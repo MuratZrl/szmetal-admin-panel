@@ -1,0 +1,243 @@
+'use client';
+
+import Link from 'next/link';
+
+import { useState } from 'react';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+
+import {
+  TextField,
+  Typography,
+  Box,
+  Card,
+  Button,
+  Snackbar,
+  Alert,
+  IconButton,
+  InputAdornment,
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+import { supabase } from '../../lib/supabaseClient';
+
+export default function LoginPage() {
+
+  const router = useRouter();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const handleClickShowPassword = () => setShowPassword((prev) => !prev);
+
+  const searchParams = useSearchParams()
+
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState< 'success' | 'error' >('success');
+
+
+  const showSnackbar = (message: string, severity: 'success' | 'error') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+
+
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!form.email.trim() || !form.password) {
+      showSnackbar('Lütfen e-posta ve şifre alanlarını doldurun.', 'error');
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: form.email.toLowerCase(),
+      password: form.password,
+    });
+
+    if (error) {
+      showSnackbar('Giriş başarısız: ' + error.message, 'error');
+      setLoading(false);
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user || user.email_confirmed_at === null) {
+      await supabase.auth.signOut();
+      showSnackbar('Lütfen önce e-posta adresinizi doğrulayın.', 'error');
+      setLoading(false);
+      return;
+    }
+
+    // Giriş başarılı
+    showSnackbar('Giriş başarılı! Yönlendiriliyorsunuz...', 'success');
+    const redirectedFrom = searchParams.get('redirectedFrom') || '/systems'
+
+    // 🔁 Yönlendirmeyi tam sayfa yenileme ile yap
+    window.location.href = redirectedFrom
+    router.refresh() // Middleware tetiklesin diye
+  };
+
+
+
+  return (
+    <Box
+      component="form"
+      noValidate
+      autoComplete="off"
+      onSubmit={handleSubmit} // 👈 ekledik
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+
+        width: '70%',
+
+        mx: 'auto',
+      }}
+    >
+
+      <Card sx={{ width: '100%', p: 3, borderRadius: 0, boxShadow: 10 }}>
+
+        {/* ******************************************************************************** */}
+
+        <Typography variant='h5' fontWeight={600} mb={3} >
+          Hemen Giriş Yapın
+        </Typography>
+
+        {/* ******************************************************************************** */}
+
+        <Box display="flex" flexDirection="column" width='100%' gap={2}>
+
+          <TextField
+            label="E-posta"
+            name="email" // 👈 Gerekli
+            type="email"
+            variant="outlined"
+
+            value={form.email}
+            onChange={handleChange}
+
+            fullWidth
+            required
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+          />
+
+          <TextField
+            label="Şifre"
+            name="password"
+            type={showPassword ? 'text' : 'password'} // 👈 toggle
+            variant="outlined"
+            value={form.password}
+            onChange={handleChange}
+            fullWidth
+            required
+            InputProps={{
+              sx: { borderRadius: 0 }, // 👈 buraya eklendi
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleClickShowPassword} edge="end">
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            disabled={loading}
+            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 0, backgroundColor: 'orangered' }}
+          >
+            {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          </Button>
+        </Box>
+        
+        {/* ******************************************************************************** */}
+
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+
+          <Typography textAlign="right" mt={3}>
+            <Link href="/forgot-password" passHref>
+              <Typography
+                component="span"
+                color="primary"
+                fontStyle="italic"
+                fontWeight={500}
+                sx={{
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Şifremi unuttum
+              </Typography>
+            </Link>
+          </Typography>
+
+          <Typography textAlign="right" mt={3}>
+            Hesabınız yoksa{' '}
+            <Link href="/register" passHref>
+              <Typography
+                component="span"
+                color="primary"
+                fontStyle="italic"
+                fontWeight={500}
+                sx={{
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                kayıt olun
+              </Typography>
+            </Link>
+          </Typography>
+
+        </Box>
+
+      </Card>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+    </Box>
+  );
+}
