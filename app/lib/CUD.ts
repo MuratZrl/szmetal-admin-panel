@@ -13,15 +13,17 @@ export const updateRow = async (table: string, id: string, data: Partial<Dynamic
   if (error) throw error;
 };
 
-export const deleteRow = async (table: string, id: string, slug: string) => {
+export const deleteRow = async (table: string, id: string, slug: string): Promise<boolean> => {
   const { error } = await supabase
     .from(table)
     .delete()
     .eq('id', id)
-    .eq('system_slug', slug); // slug kontrolü de eklendi
+    .eq('system_slug', slug);
 
   if (error) {
     console.error('Silme hatası:', error);
-    throw new Error(error.message);
+    return false;
   }
+
+  return true;
 };

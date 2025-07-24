@@ -1,3 +1,4 @@
+// app/(admin)/_constants_/mainlinks.ts
 import {
   AccountCircle,
   Dashboard,

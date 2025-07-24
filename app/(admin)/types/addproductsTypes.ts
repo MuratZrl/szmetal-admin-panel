@@ -1,5 +1,6 @@
 // app/(admin)/types/addproductsTypes.ts
 export type FormValues = {
+  id?: string; // 👈 düzenleme için gerekli
   profil_kodu: string;
   profil_adi: string;
   profil_resmi: string;
@@ -12,4 +13,5 @@ export type AddProductDialogProps = {
   slug: string;
   table: string,
   onSuccess: () => void;
+  initialData?: FormValues | null; // 👈 yeni eklendi
 };

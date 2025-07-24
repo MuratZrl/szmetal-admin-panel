@@ -4,11 +4,9 @@
 import Image from 'next/image';
 
 import { GridColDef } from '@mui/x-data-grid';
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
 
-import { deleteRow } from '../../../lib/CUD';
-
-const getColumns = (slug: string): GridColDef[] => [
+const getColumns = (): GridColDef[] => [
   {
     field: 'profil_resmi',
     headerName: 'Resim',
@@ -63,21 +61,6 @@ const getColumns = (slug: string): GridColDef[] => [
     editable: false,
     resizable: false,
     disableColumnMenu: true,
-  },
-  {
-    field: 'actions',
-    headerName: 'İşlemler',
-    renderCell: ({ row }) => (
-      <Button
-        variant="outlined"
-        color="error"
-        size="small"
-        onClick={() => deleteRow('system_profiles', row.id, slug)}
-        sx={{ Color: 'orangered', borderRadius: 7, textTransform: 'capitalize' }}
-      >
-        Sil
-      </Button>
-    ),
   },
 ];
 

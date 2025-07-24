@@ -1,10 +1,11 @@
+// app/(admin)/_components_/layout/Sidebar.tsx
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { usePathname } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
 import {
   Drawer,
@@ -23,6 +24,8 @@ const Sidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [role, setRole] = useState<string | null>(null);
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -31,6 +34,37 @@ const Sidebar = () => {
     }
     router.push('/login');
   };
+
+  const filteredLinks = useMemo(() => {
+    if (role === 'Admin') return mainLinks;
+
+    if (role === 'User') {
+      const allowedForUser = ['/account', '/systems', '/notifications', '/login'];
+      return mainLinks.filter((link) => allowedForUser.includes(link.href));
+    }
+
+    return []; // rol yoksa hiçbir şey gösterme
+  }, [role]);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        setRole(profile?.role || null);
+      }
+    };
+
+    fetchRole();
+  }, []);
 
   const renderLink = ({ label, href, icon: Icon }: SidebarLink) => {
     const isActive = pathname.startsWith(href);
@@ -127,8 +161,8 @@ const Sidebar = () => {
         justifyContent="center"
       >
         <List>
-          {mainLinks
-            .filter((link) => link.label !== 'Logout') // 👈 logout ayrı gösterilecek
+          {filteredLinks
+            .filter((link) => link.label !== 'Logout')
             .map(renderLink)}
         </List>
       </Box>
@@ -136,7 +170,7 @@ const Sidebar = () => {
       {/* Logout */}
       <Box display="flex" flexDirection="column" alignItems="center">
         {(() => {
-          const logoutLink = mainLinks.find((link) => link.label === 'Logout');
+          const logoutLink = filteredLinks.find((link) => link.label === 'Logout');
           return logoutLink ? renderLink(logoutLink) : null;
         })()}
       </Box>

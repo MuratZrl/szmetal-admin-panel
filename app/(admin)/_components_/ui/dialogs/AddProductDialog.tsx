@@ -28,8 +28,10 @@ export default function AddProductDialog({
     slug,
     table,
     onSuccess,
+    initialData = null,
   }: AddProductDialogProps) {
 
+  const isEditMode = !!initialData;
   const [uploading, setUploading] = useState(false);
 
   const {
@@ -78,16 +80,29 @@ export default function AddProductDialog({
   };
 
   const onSubmit = async (data: FormValues) => {
-    const { error } = await supabase
-      .from(table) // ✅ tablo adı artık burada
-      .insert([{ ...data, system_slug: slug }]); // 🔑 system_slug ilişkisi kurulmalı
+    const payload = { ...data, system_slug: slug };
+
+    let result;
+
+    if (isEditMode && initialData?.id) {
+      result = await supabase
+        .from(table)
+        .update(payload)
+        .eq('id', initialData.id); // 🎯 Güncelleme
+    } else {
+      result = await supabase
+        .from(table)
+        .insert([payload]); // ➕ Yeni kayıt
+    }
+
+    const { error } = result;
 
     if (!error) {
       onSuccess();
       reset();
       onClose();
     } else {
-      console.error('Ekleme hatası:', error.message);
+      console.error(isEditMode ? 'Güncelleme hatası:' : 'Ekleme hatası:', error.message);
     }
   };
 
@@ -96,14 +111,18 @@ export default function AddProductDialog({
   // useEffect hook'ları
   useEffect(() => {
     if (open) {
-      reset({
-        profil_kodu: '',
-        profil_adi: '',
-        profil_resmi: '',
-        birim_agirlik: 0,
-      });
+      if (initialData) {
+        reset(initialData); // 🎯 düzenleme modunda doldur
+      } else {
+        reset({
+          profil_kodu: '',
+          profil_adi: '',
+          profil_resmi: '',
+          birim_agirlik: 0,
+        });
+      }
     }
-  }, [open, reset]);
+  }, [open, initialData, reset]);
 
   return (
     <Dialog 
@@ -117,7 +136,9 @@ export default function AddProductDialog({
       }}
     >
 
-      <DialogTitle variant='h6'>Yeni Kayıt</DialogTitle>
+      <DialogTitle variant='h6'>
+        {isEditMode ? 'Profili Düzenle' : 'Yeni Kayıt'}
+      </DialogTitle>
 
       {/* ****************************************************************************************** */}
 
@@ -233,10 +254,10 @@ export default function AddProductDialog({
               <Button 
                 type="submit" 
                 variant="contained" 
-                disabled={uploading || !isValid} // 🔒 sadece form geçerliyse ve yükleme yapılmıyorsa aktif
+                disabled={uploading || !isValid}
                 sx={{ px: 4, backgroundColor: 'orangered', borderRadius: 7, textTransform: 'capitalize' }}
               >
-                Ekle
+                {isEditMode ? 'Kaydet' : 'Ekle'}
               </Button>
 
             </DialogActions>

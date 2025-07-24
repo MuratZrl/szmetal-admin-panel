@@ -1,3 +1,4 @@
+// app/(admin)/clients/page.tsx
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -12,26 +13,7 @@ import GroupedBarChart from '../_components_/ui/charts/GroupedUserBarChart';
 import { usersTableColumns } from '../_constants_/clients/clients-columns';
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
-// ✅ Tip tanımı
-type Database = {
-  public: {
-    Tables: {
-      users: {
-        Row: {
-          id: number;
-          username: string;
-          email: string;
-          company: string;
-          phone: string;
-          role: string;
-          status: string;
-          resim: string | null;
-        };
-      };
-    };
-  };
-};
+import { Database } from '../../../types/supabase';
 
 // ******************************************************************************************
 

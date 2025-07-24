@@ -108,9 +108,6 @@ export default function SummaryPage() {
     const { error: insertError } = await supabase.from('requests').insert([
       {
         user_id: user.id,
-        username: userProfile.username,
-        email: userProfile.email,
-        company: userProfile.company,
         system_slug: slugStr,
         form_data: JSON.parse(JSON.stringify(form)),
         summary_data: JSON.parse(JSON.stringify(rows1)),

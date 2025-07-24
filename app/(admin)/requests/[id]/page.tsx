@@ -30,8 +30,27 @@ function renderSystemTables(request: RequestRowUnion) {
 
 export default function RequestDetailPage() {
   const { id } = useParams() as { id: string };
+
   const [request, setRequest] = useState<RequestRowUnion | null>(null);
+  const [updating, setUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const updateStatus = async (newStatus: 'approved' | 'rejected') => {
+    setUpdating(true);
+
+    const { error } = await supabase
+      .from('requests')
+      .update({ status: newStatus })
+      .eq('id', id);
+
+    if (!error) {
+      setRequest((prev) => prev ? { ...prev, status: newStatus } : prev);
+    } else {
+      console.error('Durum güncelleme hatası:', error.message);
+    }
+
+    setUpdating(false);
+  };
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -136,6 +155,33 @@ export default function RequestDetailPage() {
                 </Typography>
               </Grid>
             </Grid>
+
+            <Divider sx={{ mt: 2 }} />
+
+            {request.status === 'pending' && (
+              <Grid container spacing={2} mt={2}>
+                <Grid >
+                  <Chip
+                    label="Onayla"
+                    variant="filled"
+                    onClick={() => updateStatus('approved')}
+                    disabled={updating}
+                    clickable
+                    sx={{ px: 2, py: 1, color: 'white', backgroundColor: 'orangered', fontWeight: 600 }}
+                  />
+                </Grid>
+                <Grid >
+                  <Chip
+                    label="Reddet"
+                    variant="filled"
+                    onClick={() => updateStatus('rejected')}
+                    disabled={updating}
+                    clickable
+                    sx={{ px: 2, py: 1, color: 'white', backgroundColor: 'darkred', fontWeight: 600 }}
+                  />
+                </Grid>
+              </Grid>
+            )}
 
           </CardContent>
 
