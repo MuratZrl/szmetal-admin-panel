@@ -20,7 +20,7 @@ import { useForm, Controller } from 'react-hook-form';
 
 import type { FormValues, AddProductDialogProps } from '../../../types/addproductsTypes';
 
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase } from '../../../../lib/supabase/supabaseClient';
 
 export default function AddProductDialog({
     open,

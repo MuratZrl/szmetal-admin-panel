@@ -16,7 +16,7 @@ import {
   SistemOzet 
 } from '../../../types/systemTypes';
 
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase } from '../../../../lib/supabase/supabaseClient';
 
 // ******************************************************************************************
 

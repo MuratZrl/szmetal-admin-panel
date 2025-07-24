@@ -18,7 +18,7 @@ import {
 
 import { mainLinks, SidebarLink } from '../../_constants_/mainlinks';
 
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 const Sidebar = () => {
   const router = useRouter();

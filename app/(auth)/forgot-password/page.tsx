@@ -13,7 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase/supabaseClient';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

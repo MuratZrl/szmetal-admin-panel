@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from './types/supabase'; // varsa
+import { Database } from './types/supabase'; // varsa, yoksa kaldır
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -12,40 +12,40 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Eğer oturum yoksa => login'e yönlendir
+  // 🔒 Eğer kullanıcı login değilse → login sayfasına gönder
   if (!session) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/login';
-    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   const user = session.user;
   const role = user.user_metadata?.role || 'User';
-
   const pathname = req.nextUrl.pathname;
 
-  // ❌ User rolü için yasaklı admin route'ları (kesinlikle erişilmesin)
-  const forbiddenForUser = [
+  // 🚫 Sadece adminlere açık sayfalar
+  const adminOnlyPaths = [
     '/admin/dashboard',
     '/admin/clients',
     '/admin/requests',
     '/admin/products',
   ];
 
-  if (role === 'User' && forbiddenForUser.some(path => pathname.startsWith(path))) {
+  // 👮‍♂️ Eğer User rolündeyse ve erişilmemesi gereken sayfaya girmeye çalışıyorsa
+  if (role === 'User' && adminOnlyPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.redirect(new URL('/unauthorized', req.url));
   }
 
+  // ✅ Her şey normal, devam et
   return res;
 }
 
 export const config = {
   matcher: [
+    // Koruma altına alınacak tüm sayfalar
     '/admin/:path*',
     '/clients',
     '/dashboard',
     '/requests',
     '/products',
+    '/systems/:path*',
   ],
-}
+};

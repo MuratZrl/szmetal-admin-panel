@@ -39,7 +39,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { commonTextFieldProps } from '../_constants_/formstyles';
 
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase/supabaseClient';
 
 // **********************************************************************************************************************
 

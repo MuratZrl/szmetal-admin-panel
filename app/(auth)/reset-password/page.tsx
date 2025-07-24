@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase/supabaseClient';
 
 export default function ResetPasswordPage() {
   const router = useRouter();

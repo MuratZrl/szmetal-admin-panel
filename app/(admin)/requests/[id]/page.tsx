@@ -12,7 +12,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import GiyotinTables from '../../_components_/requests-system-data/GiyotinTables';
 import { RequestRowUnion } from '../../types/requestsTypes';
 
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 function renderSystemTables(request: RequestRowUnion) {
   switch (request.system_slug) {

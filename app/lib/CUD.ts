@@ -1,7 +1,7 @@
 // app/lib/CUD.ts
 import type { DynamicRow } from '../(admin)/types/productsTypes';
 
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase/supabaseClient';
 
 export const insertRow = async (table: string, data: Partial<DynamicRow>) => {
   const { error } = await supabase.from(table).insert([data]);

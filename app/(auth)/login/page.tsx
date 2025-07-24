@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { useState } from 'react';
 
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import {
   TextField,
@@ -19,14 +19,14 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase/supabaseClient';
 
 export default function LoginPage() {
 
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => setShowPassword((prev) => !prev);
-
-  const searchParams = useSearchParams()
 
   const [form, setForm] = useState({
     email: '',
@@ -58,41 +58,53 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.email.trim() || !form.password) {
-      showSnackbar('Lütfen e-posta ve şifre alanlarını doldurun.', 'error');
+    if (!form.email || !form.password) {
+      showSnackbar('E-posta ve şifre gerekli.', 'error');
       return;
     }
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email.toLowerCase(),
-      password: form.password,
-    });
+    try {
+      // 🔐 Giriş yap
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      });
 
-    if (error) {
-      showSnackbar('Giriş başarısız: ' + error.message, 'error');
+      if (signInError) {
+        showSnackbar(`Giriş başarısız: ${signInError.message}`, 'error');
+        return;
+      }
+
+      // 🧪 Giriş yapan kullanıcının bilgisi alınıyor
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        showSnackbar('Kullanıcı bilgisi alınamadı.', 'error');
+        return;
+      }
+
+      if (!user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        showSnackbar('Lütfen önce e-posta adresinizi doğrulayın.', 'error');
+        return;
+      }
+
+      showSnackbar('Giriş başarılı, yönlendiriliyorsunuz...', 'success');
+
+      // 🔄 Tüm cookie ve session'ın middleware'e ulaşabilmesi için tam sayfa yenile!
+      setTimeout(() => {
+        window.location.href = '/systems'; // middleware tetiklenir
+      }, 500);
+
+    } catch (err) {
+      console.error('Girişte beklenmeyen hata:', err);
+      showSnackbar('Beklenmeyen bir hata oluştu.', 'error');
+
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.email_confirmed_at === null) {
-      await supabase.auth.signOut();
-      showSnackbar('Lütfen önce e-posta adresinizi doğrulayın.', 'error');
-      setLoading(false);
-      return;
-    }
-
-    // Giriş başarılı
-    showSnackbar('Giriş başarılı! Yönlendiriliyorsunuz...', 'success');
-    const redirectedFrom = searchParams.get('redirectedFrom') || '/systems'
-
-    // 🔁 Yönlendirmeyi tam sayfa yenileme ile yap
-    setTimeout(() => {
-      window.location.href = redirectedFrom
-    }, 300);
   };
 
   // ******************************************************************************************

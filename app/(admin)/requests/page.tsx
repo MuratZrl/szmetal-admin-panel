@@ -16,7 +16,7 @@ import { getRequestsColumns } from '../_constants_/requests/requests-columns';
 import MonthlyRequestsChart from '../_components_/ui/charts/MonthlyRequestChart';
 import GroupedRequestedBarChart from '../_components_/ui/charts/GroupedRequestBarChart';
 
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase/supabaseClient';
 
 // ******************************************************************************************
 

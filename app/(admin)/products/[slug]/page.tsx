@@ -12,7 +12,7 @@ import AddProductDialog from '../../_components_/ui/dialogs/AddProductDialog';
 
 import { deleteRow } from '../../../lib/CUD';
 
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 type DynamicRow = {
   id: string;
