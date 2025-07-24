@@ -25,6 +25,8 @@ export default function ClientPage() {
 
   const supabase = createClientComponentClient<Database>();
 
+  // ******************************************************************************************
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 

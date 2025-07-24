@@ -18,7 +18,6 @@ import {
 
 import { supabase } from '../../../../lib/supabaseClient';
 
-
 // ******************************************************************************************
 
 export default function SummaryPage() {
@@ -81,6 +80,7 @@ export default function SummaryPage() {
 
   // "Onayla" butonuna tıklandığında "requests" tablosuna veri ekleyen fonksiyon.
   const handleConfirm = async () => {
+    
     // Giriş yapan kullanıcının kimliğini al (sadece ID için)
     const {
       data: { user },

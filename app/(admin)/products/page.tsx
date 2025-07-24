@@ -8,7 +8,7 @@ import ProductCard from '../_components_/ui/cards/ProductCard';
 
 import { products } from '../_constants_/productcards';
 
-export default function HomePage() {
+export default function ProductsPage() {
   return (
     <Box py={2} >
 

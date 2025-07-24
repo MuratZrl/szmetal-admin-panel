@@ -21,7 +21,6 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { supabase } from '../../lib/supabaseClient';
 
-
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -43,8 +42,6 @@ export default function RegisterPage() {
 
   const handleClickShowPassword = () => setShowPassword((prev) => !prev);
   const handleClickShowConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
-
-
   
   const isPasswordValid = (password: string) => {
     const minLength = 8;

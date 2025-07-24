@@ -1,3 +1,4 @@
+// app/(admin)/_utils_/giyotin-formulas.ts
 export function hesaplaKesimAdet(profilKodu: string, sistemAdet: number): number {
   switch (profilKodu) {
 
@@ -48,9 +49,7 @@ export function hesaplaKesimAdet(profilKodu: string, sistemAdet: number): number
   }
 }
 
-
-
-
+// ****************************************************************************************************
 
 export function hesaplaKesimOlcusu(profilKodu: string, yukseklik: number, genislik: number): string {
   switch (profilKodu) {
@@ -102,15 +101,15 @@ export function hesaplaKesimOlcusu(profilKodu: string, yukseklik: number, genisl
   }
 }
 
+// ****************************************************************************************************
+
 export function parseKesimOlcusu(kesimOlcusu: string): number {
   // "1283 mm" → 1283
   const parsed = parseFloat(kesimOlcusu.replace(/[^\d.]/g, ''));
   return isNaN(parsed) ? 0 : parsed;
 }
 
-
-
-
+// ****************************************************************************************************
 
 export function hesaplaVerilecekAdet(
   profilKodu: string, 
@@ -149,33 +148,32 @@ export function hesaplaVerilecekAdet(
   }
 }
 
-
-
+// ****************************************************************************************************
 
 export function hesaplaSistemMetraj(yukseklik: number, genislik: number, adet: number): string {
   const metrekare = (yukseklik * genislik * adet) / 1_000_000;
   return metrekare.toFixed(2);
 }
 
-
+// ****************************************************************************************************
 
 export function hesaplaKayarCamGenislik(genislik: number): string {
   return (genislik - 174).toFixed(0);
 }
 
-
+// ****************************************************************************************************
 
 export function hesaplaKayarCamYukseklik(yukseklik: number): string {
   return ((yukseklik - 197) / 3).toFixed(0);
 }
 
-
+// ****************************************************************************************************
 
 export function hesaplaKayarCamAdedi(adet: number): string {
   return (adet * 3).toString();
 }
 
-
+// ****************************************************************************************************
 
 export function hesaplaCamMetraj(adet: number, yukseklik: number, genislik: number): string {
   const camYuk = (yukseklik - 197) / 3;
@@ -184,7 +182,7 @@ export function hesaplaCamMetraj(adet: number, yukseklik: number, genislik: numb
   return metrekare.toFixed(2);
 }
 
-
+// ****************************************************************************************************
 
 export function hesaplaToplamKg(birimAgirlik: number, adet: number): number {
   return birimAgirlik * adet;

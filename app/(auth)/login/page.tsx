@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { useState } from 'react';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import {
   TextField,
@@ -23,8 +23,6 @@ import { supabase } from '../../lib/supabaseClient';
 
 export default function LoginPage() {
 
-  const router = useRouter();
-
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => setShowPassword((prev) => !prev);
 
@@ -41,6 +39,7 @@ export default function LoginPage() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState< 'success' | 'error' >('success');
 
+  // ******************************************************************************************
 
   const showSnackbar = (message: string, severity: 'success' | 'error') => {
     setSnackbarMessage(message);
@@ -48,15 +47,13 @@ export default function LoginPage() {
     setSnackbarOpen(true);
   };
 
-
-
+  // ******************************************************************************************
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-
-
+  // ******************************************************************************************
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,11 +90,12 @@ export default function LoginPage() {
     const redirectedFrom = searchParams.get('redirectedFrom') || '/systems'
 
     // 🔁 Yönlendirmeyi tam sayfa yenileme ile yap
-    window.location.href = redirectedFrom
-    router.refresh() // Middleware tetiklesin diye
+    setTimeout(() => {
+      window.location.href = redirectedFrom
+    }, 300);
   };
 
-
+  // ******************************************************************************************
 
   return (
     <Box

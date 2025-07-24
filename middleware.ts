@@ -1,53 +1,51 @@
 // middleware.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from './types/supabase' // Supabase tipi varsa, yoksa kaldırabilirsin
+import { NextRequest, NextResponse } from 'next/server';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from './types/supabase'; // varsa
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+  const res = NextResponse.next();
 
-  // Supabase istemcisi oluştur
-  const supabase = createMiddlewareClient<Database>({ req, res })
+  const supabase = createMiddlewareClient<Database>({ req, res });
 
-  // Oturum ve kullanıcı bilgilerini al
   const {
     data: { session },
-  } = await supabase.auth.getSession()
+  } = await supabase.auth.getSession();
 
-  // Eğer oturum yoksa, login sayfasına yönlendir
+  // Eğer oturum yoksa => login'e yönlendir
   if (!session) {
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = '/login'
-    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  const user = session.user
+  const user = session.user;
+  const role = user.user_metadata?.role || 'User';
 
-  // Supabase 'user_metadata' içindeki rolü al
-  const userRole = user.user_metadata?.role || 'User'
+  const pathname = req.nextUrl.pathname;
 
-  const pathname = req.nextUrl.pathname
+  // ❌ User rolü için yasaklı admin route'ları (kesinlikle erişilmesin)
+  const forbiddenForUser = [
+    '/admin/dashboard',
+    '/admin/clients',
+    '/admin/requests',
+    '/admin/products',
+  ];
 
-  // Kullanıcının erişebileceği route'ları tanımla
-  const userAllowedRoutes = ['/admin/account', '/admin/systems', '/admin/notifications']
-
-  const isUser = userRole === 'User'
-
-  // Eğer User rolünde ama yetkisiz bir admin sayfasına erişmek istiyorsa
-  if (
-    isUser &&
-    pathname.startsWith('/admin') &&
-    !userAllowedRoutes.includes(pathname)
-  ) {
-    return NextResponse.redirect(new URL('/unauthorized', req.url))
+  if (role === 'User' && forbiddenForUser.some(path => pathname.startsWith(path))) {
+    return NextResponse.redirect(new URL('/unauthorized', req.url));
   }
 
-  // Diğer durumlarda devam et
-  return res
+  return res;
 }
 
-// Sadece admin sayfaları için çalışsın
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/clients',
+    '/dashboard',
+    '/requests',
+    '/products',
+  ],
 }
