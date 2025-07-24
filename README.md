@@ -1,38 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛠️ SZ Metal Admin Panel
 
-## Getting Started
+Bu proje, **Next.js 15 (App Router)**, **Supabase**, **Tailwind CSS**, **MUI (Material UI)** ve **TypeScript** kullanılarak geliştirilmiş tam özellikli bir **Admin Panel** uygulamasıdır. Eğitim amaçlı oluşturulmuştur ve modern web geliştirme yaklaşımlarını içermektedir.
 
-First, run the development server:
+---
+
+## 🚀 Teknolojiler
+
+| Teknoloji   | Açıklama |
+|------------|----------|
+| [Next.js 15](https://nextjs.org) | App Router mimarisiyle SSR + RSC destekli |
+| [Supabase](https://supabase.com) | Authentication, veritabanı ve API katmanı |
+| [Tailwind CSS](https://tailwindcss.com) | Hızlı stil yazımı için utility-first CSS framework |
+| [MUI](https://mui.com) | React için Material tasarım bileşenleri |
+| [TypeScript](https://www.typescriptlang.org) | Güçlü tip kontrolü |
+| [DataGrid](https://mui.com/x/react-data-grid/) | Gelişmiş tablo ve listeleme yetenekleri |
+| [Zod/Yup](https://zod.dev / https://github.com/jquense/yup) | Form doğrulama |
+| [React Hook Form](https://react-hook-form.com) | Form state yönetimi |
+
+---
+
+## 📁 Proje Yapısı
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-<!-- Yeşil kutu istiyorum -->
+app/
+├── (admin)/
+│   ├── account/
+│   ├── dashboard/
+│   ├── clients/
+│   ├── requests/
+│   │   └── [id]/
+│   ├── systems/
+│   │   └── [slug]/step2, step3
+│   ├── types/
+│   ├── _components_/layout, ui, charts, dialogs...
+│   ├── _constants_/requests, systems, validations...
+│   ├── _hooks_/
+│   └── _utils_/
+├── (auth)/login, register, reset-password, forgot-password
+├── unauthorized/
+lib/
+types/
+middleware.ts
