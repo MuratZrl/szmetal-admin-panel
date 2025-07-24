@@ -1,19 +1,15 @@
 // app/page.tsx
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+
+import { redirect } from 'next/navigation'
+import { createSupabaseServerClient } from './lib/supabase/supabaseServer'
 
 export default async function HomePage() {
-  const supabase = createServerComponentClient({ cookies }); // 👈 SADECE BU!
-  
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (session) {
-    redirect('/systems');
-    
+  if (user) {
+    redirect('/systems')
   } else {
-    redirect('/login');
+    redirect('/login')
   }
 }

@@ -121,9 +121,9 @@ export default function RegisterPage() {
         id: user.id,
         email: form.email,
         username: form.username,
-        role: 'user',
+        role: 'User',
         image: null,         // opsiyonel, ama tabloya uygun olmalı
-        status: 'active',    // default olabilir ama yazmak iyi olur
+        status: 'Active',    // default olabilir ama yazmak iyi olur
       });
 
       if (insertError) {

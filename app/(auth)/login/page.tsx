@@ -95,7 +95,8 @@ export default function LoginPage() {
 
       // 🔄 Tüm cookie ve session'ın middleware'e ulaşabilmesi için tam sayfa yenile!
       setTimeout(() => {
-        window.location.href = '/systems'; // middleware tetiklenir
+        router.refresh(); // SSR bileşenleri güncellensin
+        router.push('/systems');
       }, 500);
 
     } catch (err) {

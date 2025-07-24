@@ -1,51 +1,76 @@
 // middleware.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from './types/supabase'; // varsa, yoksa kaldır
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  const res = NextResponse.next()
 
-  const supabase = createMiddlewareClient<Database>({ req, res });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value
+        },
+      },
+    }
+  )
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // 🔑 Supabase user oturumu al
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // 🔒 Eğer kullanıcı login değilse → login sayfasına gönder
-  if (!session) {
-    return NextResponse.redirect(new URL('/login', req.url));
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  const user = session.user;
-  const role = user.user_metadata?.role || 'User';
-  const pathname = req.nextUrl.pathname;
+  // 🧠 Şimdi "users" tablosundan kullanıcı rolünü al
+  const { data: userData, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
-  // 🚫 Sadece adminlere açık sayfalar
+  if (error || !userData) {
+    console.error('Rol bilgisi alınamadı:', error)
+    return NextResponse.redirect(new URL('/unauthorized', req.url))
+  }
+
+  const role = userData.role
+  const pathname = req.nextUrl.pathname
+
+    // ✅ Kullanıcı giriş yaptıysa /auth sayfalarına erişemesin
+  if (user && pathname.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/systems', req.url))
+  }
+
+  // 🚫 Sadece admin'lere özel sayfalar
   const adminOnlyPaths = [
-    '/admin/dashboard',
-    '/admin/clients',
-    '/admin/requests',
-    '/admin/products',
-  ];
-
-  // 👮‍♂️ Eğer User rolündeyse ve erişilmemesi gereken sayfaya girmeye çalışıyorsa
-  if (role === 'User' && adminOnlyPaths.some(path => pathname.startsWith(path))) {
-    return NextResponse.redirect(new URL('/unauthorized', req.url));
-  }
-
-  // ✅ Her şey normal, devam et
-  return res;
-}
-
-export const config = {
-  matcher: [
-    // Koruma altına alınacak tüm sayfalar
-    '/admin/:path*',
     '/clients',
     '/dashboard',
     '/requests',
     '/products',
-    '/systems/:path*',
+    '/admin',
+  ]
+
+  const isRestricted = adminOnlyPaths.some(path => pathname.startsWith(path))
+
+  if (role !== 'Admin' && isRestricted) {
+    return NextResponse.redirect(new URL('/unauthorized', req.url))
+  }
+
+  return res
+}
+
+export const config = {
+  matcher: [
+    '/clients',
+    '/dashboard',
+    '/requests/:path*',   // ✅ dinamik id dahil
+    '/products/:path*',   // ✅ dinamik slug dahil
+    '/admin/:path*',
+    '/systems/:path*',    // ✅ dinamik slug dahil
+    
+    '/auth/:path*', // 👈 bunu ekledik
   ],
-};
+}

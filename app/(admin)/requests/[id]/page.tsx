@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useParams, notFound } from 'next/navigation';
 
-import { Typography, CircularProgress, Box, Card, CardContent, Grid, Paper, Chip, Divider } from '@mui/material';
+import { Typography, CircularProgress, Box, Card, CardContent, Grid, Paper, Chip, Divider, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -16,6 +16,7 @@ import { supabase } from '../../../lib/supabase/supabaseClient';
 
 function renderSystemTables(request: RequestRowUnion) {
   switch (request.system_slug) {
+
     case 'giyotin-sistemi':
       return (
         <GiyotinTables
@@ -23,6 +24,7 @@ function renderSystemTables(request: RequestRowUnion) {
           materialData={request.material_data}
         />
       );
+      
     default:
       return <Typography>Tanımsız sistem.</Typography>;
   }
@@ -156,29 +158,51 @@ export default function RequestDetailPage() {
               </Grid>
             </Grid>
 
-            <Divider sx={{ mt: 2 }} />
+            <Divider sx={{ my: 2 }} />
 
             {request.status === 'pending' && (
-              <Grid container spacing={2} mt={2}>
+              <Grid container spacing={1} justifyContent="flex-end" >
                 <Grid >
-                  <Chip
-                    label="Onayla"
-                    variant="filled"
+                  <Button
+                    variant="contained"
                     onClick={() => updateStatus('approved')}
                     disabled={updating}
-                    clickable
-                    sx={{ px: 2, py: 1, color: 'white', backgroundColor: 'orangered', fontWeight: 600 }}
-                  />
+                    sx={{
+                      px: 3,
+                      py: 1,
+                      backgroundColor: 'green',
+                      textTransform: 'capitalize',
+
+                      borderRadius: 7,
+
+                      '&:hover': {
+                        backgroundColor: 'darkgreen'
+                      }
+                    }}
+                  >
+                    Onayla
+                  </Button>
                 </Grid>
                 <Grid >
-                  <Chip
-                    label="Reddet"
-                    variant="filled"
+                  <Button
+                    variant="contained"
                     onClick={() => updateStatus('rejected')}
                     disabled={updating}
-                    clickable
-                    sx={{ px: 2, py: 1, color: 'white', backgroundColor: 'darkred', fontWeight: 600 }}
-                  />
+                    sx={{
+                      px: 3,
+                      py: 1,
+                      backgroundColor: 'orangered',
+                      textTransform: 'capitalize',
+
+                      borderRadius: 7,
+
+                      '&:hover': {
+                        backgroundColor: 'darkred'
+                      }
+                    }}
+                  >
+                    Reddet
+                  </Button>
                 </Grid>
               </Grid>
             )}

@@ -1,7 +1,7 @@
 // lib/auth/getUserOrRedirect.ts
 import { redirect } from 'next/navigation'
 
-import c
+import { createSupabaseServerClient } from '../supabase/supabaseServer'
 
 export const getUserOrRedirect = async () => {
   const supabase = await createSupabaseServerClient()
