@@ -409,243 +409,254 @@ if (!userData) {
 }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', py: 2 }}>
+    <Box 
+      display="flex" 
+      flexDirection={{ xs: 'column', sm: 'row' }}
+      alignItems={{ xs: 'flex-start', sm: 'center' }}
+      justifyContent="space-between" 
+      sx={{ py: 2 }}
+    >
 
-      <Paper elevation={5} sx={{ p: 3, borderRadius: 10 }}>
+      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
 
-        {/* Profil */}
-        <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} mb={3}>
+        <Paper elevation={1} sx={{ mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, p: 3, borderRadius: 7 }} >
 
-          {/* Sol: Avatar ve Bilgiler */}
-          <Box display="flex" alignItems="center" gap={2}>
+          {/* Profil */}
+          <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} mb={3}>
 
-            <Avatar
-              alt="Kullanıcı Avatarı"
-              src={userData?.image || '/avatar.jpg'} // kullanıcıdan gelen URL olabilir
-              sx={{ width: 64, height: 64 }}
-            />
+            {/* Sol: Avatar ve Bilgiler */}
+            <Box display="flex" alignItems="center" gap={2}>
 
-            <Box>
-
-              <Typography fontWeight={600}>
-                {userData?.username || 'Yükleniyor...'}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary">
-                {userData?.email || ''}
-              </Typography>
-
-              <Chip
-                label={userData?.role ?? '...'}
-                size="small"
-                sx={{
-                  mt: 1,
-                  fontWeight: 'bold',
-                  boxShadow: 1,
-                  ...getRoleColor(userData?.role ?? null), // 👈 renkler ayrı fonksiyonla
-                }}
+              <Avatar
+                alt="Kullanıcı Avatarı"
+                src={userData?.image || '/avatar.jpg'} // kullanıcıdan gelen URL olabilir
+                sx={{ width: 64, height: 64 }}
               />
+
+              <Box>
+
+                <Typography fontWeight={600}>
+                  {userData?.username || 'Yükleniyor...'}
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  {userData?.email || ''}
+                </Typography>
+
+                <Chip
+                  label={userData?.role ?? '...'}
+                  size="small"
+                  sx={{
+                    mt: 1,
+                    fontWeight: 'bold',
+                    boxShadow: 1,
+                    pointerEvents: 'none',
+                    ...getRoleColor(userData?.role ?? null), // 👈 renkler ayrı fonksiyonla
+                  }}
+                />
+
+              </Box>
+
+            </Box>
+
+            {/* Sağ: Fotoğraf Butonları */}
+            <Box display="flex" gap={1}>
+
+              <Button
+                variant="outlined"
+                size="small"
+                component="label"
+                sx={{ color: 'orangered', textTransform: 'capitalize', borderColor: 'orangered', borderRadius: 7 }}
+              >
+                {uploading ? 'Yükleniyor...' : 'Resim Yükle'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleUpload}
+                />
+              </Button>
+
+              <Button
+                variant="text"
+                size="small"
+                color="error"
+                sx={{ color: 'red', textTransform: 'capitalize', borderRadius: 7 }}
+                onClick={handleRemoveImage}
+              >
+                Kaldır
+              </Button>
 
             </Box>
 
           </Box>
 
-          {/* Sağ: Fotoğraf Butonları */}
-          <Box display="flex" gap={1}>
+          {/* ******************************************************************************** */}
 
-            <Button
-              variant="outlined"
-              size="small"
-              component="label"
-              sx={{ color: 'orangered', textTransform: 'capitalize', borderColor: 'orangered', borderRadius: 7 }}
-            >
-              {uploading ? 'Yükleniyor...' : 'Resim Yükle'}
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleUpload}
-              />
-            </Button>
+          <Divider sx={{ my: 3 }} />
 
-            <Button
-              variant="text"
-              size="small"
-              color="error"
-              sx={{ color: 'red', textTransform: 'capitalize', borderRadius: 7 }}
-              onClick={handleRemoveImage}
-            >
-              Kaldır
-            </Button>
+          {/* ******************************************************************************** */}
 
-          </Box>
+          {/* Bilgi Güncelleme */}
+          <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom >
+            Kişisel Bilgiler
+          </Typography>
 
-        </Box>
+          <Box component={'form'} onSubmit={handleSubmit(onSubmit)} >
 
-        {/* ******************************************************************************** */}
+            <Grid container spacing={2}>
 
-        <Divider sx={{ my: 3 }} />
-
-        {/* ******************************************************************************** */}
-
-        {/* Bilgi Güncelleme */}
-        <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom >
-          Kişisel Bilgiler
-        </Typography>
-
-        <Box component={'form'} onSubmit={handleSubmit(onSubmit)} >
-
-          <Grid container spacing={2}>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                required
-                fullWidth
-                label="Kullanıcı Adı"
-                type='text'
-                {...register('username')}
-                helperText={errors.username?.message}
-                error={!!errors.username}
-                InputLabelProps={{ shrink: true }} // ✅ LABEL YUKARI ZORLA
-                {...commonTextFieldProps}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Box display="flex" gap={1} alignItems="center">
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   required
                   fullWidth
-                  label="E-Posta"
-                  value={userData?.email ?? ''}
-                  disabled
+                  label="Kullanıcı Adı"
+                  type='text'
+                  {...register('username')}
+                  helperText={errors.username?.message}
+                  error={!!errors.username}
+                  InputLabelProps={{ shrink: true }} // ✅ LABEL YUKARI ZORLA
                   {...commonTextFieldProps}
                 />
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => setEmailModalOpen(true)}
-                  sx={{ p: 1.25, px: 3, textTransform: 'capitalize', borderColor: 'orangered', borderRadius: 4, backgroundColor: 'orangered', textWrap: 'wrap', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}
-                >
-                  Email Değiştir
-                </Button>
-              </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box display="flex" gap={1} alignItems="center">
+                  <TextField
+                    required
+                    fullWidth
+                    label="E-Posta"
+                    value={userData?.email ?? ''}
+                    disabled
+                    {...commonTextFieldProps}
+                  />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setEmailModalOpen(true)}
+                    sx={{ p: 1.25, px: 3, textTransform: 'capitalize', borderColor: 'orangered', borderRadius: 4, backgroundColor: 'orangered', textWrap: 'wrap', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}
+                  >
+                    Email Değiştir
+                  </Button>
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Telefon"
+                  {...register('phone')}
+                  helperText={errors.phone?.message}
+                  error={!!errors.phone}
+                  inputProps={{ maxLength: 11 }}
+                  {...commonTextFieldProps}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Şirket"
+                  {...register('company')}
+                  {...commonTextFieldProps}
+                />
+              </Grid>
+
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Box mt={3} display="flex" justifyContent="flex-end">
+              <Button
+                type='submit'
+                variant="contained"
+                disabled={!isDirty || !isValid} // 👈 Değişiklik yapılmadıysa veya form geçersizse
+                sx={{ px: 2, py: 1, backgroundColor: 'orangered', borderRadius: 10, textTransform: 'capitalize' }}
+              >
+                Kaydet
+              </Button>
+            </Box>
+
+          </Box>
+
+          {/* ******************************************************************************** */}
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* ******************************************************************************** */}
+
+          {/* Şifre */}
+          <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom >
+            Şifreyi Güncelle
+          </Typography>
+
+          <Grid container spacing={1} >
+
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="Telefon"
-                {...register('phone')}
-                helperText={errors.phone?.message}
-                error={!!errors.phone}
-                inputProps={{ maxLength: 11 }}
-                {...commonTextFieldProps}
+                type={showCurrentPassword ? 'text' : 'password'}
+                label="Mevcut Şifre"
+
+                {...passwordRegister('currentPassword')}
+                helperText={passwordErrors.currentPassword?.message}
+                error={!!passwordErrors.currentPassword}
+
+                InputProps={{
+                  ...commonTextFieldProps.InputProps, // common stilleri al
+                  endAdornment: ( // ama buraya özel olarak ikon da ekle
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowCurrentPassword((prev) => !prev)} edge="end">
+                        {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+
+                InputLabelProps={commonTextFieldProps.InputLabelProps}
+                variant={commonTextFieldProps.variant}
               />
             </Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="Şirket"
-                {...register('company')}
-                {...commonTextFieldProps}
+                type={showNewPassword ? 'text' : 'password'}
+                label="Yeni Şifre"
+
+                {...passwordRegister('newPassword')}
+                helperText={passwordErrors.newPassword?.message}
+                error={!!passwordErrors.newPassword}
+                
+                InputProps={{
+                  ...commonTextFieldProps.InputProps,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowNewPassword((prev) => !prev)} edge="end">
+                        {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+
+                InputLabelProps={commonTextFieldProps.InputLabelProps}
+                variant={commonTextFieldProps.variant}
               />
             </Grid>
 
           </Grid>
 
           <Box mt={3} display="flex" justifyContent="flex-end">
-            <Button
+            <Button 
               type='submit'
-              variant="contained"
-              disabled={!isDirty || !isValid} // 👈 Değişiklik yapılmadıysa veya form geçersizse
-              sx={{ px: 2, py: 1, backgroundColor: 'orangered', borderRadius: 10, textTransform: 'capitalize' }}
-            >
-              Kaydet
+              variant="outlined" 
+              color="secondary" 
+              onClick={handlePasswordSubmit(handlePasswordChange)}
+              disabled={!isPasswordDirty || !isPasswordValid}
+              sx={{ px: 2, py: 1, color: 'orangered', borderColor: 'orangered', borderRadius: 10, textTransform: 'capitalize' }}>
+              Şifreyi Güncelle
             </Button>
           </Box>
 
-        </Box>
-
-        {/* ******************************************************************************** */}
-
-        <Divider sx={{ my: 3 }} />
-
-        {/* ******************************************************************************** */}
-
-        {/* Şifre */}
-        <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom >
-          Şifreyi Güncelle
-        </Typography>
-
-        <Grid container spacing={1}>
-
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              fullWidth
-              type={showCurrentPassword ? 'text' : 'password'}
-              label="Mevcut Şifre"
-
-              {...passwordRegister('currentPassword')}
-              helperText={passwordErrors.currentPassword?.message}
-              error={!!passwordErrors.currentPassword}
-
-              InputProps={{
-                ...commonTextFieldProps.InputProps, // common stilleri al
-                endAdornment: ( // ama buraya özel olarak ikon da ekle
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowCurrentPassword((prev) => !prev)} edge="end">
-                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-
-              InputLabelProps={commonTextFieldProps.InputLabelProps}
-              variant={commonTextFieldProps.variant}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              fullWidth
-              type={showNewPassword ? 'text' : 'password'}
-              label="Yeni Şifre"
-
-              {...passwordRegister('newPassword')}
-              helperText={passwordErrors.newPassword?.message}
-              error={!!passwordErrors.newPassword}
-              
-              InputProps={{
-                ...commonTextFieldProps.InputProps,
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowNewPassword((prev) => !prev)} edge="end">
-                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-
-              InputLabelProps={commonTextFieldProps.InputLabelProps}
-              variant={commonTextFieldProps.variant}
-            />
-          </Grid>
-
-        </Grid>
-
-        <Box mt={3} display="flex" justifyContent="flex-end">
-          <Button 
-            type='submit'
-            variant="outlined" 
-            color="secondary" 
-            onClick={handlePasswordSubmit(handlePasswordChange)}
-            disabled={!isPasswordDirty || !isPasswordValid}
-            sx={{ px: 2, py: 1, color: 'orangered', borderColor: 'orangered', borderRadius: 10, textTransform: 'capitalize' }}>
-            Şifreyi Güncelle
-          </Button>
-        </Box>
+        </Paper>
 
       </Paper>
 

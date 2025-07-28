@@ -156,7 +156,7 @@ export default function RequestPage() {
   return (
     <Box sx={{ py: 4 }} >
 
-      <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7 }} >
+      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
 
         {/* ****************************************************************************************** */}
 

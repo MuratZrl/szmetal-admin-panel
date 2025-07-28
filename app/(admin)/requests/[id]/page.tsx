@@ -55,15 +55,15 @@ export default function RequestDetailPage() {
       const systemName = request?.system_slug?.replace(/-/g, ' '); // örn: 'giyotin-sistemi' → 'giyotin sistemi'
 
       if (userId) {
-        await supabase.from('notifications').insert([
+        await supabase.from('orders').insert([
           {
             user_id: userId,
             title: `Talebiniz ${newStatus === 'approved' ? 'Onaylandı' : 'Reddedildi'}`,
             message:
               newStatus === 'approved'
-                ? `Yapmış olduğunuz "${systemName}" sistemi talebi onaylanmıştır.`
-                : `Yapmış olduğunuz "${systemName}" sistemi talebi maalesef reddedilmiştir.`,
-            type: newStatus === 'approved' ? 'success' : 'error',
+                ? `Yapmış olduğunuz ${systemName} sistemi talebi başarılı bir şekilde onaylanmıştır.`
+                : `Yapmış olduğunuz ${systemName} sistemi talebi maalesef reddedilmiştir.`,
+            type: newStatus === 'approved' ? 'success' : 'rejected',
           },
         ]);
       }
@@ -114,7 +114,7 @@ export default function RequestDetailPage() {
   return (
     <Box sx={{ py: 4, px: 2 }} >
 
-      <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7 }} >
+      <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
 
         <Card variant="outlined" sx={{ mb: 4, borderRadius: 5, boxShadow: 2 }} >
 

@@ -3,11 +3,15 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Chip } from '@mui/material';
 
-export const notificationColumns: GridColDef[] = [
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import InfoIcon from '@mui/icons-material/Info';
+
+export const ordersColumns: GridColDef[] = [
   {
     field: 'title',
     headerName: 'Başlık',
-    flex: 1,
+    flex: 0.75,
 
     editable: false,
     sortable: false,
@@ -17,7 +21,7 @@ export const notificationColumns: GridColDef[] = [
   },
   {
     field: 'message',
-    headerName: 'Mesaj',
+    headerName: 'Açıklama',
     flex: 2,
 
     editable: false,
@@ -36,19 +40,44 @@ export const notificationColumns: GridColDef[] = [
     resizable: false,
     filterable: false,
     disableColumnMenu: true,
-    renderCell: (params) => (
-      <Chip
-        label={params.value}
-        color={
-          params.value === 'success'
-            ? 'success'
-            : params.value === 'error'
-            ? 'error'
-            : 'info'
-        }
-        size="small"
-      />
-    ),
+
+    renderCell: (params) => {
+      const value = params.value;
+
+      let icon, color;
+
+      switch (value) {
+        case 'success':
+          icon = <CheckCircleIcon sx={{ fontSize: 16, color: 'green !important' }} />;
+          color = 'green';
+          break;
+        case 'rejected':
+          icon = <ReportProblemIcon sx={{ fontSize: 16, color: 'red !important' }} />;
+          color = 'red';
+          break;
+        default:
+          icon = <InfoIcon sx={{ fontSize: 16, color: 'dodgerblue !important' }} />;
+          color = 'dodgerblue';
+          break;
+      }
+
+      return (
+        <Chip
+          icon={icon}
+          label={value}
+          variant="outlined"
+          size="small"
+          sx={{
+            backgroundColor: 'transparent',
+            borderColor: color,
+            color: color,
+            fontWeight: 500,
+            px: 0.25,
+            textTransform: 'capitalize',
+          }}
+        />
+      );
+    },
   },
   {
     field: 'is_read',

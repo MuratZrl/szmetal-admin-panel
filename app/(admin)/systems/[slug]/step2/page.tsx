@@ -3,7 +3,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import {
   Box,
@@ -42,10 +42,13 @@ export default function Step2Page() {
   const yukseklik = parseInt(form.sistem_yukseklik || '0', 10);
   const genislik = parseInt(form.sistem_genislik || '0', 10);
 
-  const isValidForm =
-    adet > 0 &&
-    yukseklik >= 1500 && yukseklik <= 4000 &&
-    genislik >= 1500 && genislik <= 4000;
+  const isValidForm = useMemo(() => {
+    return (
+      adet > 0 &&
+      yukseklik >= 1500 && yukseklik <= 4000 &&
+      genislik >= 1500 && genislik <= 4000
+    );
+  }, [adet, yukseklik, genislik]);
 
   const handleNext = () => {
     // Burada form doğrulama yapabilirsin

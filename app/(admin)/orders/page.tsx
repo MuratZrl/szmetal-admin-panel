@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-import { Box, CircularProgress } from '@mui/material';
+import { Box, Paper, CircularProgress } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
-import { notificationColumns } from '../_constants_/notifications/columns';
+import { ordersColumns } from '../_constants_/orders/columns';
 
 import { supabase } from '../../lib/supabase/supabaseClient';
 
@@ -14,7 +14,7 @@ type Notification = {
   title: string;
   message: string;
   is_read: boolean;
-  type: 'success' | 'error' | 'info' | null;
+  type: 'success' | 'rejected' | 'info' | null;
   created_at: string;
 };
 
@@ -33,7 +33,7 @@ export default function NotificationsPage() {
       if (!userId) return;
 
       const { data, error } = await supabase
-        .from('notifications')
+        .from('orders')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -54,7 +54,7 @@ export default function NotificationsPage() {
       if (!user) return;
 
       await supabase
-        .from('notifications')
+        .from('orders')
         .update({ is_read: true })
         .eq('user_id', user.id)
         .eq('is_read', false);
@@ -66,30 +66,34 @@ export default function NotificationsPage() {
   return (
     <Box py={2} >
 
-      {loading ? (
-        <CircularProgress />
-      ) : (
-        <Box sx={{ height: 600 }} >
-          <DataGrid
-            rows={notifications}
-            columns={notificationColumns}
-            getRowId={(row) => row.id}
-            hideFooter
-            disableRowSelectionOnClick
-            sx={{
-              borderRadius: 7,
-              '& .MuiDataGrid-columnHeader': {
-                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
-              },
-              '& .MuiDataGrid-columnHeaderTitle': {
-                color: 'white',
-                fontWeight: 600,
-              },
-            }}
-          />
-        </Box>
-      )}
-      
+      <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
+
+        {loading ? (
+          <CircularProgress />
+        ) : (
+          <Box sx={{ height: 600 }} >
+            <DataGrid
+              rows={notifications}
+              columns={ordersColumns}
+              getRowId={(row) => row.id}
+              hideFooter
+              disableRowSelectionOnClick
+              sx={{
+                borderRadius: 7,
+                '& .MuiDataGrid-columnHeader': {
+                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+                },
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  color: 'white',
+                  fontWeight: 600,
+                },
+              }}
+            />
+          </Box>
+        )}
+
+      </Paper>
+
     </Box>
   );
 }
