@@ -1,3 +1,6 @@
+// app/(auth)/layout.tsx
+'use client';
+
 import React from 'react';
 import { Box, Grid } from '@mui/material';
 
@@ -9,7 +12,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', color: 'text.primary' }}>
       
-      <Grid container sx={{ height: '100vh' }}>
+      <Grid container sx={{ height: '100vh' }} >
 
         {/* Sol Panel */}
         <Grid size={{ md: 7 }} sx={{ display: { xs: 'none', md: 'block' } }}>

@@ -73,11 +73,25 @@ export default function LoginPage() {
       });
 
       if (signInError) {
+        if (signInError.message === 'Email not confirmed') {
+          // ❗E-posta onaylanmamış: tekrar onay e-postası gönderelim
+          await supabase.auth.signUp({
+            email: form.email.trim().toLowerCase(),
+            password: form.password,
+          });
+
+          showSnackbar(
+            'E-posta adresiniz henüz doğrulanmamış. Yeni bir onay maili gönderildi.',
+            'error'
+          );
+          return;
+        }
+
         showSnackbar(`Giriş başarısız: ${signInError.message}`, 'error');
         return;
       }
 
-      // 🧪 Giriş yapan kullanıcının bilgisi alınıyor
+      // 🧪 Kullanıcı bilgisi alınıyor
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
@@ -85,24 +99,16 @@ export default function LoginPage() {
         return;
       }
 
-      if (!user.email_confirmed_at) {
-        await supabase.auth.signOut();
-        showSnackbar('Lütfen önce e-posta adresinizi doğrulayın.', 'error');
-        return;
-      }
-
       showSnackbar('Giriş başarılı, yönlendiriliyorsunuz...', 'success');
 
-      // 🔄 Tüm cookie ve session'ın middleware'e ulaşabilmesi için tam sayfa yenile!
       setTimeout(() => {
-        router.refresh(); // SSR bileşenleri güncellensin
+        router.refresh();
         router.push('/systems');
       }, 500);
 
     } catch (err) {
       console.error('Girişte beklenmeyen hata:', err);
       showSnackbar('Beklenmeyen bir hata oluştu.', 'error');
-
     } finally {
       setLoading(false);
     }

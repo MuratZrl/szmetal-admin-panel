@@ -17,14 +17,16 @@ const AuthRightPanel = ({ children }: Props) => {
           position: 'absolute',
           top: 16,
           right: 16,
-          zIndex: 10,
+          zIndex: 15,
+          height: 40, // sabit ölçü
         }}
       >
         <Image
           src="/szmetal-logo.png"
           alt="SZ Metal Logo"
-          width={75}
-          height={75}
+          fill
+          style={{ objectFit: 'cover' }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"     
         />
       </Box>
 

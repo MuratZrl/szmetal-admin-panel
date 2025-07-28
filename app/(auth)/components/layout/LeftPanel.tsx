@@ -1,27 +1,37 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { Typography } from '@mui/material';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Yeni API ile motion bileşenlerini oluşturuyoruz
-const MotionDiv = motion.create('div');
-const MotionTypography = motion.create(Typography);
+const texts = [
+  'Kullanıcı dostu arayüz',
+  'Verilerinizi güvenle yönetin',
+  'SZ Metal ile güçlü alt yapı',
+];
 
-const getPageTitle = (pathname: string) => {
-  if (pathname.includes('/login')) return <>Hoş Geldiniz</>;
-  if (pathname.includes('/register')) return <>Aramıza<br />Katılın</>;
-  if (pathname.includes('/forgot-password')) return <>Şifrenizi<br />Sıfırlayın</>;
-  return 'SZ Metal Panel';
-};
+const MotionTypography = motion.create(Typography); // ✅ yeni ve doğru kullanım
 
 const AuthLeftPanel = () => {
-  const pathname = usePathname();
-  const pageTitle = getPageTitle(pathname);
+  const [index, setIndex] = useState(0);
+  const [mounted, setMounted] = useState(false); // 👈 SSR sırasında render'ı engeller
+
+  useEffect(() => {
+    setMounted(true); // 👈 client mount edildiğinde göster
+
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % texts.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!mounted) return null; // ⛔ SSR'da DOM üretme
 
   return (
-    <MotionDiv
+    <Box
       style={{
+        background: 'linear-gradient(135deg, #ffae00ff, #df7900)',
         width: '100%',
         height: '100%',
         display: 'flex',
@@ -29,38 +39,24 @@ const AuthLeftPanel = () => {
         justifyContent: 'center',
         padding: '1rem',
       }}
-      initial={{ backgroundColor: '#ffae00ff' }}
-      animate={{
-        backgroundColor: [
-          '#ffae00ff',
-          '#df7900',
-          '#f0880aff',
-          '#df7900',
-          '#ffae00ff',
-        ],
-      }}
-      transition={{
-        duration: 15,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
     >
-      <MotionTypography
-        key={pathname}
-        variant="h1"
-        lineHeight={1.15}
-        fontWeight={600}
-        textAlign="center"
-        color="white"
-        zIndex={99}
-        sx={{ textShadow: '2px 2px 15px rgba(0, 0, 0, 0.75)', opacity: 0.85 }}
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-      >
-        {pageTitle}
-      </MotionTypography>
-    </MotionDiv>
+      <AnimatePresence mode="wait">
+        <MotionTypography
+          key={texts[index]}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -40 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          variant="h2"
+          textAlign="center"
+          fontWeight={600}
+          color="white"
+          sx={{ textShadow: '2px 2px 15px rgba(0, 0, 0, 0.25)' }}
+        >
+          {texts[index]}
+        </MotionTypography>
+      </AnimatePresence>
+    </Box>
   );
 };
 
