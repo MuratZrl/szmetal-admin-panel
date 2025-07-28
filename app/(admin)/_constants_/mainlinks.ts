@@ -6,8 +6,8 @@ import {
   ListAlt,
   People,
   Inventory,
-  Notifications,
   Logout,
+  ShoppingBasket,
 } from '@mui/icons-material';
 
 export type SidebarLink = {
@@ -23,6 +23,6 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Requests', href: '/requests', icon: ListAlt },
   { label: 'Clients', href: '/clients', icon: People },
   { label: 'Products', href: '/products', icon: Inventory },
-  { label: 'Notifications', href: '/notifications', icon: Notifications },
+  { label: 'Orders', href: '/orders', icon: ShoppingBasket },
   { label: 'Logout', href: '/login', icon: Logout }, // 👈 logout da dahil edildi
 ];

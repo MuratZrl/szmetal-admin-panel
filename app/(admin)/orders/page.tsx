@@ -1,0 +1,93 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Box, CircularProgress } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+
+import { notificationColumns } from '../_constants_/notifications/columns';
+
+import { supabase } from '../../lib/supabase/supabaseClient';
+
+type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  type: 'success' | 'error' | 'info' | null;
+  created_at: string;
+};
+
+export default function NotificationsPage() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ****************************************************************************************************
+
+  // useEffect hook'ları
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
+      if (!userId) return;
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setNotifications(data);
+      }
+
+      setLoading(false);
+    };
+
+    fetchNotifications();
+  }, []);
+
+  useEffect(() => {
+    const markAsRead = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+    };
+
+    markAsRead();
+  }, []);
+
+  return (
+    <Box py={2} >
+
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        <Box sx={{ height: 600 }}>
+          <DataGrid
+            rows={notifications}
+            columns={notificationColumns}
+            getRowId={(row) => row.id}
+            hideFooter
+            disableRowSelectionOnClick
+            sx={{
+              borderRadius: 7,
+              '& .MuiDataGrid-columnHeader': {
+                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                color: 'white',
+                fontWeight: 600,
+              },
+            }}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+}

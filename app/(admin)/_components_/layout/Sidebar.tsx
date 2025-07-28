@@ -14,6 +14,7 @@ import {
   ListItemButton,
   Tooltip,
   Box,
+  Badge,
 } from '@mui/material';
 
 import { mainLinks, SidebarLink } from '../../_constants_/mainlinks';
@@ -25,6 +26,8 @@ const Sidebar = () => {
   const pathname = usePathname();
 
   const [role, setRole] = useState<string | null>(null);
+
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -66,6 +69,53 @@ const Sidebar = () => {
     fetchRole();
   }, []);
 
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      setUnreadCount(count || 0);
+    };
+
+    fetchUnreadCount();
+  }, []);
+
+
+  useEffect(() => {
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel('realtime-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            setUnreadCount((prev) => prev + 1);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupRealtime();
+  }, []);
+
   const renderLink = ({ label, href, icon: Icon }: SidebarLink) => {
     const isActive = pathname.startsWith(href);
     const isLogout = label === 'Logout';
@@ -85,7 +135,13 @@ const Sidebar = () => {
           },
         }}
       >
-        <Icon fontSize="medium" />
+        {label === 'Orders' ? (
+          <Badge badgeContent={unreadCount} color="error">
+            <Icon fontSize="medium" />
+          </Badge>
+        ) : (
+          <Icon fontSize="medium" />
+        )}
       </ListItemButton>
     );
 

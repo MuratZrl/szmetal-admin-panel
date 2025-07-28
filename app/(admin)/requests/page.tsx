@@ -11,7 +11,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import StatCard from '../_components_/ui/cards/StatCard';
 
 import { RequestRowUnion } from '../types/requestsTypes';
-import { getRequestsColumns } from '../_constants_/requests/requests-columns';
+import { getRequestsColumns } from '../_constants_/requests/columns';
 
 import MonthlyRequestsChart from '../_components_/ui/charts/MonthlyRequestChart';
 import GroupedRequestedBarChart from '../_components_/ui/charts/GroupedRequestBarChart';

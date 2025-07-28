@@ -40,13 +40,33 @@ export default function RequestDetailPage() {
   const updateStatus = async (newStatus: 'approved' | 'rejected') => {
     setUpdating(true);
 
+    // 1. status güncelle
     const { error } = await supabase
       .from('requests')
       .update({ status: newStatus })
       .eq('id', id);
 
     if (!error) {
-      setRequest((prev) => prev ? { ...prev, status: newStatus } : prev);
+      // 2. arayüzde state güncelle
+      setRequest((prev) => (prev ? { ...prev, status: newStatus } : prev));
+
+      // 3. notification oluştur (yalnızca status approved/rejected ise)
+      const userId = request?.user_id;
+      const systemName = request?.system_slug?.replace(/-/g, ' '); // örn: 'giyotin-sistemi' → 'giyotin sistemi'
+
+      if (userId) {
+        await supabase.from('notifications').insert([
+          {
+            user_id: userId,
+            title: `Talebiniz ${newStatus === 'approved' ? 'Onaylandı' : 'Reddedildi'}`,
+            message:
+              newStatus === 'approved'
+                ? `Yapmış olduğunuz "${systemName}" sistemi talebi onaylanmıştır.`
+                : `Yapmış olduğunuz "${systemName}" sistemi talebi maalesef reddedilmiştir.`,
+            type: newStatus === 'approved' ? 'success' : 'error',
+          },
+        ]);
+      }
     } else {
       console.error('Durum güncelleme hatası:', error.message);
     }
