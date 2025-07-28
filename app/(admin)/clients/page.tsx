@@ -164,7 +164,7 @@ export default function ClientPage() {
 
         {/* Stat Cards */}
         <Grid container spacing={2} mb={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} >
             <StatCard
               title="Toplam Kullanıcı"
               value={totalUsers}
@@ -172,7 +172,7 @@ export default function ClientPage() {
               percentage={Math.abs(totalChange)}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} >
             <StatCard
               title="Aktif Kullanıcılar"
               value={activeUsers}
@@ -180,7 +180,7 @@ export default function ClientPage() {
               percentage={Math.abs(activeChange)}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} >
             <StatCard
               title="Pasif Kullanıcılar"
               value={passiveUsers}
@@ -188,7 +188,7 @@ export default function ClientPage() {
               percentage={Math.abs(passiveChange)}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} >
             <StatCard
               title="Banlanan Kullanıcılar"
               value={bannedUsers}

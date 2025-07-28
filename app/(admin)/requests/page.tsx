@@ -158,7 +158,7 @@ export default function RequestPage() {
 
         {/* Stat Cards */}
         <Grid container spacing={2} mb={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} >
             <StatCard
               title="Toplam Talep"
               value={rows.length}
@@ -166,7 +166,7 @@ export default function RequestPage() {
               percentage={totalPercentage}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} >
             <StatCard
               title="Bu Ay Toplam Talepler"
               value={currentMonthRequests}
@@ -174,7 +174,7 @@ export default function RequestPage() {
               percentage={percentage}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} >
             <StatCard
               title="Bu Ay Bekleyen Talepler"
               value={pendingCount}
