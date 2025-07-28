@@ -20,14 +20,20 @@ import {
 import { mainLinks, SidebarLink } from '../../_constants_/mainlinks';
 
 import { supabase } from '../../../lib/supabase/supabaseClient';
+import { User } from '@supabase/supabase-js';
+
+// ****************************************************************************************************
 
 const Sidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
   const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // ****************************************************************************************************
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -37,6 +43,8 @@ const Sidebar = () => {
     }
     router.push('/login');
   };
+
+  // ****************************************************************************************************
 
   const filteredLinks = useMemo(() => {
     if (role === 'Admin') return mainLinks;
@@ -49,31 +57,38 @@ const Sidebar = () => {
     return []; // rol yoksa hiçbir şey gösterme
   }, [role]);
 
+  // ****************************************************************************************************
+
+  // useEffect hook'ları
   useEffect(() => {
-    const fetchRole = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        setRole(profile?.role || null);
-      }
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
     };
 
-    fetchRole();
+    fetchUser();
   }, []);
 
   useEffect(() => {
-    const fetchUnreadCount = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) return;
 
+    const fetchRole = async () => {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      setRole(profile?.role || null);
+    };
+
+    fetchRole();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnreadCount = async () => {
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -84,48 +99,55 @@ const Sidebar = () => {
     };
 
     fetchUnreadCount();
-  }, []);
-
+  }, [user]);
 
   useEffect(() => {
-    const setupRealtime = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) return;
 
-      const channel = supabase
-        .channel('realtime-notifications')
-        channel
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            setUnreadCount((prev) => prev + 1);
-          }
-        )
-        .subscribe();
+    const channel = supabase
+      .channel('realtime-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          setUnreadCount((prev) => prev + 1);
+        }
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [user]);
 
-    setupRealtime();
-  }, []);
 
-  const renderLink = ({ label, href, icon: Icon }: SidebarLink) => {
+
+
+
+
+  const renderLink = (link: SidebarLink) => {
+    
+    const { label, href, icon: Icon } = link;
     const isActive = pathname.startsWith(href);
     const isLogout = label === 'Logout';
 
-    const button = (
+    const iconElement = label === 'Orders' ? (
+      <Badge badgeContent={unreadCount} color="error">
+        <Icon fontSize="medium" />
+      </Badge>
+    ) : (
+      <Icon fontSize="medium" />
+    );
+
+    const listItemButton = (
       <ListItemButton
-        onClick={isLogout ? handleLogout : undefined} // sadece logout için
+        onClick={isLogout ? handleLogout : undefined}
         sx={{
-          display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           color: isActive ? 'orangered' : 'gray.600',
@@ -136,13 +158,7 @@ const Sidebar = () => {
           },
         }}
       >
-        {label === 'Orders' ? (
-          <Badge badgeContent={unreadCount} color="error">
-            <Icon fontSize="medium" />
-          </Badge>
-        ) : (
-          <Icon fontSize="medium" />
-        )}
+        {iconElement}
       </ListItemButton>
     );
 
@@ -151,27 +167,20 @@ const Sidebar = () => {
         <Tooltip
           title={label}
           placement="right"
-          PopperProps={{
-            modifiers: [
-              {
-                name: 'offset',
-                options: {
-                  offset: [0, 0], // hover balonunun butona göre uzaklığı
-                },
-              },
-            ],
-            sx: {
-              '& .MuiTooltip-tooltip': {
+          componentsProps={{
+            tooltip: {
+              sx: {
                 backgroundColor: 'black',
                 color: '#fff',
                 fontSize: '0.875rem',
                 borderRadius: 2,
-                padding: '8px 12px',
+                px: 1.5,
+                py: 1,
               },
             },
           }}
         >
-          {isLogout ? button : <Link href={href}>{button}</Link>}
+          {isLogout ? listItemButton : <Link href={href}>{listItemButton}</Link>}
         </Tooltip>
       </ListItem>
     );

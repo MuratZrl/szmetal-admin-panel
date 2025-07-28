@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               elevation={4}
               sx={{
                 width: '100%',
-                p: { xs: 2 },
+                px: { xs: 2 },
                 my: 2,
                 borderRadius: 7,
                 backgroundColor: '#e7e7e750',

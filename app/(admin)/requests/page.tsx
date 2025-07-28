@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { useEffect, useState } from 'react';
 
-import { Box, Paper, Grid, CircularProgress } from '@mui/material';
+import { Box, Paper, Grid } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 import StatCard from '../_components_/ui/cards/StatCard';
@@ -185,40 +185,30 @@ export default function RequestPage() {
         </Grid>
 
         {/* DataGrid */}
-        {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            py={8}
-          >
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataGrid
-            rows={rows}
-            columns={getRequestsColumns(handleViewDetail)}
-            getRowId={(row) => row.id}
-            autoHeight
-            disableRowSelectionOnClick
-            hideFooter
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 20, page: 0 },
-              },
-            }}
-            sx={{
-              borderRadius: 5,
-              '& .MuiDataGrid-columnHeader': {
-                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
-              },
-              '& .MuiDataGrid-columnHeaderTitle': {
-                color: 'white',
-                fontWeight: 600,
-              },
-            }}
-          />
-        )}
+        <DataGrid
+          rows={rows}
+          columns={getRequestsColumns(handleViewDetail)}
+          getRowId={(row) => row.id}
+          loading={loading}
+          autoHeight
+          disableRowSelectionOnClick
+          hideFooter
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 20, page: 0 },
+            },
+          }}
+          sx={{
+            borderRadius: 5,
+            '& .MuiDataGrid-columnHeader': {
+              backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              color: 'white',
+              fontWeight: 600,
+            },
+          }}
+        />
 
         {/* Charts */}
         <Grid container spacing={2} mt={3} >

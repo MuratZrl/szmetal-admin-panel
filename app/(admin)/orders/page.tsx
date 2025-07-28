@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 import { ordersColumns } from '../_constants_/orders/columns';
@@ -64,39 +64,28 @@ export default function NotificationsPage() {
   }, []);
 
   return (
-    <Box py={{ xs: 2, sm: 3 }} px={{ xs: 1.5, sm: 2 }}>
+    <Box py={{ xs: 2, sm: 3 }} >
 
-        {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height={200}
-          >
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Box sx={{ height: { xs: 400, sm: 500, md: 600 } }}>
-            <DataGrid
-              rows={notifications}
-              columns={ordersColumns}
-              getRowId={(row) => row.id}
-              hideFooter
-              disableRowSelectionOnClick
-              sx={{
-                borderRadius: 7,
-                '& .MuiDataGrid-columnHeader': {
-                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
-                },
-                '& .MuiDataGrid-columnHeaderTitle': {
-                  color: 'white',
-                  fontWeight: 600,
-                },
-              }}
-            />
-          </Box>
-        )}
-
+      <Box sx={{ height: { xs: 400, sm: 500, md: 600 } }}>
+        <DataGrid
+          rows={notifications}
+          columns={ordersColumns}
+          getRowId={(row) => row.id}
+          hideFooter
+          disableRowSelectionOnClick
+          loading={loading} // ← sadece bu satırla loading skeleton gösterilir
+          sx={{
+            borderRadius: 7,
+            '& .MuiDataGrid-columnHeader': {
+              backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              color: 'white',
+              fontWeight: 600,
+            },
+          }}
+        />
+      </Box>
     </Box>
   );
 }

@@ -3,6 +3,7 @@
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CountUp from 'react-countup'; // 👈 ekledik
 
 type StatCardProps = {
   title: string;
@@ -19,12 +20,14 @@ const StatCard = ({ title, value, trend, percentage }: StatCardProps) => {
         minHeight: { xs: 120, sm: 125, md: 95 }
       }} 
     >
+
       <CardContent
         sx={{
           px: { xs: 1.5, sm: 2.5 },
           py: { xs: 1.5, sm: 2 },
         }}
       >
+
         {/* Başlık + ikon aynı hizada */}
         <Box
           display="flex"
@@ -51,12 +54,18 @@ const StatCard = ({ title, value, trend, percentage }: StatCardProps) => {
             >
               {trend === 'up' && <ArrowDropUpIcon fontSize="small" color="success" />}
               {trend === 'down' && <ArrowDropDownIcon fontSize="small" color="error" />}
+              
               <Typography
                 variant="body2"
                 color={trend === 'up' ? 'success.main' : 'error.main'}
                 fontSize={{ xs: '0.85rem', sm: '0.95rem' }}
               >
-                %{percentage}
+                <CountUp
+                  end={percentage || 0}
+                  duration={1}
+                  suffix="%"
+                  decimals={0}
+                />
               </Typography>
             </Box>
           )}
@@ -67,12 +76,14 @@ const StatCard = ({ title, value, trend, percentage }: StatCardProps) => {
           fontWeight="bold"
           fontSize={{ xs: '1.5rem', sm: '1.75rem' }}
         >
-          {value}
+          {/* 👇 Burada animasyonlu değer */}
+          <CountUp end={Number(value)} duration={1.2} separator="," />
         </Typography>
+
       </CardContent>
+
     </Card>
   );
-
 };
 
 

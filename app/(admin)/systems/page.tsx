@@ -16,10 +16,10 @@ const SystemsPage = () => {
   const router = useRouter();
 
   return (
-    <Box sx={{ py: { xs: 2 } }} >
+    <Box  py={2} >
 
         {/* ******************** 1. Adım ******************** */}
-        <Box mb={{ xs: 2, sm: 2 }}>
+        <Box >
           <StepperComponent activeStep={0} />
         </Box>
 

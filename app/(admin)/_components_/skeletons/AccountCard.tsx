@@ -5,8 +5,9 @@ import { Box, Divider, Grid, Paper, Skeleton, Typography } from '@mui/material';
 
 const ProfileSkeleton = () => {
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', py: 2 }}>
-      <Paper elevation={5} sx={{ p: 3, borderRadius: 10 }}>
+    <Box sx={{ maxWidth: 1100, mx: 'auto', py: 2 }}>
+      
+      <Paper elevation={5} sx={{ p: 3, borderRadius: 7 }}>
         
         {/* Üst Bilgiler */}
         <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} mb={3}>

@@ -61,8 +61,8 @@ const StepperComponent: React.FC<StepperProps> = ({ activeStep }) => {
       sx={{
         width: '100%',
         mx: 'auto',
-        py: { xs: 2, sm: 3 },
         px: { xs: 1, sm: 2 },
+        py: { xs: 1, sm: 2 }, // ← bu yeni
       }}
     >
       <Card

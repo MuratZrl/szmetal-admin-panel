@@ -10,7 +10,7 @@ import StatCard from '../_components_/ui/cards/StatCard';
 import MonthlyUserChart from '../_components_/ui/charts/MonthlyUserChart';
 import GroupedBarChart from '../_components_/ui/charts/GroupedUserBarChart';
 
-import { usersTableColumns } from '../_constants_/clients/clients-columns';
+import { usersTableColumns } from '../_constants_/clients/columns';
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';
@@ -199,31 +199,29 @@ export default function ClientPage() {
         </Grid>
 
         {/* DataGrid */}
-        <Box sx={{ mt: 2 }}>
-          <DataGrid
-            rows={users}
-            columns={usersTableColumns}
-            loading={loading}
-            getRowId={(row) => row.id}
-            pageSizeOptions={[20, 50, 100]}
-            hideFooter
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 20, page: 0 },
-              },
-            }}
-            sx={{
-              borderRadius: 5,
-              '& .MuiDataGrid-columnHeader': {
-                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
-              },
-              '& .MuiDataGrid-columnHeaderTitle': {
-                color: 'white',
-                fontWeight: 600,
-              },
-            }}
-          />
-        </Box>
+        <DataGrid
+          rows={users}
+          columns={usersTableColumns}
+          getRowId={(row) => row.id}
+          loading={loading}
+          autoHeight
+          hideFooter
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 20, page: 0 },
+            },
+          }}
+          sx={{
+            borderRadius: 5,
+            '& .MuiDataGrid-columnHeader': {
+              backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              color: 'white',
+              fontWeight: 600,
+            },
+          }}
+        />
 
         {/* Charts */}
         <Grid container spacing={2} mt={3}>
