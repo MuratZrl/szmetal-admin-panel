@@ -417,8 +417,6 @@ if (!userData) {
       sx={{ py: 2 }}
     >
 
-      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
-
         <Paper elevation={1} sx={{ mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, p: 3, borderRadius: 7 }} >
 
           {/* Profil */}
@@ -506,7 +504,7 @@ if (!userData) {
 
             <Grid container spacing={2}>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }} >
                 <TextField
                   required
                   fullWidth
@@ -541,7 +539,7 @@ if (!userData) {
                 </Box>
               </Grid>
 
-              <Grid size={{ xs: 12 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Telefon"
@@ -553,7 +551,7 @@ if (!userData) {
                 />
               </Grid>
 
-              <Grid size={{ xs: 12 }}>
+              <Grid size={{ xs: 12, sm :6 }}>
                 <TextField
                   fullWidth
                   label="Şirket"
@@ -588,7 +586,7 @@ if (!userData) {
             Şifreyi Güncelle
           </Typography>
 
-          <Grid container spacing={1} >
+          <Grid container spacing={2} >
 
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
@@ -657,8 +655,6 @@ if (!userData) {
           </Box>
 
         </Paper>
-
-      </Paper>
 
       <ChangeEmailDialog
         open={emailModalOpen}

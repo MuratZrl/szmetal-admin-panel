@@ -3,7 +3,7 @@ import Sidebar from './_components_/layout/Sidebar';
 import Breadcrumb from './_components_/layout/Breadcrumb';
 import Header from './_components_/layout/Header';
 
-import { Box, CssBaseline } from '@mui/material';
+import { Box, Paper, CssBaseline } from '@mui/material';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,17 +19,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             flexGrow: 1,
             ml: { sm: '60px', xs: 0 },
             overflowX: 'hidden',
-            px: 2,
-            py: 2,
+            px: 1.5,
+            py: 1,
           }}
         >
 
-          <Breadcrumb />
-          <Header />
+          <Paper elevation={3} sx={{ p: 2, backgroundColor: 'white', borderRadius: 7 }}>
 
-          <Box>
-            {children}
-          </Box>
+            <Breadcrumb />
+
+            <Header />
+
+            {/* Ortak Paper kapsayıcı */}
+            <Paper
+              elevation={4}
+              sx={{
+                width: '100%',
+                p: { xs: 2 },
+                my: 2,
+                borderRadius: 7,
+                backgroundColor: '#e7e7e750',
+              }}
+            >
+
+              <Box>
+                {children}
+              </Box>
+
+            </Paper>
+
+
+          </Paper>
+
 
         </Box>
       </Box>

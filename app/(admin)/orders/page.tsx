@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { Box, Paper, CircularProgress } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 import { ordersColumns } from '../_constants_/orders/columns';
@@ -65,15 +65,7 @@ export default function NotificationsPage() {
 
   return (
     <Box py={{ xs: 2, sm: 3 }} px={{ xs: 1.5, sm: 2 }}>
-      <Paper
-        elevation={1}
-        sx={{
-          width: '100%',
-          p: { xs: 1.5, sm: 2 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+
         {loading ? (
           <Box
             display="flex"
@@ -104,7 +96,7 @@ export default function NotificationsPage() {
             />
           </Box>
         )}
-      </Paper>
+
     </Box>
   );
 }

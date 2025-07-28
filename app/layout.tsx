@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   description: 'Admin panel for SZ Metal',
 };
 
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr">

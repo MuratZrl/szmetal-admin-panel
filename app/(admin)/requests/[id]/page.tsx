@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useParams, notFound } from 'next/navigation';
 
-import { Typography, CircularProgress, Box, Card, CardContent, Grid, Paper, Chip, Divider, Button } from '@mui/material';
+import { Typography, CircularProgress, Box, Card, CardContent, Grid, Chip, Divider, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -113,15 +113,7 @@ export default function RequestDetailPage() {
 
   return (
     <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
-      <Paper
-        elevation={1}
-        sx={{
-          width: '100%',
-          p: { xs: 2, sm: 3 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+
         {/* Kart: Genel Bilgiler */}
         <Card
           variant="outlined"
@@ -254,7 +246,7 @@ export default function RequestDetailPage() {
 
         {/* Detayları renderla */}
         {renderSystemTables(request)}
-      </Paper>
+
     </Box>
   );
 

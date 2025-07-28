@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from 'react';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Paper, Grid, Card, CardHeader, CardContent, Typography } from '@mui/material';
+import { Box, Grid, Card, CardHeader, CardContent, Typography } from '@mui/material';
 
 import StatCard from '../_components_/ui/cards/StatCard';
 import MonthlyUserChart from '../_components_/ui/charts/MonthlyUserChart';
@@ -159,16 +159,9 @@ export default function ClientPage() {
 
   // TSX
   return (
-    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
-      <Paper
-        elevation={4}
-        sx={{
-          width: '100%',
-          p: { xs: 2, sm: 3 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+    <Box sx={{ py: { xs: 2, md: 4 } }} >
+
+
         {/* Stat Cards */}
         <Grid container spacing={2} mb={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -280,7 +273,7 @@ export default function ClientPage() {
             </Card>
           </Grid>
         </Grid>
-      </Paper>
+
     </Box>
   );
 }

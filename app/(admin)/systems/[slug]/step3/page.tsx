@@ -7,7 +7,6 @@ import { useState, useEffect, useMemo } from 'react';
 
 import { 
   Box, 
-  Paper,
   Card,
   Typography, 
   Button, 
@@ -94,7 +93,7 @@ export default function SummaryPage() {
 
   // "Onayla" butonuna tıklandığında "requests" tablosuna veri ekleyen fonksiyon.
   const handleConfirm = async () => {
-    
+
     // Giriş yapan kullanıcıyı al
     const {
       data: { user },
@@ -163,15 +162,7 @@ export default function SummaryPage() {
 
   return (
     <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
-      <Paper
-        elevation={4}
-        sx={{
-          width: '100%',
-          p: { xs: 2, sm: 3 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+
         {/* Stepper */}
         <Box mb={{ xs: 2, sm: 3 }}>
           <StepperComponent activeStep={2} />
@@ -296,7 +287,7 @@ export default function SummaryPage() {
             {snackbarMessage}
           </Alert>
         </Snackbar>
-      </Paper>
+
     </Box>
   );
 

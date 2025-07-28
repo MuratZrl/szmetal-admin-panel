@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { Box, Paper, Grid } from "@mui/material";
+import { Box, Grid } from "@mui/material";
 
 import StepperComponent from "../_components_/ui/stepper/Stepper";
 import SystemsCard from "../_components_/ui/cards/SystemsCard";
@@ -16,17 +16,7 @@ const SystemsPage = () => {
   const router = useRouter();
 
   return (
-    <Box sx={{ py: { xs: 2, md: 4 } }}>
-
-      <Paper
-        elevation={4}
-        sx={{
-          width: '100%',
-          p: { xs: 2, sm: 3, md: 2 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+    <Box sx={{ py: { xs: 2 } }} >
 
         {/* ******************** 1. Adım ******************** */}
         <Box mb={{ xs: 2, sm: 2 }}>
@@ -59,8 +49,6 @@ const SystemsPage = () => {
             ))
           )}
         </Grid>
-
-      </Paper>
 
     </Box>
   );

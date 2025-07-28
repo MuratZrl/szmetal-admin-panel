@@ -155,15 +155,7 @@ export default function RequestPage() {
   // TSX
   return (
     <Box sx={{ py: { xs: 2, sm: 4 } }}>
-      <Paper
-        elevation={4}
-        sx={{
-          width: '100%',
-          p: { xs: 2, sm: 3 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+
         {/* Stat Cards */}
         <Grid container spacing={2} mb={3}>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -248,7 +240,7 @@ export default function RequestPage() {
             </Paper>
           </Grid>
         </Grid>
-      </Paper>
+        
     </Box>
   );
 

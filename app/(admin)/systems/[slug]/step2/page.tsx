@@ -7,7 +7,6 @@ import { useState, useMemo } from 'react';
 
 import {
   Box,
-  Paper,
   Button,
   Card,
   Grid,
@@ -63,15 +62,7 @@ export default function Step2Page() {
 
   return (
     <Box sx={{ py: { xs: 2, md: 4 } }}>
-      <Paper
-        elevation={4}
-        sx={{
-          width: '100%',
-          p: { xs: 2, sm: 3, md: 4 },
-          borderRadius: 7,
-          backgroundColor: '#e7e7e750',
-        }}
-      >
+
         {/* Stepper */}
         <Box mb={{ xs: 2, sm: 3 }}>
           <StepperComponent activeStep={1} />
@@ -208,7 +199,7 @@ export default function Step2Page() {
             </List>
           </Box>
         </Box>
-      </Paper>
+
     </Box>
   );
 
