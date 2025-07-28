@@ -95,18 +95,20 @@ export default function SummaryPage() {
   // "Onayla" butonuna tıklandığında "requests" tablosuna veri ekleyen fonksiyon.
   const handleConfirm = async () => {
     
-    // Giriş yapan kullanıcının kimliğini al (sadece ID için)
+    // Giriş yapan kullanıcıyı al
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.error('Kullanıcı bilgisi alınamadı.', userError);
+      setSnackbarMessage('Kullanıcı bilgisi alınamadı!');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
       return;
     }
 
-    // user.id ile kendi `users` tablosundan bilgileri al
+    // Kullanıcının profil bilgilerini al
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('username, email, company')
@@ -114,11 +116,13 @@ export default function SummaryPage() {
       .single();
 
     if (profileError || !userProfile) {
-      console.error('Kullanıcı profili alınamadı:', profileError);
+      setSnackbarMessage('Kullanıcı profili alınamadı!');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
       return;
     }
 
-    // İsteği requests tablosuna kaydet
+    // Veriyi requests tablosuna ekle
     const { error: insertError } = await supabase.from('requests').insert([
       {
         user_id: user.id,
@@ -131,28 +135,23 @@ export default function SummaryPage() {
     ]);
 
     if (insertError) {
-      console.error('❌ Kayıt eklenemedi:', {
-        message: insertError.message,
-        details: insertError.details,
-        hint: insertError.hint,
-        code: insertError.code,
-      });
-
       setSnackbarMessage('Kayıt eklenemedi!');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
-
-    } else {
-      setSnackbarMessage('Talebiniz Oluşturuldu! 🎉');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-
-      // Biraz bekleyip yönlendir (1.5 saniye sonra)
-      setTimeout(() => {
-        router.push('/systems');
-      }, 1500);
+      return;
     }
+
+    // Başarılıysa:
+    setSnackbarMessage('Talebiniz Oluşturuldu! 🎉');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+
+    // 1.5 saniye sonra yönlendir
+    setTimeout(() => {
+      router.push('/systems');
+    }, 1500);
   };
+
 
   // ❗ hook'lar çalıştıktan sonra koşullu render
   if (!config) return <div>Geçersiz sistem: {slugStr}</div>;
@@ -163,29 +162,38 @@ export default function SummaryPage() {
   const columns2 = config.materialColumns;
 
   return (
-    <Box sx={{ py: 2 }} >
+    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
+      <Paper
+        elevation={4}
+        sx={{
+          width: '100%',
+          p: { xs: 2, sm: 3 },
+          borderRadius: 7,
+          backgroundColor: '#e7e7e750',
+        }}
+      >
+        {/* Stepper */}
+        <Box mb={{ xs: 2, sm: 3 }}>
+          <StepperComponent activeStep={2} />
+        </Box>
 
-      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
-
-        {/* ******************** 3. Adım ******************** */}
-        <StepperComponent activeStep={2} />
-
-        <Card sx={{ p: 2, mb: 2, borderRadius: 7 }} >
-
+        {/* Genel Bilgiler */}
+        <Card sx={{ p: { xs: 1.5, sm: 2.5 }, mb: 2, borderRadius: 7 }}>
           <Typography variant="subtitle1" fontWeight={600} px={1} gutterBottom>
             Genel Bilgiler
           </Typography>
 
-          <DataGrid 
+          <DataGrid
             rows={rows1}
             columns={columns1}
-            getRowId={(row) => row.id} // ✅ id zorunlu!
-            hideFooter 
-            disableRowSelectionOnClick 
+            getRowId={(row) => row.id}
+            hideFooter
+            disableRowSelectionOnClick
+            autoHeight
             sx={{
               borderRadius: 5,
               '& .MuiDataGrid-columnHeader': {
-                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
               },
               '& .MuiDataGrid-columnHeaderTitle': {
                 color: 'white',
@@ -193,43 +201,51 @@ export default function SummaryPage() {
               },
             }}
           />
-
         </Card>
 
-        <Card sx={{ p: 2, borderRadius: 7 }} >
-
+        {/* Malzeme Listesi */}
+        <Card sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 7 }}>
           <Typography variant="subtitle1" fontWeight={600} px={1} gutterBottom>
             Malzeme Listesi
           </Typography>
 
-            <DataGrid
-              rows={rows2}
-              columns={columns2}
-              rowHeight={125}
-              getRowId={(row) => row.profil_kodu} // 👈 burada id yerine geçer
-              hideFooter 
-              disableRowSelectionOnClick   
-              sx={{
-                borderRadius: 5,
-                '& .MuiDataGrid-columnHeader': {
-                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
-                },
-                '& .MuiDataGrid-columnHeaderTitle': {
-                  color: 'white',
-                  fontWeight: 600,
-                },
-              }}
-            />
-
+          <DataGrid
+            rows={rows2}
+            columns={columns2}
+            rowHeight={125}
+            getRowId={(row) => row.profil_kodu}
+            hideFooter
+            disableRowSelectionOnClick
+            autoHeight
+            sx={{
+              borderRadius: 5,
+              '& .MuiDataGrid-columnHeader': {
+                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                color: 'white',
+                fontWeight: 600,
+              },
+            }}
+          />
         </Card>
 
-        <Box className="flex justify-between mt-6 px-1">
+        {/* Butonlar */}
+        <Box
+          mt={6}
+          display="flex"
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          gap={2}
+          px={1}
+        >
           <Button
             variant="outlined"
             onClick={() => router.push(`/systems/${slug}/step2`)}
             sx={{
               px: 4,
               py: 1,
+              width: { xs: '100%', sm: 'auto' },
               color: 'orangered',
               borderColor: 'orangered',
               borderRadius: 7,
@@ -245,6 +261,7 @@ export default function SummaryPage() {
             sx={{
               px: 4,
               py: 1,
+              width: { xs: '100%', sm: 'auto' },
               backgroundColor: 'orangered',
               borderRadius: 7,
               textTransform: 'capitalize',
@@ -254,12 +271,13 @@ export default function SummaryPage() {
           </Button>
         </Box>
 
+        {/* Onay Dialog */}
         <ConfirmDialog
           open={confirmOpen}
           onClose={() => setConfirmOpen(false)}
           onConfirm={() => {
-            setConfirmOpen(false);   // önce dialog kapanır
-            handleConfirm();         // sonra işlem yapılır
+            setConfirmOpen(false);
+            handleConfirm();
           }}
           title="Talebi Onayla"
           description="Bu talebi sistem kaydına eklemek üzeresiniz. Devam etmek istiyor musunuz?"
@@ -267,6 +285,7 @@ export default function SummaryPage() {
           cancelText="İptal"
         />
 
+        {/* Snackbar */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}
@@ -277,9 +296,8 @@ export default function SummaryPage() {
             {snackbarMessage}
           </Alert>
         </Snackbar>
-
       </Paper>
-
     </Box>
   );
+
 }

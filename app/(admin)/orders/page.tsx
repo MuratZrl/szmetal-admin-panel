@@ -64,14 +64,27 @@ export default function NotificationsPage() {
   }, []);
 
   return (
-    <Box py={2} >
-
-      <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
-
+    <Box py={{ xs: 2, sm: 3 }} px={{ xs: 1.5, sm: 2 }}>
+      <Paper
+        elevation={1}
+        sx={{
+          width: '100%',
+          p: { xs: 1.5, sm: 2 },
+          borderRadius: 7,
+          backgroundColor: '#e7e7e750',
+        }}
+      >
         {loading ? (
-          <CircularProgress />
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height={200}
+          >
+            <CircularProgress />
+          </Box>
         ) : (
-          <Box sx={{ height: 600 }} >
+          <Box sx={{ height: { xs: 400, sm: 500, md: 600 } }}>
             <DataGrid
               rows={notifications}
               columns={ordersColumns}
@@ -81,7 +94,7 @@ export default function NotificationsPage() {
               sx={{
                 borderRadius: 7,
                 '& .MuiDataGrid-columnHeader': {
-                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
                 },
                 '& .MuiDataGrid-columnHeaderTitle': {
                   color: 'white',
@@ -91,9 +104,7 @@ export default function NotificationsPage() {
             />
           </Box>
         )}
-
       </Paper>
-
     </Box>
   );
 }

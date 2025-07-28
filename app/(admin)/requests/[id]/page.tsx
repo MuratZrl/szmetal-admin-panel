@@ -112,30 +112,44 @@ export default function RequestDetailPage() {
   if (!request) return null;
 
   return (
-    <Box sx={{ py: 4, px: 2 }} >
-
-      <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
-
-        <Card variant="outlined" sx={{ mb: 4, borderRadius: 5, boxShadow: 2 }} >
-
+    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
+      <Paper
+        elevation={1}
+        sx={{
+          width: '100%',
+          p: { xs: 2, sm: 3 },
+          borderRadius: 7,
+          backgroundColor: '#e7e7e750',
+        }}
+      >
+        {/* Kart: Genel Bilgiler */}
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 4,
+            borderRadius: 5,
+            boxShadow: 2,
+          }}
+        >
           <CardContent>
-
-            <Grid container spacing={2} >
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }} >
                 <Typography>
                   <strong>Durum:</strong>{' '}
                   <Chip
                     label={
-                      <span className="flex items-center gap-1">
+                      <Box component="span" display="flex" alignItems="center" gap={1}>
                         {request.status === 'approved' && <CheckCircleIcon sx={{ fontSize: 16 }} />}
                         {request.status === 'pending' && <HourglassTopIcon sx={{ fontSize: 16 }} />}
                         {request.status === 'rejected' && <CancelIcon sx={{ fontSize: 16 }} />}
                         {
-                          request.status === 'approved' ? 'Onaylandı' :
-                          request.status === 'pending' ? 'Bekleyen' :
-                          'Reddedildi'
+                          request.status === 'approved'
+                            ? 'Onaylandı'
+                            : request.status === 'pending'
+                            ? 'Bekleyen'
+                            : 'Reddedildi'
                         }
-                      </span>
+                      </Box>
                     }
                     color={
                       request.status === 'approved'
@@ -171,7 +185,7 @@ export default function RequestDetailPage() {
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12 }} >
+              <Grid size={{ xs: 12 }}>
                 <Typography>
                   <strong>E-posta:</strong> {request.users?.email ?? '—'}
                 </Typography>
@@ -181,54 +195,59 @@ export default function RequestDetailPage() {
             <Divider sx={{ my: 2 }} />
 
             {request.status === 'pending' && (
-              <Grid container spacing={1} justifyContent="flex-end" >
-                <Grid >
+              <Grid
+                container
+                spacing={2}
+                justifyContent={{ xs: 'center', sm: 'flex-end' }}
+                mt={1}
+              >
+
+                <Grid size={{ xs: 12, sm: 6 }} >
                   <Button
                     variant="contained"
                     onClick={() => updateStatus('approved')}
                     disabled={updating}
                     sx={{
-                      px: 3,
+                      px: 4,
                       py: 1,
+                      width: '100%',
                       backgroundColor: 'green',
                       textTransform: 'capitalize',
-
-                      borderRadius: 7,
-
+                      borderRadius: 0,
                       '&:hover': {
-                        backgroundColor: 'darkgreen'
-                      }
+                        backgroundColor: 'darkgreen',
+                      },
                     }}
                   >
                     Onayla
                   </Button>
                 </Grid>
-                <Grid >
+
+                <Grid size={{ xs: 12, sm: 6 }} >
                   <Button
                     variant="contained"
                     onClick={() => updateStatus('rejected')}
                     disabled={updating}
                     sx={{
-                      px: 3,
+                      px: 4,
                       py: 1,
+                      width: '100%',
                       backgroundColor: 'orangered',
                       textTransform: 'capitalize',
-
-                      borderRadius: 7,
-
+                      borderRadius: 0,
                       '&:hover': {
-                        backgroundColor: 'darkred'
-                      }
+                        backgroundColor: 'darkred',
+                      },
                     }}
                   >
                     Reddet
                   </Button>
                 </Grid>
+                
               </Grid>
+
             )}
-
           </CardContent>
-
         </Card>
 
         <Divider sx={{ my: 2 }} />
@@ -236,7 +255,7 @@ export default function RequestDetailPage() {
         {/* Detayları renderla */}
         {renderSystemTables(request)}
       </Paper>
-
     </Box>
   );
+
 }

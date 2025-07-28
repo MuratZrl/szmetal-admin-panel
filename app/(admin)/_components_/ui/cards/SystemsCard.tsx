@@ -5,9 +5,6 @@ import Image from 'next/image';
 import { Card, Typography, Box, Button } from '@mui/material';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 
-
-
-
 type SystemsCardProps = {
   imageUrl: string;
   title: string;
@@ -20,10 +17,10 @@ type SystemsCardProps = {
   onRequestClick: () => void; // 👈 yeni prop
 };
 
+// ****************************************************************************************************
 
 const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onRequestClick }: SystemsCardProps) => {
   return (
-
     <Card
       className="overflow-hidden"
       sx={{
@@ -32,11 +29,10 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRadius: 10,
+        borderRadius: 7,
         boxShadow: 3,
       }}
     >
-
       {/* Image */}
       <Box
         sx={{
@@ -87,9 +83,12 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
       </Box>
 
       {/* Content */}
-      <Box sx={{ flexGrow: 1, px: 2.5, py: 2 }}>
-
-        <Typography variant="h6" fontWeight={600}>
+      <Box sx={{ flexGrow: 1, px: { xs: 2, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
+        <Typography
+          variant="h6"
+          fontWeight={600}
+          fontSize={{ xs: '1rem', sm: '1.1rem', md: '1.2rem' }}
+        >
           {title}
         </Typography>
 
@@ -109,16 +108,18 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
         >
           {description}
         </Typography>
-
       </Box>
 
       {/* Buttons */}
       <Box
         sx={{
-          px: 2.5,
-          pb: 2,
+          px: { xs: 2, sm: 2.5 },
+          pb: { xs: 2, sm: 2.5 },
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1.5,
           justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
         }}
       >
         <Button
@@ -126,6 +127,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
           variant="text"
           color="primary"
           size="small"
+          fullWidth={true}
           sx={{
             py: 1,
             borderRadius: 10,
@@ -142,6 +144,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
           size="small"
           endIcon={<FlashOnIcon />}
           onClick={onRequestClick}
+          fullWidth={true}
           sx={{
             px: 2,
             py: 1,

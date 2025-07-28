@@ -146,15 +146,19 @@ export default function ProductDetailPage() {
   }, [slug, fetchProfiles, actionColumn]);
 
   return (
-    <Box py={4} >
-
-      <Paper sx={{ p: 3, borderRadius: 7 }} >
-
-        {/* ****************************************************************************************** */}
-
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2} px={2} >
-
-          <Typography variant="h5" >
+    <Box py={{ xs: 2, sm: 4 }} px={{ xs: 1.5, sm: 2 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 7 }}>
+        
+        {/* Header */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          gap={2}
+          mb={2}
+          px={{ xs: 1, sm: 2 }}
+        >
+          <Typography variant="h5">
             {formatSlugToTitle(slug)} Profilleri
           </Typography>
 
@@ -170,18 +174,24 @@ export default function ProductDetailPage() {
               backgroundColor: 'darkolivegreen',
               borderRadius: 7,
               textTransform: 'capitalize',
+              width: { xs: '100%', sm: 'auto' },
             }}
           >
             Ekle
           </Button>
-
         </Stack>
 
-        {/* ****************************************************************************************** */}
-
-        <Box mt={2} sx={{ height: 700 }} >
+        {/* DataGrid */}
+        <Box mt={2} sx={{ height: { xs: 400, sm: 500, md: 700 } }}>
           {loading ? (
-            <CircularProgress />
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              height="100%"
+            >
+              <CircularProgress />
+            </Box>
           ) : (
             <DataGrid
               rows={rows}
@@ -192,7 +202,7 @@ export default function ProductDetailPage() {
               sx={{
                 borderRadius: 7,
                 '& .MuiDataGrid-columnHeader': {
-                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
                 },
                 '& .MuiDataGrid-columnHeaderTitle': {
                   color: 'white',
@@ -202,11 +212,9 @@ export default function ProductDetailPage() {
             />
           )}
         </Box>
-
       </Paper>
 
-      {/* ****************************************************************************************** */}
-
+      {/* Dialog */}
       <AddProductDialog
         open={addOpen}
         onClose={() => {
@@ -232,9 +240,7 @@ export default function ProductDetailPage() {
           fetchProfiles();
         }}
       />
-
-      {/* ****************************************************************************************** */}
-
     </Box>
   );
+
 }

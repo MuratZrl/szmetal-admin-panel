@@ -159,24 +159,27 @@ export default function ClientPage() {
 
   // TSX
   return (
-    <Box sx={{ py: 4 }} >
-
-      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
-
-        {/* ****************************************************************************************** */}
-
+    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
+      <Paper
+        elevation={4}
+        sx={{
+          width: '100%',
+          p: { xs: 2, sm: 3 },
+          borderRadius: 7,
+          backgroundColor: '#e7e7e750',
+        }}
+      >
+        {/* Stat Cards */}
         <Grid container spacing={2} mb={3}>
-
-          <Grid size={{ xs: 12, sm: 3 }}>
-            <StatCard 
-              title="Toplam Kullanıcı" 
-              value={totalUsers} 
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <StatCard
+              title="Toplam Kullanıcı"
+              value={totalUsers}
               trend={totalTrend}
               percentage={Math.abs(totalChange)}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Aktif Kullanıcılar"
               value={activeUsers}
@@ -184,8 +187,7 @@ export default function ClientPage() {
               percentage={Math.abs(activeChange)}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Pasif Kullanıcılar"
               value={passiveUsers}
@@ -193,8 +195,7 @@ export default function ClientPage() {
               percentage={Math.abs(passiveChange)}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="Banlanan Kullanıcılar"
               value={bannedUsers}
@@ -202,45 +203,43 @@ export default function ClientPage() {
               percentage={Math.abs(bannedChange)}
             />
           </Grid>
-
         </Grid>
 
-        {/* ****************************************************************************************** */}
+        {/* DataGrid */}
+        <Box sx={{ mt: 2 }}>
+          <DataGrid
+            rows={users}
+            columns={usersTableColumns}
+            loading={loading}
+            getRowId={(row) => row.id}
+            pageSizeOptions={[20, 50, 100]}
+            hideFooter
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 20, page: 0 },
+              },
+            }}
+            sx={{
+              borderRadius: 5,
+              '& .MuiDataGrid-columnHeader': {
+                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                color: 'white',
+                fontWeight: 600,
+              },
+            }}
+          />
+        </Box>
 
-        <DataGrid
-          rows={users}
-          columns={usersTableColumns}
-          loading={loading}
-          getRowId={(row) => row.id}
-          pageSizeOptions={[20, 50, 100]} // Kullanıcının seçebileceği seçenekler
-          hideFooter
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 20, page: 0 }, // ✅ Başlangıçta 20 satır göster
-            },
-          }}
-          sx={{
-            borderRadius: 5,
-            '& .MuiDataGrid-columnHeader': {
-              backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
-            },
-            '& .MuiDataGrid-columnHeaderTitle': {
-              color: 'white',
-              fontWeight: 600,
-            },
-          }}
-        />
-
-        {/* ****************************************************************************************** */}
-
-        <Grid container spacing={2} mt={3} >
-
+        {/* Charts */}
+        <Grid container spacing={2} mt={3}>
           <Grid size={{ xs: 12, md: 6 }} >
             <Card
               elevation={2}
               sx={{
-                height: '100%',
                 borderRadius: 7,
+                height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
               }}
@@ -252,7 +251,7 @@ export default function ClientPage() {
                   </Typography>
                 }
               />
-              <CardContent sx={{ flexGrow: 1 }} >
+              <CardContent sx={{ flexGrow: 1 }}>
                 <MonthlyUserChart />
               </CardContent>
             </Card>
@@ -262,8 +261,8 @@ export default function ClientPage() {
             <Card
               elevation={2}
               sx={{
-                height: '100%',
                 borderRadius: 7,
+                height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
               }}
@@ -275,18 +274,13 @@ export default function ClientPage() {
                   </Typography>
                 }
               />
-              <CardContent sx={{ flexGrow: 1 }} >
+              <CardContent sx={{ flexGrow: 1 }}>
                 <GroupedBarChart />
               </CardContent>
             </Card>
           </Grid>
-
         </Grid>
-
-        {/* ****************************************************************************************** */}
-
       </Paper>
-
     </Box>
   );
 }

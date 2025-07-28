@@ -154,25 +154,27 @@ export default function RequestPage() {
 
   // TSX
   return (
-    <Box sx={{ py: 4 }} >
-
-      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
-
-        {/* ****************************************************************************************** */}
-
+    <Box sx={{ py: { xs: 2, sm: 4 } }}>
+      <Paper
+        elevation={4}
+        sx={{
+          width: '100%',
+          p: { xs: 2, sm: 3 },
+          borderRadius: 7,
+          backgroundColor: '#e7e7e750',
+        }}
+      >
         {/* Stat Cards */}
-        <Grid container spacing={2} mb={3} >
-
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} >
-            <StatCard 
-              title="Toplam Talep" 
+        <Grid container spacing={2} mb={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <StatCard
+              title="Toplam Talep"
               value={rows.length}
               trend={totalTrend}
               percentage={totalPercentage}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} >
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <StatCard
               title="Bu Ay Toplam Talepler"
               value={currentMonthRequests}
@@ -180,8 +182,7 @@ export default function RequestPage() {
               percentage={percentage}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} >
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <StatCard
               title="Bu Ay Bekleyen Talepler"
               value={pendingCount}
@@ -189,14 +190,16 @@ export default function RequestPage() {
               percentage={pendingPercentage}
             />
           </Grid>
-
         </Grid>
-
-        {/* ****************************************************************************************** */}
 
         {/* DataGrid */}
         {loading ? (
-          <Box className="flex justify-center py-10" >
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            py={8}
+          >
             <CircularProgress />
           </Box>
         ) : (
@@ -209,13 +212,13 @@ export default function RequestPage() {
             hideFooter
             initialState={{
               pagination: {
-                paginationModel: { pageSize: 20, page: 0 }, // ✅ Başlangıçta 20 satır göster
+                paginationModel: { pageSize: 20, page: 0 },
               },
             }}
             sx={{
               borderRadius: 5,
               '& .MuiDataGrid-columnHeader': {
-                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
               },
               '& .MuiDataGrid-columnHeaderTitle': {
                 color: 'white',
@@ -225,29 +228,28 @@ export default function RequestPage() {
           />
         )}
 
-        {/* ****************************************************************************************** */}
-
         {/* Charts */}
-        <Grid container spacing={2} mt={3}>
+        <Grid container spacing={2} mt={3} >
           <Grid size={{ xs: 12, sm: 6 }} >
-            <Paper elevation={2} sx={{ p: 2, borderRadius: 7 }}>
-              <Box mb={1}><strong>Aylık Toplam Talepler</strong></Box>
+            <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 7 }}>
+              <Box mb={1}>
+                <strong>Aylık Toplam Talepler</strong>
+              </Box>
               <MonthlyRequestsChart rows={rows} />
             </Paper>
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }} >
-            <Paper elevation={2} sx={{ p: 2, borderRadius: 7 }}>
-              <Box mb={1}><strong>Son 3 Ay Statü Dağılımı</strong></Box>
+            <Paper elevation={2} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 7 }}>
+              <Box mb={1}>
+                <strong>Son 3 Ay Statü Dağılımı</strong>
+              </Box>
               <GroupedRequestedBarChart rows={rows} />
             </Paper>
           </Grid>
         </Grid>
-
-        {/* ****************************************************************************************** */}
-
       </Paper>
-
     </Box>
   );
+
 }
