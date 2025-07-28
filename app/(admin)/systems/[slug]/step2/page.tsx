@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import {
   Box,
+  Paper,
   Button,
   Card,
   Grid,
@@ -58,114 +59,121 @@ export default function Step2Page() {
   };
 
   return (
-    <Box >
+    <Box sx={{ py: 2 }} >
 
-      {/* ******************** 2. Adım ******************** */}
-      <StepperComponent activeStep={1} />
+      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
 
-      {/* ******************************************************************************** */}
+        {/* ******************** 2. Adım ******************** */}
+        <StepperComponent activeStep={1} />
 
-      <Card className="max-w-2xl mx-auto" sx={{ p: 3, boxShadow: 2, borderRadius: 7 }} >
+        {/* ******************************************************************************** */}
 
-          {/* ******************************************************************************** */}
+        <Card className=" mx-auto" sx={{ p: 3, boxShadow: 2, borderRadius: 7 }} >
 
-          <Typography variant="h6" px={1} gutterBottom >
-            Lütfen Sistem Bilgilerini Giriniz
-          </Typography>
+            {/* ******************************************************************************** */}
 
-          {/* ******************************************************************************** */}
+            <Typography variant="h6" px={1} gutterBottom >
+              Lütfen Sistem Bilgilerini Giriniz
+            </Typography>
 
-          <Grid container spacing={2}>
+            {/* ******************************************************************************** */}
 
-            {formConfig?.fields.map((field) => {
-              const value = form[field.name] || '';
-              const error =
-                field.required &&
-                ((field.min !== undefined && Number(value) < field.min) ||
-                  (field.max !== undefined && Number(value) > field.max));
+            <Grid container spacing={2}>
 
-              return (
-                <Grid key={field.name} size={{ xs: 12 }}>
-                  <TextField
-                    fullWidth
-                    label={field.label}
-                    type={field.type || 'text'}
-                    value={value}
-                    placeholder={field.placeholder}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, [field.name]: e.target.value }))
-                    }
-                    error={error}
-                    helperText={error ? field.helperText : ''}
-                    {...commonTextFieldProps}
-                  />
-                </Grid>
-              );
-            })}
+              {formConfig?.fields.map((field) => {
+                const value = form[field.name] || '';
+                const error =
+                  field.required &&
+                  ((field.min !== undefined && Number(value) < field.min) ||
+                    (field.max !== undefined && Number(value) > field.max));
 
-          </Grid>
+                return (
+                  <Grid key={field.name} size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      label={field.label}
+                      type={field.type || 'text'}
+                      value={value}
+                      placeholder={field.placeholder}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, [field.name]: e.target.value }))
+                      }
+                      error={error}
+                      helperText={error ? field.helperText : ''}
+                      {...commonTextFieldProps}
+                    />
+                  </Grid>
+                );
+              })}
 
-          {/* ******************************************************************************** */}
+            </Grid>
 
-          <Box className="flex justify-between mt-4 px-1">
+            {/* ******************************************************************************** */}
 
-            <Button variant="outlined" onClick={handleBack} sx={{ px: 4, py: 1, color: 'orangered', borderColor: 'orangered', borderRadius: 7, textTransform: 'capitalize' }} >
-              Geri
-            </Button>
+            <Box className="flex justify-between mt-4 px-1">
 
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={!isValidForm}
-              sx={{
-                px: 4,
-                py: 1,
-                backgroundColor: 'orangered',
-                borderRadius: 7,
-                textTransform: 'capitalize',
-                '&.Mui-disabled': {
-                  backgroundColor: '#ffd2b3', // istersen disabled görünümünü özelleştir
-                  color: '#fff',
-                },
-              }}
-            >
-              İleri
-            </Button>
+              <Button variant="outlined" onClick={handleBack} sx={{ px: 4, py: 1, color: 'orangered', borderColor: 'orangered', borderRadius: 7, textTransform: 'capitalize' }} >
+                Geri
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                disabled={!isValidForm}
+                sx={{
+                  px: 4,
+                  py: 1,
+                  backgroundColor: 'orangered',
+                  borderRadius: 7,
+                  textTransform: 'capitalize',
+                  '&.Mui-disabled': {
+                    backgroundColor: '#ffd2b3', // istersen disabled görünümünü özelleştir
+                    color: '#fff',
+                  },
+                }}
+              >
+                İleri
+              </Button>
+
+            </Box>
+
+        </Card>
+
+
+        <Box display={'flex'} justifyContent={'center'} alignItems={'center'} py={3} >
+          <Box>
+
+            <Typography variant="h6" gutterBottom>
+              Dikkat Edilmesi Gerekenler
+            </Typography>
+
+            <List dense>
+              <ListItem>
+                <ListItemIcon>
+                  <ArrowRightIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sistem adedi pozitif bir sayı olmalıdır." />
+              </ListItem>
+
+              <ListItem>
+                <ListItemIcon>
+                  <ArrowRightIcon />
+                </ListItemIcon>
+                <ListItemText primary="Yükseklik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
+              </ListItem>
+
+              <ListItem>
+                <ListItemIcon>
+                  <ArrowRightIcon />
+                </ListItemIcon>
+                <ListItemText primary="Genişlik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
+              </ListItem>
+            </List>
 
           </Box>
+        </Box>
 
-      </Card>
-
-
-      <Box mt={4} px={4} className="max-w-2xl mx-auto">
-
-        <Typography variant="h6" gutterBottom>
-          Dikkat Edilmesi Gerekenler
-        </Typography>
-
-        <List dense>
-          <ListItem>
-            <ListItemIcon>
-              <ArrowRightIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sistem adedi pozitif bir sayı olmalıdır." />
-          </ListItem>
-
-          <ListItem>
-            <ListItemIcon>
-              <ArrowRightIcon />
-            </ListItemIcon>
-            <ListItemText primary="Yükseklik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
-          </ListItem>
-
-          <ListItem>
-            <ListItemIcon>
-              <ArrowRightIcon />
-            </ListItemIcon>
-            <ListItemText primary="Genişlik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
-          </ListItem>
-        </List>
-      </Box>
+      </Paper>
 
     </Box>
   );

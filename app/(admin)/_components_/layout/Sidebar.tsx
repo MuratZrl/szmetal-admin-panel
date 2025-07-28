@@ -94,6 +94,7 @@ const Sidebar = () => {
 
       const channel = supabase
         .channel('realtime-notifications')
+        channel
         .on(
           'postgres_changes',
           {
@@ -102,7 +103,7 @@ const Sidebar = () => {
             table: 'notifications',
             filter: `user_id=eq.${user.id}`,
           },
-          (payload) => {
+          () => {
             setUnreadCount((prev) => prev + 1);
           }
         )

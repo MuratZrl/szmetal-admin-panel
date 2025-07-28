@@ -57,7 +57,7 @@ const CustomStepIcon = ({ active, completed, icon }: StepIconProps) => {
 
 const StepperComponent: React.FC<StepperProps> = ({ activeStep }) => {
   return (
-    <Box className="w-full mx-auto max-w-3xl py-4">
+    <Box className="w-full mx-auto py-4">
       <Card sx={{ p: 1.5, borderRadius: 3, boxShadow: 2 }}>
         <Stepper activeStep={activeStep}>
           {steps.map((label) => (

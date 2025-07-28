@@ -159,7 +159,7 @@ export default function ClientPage() {
 
   // TSX
   return (
-    <Box sx={{ py: 4, px: 2 }} >
+    <Box sx={{ py: 4 }} >
 
       <Paper elevation={1} sx={{ width: '100%', p: 2, borderRadius: 7 }} >
 

@@ -5,8 +5,20 @@ import { useRouter, useParams } from 'next/navigation';
 
 import { useState, useEffect, useMemo } from 'react';
 
-import { Box, Card, Typography, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { 
+  Box, 
+  Paper,
+  Card,
+  Typography, 
+  Button, 
+  CircularProgress, 
+  Snackbar, 
+  Alert,
+} 
+from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+
+import ConfirmDialog from '../../../_components_/ui/dialogs/ConfirmDialog';
 
 import StepperComponent from '../../../_components_/ui/stepper/Stepper';
 import { systemStep3Configs } from '../../../_constants_/systems/step3/systemConfigs';
@@ -35,6 +47,8 @@ export default function SummaryPage() {
   const [rows2, setRows2] = useState<GiyotinProfilHesapli[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // ✅ Güvenli localStorage okuma
   const form = useMemo(() => {
@@ -127,8 +141,9 @@ export default function SummaryPage() {
       setSnackbarMessage('Kayıt eklenemedi!');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
+
     } else {
-      setSnackbarMessage('Kayıt başarıyla eklendi 🎉');
+      setSnackbarMessage('Talebiniz Oluşturuldu! 🎉');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
 
@@ -148,105 +163,122 @@ export default function SummaryPage() {
   const columns2 = config.materialColumns;
 
   return (
-    <Box className="max-w-6xl mx-auto p-3">
+    <Box sx={{ py: 2 }} >
 
-      {/* ******************** 3. Adım ******************** */}
-      <StepperComponent activeStep={2} />
+      <Paper elevation={4} sx={{ width: '100%', p: 2, borderRadius: 7, backgroundColor: '#e7e7e750' }} >
 
-      <Card sx={{ p: 2, mb: 2, borderRadius: 7 }} >
+        {/* ******************** 3. Adım ******************** */}
+        <StepperComponent activeStep={2} />
 
-        <Typography variant="subtitle1" gutterBottom>
-          Genel Bilgiler
-        </Typography>
+        <Card sx={{ p: 2, mb: 2, borderRadius: 7 }} >
 
-        <DataGrid 
-          rows={rows1}
-          columns={columns1}
-          getRowId={(row) => row.id} // ✅ id zorunlu!
-          hideFooter 
-          disableRowSelectionOnClick 
-              
-          sx={{
-            border: 'none',
-            '& .MuiDataGrid-main': {
-              borderRadius: 3,
-            },
-            '& .MuiDataGrid-cell': {
-              borderBottom: 'none', // opsiyonel
-            },
-          }}
-        />
+          <Typography variant="subtitle1" fontWeight={600} px={1} gutterBottom>
+            Genel Bilgiler
+          </Typography>
 
-      </Card>
-
-      <Card sx={{ p: 2, borderRadius: 7 }} >
-
-        <Typography variant="subtitle1" gutterBottom>
-          Malzeme Listesi
-        </Typography>
-
-          <DataGrid
-            rows={rows2}
-            columns={columns2}
-            rowHeight={125}
-            getRowId={(row) => row.profil_kodu} // 👈 burada id yerine geçer
+          <DataGrid 
+            rows={rows1}
+            columns={columns1}
+            getRowId={(row) => row.id} // ✅ id zorunlu!
             hideFooter 
-            disableRowSelectionOnClick   
-    
+            disableRowSelectionOnClick 
             sx={{
-              border: 'none',
-              '& .MuiDataGrid-main': {
-                borderRadius: 3,
+              borderRadius: 5,
+              '& .MuiDataGrid-columnHeader': {
+                backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
               },
-              '& .MuiDataGrid-cell': {
-                borderBottom: 'none', // opsiyonel
+              '& .MuiDataGrid-columnHeaderTitle': {
+                color: 'white',
+                fontWeight: 600,
               },
             }}
           />
 
-      </Card>
+        </Card>
 
-      <Box className="flex justify-between mt-6 px-1">
-        <Button
-          variant="outlined"
-          onClick={() => router.push(`/systems/${slug}/step2`)}
-          sx={{
-            px: 4,
-            py: 1,
-            color: 'orangered',
-            borderColor: 'orangered',
-            borderRadius: 7,
-            textTransform: 'capitalize',
+        <Card sx={{ p: 2, borderRadius: 7 }} >
+
+          <Typography variant="subtitle1" fontWeight={600} px={1} gutterBottom>
+            Malzeme Listesi
+          </Typography>
+
+            <DataGrid
+              rows={rows2}
+              columns={columns2}
+              rowHeight={125}
+              getRowId={(row) => row.profil_kodu} // 👈 burada id yerine geçer
+              hideFooter 
+              disableRowSelectionOnClick   
+              sx={{
+                borderRadius: 5,
+                '& .MuiDataGrid-columnHeader': {
+                  backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)'
+                },
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  color: 'white',
+                  fontWeight: 600,
+                },
+              }}
+            />
+
+        </Card>
+
+        <Box className="flex justify-between mt-6 px-1">
+          <Button
+            variant="outlined"
+            onClick={() => router.push(`/systems/${slug}/step2`)}
+            sx={{
+              px: 4,
+              py: 1,
+              color: 'orangered',
+              borderColor: 'orangered',
+              borderRadius: 7,
+              textTransform: 'capitalize',
+            }}
+          >
+            Geri
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={() => setConfirmOpen(true)}
+            sx={{
+              px: 4,
+              py: 1,
+              backgroundColor: 'orangered',
+              borderRadius: 7,
+              textTransform: 'capitalize',
+            }}
+          >
+            Onayla
+          </Button>
+        </Box>
+
+        <ConfirmDialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={() => {
+            setConfirmOpen(false);   // önce dialog kapanır
+            handleConfirm();         // sonra işlem yapılır
           }}
-        >
-          Geri
-        </Button>
+          title="Talebi Onayla"
+          description="Bu talebi sistem kaydına eklemek üzeresiniz. Devam etmek istiyor musunuz?"
+          confirmText="Evet, Onayla"
+          cancelText="İptal"
+        />
 
-        <Button
-          variant="contained"
-          onClick={handleConfirm}
-          sx={{
-            px: 4,
-            py: 1,
-            backgroundColor: 'orangered',
-            borderRadius: 7,
-            textTransform: 'capitalize',
-          }}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          Onayla
-        </Button>
-      </Box>
+          <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      </Paper>
 
     </Box>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import { Box, CircularProgress } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -68,7 +69,7 @@ export default function NotificationsPage() {
       {loading ? (
         <CircularProgress />
       ) : (
-        <Box sx={{ height: 600 }}>
+        <Box sx={{ height: 600 }} >
           <DataGrid
             rows={notifications}
             columns={notificationColumns}
@@ -88,6 +89,7 @@ export default function NotificationsPage() {
           />
         </Box>
       )}
+      
     </Box>
   );
 }
