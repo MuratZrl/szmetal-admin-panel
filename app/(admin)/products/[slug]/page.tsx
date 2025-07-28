@@ -40,6 +40,23 @@ export default function ProductDetailPage() {
       .join(' ');                     // 'Giyotin Sistemi'
   };
 
+  // ******************************************************************************************
+
+  const rowLimits: Record<string, number> = {
+    'giyotin-sistemi': 14,
+    'cam-balkon-sistemi': 10,
+    'profil-sistemi': 20,
+    'sürme-sistem': 12,
+    'katlanir-sistem': 8,
+    'cephe-sistemi': 16,
+    'kapi-sistemi': 18,
+  };
+
+  const limit = rowLimits[slug]; // o slug için sınır varsa alır
+  const isAddDisabled = typeof limit === 'number' && rows.length >= limit;
+
+  // ******************************************************************************************
+
   // useEffect'in DIŞINDA tanımlanmalı:
   const fetchProfiles = useCallback(async () => {
     const { data, error } = await supabase
@@ -143,11 +160,17 @@ export default function ProductDetailPage() {
 
           <Button
             variant="contained"
+            disabled={isAddDisabled}
             onClick={() => {
-              setEditData(null);     // ✨ yeni kayıt moduna geç
-              setAddOpen(true);      // dialog'u aç
+              setEditData(null);
+              setAddOpen(true);
             }}
-            sx={{ px: 4, backgroundColor: 'darkolivegreen', borderRadius: 7, textTransform: 'capitalize' }}
+            sx={{
+              px: 4,
+              backgroundColor: 'darkolivegreen',
+              borderRadius: 7,
+              textTransform: 'capitalize',
+            }}
           >
             Ekle
           </Button>
