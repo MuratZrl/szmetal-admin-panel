@@ -53,10 +53,12 @@ export async function middleware(req: NextRequest) {
   // 🚫 Sadece admin'lere özel sayfalar
   const adminOnlyPaths = [
     '/account',
-    '/clients',
     '/dashboard',
+    '/systems',
     '/requests',
+    '/clients',
     '/products',
+    '/orders',
     '/admin',
   ]
 
@@ -72,12 +74,13 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     '/account',
-    '/clients',
     '/dashboard',
-    '/requests/:path*',   // ✅ dinamik id dahil
-    '/products/:path*',   // ✅ dinamik slug dahil
-    '/admin/:path*',
     '/systems/:path*',    // ✅ dinamik slug dahil
+    '/requests/:path*',   // ✅ dinamik id dahil
+    '/clients',
+    '/products/:path*',   // ✅ dinamik slug dahil
+    '/orders/:path*',   // ✅ dinamik slug dahil
+    '/admin/:path*',
     
     '/auth/:path*', // 👈 bunu ekledik
   ],

@@ -161,7 +161,6 @@ export default function ClientPage() {
   return (
     <Box sx={{ py: { xs: 2, md: 4 } }} >
 
-
         {/* Stat Cards */}
         <Grid container spacing={2} mb={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }} >

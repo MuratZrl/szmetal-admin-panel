@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 
-import { Box, Paper, Stack, Button, Typography, CircularProgress } from '@mui/material';
+import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 import AddProductDialog from '../../_components_/ui/dialogs/AddProductDialog';
@@ -147,7 +147,6 @@ export default function ProductDetailPage() {
 
   return (
     <Box py={{ xs: 2, sm: 4 }} px={{ xs: 1.5, sm: 2 }}>
-      <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 7 }}>
         
         {/* Header */}
         <Stack
@@ -212,7 +211,6 @@ export default function ProductDetailPage() {
             />
           )}
         </Box>
-      </Paper>
 
       {/* Dialog */}
       <AddProductDialog
