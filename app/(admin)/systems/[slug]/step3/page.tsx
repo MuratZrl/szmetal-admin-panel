@@ -163,7 +163,7 @@ export default function SummaryPage() {
     <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }} >
 
         {/* Stepper */}
-        <Box mb={{ xs: 2, sm: 3 }}>
+        <Box mb={{ xs: 2, sm: 3 }} >
           <StepperComponent activeStep={2} />
         </Box>
 
@@ -175,6 +175,7 @@ export default function SummaryPage() {
           <DataGrid
             rows={rows1}
             columns={columns1}
+            rowHeight={50}
             getRowId={(row) => row.id}
             loading={loading}
 
@@ -216,7 +217,6 @@ export default function SummaryPage() {
             disableAutosize
             disableColumnFilter
             disableRowSelectionOnClick
-            disableDensitySelector
             showToolbar
             label='Malzeme Listesi'
 

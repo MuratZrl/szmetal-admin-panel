@@ -50,7 +50,7 @@ const Sidebar = () => {
     if (role === 'Admin') return mainLinks;
 
     if (role === 'User') {
-      const allowedForUser = ['/account', '/systems', '/notifications', '/login'];
+      const allowedForUser = ['/account', '/systems', '/orders', '/login'];
       return mainLinks.filter((link) => allowedForUser.includes(link.href));
     }
 
@@ -124,11 +124,6 @@ const Sidebar = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
-
-
-
-
-
 
   const renderLink = (link: SidebarLink) => {
     

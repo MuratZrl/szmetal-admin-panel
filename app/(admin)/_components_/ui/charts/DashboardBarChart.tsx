@@ -1,17 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart } from '@mui/x-charts/BarChart';
+import {
+  BarChart,
+} from '@mui/x-charts/BarChart';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
 import { Database } from '../../../../../types/supabase';
 
-export default function SimpleCharts() {
+import { Box, Stack } from '@mui/material';
 
+export default function StackedSystemBarChart() {
   const supabase = createClientComponentClient<Database>();
-  
+
   const [months, setMonths] = useState<string[]>([]);
-  const [series, setSeries] = useState<{ label: string; data: number[] }[]>([]);
+  const [series, setSeries] = useState<
+    { id: string; label: string; data: number[]; stack: string }[]
+  >([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +33,7 @@ export default function SimpleCharts() {
 
       const startDate = monthData[0].start.toISOString();
 
-      const { data: users, error } = await supabase
+      const { data: requests, error } = await supabase
         .from('requests')
         .select('created_at, system_slug')
         .gte('created_at', startDate);
@@ -39,18 +43,23 @@ export default function SimpleCharts() {
         return;
       }
 
-      const roles = Array.from(new Set(users?.map(u => u.system_slug).filter(Boolean)));
+      const systems = Array.from(new Set(requests?.map(r => r.system_slug).filter(Boolean)));
 
-      const grouped = roles.map((system_slug) => {
-        const data = monthData.map(({ start, end }) => {
-          return users?.filter((u) => {
-            if (!u.created_at || !u.system_slug) return false;
-            const created = new Date(u.created_at);
-            return u.system_slug === system_slug && created >= start && created < end;
-          }).length || 0;
-        });
+      const grouped = systems.map((slug) => {
+        const data = monthData.map(({ start, end }) =>
+          requests?.filter((r) => {
+            if (!r.created_at || !r.system_slug) return false;
+            const created = new Date(r.created_at);
+            return r.system_slug === slug && created >= start && created < end;
+          }).length || 0
+        );
 
-        return { label: system_slug, data };
+        return {
+          id: slug,
+          label: slug,
+          data,
+          stack: 'total', // 📌 stacked görünüm
+        };
       });
 
       setSeries(grouped);
@@ -60,11 +69,16 @@ export default function SimpleCharts() {
   }, [supabase]);
 
   return (
-    <BarChart
-      height={300}
-      xAxis={[{ id: 'barMonths', data: months }]}
-      series={series}
-      grid={{ horizontal: true, vertical: true }} // ✅ Grid çizgileri aktif!
-    />
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} sx={{ width: '100%' }}>
+      <Box sx={{ flexGrow: 1 }}>
+        <BarChart
+          height={300}
+          xAxis={[{ id: 'months', data: months }]}
+          series={series}
+          grid={{ horizontal: true }}
+        />
+      </Box>
+
+    </Stack>
   );
 }

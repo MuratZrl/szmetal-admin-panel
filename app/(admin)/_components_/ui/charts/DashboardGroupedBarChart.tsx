@@ -42,7 +42,7 @@ export default function BasicBars() {
 
       const colorPalette = ['darkred', 'purple'];
 
-      const grouped = roles.map((role) => {
+      const grouped = roles.map((role, i) => {
         const data = monthData.map(({ start, end }) => {
           return users?.filter((u) => {
             if (!u.created_at || !u.role) return false;
@@ -52,9 +52,9 @@ export default function BasicBars() {
         });
 
         return {
-          id: role, // 🌟 Önemli: `id` eşleşme için kullanılacak
           label: role,
           data,
+          color: colorPalette[i % colorPalette.length], // 🔥 Renk tanımı burada
         };
       });
 

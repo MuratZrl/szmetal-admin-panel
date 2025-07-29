@@ -52,13 +52,10 @@ export async function middleware(req: NextRequest) {
 
   // 🚫 Sadece admin'lere özel sayfalar
   const adminOnlyPaths = [
-    '/account',
     '/dashboard',
-    '/systems',
     '/requests',
     '/clients',
     '/products',
-    '/orders',
     '/admin',
   ]
 
