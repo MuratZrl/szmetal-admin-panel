@@ -1,4 +1,4 @@
-// app/_constants_/systemForms.ts
+// app/_constants_/systems/step2/systemForms.ts
 
 export type FormFieldConfig = {
   name: string;
@@ -19,8 +19,16 @@ export const systemForms: Record<string, SystemFormConfig> = {
   'giyotin-sistemi': {
     fields: [
       {
+        name: 'description',
+        label: 'Proje Adı',
+        type: 'string',
+        min: 1,
+        required: true,
+        helperText: 'Proje adını giriniz.',
+      },
+      {
         name: 'sistem_adet',
-        label: 'Giyotin Sayısı',
+        label: 'Sistem Adedi',
         placeholder: 'Örn: 2',
         type: 'number',
         min: 1,

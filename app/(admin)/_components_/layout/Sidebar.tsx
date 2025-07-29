@@ -126,8 +126,7 @@ const Sidebar = () => {
   }, [user]);
 
   const renderLink = (link: SidebarLink) => {
-    
-    const { label, href, icon: Icon } = link;
+    const { label, labelTr, href, icon: Icon } = link;
     const isActive = pathname.startsWith(href);
     const isLogout = label === 'Logout';
 
@@ -160,7 +159,7 @@ const Sidebar = () => {
     return (
       <ListItem key={href} disablePadding sx={{ justifyContent: 'center' }}>
         <Tooltip
-          title={label}
+          title={labelTr || label} // 👈 Türkçe varsa onu kullan
           placement="right"
           componentsProps={{
             tooltip: {

@@ -14,7 +14,7 @@ export default function Header() {
     const current = mainLinks.find(
       (link) => pathname === link.href || pathname.startsWith(`${link.href}/`)
     );
-    setTitle(current?.label ?? 'Sayfa');
+    setTitle(current?.labelTr ?? 'Sayfa');
   }, [pathname]);
 
   if (!title) return null;

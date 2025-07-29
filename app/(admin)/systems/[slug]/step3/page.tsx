@@ -9,7 +9,6 @@ import {
   Box, 
   Card,
   Button, 
-  CircularProgress, 
   Snackbar, 
   Alert,
 } 
@@ -129,6 +128,7 @@ export default function SummaryPage() {
         summary_data: JSON.parse(JSON.stringify(rows1)),
         material_data: JSON.parse(JSON.stringify(rows2)),
         status: 'pending',
+        description: form.description || null,  // 👈 buraya description ekledik
       },
     ]);
 
@@ -153,7 +153,6 @@ export default function SummaryPage() {
 
   // ❗ hook'lar çalıştıktan sonra koşullu render
   if (!config) return <div>Geçersiz sistem: {slugStr}</div>;
-  if (loading) return <div className="flex justify-center mt-10"><CircularProgress /></div>;
   if (fetchError) return <div className="text-red-500 text-center mt-10">{fetchError}</div>;
 
   const columns1 = config.summaryColumns;
@@ -175,7 +174,7 @@ export default function SummaryPage() {
           <DataGrid
             rows={rows1}
             columns={columns1}
-            rowHeight={50}
+            rowHeight={65}
             getRowId={(row) => row.id}
             loading={loading}
 
@@ -183,7 +182,6 @@ export default function SummaryPage() {
             disableAutosize
             disableColumnFilter
             disableRowSelectionOnClick
-            showToolbar
             label='Genel Bilgiler'
 
             autoHeight
@@ -217,7 +215,6 @@ export default function SummaryPage() {
             disableAutosize
             disableColumnFilter
             disableRowSelectionOnClick
-            showToolbar
             label='Malzeme Listesi'
 
             autoHeight
