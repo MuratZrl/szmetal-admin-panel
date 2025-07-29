@@ -40,6 +40,8 @@ export default function BasicBars() {
 
       const roles = Array.from(new Set(users?.map(u => u.role).filter(Boolean)));
 
+      const colorPalette = ['darkred', 'purple'];
+
       const grouped = roles.map((role) => {
         const data = monthData.map(({ start, end }) => {
           return users?.filter((u) => {
@@ -49,7 +51,11 @@ export default function BasicBars() {
           }).length || 0;
         });
 
-        return { label: role, data };
+        return {
+          id: role, // 🌟 Önemli: `id` eşleşme için kullanılacak
+          label: role,
+          data,
+        };
       });
 
       setSeries(grouped);
@@ -62,7 +68,8 @@ export default function BasicBars() {
     <BarChart
       height={300}
       xAxis={[{ data: months }]}
-      series={series}
+      series={series} // her biri color içeriyor
+      grid={{ horizontal: true, vertical: true }}
     />
   );
 }

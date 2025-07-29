@@ -28,12 +28,14 @@ export const giyotinMalzemeColumns: GridColDef[] = [
     disableColumnMenu: true,
 
     renderCell: (params) => (
-      <Box sx={{ position: 'relative', width: 100, height: 100 }} >
+      <Box sx={{ position: 'relative', width: 125, height: 125 }} >
         <Image
           src={params.value}
           alt="profil"
-          width={100}
-          height={100}
+          width={125}
+          height={125}
+          unoptimized
+          priority
           style={{
             objectFit: 'cover',
             objectPosition: 'center',

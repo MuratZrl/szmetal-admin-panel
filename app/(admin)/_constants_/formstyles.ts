@@ -5,25 +5,28 @@ export const commonTextFieldProps: Partial<TextFieldProps> = {
   InputProps: {
     sx: {
       '& .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'orangered',
+        borderColor: '#470000',
         borderRadius: 5,
       },
       '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'darkorange',
+        borderColor: '#A30000',
       },
       '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'red',
+        borderColor: 'darkred',
         borderWidth: 2,
       },
     },
   },
   InputLabelProps: {
     sx: {
-      color: 'gray',
+      color: 'black',
+      opacity: 0.65,
       '&.Mui-focused': {
-        color: 'orangered',
+        color: 'darkred',
+        borderColor: 'darkred',
         fontWeight: 600,
         fontStyle: 'italic',
+        opacity: 1,
       },
     },
   },

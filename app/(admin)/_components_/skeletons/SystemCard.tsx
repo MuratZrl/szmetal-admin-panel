@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
 import { Box, Card, Skeleton } from '@mui/material';
 
-const SystemsCardSkeleton = () => {
+const SystemCardSkeleton = () => {
   return (
     <Card
       className="overflow-hidden"
@@ -12,7 +13,7 @@ const SystemsCardSkeleton = () => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRadius: 10,
+        borderRadius: 7,
         boxShadow: 3,
       }}
     >
@@ -27,37 +28,50 @@ const SystemsCardSkeleton = () => {
       >
         <Skeleton
           variant="rectangular"
+          width="100%"
+          height="100%"
           sx={{
             position: 'absolute',
             top: 0,
             left: 0,
-            width: '100%',
             height: '100%',
+            width: '100%',
           }}
         />
       </Box>
 
       {/* Content Skeleton */}
-      <Box sx={{ flexGrow: 1, px: 2.5, py: 2 }}>
-        <Skeleton variant="text" width="60%" height={28} />
-        <Skeleton variant="text" width="100%" height={18} sx={{ mt: 1 }} />
-        <Skeleton variant="text" width="90%" height={18} />
+      <Box sx={{ flexGrow: 1, px: { xs: 2, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
+        <Skeleton variant="text" width="70%" height={24} sx={{ mb: 1 }} />
+        <Skeleton variant="text" width="100%" height={16} />
+        <Skeleton variant="text" width="90%" height={16} />
       </Box>
 
       {/* Buttons Skeleton */}
       <Box
         sx={{
-          px: 2.5,
-          pb: 2,
+          px: { xs: 2, sm: 2.5 },
+          pb: { xs: 2, sm: 2.5 },
           display: 'flex',
-          justifyContent: 'space-between',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1.5,
         }}
       >
-        <Skeleton variant="rounded" width={80} height={36} />
-        <Skeleton variant="rounded" width={120} height={36} />
+        <Skeleton
+          variant="rounded"
+          height={36}
+          width="100%"
+          sx={{ flex: 1 }}
+        />
+        <Skeleton
+          variant="rounded"
+          height={36}
+          width="100%"
+          sx={{ flex: 1 }}
+        />
       </Box>
     </Card>
   );
 };
 
-export default SystemsCardSkeleton;
+export default SystemCardSkeleton;

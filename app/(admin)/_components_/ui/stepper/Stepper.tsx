@@ -1,6 +1,3 @@
-'use client';
-
-import React from 'react';
 import {
   Stepper,
   Step,
@@ -17,7 +14,6 @@ type StepperProps = {
 
 const steps = ['Sistem Seçimi', 'Sistem Bilgileri', 'Sistem Özeti'];
 
-// Özel ikon bileşeni
 const CustomStepIcon = ({ active, completed, icon }: StepIconProps) => {
   let backgroundStyle = {};
 
@@ -27,7 +23,7 @@ const CustomStepIcon = ({ active, completed, icon }: StepIconProps) => {
     };
   } else if (active) {
     backgroundStyle = {
-      backgroundImage: 'linear-gradient(45deg, orangered, red)', // gradient turuncu
+      backgroundImage: 'linear-gradient(45deg, orangered, red)',
     };
   } else {
     backgroundStyle = {
@@ -55,14 +51,14 @@ const CustomStepIcon = ({ active, completed, icon }: StepIconProps) => {
   );
 };
 
-const StepperComponent: React.FC<StepperProps> = ({ activeStep }) => {
+const StepperComponent = ({ activeStep }: StepperProps) => {
   return (
     <Box
       sx={{
         width: '100%',
         mx: 'auto',
         px: { xs: 1, sm: 2 },
-        py: { xs: 1, sm: 2 }, // ← bu yeni
+        py: { xs: 1, sm: 2 },
       }}
     >
       <Card

@@ -2,7 +2,10 @@
 
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+
 import { LineChart } from '@mui/x-charts/LineChart';
+import { Box } from '@mui/material';
+
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 import { Database } from '../../../../../types/supabase';
@@ -57,17 +60,33 @@ export default function BasicArea() {
   }, [supabase]);
 
   return (
-    <LineChart
-      height={300}
-      xAxis={[{ data: data.map((c) => c.label), scaleType: 'band' }]}
-      series={[
-        {
-          label: 'Yeni Kullanıcılar',
-          data: data.map((c) => c.count),
-          area: true,
-          showMark: false,
-        },
-      ]}
-    />
+    <Box position="relative">
+
+      <svg width={0} height={0}>
+        <defs>
+          <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="orangered" />
+            <stop offset="100%" stopColor="darkred" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <LineChart
+        height={300}
+        xAxis={[{ data: data.map((c) => c.label), scaleType: 'band' }]}
+        series={[
+          {
+            type: 'line',
+            label: 'Yeni Kullanıcılar',
+            data: data.map((c) => c.count),
+            area: true,
+            showMark: false,
+            color: 'url(#gradient)', // 🔥 gradient burada uygulanır
+          },
+        ]}
+        grid={{ horizontal: true, vertical: true }}
+      />
+      
+    </Box>
   );
 }

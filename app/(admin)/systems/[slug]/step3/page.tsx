@@ -176,12 +176,15 @@ export default function SummaryPage() {
             rows={rows1}
             columns={columns1}
             getRowId={(row) => row.id}
+            loading={loading}
+
             hideFooter
             disableAutosize
             disableColumnFilter
             disableRowSelectionOnClick
             showToolbar
             label='Genel Bilgiler'
+
             autoHeight
             sx={{
               borderRadius: 5,
@@ -207,6 +210,8 @@ export default function SummaryPage() {
             columns={columns2}
             rowHeight={125}
             getRowId={(row) => row.profil_kodu}
+            loading={loading}
+
             hideFooter
             disableAutosize
             disableColumnFilter
@@ -214,6 +219,7 @@ export default function SummaryPage() {
             disableDensitySelector
             showToolbar
             label='Malzeme Listesi'
+
             autoHeight
             sx={{
               borderRadius: 5,

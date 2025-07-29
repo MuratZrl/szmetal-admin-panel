@@ -56,7 +56,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
               top: 10,
               left: 16,
               boxShadow: 1,
-              background: 'linear-gradient(135deg, red, darkorange)',
+              background: 'linear-gradient(135deg, red, darkred)',
               color: 'white',
               px: 1.5,
               py: 0.5,
@@ -149,7 +149,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
             px: 2,
             py: 1,
             borderRadius: 10,
-            background: 'linear-gradient(90deg, red 0%, red 75%, orangered 100%)',
+            background: 'linear-gradient(90deg, red 0%, darkred 75%, darkred 100%)',
             textTransform: 'capitalize',
           }}
         >

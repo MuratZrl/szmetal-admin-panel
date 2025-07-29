@@ -102,6 +102,7 @@ export default function DashboardStatusAreaChart() {
         height={300}
         margin={{ top: 20, bottom: 30, left: 50, right: 20 }}
         experimentalFeatures={{ preferStrictDomainInLineCharts: true }}
+        grid={{ horizontal: true, vertical: true }} // ✅ Grid çizgileri aktif!
       />
     </Box>
   );

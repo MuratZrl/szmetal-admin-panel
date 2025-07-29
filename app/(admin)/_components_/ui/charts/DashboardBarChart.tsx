@@ -64,6 +64,7 @@ export default function SimpleCharts() {
       height={300}
       xAxis={[{ id: 'barMonths', data: months }]}
       series={series}
+      grid={{ horizontal: true, vertical: true }} // ✅ Grid çizgileri aktif!
     />
   );
 }

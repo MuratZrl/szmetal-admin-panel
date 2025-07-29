@@ -126,8 +126,8 @@ export default function Step2Page() {
               sx={{
                 px: 4,
                 py: 1,
-                color: 'orangered',
-                borderColor: 'orangered',
+                color: 'darkred',
+                borderColor: 'darkred',
                 borderRadius: 7,
                 textTransform: 'capitalize',
                 width: { xs: '100%', sm: 'auto' },
@@ -144,7 +144,7 @@ export default function Step2Page() {
                 px: 4,
                 py: 1,
                 borderRadius: 7,
-                backgroundColor: 'orangered',
+                backgroundColor: 'darkred',
                 textTransform: 'capitalize',
                 '&.Mui-disabled': {
                   backgroundColor: '#ffd2b3',
