@@ -8,7 +8,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Box, 
   Card,
-  Typography, 
   Button, 
   CircularProgress, 
   Snackbar, 
@@ -33,7 +32,7 @@ import { supabase } from '../../../../lib/supabase/supabaseClient';
 
 export default function SummaryPage() {
   const router = useRouter();
-  const { slug } = useParams();
+  const { slug } = useParams();;
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -161,7 +160,7 @@ export default function SummaryPage() {
   const columns2 = config.materialColumns;
 
   return (
-    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
+    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }} >
 
         {/* Stepper */}
         <Box mb={{ xs: 2, sm: 3 }}>
@@ -169,17 +168,20 @@ export default function SummaryPage() {
         </Box>
 
         {/* Genel Bilgiler */}
-        <Card sx={{ p: { xs: 1.5, sm: 2.5 }, mb: 2, borderRadius: 7 }}>
-          <Typography variant="subtitle1" fontWeight={600} px={1} gutterBottom>
-            Genel Bilgiler
-          </Typography>
+        <Card 
+          sx={{ p: { xs: 1.5, sm: 2.5 }, mb: 2, borderRadius: 7 }} 
+        >
 
           <DataGrid
             rows={rows1}
             columns={columns1}
             getRowId={(row) => row.id}
             hideFooter
+            disableAutosize
+            disableColumnFilter
             disableRowSelectionOnClick
+            showToolbar
+            label='Genel Bilgiler'
             autoHeight
             sx={{
               borderRadius: 5,
@@ -192,13 +194,13 @@ export default function SummaryPage() {
               },
             }}
           />
+
         </Card>
 
         {/* Malzeme Listesi */}
-        <Card sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 7 }}>
-          <Typography variant="subtitle1" fontWeight={600} px={1} gutterBottom>
-            Malzeme Listesi
-          </Typography>
+        <Card
+          sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 7 }} 
+        >
 
           <DataGrid
             rows={rows2}
@@ -206,7 +208,12 @@ export default function SummaryPage() {
             rowHeight={125}
             getRowId={(row) => row.profil_kodu}
             hideFooter
+            disableAutosize
+            disableColumnFilter
             disableRowSelectionOnClick
+            disableDensitySelector
+            showToolbar
+            label='Malzeme Listesi'
             autoHeight
             sx={{
               borderRadius: 5,
@@ -219,6 +226,7 @@ export default function SummaryPage() {
               },
             }}
           />
+
         </Card>
 
         {/* Butonlar */}
@@ -249,6 +257,7 @@ export default function SummaryPage() {
           <Button
             variant="contained"
             onClick={() => setConfirmOpen(true)}
+            
             sx={{
               px: 4,
               py: 1,
