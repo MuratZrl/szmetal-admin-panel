@@ -1,6 +1,7 @@
 // app/(admin)/_constants_/systems/system-columns/giyotin-sistemi.ts
 
 import { GridColDef } from '@mui/x-data-grid';
+import { Box } from '@mui/material';
 
 import Image from 'next/image';
 
@@ -14,27 +15,79 @@ export const giyotinGenelBilgiColumns: GridColDef[] = [
 ];
 
 export const giyotinMalzemeColumns: GridColDef[] = [
+// ****************************************************************************************************
   {
     field: 'profil_resmi',
     headerName: 'Profil Resmi',
-    flex: 1,
+    flex: 0.35,
+
     sortable: false,
+    editable: false,
+    resizable: false,
     filterable: false,
     disableColumnMenu: true,
 
     renderCell: (params) => (
-      <div style={{ position: 'relative', width: 100, height: '100%' }}>
+      <Box sx={{ position: 'relative', width: 100, height: 100 }} >
         <Image
           src={params.value}
           alt="profil"
-          fill
-          style={{ objectFit: 'cover', borderRadius: 4 }}
+          width={100}
+          height={100}
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
         />
-      </div>
+      </Box>
     ),
   },
-  { field: 'profil_kodu', headerName: 'Profil Kodu', flex: 0.5, sortable: false, editable: false, resizable: false, filterable: false, disableColumnMenu: true },
-  { field: 'profil_adi', headerName: 'Profil Adı', flex: 1, sortable: false, editable: false, resizable: false, filterable: false, disableColumnMenu: true },
-  { field: 'kesim_olcusu', headerName: 'Kesim Ölçüsü', flex: 1, sortable: false, editable: false, resizable: false, filterable: false, disableColumnMenu: true },
-  { field: 'verilecek_adet', headerName: 'Verilecek Adet', flex: 1, sortable: false, editable: false, resizable: false, filterable: false, disableColumnMenu: true },
+// ****************************************************************************************************
+  { field: 'profil_kodu',
+    headerName: 'Profil Kodu',
+    flex: 0.25,
+
+    sortable: false,
+    editable: false,
+    resizable: false,
+    filterable: false,
+    disableColumnMenu: true
+  },
+// **************************************************************************************************** 
+  { 
+    field: 'profil_adi',
+    headerName: 'Profil Adı',
+    flex: 0.5,
+
+    sortable: false,
+    editable: false,
+    resizable: false,
+    filterable: false,
+    disableColumnMenu: true
+  },
+// ****************************************************************************************************
+  { 
+    field: 'kesim_olcusu',
+    headerName: 'Kesim Ölçüsü',
+    flex: 0.5,
+
+    sortable: false,
+    editable: false,
+    resizable: false,
+    filterable: false,
+    disableColumnMenu: true
+  },
+// ****************************************************************************************************
+  { 
+    field: 'verilecek_adet',
+    headerName: 'Verilecek Adet', 
+    flex: 1, 
+
+    sortable: false,
+    editable: false,
+    resizable: false,
+    filterable: false,
+    disableColumnMenu: true 
+  },
+// ****************************************************************************************************
 ];

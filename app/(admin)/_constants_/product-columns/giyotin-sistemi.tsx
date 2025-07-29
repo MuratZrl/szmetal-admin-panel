@@ -19,12 +19,12 @@ const getColumns = (): GridColDef[] => [
     disableColumnMenu: true,
 
     renderCell: (params) => (
-      <Box sx={{ position: 'relative', width: 48, height: 48 }}>
+      <Box sx={{ position: 'relative', width: 48, height: 48 }} >
         <Image
           src={params.value}
           alt="profil"
           fill
-          style={{ objectFit: 'cover', borderRadius: 4 }}
+          style={{ objectFit: 'cover', objectPosition: 'center', borderRadius: 0 }}
         />
       </Box>
     ),
