@@ -7,7 +7,9 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../../../types/supabase';
 
 export default function SimpleCharts() {
+
   const supabase = createClientComponentClient<Database>();
+  
   const [months, setMonths] = useState<string[]>([]);
   const [series, setSeries] = useState<{ label: string; data: number[] }[]>([]);
 

@@ -1,8 +1,7 @@
-// ********************************************************************************
-import * as React from 'react';
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { ScatterChart } from '@mui/x-charts/ScatterChart';
-// ********************************************************************************
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../../../types/supabase';
 
@@ -14,40 +13,49 @@ type Point = {
   requestCount: number;
 };
 
-export default function ScatterDataset() {
+type RequestRow = Database['public']['Tables']['requests']['Row'];
 
+export default function ScatterDataset() {
   const [points, setPoints] = useState<Point[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
-
-      // 1. Tüm talepler
-      const { data: requests } = await supabase
+      const { data, error } = await supabase
         .from('requests')
-        .select('id, system_slug, created_by');
+        .select('user_id, system_slug');
 
+      if (error) {
+        console.error('Supabase Error:', error.message);
+        return;
+      }
+
+      console.log('Supabase Request Data:', data);
+
+      const requests = data as RequestRow[];
       if (!requests) return;
 
-      // 2. Sistem slug'lara göre grupla
       const systemMap = new Map<string, { users: Set<string>; requests: number }>();
 
-      requests.forEach((req) => {
+      for (const req of requests) {
         const slug = req.system_slug;
-        const user = req.created_by;
+        const user = req.user_id;
+
+        if (!slug || !user) continue;
+
         if (!systemMap.has(slug)) {
           systemMap.set(slug, { users: new Set(), requests: 0 });
         }
         systemMap.get(slug)!.users.add(user);
         systemMap.get(slug)!.requests += 1;
-      });
+      }
 
-      // 3. Scatter Chart için veri üret
       const result: Point[] = Array.from(systemMap.entries()).map(([slug, { users, requests }]) => ({
         system: slug,
         userCount: users.size,
         requestCount: requests,
       }));
 
+      console.log('Processed Points:', result);
       setPoints(result);
     };
 
@@ -57,15 +65,15 @@ export default function ScatterDataset() {
   return (
     <ScatterChart
       height={300}
-      dataset={points.map((p, i) => ({
+      dataset={points.map((p) => ({
         id: p.system,
-        x: p.userCount,
-        y: p.requestCount,
+        x: p.userCount ?? 0,
+        y: p.requestCount ?? 0,
+        label: p.system,
       }))}
       series={[
         {
           label: 'Sistem Kullanımı',
-          valueFormatter: (v: number | null) => (v ?? 0).toString(),
         },
       ]}
       xAxis={[{ label: 'Kullanıcı Sayısı' }]}

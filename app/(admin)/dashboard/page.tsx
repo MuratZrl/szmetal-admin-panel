@@ -46,9 +46,7 @@ export default function DashboardPage() {
 
   // ********************************************************************************
 
-  // useEffect hook'ları
   const fetchDashboardStats = async () => {
-
     // **********************************************************************
 
     // 1. Bu ay oluşturulan kullanıcılar
