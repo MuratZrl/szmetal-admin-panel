@@ -60,7 +60,14 @@ export default function BasicArea() {
     <LineChart
       height={300}
       xAxis={[{ data: data.map((c) => c.label), scaleType: 'band' }]}
-      series={[{ data: data.map((c) => c.count), area: true }]}
+      series={[
+        {
+          label: 'Yeni Kullanıcılar',
+          data: data.map((c) => c.count),
+          area: true,
+          showMark: false,
+        },
+      ]}
     />
   );
 }

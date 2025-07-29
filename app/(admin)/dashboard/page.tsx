@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 // ********************************************************************************
-import { Box, Grid, Card } from '@mui/material';
+import { Box, Grid, Card, Typography, Divider } from '@mui/material';
 // ********************************************************************************
 import StatCard from '../_components_/ui/cards/StatCard';
 // ********************************************************************************
@@ -11,7 +11,7 @@ import BasicBars from '../_components_/ui/charts/DashboardGroupedBarChart';
 // ********************************************************************************
 import SimpleCharts from '../_components_/ui/charts/DashboardBarChart';
 import MultiSeriesRadar from '../_components_/ui/charts/DashboardRadarChart';
-import ScatterDataset from '../_components_/ui/charts/DashboardScatterChart';
+import ScatterDataset from '../_components_/ui/charts/DashboardStacktedAresChart';
 // ********************************************************************************
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';
@@ -78,7 +78,7 @@ export default function DashboardPage() {
       .select('id, status, created_at')
       .eq('status', 'pending')
       .gte('created_at', startOfLastMonth.toISOString())
-      .lte('created_at', endOfLastMonth.toISOString());
+      .lte('created_at', endOfLastMonth.toISOString())
 
     const thisMonthActiveCount = thisMonthRequests?.length ?? 0;
     const lastMonthActiveCount = lastMonthRequests?.length ?? 0;
@@ -156,12 +156,35 @@ export default function DashboardPage() {
 
         <Grid size={{ xs: 12, sm: 6 }} >
           <Card sx={{ p: 2, borderRadius: 7 }} >
+
+            <Typography
+              variant='subtitle1'
+              fontWeight={600}
+              px={2}
+            >
+              Son 6 Ay Toplam Kullanıcı Grafiği
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
             <BasicArea />
+
           </Card>
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6 }} >
           <Card sx={{ p: 2, borderRadius: 7 }} >
+
+            <Typography
+              variant='subtitle1'
+              fontWeight={600}
+              px={2}
+            >
+              Son 6 Ay Kullanıcı Rolü Grafiği
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
             <BasicBars />
           </Card>
         </Grid>
@@ -175,18 +198,52 @@ export default function DashboardPage() {
 
         <Grid size={{ xs: 12, sm: 6, md: 4 }} >
           <Card sx={{ p: 2, borderRadius: 7 }} >
+
+            <Typography
+              variant='subtitle1'
+              fontWeight={600}
+              px={2}
+            >
+              Talep Durumu Grafiği
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
             <ScatterDataset />
+
           </Card>
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 4 }} >
           <Card sx={{ p: 2, borderRadius: 7 }} >
+
+            <Typography
+              variant='subtitle1'
+              fontWeight={600}
+              px={2}
+            >
+              Talep - Ülke Grafiği
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
             <MultiSeriesRadar />
           </Card>
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 4 }} >
           <Card sx={{ p: 2, borderRadius: 7 }} >
+
+            <Typography
+              variant='subtitle1'
+              fontWeight={600}
+              px={2}
+            >
+              Talep - Sistem Grafiği
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
             <SimpleCharts />
           </Card>
         </Grid>

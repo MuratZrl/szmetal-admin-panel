@@ -1,23 +1,19 @@
 // app/(admin)/products/[slug]/page.tsx
 
 'use client';
-
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-
+// ****************************************************************************************************
 import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-
+// ****************************************************************************************************
 import AddProductDialog from '../../_components_/ui/dialogs/AddProductDialog';
-
+import { DynamicRow } from '../../types/productsTypes';
+// ****************************************************************************************************
 import { deleteRow } from '../../../lib/CUD';
-
+// ****************************************************************************************************
 import { supabase } from '../../../lib/supabase/supabaseClient';
-
-type DynamicRow = {
-  id: string;
-  [key: string]: string | number | null; // diğer alanlar dinamik
-};
+// ****************************************************************************************************
 
 export default function ProductDetailPage() {
 
@@ -45,11 +41,11 @@ export default function ProductDetailPage() {
   const rowLimits: Record<string, number> = {
     'giyotin-sistemi': 14,
     'cam-balkon-sistemi': 10,
+    'giydirme-cephe-sistemi': 13,
+    'aluminyum-dograma-sistemi': 15,
+    'kupeste-sistemi': 5,
     'profil-sistemi': 20,
-    'sürme-sistem': 12,
-    'katlanir-sistem': 8,
-    'cephe-sistemi': 16,
-    'kapi-sistemi': 18,
+    'seramik-cephe-kaplama-sistemi': 17
   };
 
   const limit = rowLimits[slug]; // o slug için sınır varsa alır

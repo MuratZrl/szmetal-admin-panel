@@ -1,5 +1,7 @@
 // app/(admin)/types/addproductsTypes.ts
-export type FormValues = {
+
+// Giyotin Sistem İçin
+export type StaticFormValues = {
   id?: string; // 👈 düzenleme için gerekli
   profil_kodu: string;
   profil_adi: string;
@@ -11,7 +13,7 @@ export type AddProductDialogProps = {
   open: boolean;
   onClose: () => void;
   slug: string;
-  table: string,
+  table: string;
   onSuccess: () => void;
-  initialData?: FormValues | null; // 👈 yeni eklendi
+  initialData?: StaticFormValues | null; // 👈 yeni eklendi
 };
