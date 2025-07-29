@@ -52,6 +52,7 @@ export async function middleware(req: NextRequest) {
 
   // 🚫 Sadece admin'lere özel sayfalar
   const adminOnlyPaths = [
+    '/account',
     '/clients',
     '/dashboard',
     '/requests',
@@ -70,6 +71,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    '/account',
     '/clients',
     '/dashboard',
     '/requests/:path*',   // ✅ dinamik id dahil
