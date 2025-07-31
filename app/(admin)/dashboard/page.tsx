@@ -1,6 +1,6 @@
 // app/(admin)/dashboard/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 // ********************************************************************************
 import { Box, Grid, Card, Typography, Divider } from '@mui/material';
 // ********************************************************************************
@@ -27,11 +27,11 @@ export default function DashboardPage() {
 
   // ********************************************************************************
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
-  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0); // geçen ayın son günü
+  const startOfThisMonth = useMemo(() => new Date(now.getFullYear(), now.getMonth(), 1), [now]);
+  const startOfLastMonth = useMemo(() => new Date(now.getFullYear(), now.getMonth() - 1, 1), [now]);
+  const endOfLastMonth = useMemo(() => new Date(now.getFullYear(), now.getMonth(), 0), [now]);
 
   // ********************************************************************************
 
@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
   // ********************************************************************************
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     // **********************************************************************
 
     // 1. Bu ay oluşturulan kullanıcılar
@@ -118,14 +118,14 @@ export default function DashboardPage() {
     setUniqueSystems(uniqueThisMonth);
     setSystemChange(calcChange(uniqueThisMonth, uniqueLastMonth));
     setSystemTrend(uniqueThisMonth > uniqueLastMonth ? 'up' : uniqueThisMonth < uniqueLastMonth ? 'down' : undefined);
-  };
+  }, [startOfThisMonth, startOfLastMonth, endOfLastMonth, supabase]);
 
   // ********************************************************************************
 
   // useEffect hook'ları
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, [fetchDashboardStats]);
 
   // ********************************************************************************
 

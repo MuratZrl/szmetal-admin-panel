@@ -18,7 +18,7 @@ import { commonTextFieldProps } from '../../../_constants_/formstyles';
 
 import { useForm, Controller } from 'react-hook-form';
 
-import type { FormValues, AddProductDialogProps } from '../../../types/addproductsTypes';
+import type { StaticFormValues, AddProductDialogProps } from '../../../types/addproductsTypes';
 
 import { supabase } from '../../../../lib/supabase/supabaseClient';
 
@@ -41,7 +41,7 @@ export default function AddProductDialog({
     setValue,
     watch,
     formState: { errors, isValid }
-  } = useForm<FormValues>({
+  } = useForm<StaticFormValues>({
     mode: 'onChange',
     resolver: yupResolver(productDialogSchema),
     defaultValues: {
@@ -79,7 +79,7 @@ export default function AddProductDialog({
     setUploading(false);
   };
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: StaticFormValues) => {
     const payload = { ...data, system_slug: slug };
 
     let result;
