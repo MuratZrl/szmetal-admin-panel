@@ -36,9 +36,11 @@ const ParticlesBackground = () => {
       fpsLimit: 9999,
       pauseOnBlur: true,
       pauseOnOutsideViewport: true,
+      
       particles: {
+        
         number: {
-          value: 200,
+          value: 150,
           density: {
             enable: true,
             width: 1920,
@@ -52,16 +54,17 @@ const ParticlesBackground = () => {
           type: 'circle',
         },
         opacity: {
-          value: 0.75,
+          value: 0.85,
         },
         size: {
           value: 10,
         },
         move: {
           enable: true,
-          speed: 1.25,
+          speed: 0.95,
           direction: 'bottom',
-          straight: true,
+          random: true,
+          straight: false,
           outModes: {
             default: 'out',
           },
@@ -72,6 +75,24 @@ const ParticlesBackground = () => {
           speed: {
             angle: 45,
             move: 10,
+          },
+        },
+        twinkle: {
+          particles: {
+            enable: true,
+            frequency: 1,
+            opacity: 1,
+          },
+        },
+        shadow: {
+          enable: true,
+          color: {
+            value: '#ffffff',
+          },
+          blur: 5,
+          offset: {
+            x: 0,
+            y: 0,
           },
         },
         zIndex: {

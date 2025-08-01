@@ -14,13 +14,14 @@ type Props = {
 
 // Sabit gradient renkler (düz renk gibi ele alınacak)
 const gradients = [
-  '#ff411bff',
-  '#dd2443ff',
-  '#e73b7dff',
   '#514a9d',
   '#3271cfff',
   '#4bdbc3ff',
-  '#4bdb82ff', 
+  '#278b4dff', 
+  '#1c5230ff', 
+  '#171b19ff', 
+  '#397786ff', 
+  '#2b57aaff', 
 ];
 
 const AuthRightPanel = ({ children }: Props) => {

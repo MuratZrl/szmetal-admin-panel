@@ -8,6 +8,10 @@ const texts = [
   'Kullanıcı dostu arayüz',
   'Verilerinizi güvenle yönetin',
   'SZ Metal ile güçlü alt yapı',
+  'Gerçek zamanlı analiz ve raporlama',
+  'Her cihazda erişilebilir kontrol paneli',
+  'Hızlı, güvenilir ve esnek sistem mimarisi',
+  'İhtiyaçlarınıza özel çözümler',
 ];
 
 const MotionTypography = motion.create(Typography); // ✅ yeni ve doğru kullanım
@@ -21,7 +25,7 @@ const AuthLeftPanel = () => {
 
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % texts.length);
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -52,11 +56,11 @@ const AuthLeftPanel = () => {
       <AnimatePresence mode="wait">
         <MotionTypography
           key={texts[index]}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.6, ease: 'easeInOut' }}
-          variant="h2"
+          initial={{ opacity: 0, scale: 0.95, letterSpacing: '0.1em' }}
+          animate={{ opacity: 1, scale: 1, letterSpacing: '0' }}
+          exit={{ opacity: 0, scale: 1.05, letterSpacing: '0.05em' }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
+          variant="h3"
           textAlign="center"
           fontWeight={600}
           color="white"
