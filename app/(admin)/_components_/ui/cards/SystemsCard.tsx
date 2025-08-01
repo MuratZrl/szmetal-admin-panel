@@ -110,7 +110,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
         </Typography>
       </Box>
 
-      {/* Buttons */}
+      {/* Button */}
       <Box
         sx={{
           px: { xs: 2, sm: 2.5 },
@@ -118,35 +118,21 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
           gap: 1.5,
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: { xs: 'stretch', sm: 'center' },
+          width: '100%',
         }}
       >
-        <Button
-          disableRipple
-          variant="text"
-          color="primary"
-          size="small"
-          fullWidth={true}
-          sx={{
-            py: 1,
-            borderRadius: 10,
-            color: 'darkred',
-            textTransform: 'capitalize',
-          }}
-        >
-          {buttonLabels.details}
-        </Button>
 
         <Button
           variant="contained"
+          endIcon={<FlashOnIcon />}
+
           color="primary"
           size="small"
-          endIcon={<FlashOnIcon />}
           onClick={onRequestClick}
-          fullWidth={true}
           sx={{
-            px: 2,
+            px: 3,
             py: 1,
             borderRadius: 10,
             background: 'linear-gradient(90deg, red 0%, darkred 75%, darkred 100%)',
@@ -155,6 +141,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
         >
           {buttonLabels.request}
         </Button>
+
       </Box>
     </Card>
   );

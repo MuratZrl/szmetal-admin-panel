@@ -83,7 +83,8 @@ export default function RequestDetailPage() {
           users (
             username,
             email,
-            company
+            company,
+            country
           )
         `)
         .eq('id', id)
@@ -177,9 +178,15 @@ export default function RequestDetailPage() {
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography>
                   <strong>E-posta:</strong> {request.users?.email ?? '—'}
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography>
+                  <strong>Ülke:</strong> {request.users?.country ?? '—'}
                 </Typography>
               </Grid>
             </Grid>

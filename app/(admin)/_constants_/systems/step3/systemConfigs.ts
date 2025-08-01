@@ -1,10 +1,10 @@
 // app/_constants_/systems/step3/systemConfigs.ts
-
+// ****************************************************************************************************
+// Giyotin Sistemi İçin:
 import {
   giyotinGenelBilgiColumns,
   giyotinMalzemeColumns,
 } from '../system-columns/giyotin-sistemi';
-
 import {
   hesaplaCamMetraj,
   hesaplaKayarCamAdedi,
@@ -16,19 +16,19 @@ import {
   hesaplaVerilecekAdet,
   parseKesimOlcusu,
 } from '../../../_utils_/giyotin-formulas';
-
 import { SystemStep3Config } from '../../../types/systemTypes';
 import { GiyotinFormData } from '../../../types/systemTypes';
-
 // ****************************************************************************************************
-
+// ****************************************************************************************************
+// ****************************************************************************************************
 export const systemStep3Configs: Record<string, SystemStep3Config<GiyotinFormData>> = {
+  // ****************************************************************************************************
   'giyotin-sistemi': {
     summaryColumns: giyotinGenelBilgiColumns,
     materialColumns: giyotinMalzemeColumns,
     supabaseTable: 'system_profiles',
     supabaseFilterColumn: 'system_slug',
-
+    // ****************************************************************************************************
     summaryCalculator: (form, rows2) => {
       const adet = parseInt(form.sistem_adet || '0');
       const yukseklik = parseInt(form.sistem_yukseklik || '0');
@@ -51,7 +51,7 @@ export const systemStep3Configs: Record<string, SystemStep3Config<GiyotinFormDat
         },
       ];
     },
-
+    // ****************************************************************************************************
     materialCalculator: (form, profiles) => {
       const adet = parseInt(form.sistem_adet || '0');
       const yukseklik = parseInt(form.sistem_yukseklik || '0');
@@ -71,4 +71,6 @@ export const systemStep3Configs: Record<string, SystemStep3Config<GiyotinFormDat
       });
     },
   },
+  // ****************************************************************************************************
+  // Diğer sistemler...
 };

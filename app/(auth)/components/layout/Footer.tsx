@@ -1,7 +1,7 @@
 // app/(auth)/components/layout/Footer.tsx
 'use client';
 
-import { Box, Typography, Link } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 const Footer = () => {
   return (
@@ -20,14 +20,11 @@ const Footer = () => {
       }}
     >
 
-      <Typography variant="body2">
+      <Typography 
+        variant="body2" 
+        gutterBottom
+      >
         © {new Date().getFullYear()} SZ Metal. Tüm hakları saklıdır.
-      </Typography>
-
-      <Typography variant="caption" sx={{ display: 'block' }}>
-        <Link href="/privacy-policy" underline="hover" color="inherit">
-          Gizlilik Politikası
-        </Link>
       </Typography>
       
     </Box>

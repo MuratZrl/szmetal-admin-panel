@@ -31,7 +31,7 @@ const AuthLeftPanel = () => {
   return (
     <Box
       style={{
-        background: 'linear-gradient(135deg, #ffae00ff, #df7900)',
+        background: 'linear-gradient(135deg, #4e493eff, #4e493ec0)',
         width: '100%',
         height: '100%',
         display: 'flex',

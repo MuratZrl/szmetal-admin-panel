@@ -70,10 +70,17 @@ export default function Step2Page() {
 
   if (!formConfig) {
     return (
-      <Box py={2} textAlign="center">
-        <Typography variant="h3" color="error">
-          Çok Yakında...
+      <Box py={2} textAlign="center" >
+
+        <Typography 
+          variant="h4"
+
+          color="error"
+          fontWeight={600}
+        >
+          Geçersiz Sistem.
         </Typography>
+
         <Button
           variant="contained"
           onClick={() => router.push('/systems')}
@@ -81,6 +88,7 @@ export default function Step2Page() {
         >
           Geri Dön
         </Button>
+
       </Box>
     );
   }

@@ -21,6 +21,7 @@ export const systemForms: Record<string, SystemFormConfig> = {
       {
         name: 'description',
         label: 'Proje Adı',
+        placeholder: 'Örn: Kocaeli/Gebze',
         type: 'string',
         min: 1,
         required: true,

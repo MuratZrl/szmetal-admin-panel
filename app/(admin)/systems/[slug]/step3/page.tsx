@@ -89,7 +89,7 @@ export default function SummaryPage() {
     // Kullanıcının profil bilgilerini al
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
-      .select('username, email, company')
+      .select('username, email, company, country')
       .eq('id', user.id)
       .single();
 
