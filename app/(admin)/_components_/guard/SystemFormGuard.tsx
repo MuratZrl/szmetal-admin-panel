@@ -25,10 +25,10 @@ export default function FormGuard({ children }: Props) {
       const hasRequiredFields =
         parsed &&
         typeof parsed === 'object' &&
-        parsed.description &&
-        parsed.sistem_adet &&
-        parsed.sistem_yukseklik &&
-        parsed.sistem_genislik;
+        'description' in parsed &&
+        'sistem_adet' in parsed &&
+        'sistem_yukseklik' in parsed &&
+        'sistem_genislik' in parsed;
 
       if (!hasRequiredFields) {
         router.replace(`/systems/${slug}/step2`);
@@ -38,6 +38,7 @@ export default function FormGuard({ children }: Props) {
       // ✅ Tüm kontroller geçtiyse
       setIsValid(true);
     } catch (err) {
+      console.error('JSON parse hatası:', err);
       router.replace(`/systems/${slug}/step2`);
     }
   }, [router, slug]);

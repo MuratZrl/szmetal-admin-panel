@@ -39,7 +39,7 @@ const AuthRightPanel = ({ children }: Props) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundImage: 'linear-gradient(to right, red, darkred)',
+          backgroundImage: 'linear-gradient(to right, orangered, darkred)',
           px: 2,
         }}
       >

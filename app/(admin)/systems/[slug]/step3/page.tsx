@@ -53,12 +53,9 @@ export default function SummaryPage() {
   // ✅ Güvenli localStorage okuma
   const form = useMemo(() => {
     if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem('systemData');
-      return stored ? JSON.parse(stored) : null;
-    } catch (e) {
-      return null;
-    }
+
+    const stored = localStorage.getItem('systemData');
+    return stored ? JSON.parse(stored) : null;
   }, []);
 
   // ****************************************************************************************************

@@ -37,7 +37,7 @@ export default function CountrySystemBarChart() {
         return;
       }
 
-      const typedData = data as SupabaseRawRow[];
+      const typedData = (data as unknown) as SupabaseRawRow[];
 
       const cleanRows = typedData.map((row) => ({
         system_slug: row.system_slug,
@@ -99,8 +99,14 @@ export default function CountrySystemBarChart() {
         }))}
         height={300}
         margin={{ top: 20, bottom: 30, left: 50, right: 20 }}
-        yAxis={[{ label: 'Talep Sayısı', valueFormatter: (v) => `${v}` }]}
+        yAxis={[
+          {
+            label: 'Talep Sayısı',
+            valueFormatter: (v: number) => `${v}`,
+          },
+        ]}
       />
+
     </Box>
   );
 }

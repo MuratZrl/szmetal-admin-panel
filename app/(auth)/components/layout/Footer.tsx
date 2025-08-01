@@ -24,7 +24,7 @@ const Footer = () => {
         variant="body2" 
         gutterBottom
       >
-        © {new Date().getFullYear()} SZ Metal. Tüm hakları saklıdır.
+        © {new Date().getFullYear()} Alutem. Tüm hakları saklıdır.
       </Typography>
       
     </Box>

@@ -96,13 +96,8 @@ export default function Step2Page() {
   // ****************************************************************************************************
   
   const handleNext = () => {
-    try {
-      localStorage.setItem('systemData', JSON.stringify(form));
-      router.push(`/systems/${slug}/step3`);
-
-    } catch (error) {
-      alert('Veri kaydedilemedi. Tarayıcı ayarlarınızı kontrol ediniz.');
-    }
+    localStorage.setItem('systemData', JSON.stringify(form));
+    router.push(`/systems/${slug}/step3`);
   };
 
   // ****************************************************************************************************

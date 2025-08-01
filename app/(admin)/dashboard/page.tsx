@@ -47,75 +47,71 @@ export default function DashboardPage() {
   // ********************************************************************************
 
   const fetchDashboardStats = useCallback(async () => {
-    // **********************************************************************
+    // 1. Genel toplamlar
+    const { data: allUsers } = await supabase.from('users').select('id');
+    const { data: allRequests } = await supabase.from('requests').select('id').eq('status', 'pending');
+    const { data: allSystems } = await supabase.from('system_profiles').select('system_slug');
 
-    // 1. Bu ay oluşturulan kullanıcılar
+    setTotalUsers(allUsers?.length ?? 0);
+    setTotalRequests(allRequests?.length ?? 0);
+    setUniqueSystems(new Set(allSystems?.map(s => s.system_slug)).size);
+
+    // 2. Trend hesaplaması (aya göre)
     const { data: thisMonthUsers } = await supabase
       .from('users')
-      .select('id, created_at')
+      .select('id')
       .gte('created_at', startOfThisMonth.toISOString());
 
     const { data: lastMonthUsers } = await supabase
       .from('users')
-      .select('id, created_at')
+      .select('id')
       .gte('created_at', startOfLastMonth.toISOString())
       .lte('created_at', endOfLastMonth.toISOString());
 
     const thisMonthUserCount = thisMonthUsers?.length ?? 0;
     const lastMonthUserCount = lastMonthUsers?.length ?? 0;
 
-    // **********************************************************************
-
-    // 2. Aktif talepler (bu ay)
     const { data: thisMonthRequests } = await supabase
       .from('requests')
-      .select('id, status, created_at')
+      .select('id')
       .eq('status', 'pending')
       .gte('created_at', startOfThisMonth.toISOString());
 
     const { data: lastMonthRequests } = await supabase
       .from('requests')
-      .select('id, status, created_at')
+      .select('id')
       .eq('status', 'pending')
       .gte('created_at', startOfLastMonth.toISOString())
-      .lte('created_at', endOfLastMonth.toISOString())
+      .lte('created_at', endOfLastMonth.toISOString());
 
     const thisMonthActiveCount = thisMonthRequests?.length ?? 0;
     const lastMonthActiveCount = lastMonthRequests?.length ?? 0;
 
-    // **********************************************************************
-
-    // 3. Sistem slug sayısı (unique) bu ay ve geçen ay
     const { data: thisMonthSystems } = await supabase
       .from('system_profiles')
-      .select('system_slug, created_at')
+      .select('system_slug')
       .gte('created_at', startOfThisMonth.toISOString());
 
     const { data: lastMonthSystems } = await supabase
       .from('system_profiles')
-      .select('system_slug, created_at')
+      .select('system_slug')
       .gte('created_at', startOfLastMonth.toISOString())
       .lte('created_at', endOfLastMonth.toISOString());
 
     const uniqueThisMonth = new Set(thisMonthSystems?.map(s => s.system_slug)).size;
     const uniqueLastMonth = new Set(lastMonthSystems?.map(s => s.system_slug)).size;
 
-    // 🔁 Yüzde değişim hesapla
     const calcChange = (current: number, previous: number) => {
       if (previous === 0) return current > 0 ? 100 : 0;
       return Math.round(((current - previous) / previous) * 100);
     };
 
-    // ✅ Stateleri güncelle
-    setTotalUsers(thisMonthUserCount);
     setUserChange(calcChange(thisMonthUserCount, lastMonthUserCount));
     setUserTrend(thisMonthUserCount > lastMonthUserCount ? 'up' : thisMonthUserCount < lastMonthUserCount ? 'down' : undefined);
 
-    setTotalRequests(thisMonthActiveCount);
     setRequestChange(calcChange(thisMonthActiveCount, lastMonthActiveCount));
     setRequestTrend(thisMonthActiveCount > lastMonthActiveCount ? 'up' : thisMonthActiveCount < lastMonthActiveCount ? 'down' : undefined);
 
-    setUniqueSystems(uniqueThisMonth);
     setSystemChange(calcChange(uniqueThisMonth, uniqueLastMonth));
     setSystemTrend(uniqueThisMonth > uniqueLastMonth ? 'up' : uniqueThisMonth < uniqueLastMonth ? 'down' : undefined);
   }, [startOfThisMonth, startOfLastMonth, endOfLastMonth, supabase]);
@@ -204,7 +200,7 @@ export default function DashboardPage() {
               fontWeight={600}
               px={2}
             >
-              Talep Durumu Grafiği
+              Talep - Durum Grafiği
             </Typography>
 
             <Divider sx={{ my: 1 }} />

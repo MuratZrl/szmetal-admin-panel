@@ -26,12 +26,12 @@ const AuthLeftPanel = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (!mounted) return null; // ⛔ SSR'da DOM üretme
+  if (!mounted) return null;
 
   return (
     <Box
       style={{
-        background: 'linear-gradient(135deg, #4e493eff, #4e493ec0)',
+        background: 'linear-gradient(135deg, #292724ff, #4e493eb9)',
         width: '100%',
         height: '100%',
         display: 'flex',

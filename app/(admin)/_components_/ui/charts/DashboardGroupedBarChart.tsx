@@ -43,11 +43,11 @@ export default function BasicBars() {
       const colorPalette = ['darkred', 'purple'];
 
       const grouped = roles.map((role, i) => {
-        const data = monthData.map(({ start, end }) => {
+        const data = monthData.map(({ end }) => {
           return users?.filter((u) => {
             if (!u.created_at || !u.role) return false;
             const created = new Date(u.created_at);
-            return u.role === role && created >= start && created < end;
+            return u.role === role && created < end;
           }).length || 0;
         });
 
