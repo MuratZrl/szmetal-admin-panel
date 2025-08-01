@@ -1,7 +1,7 @@
 'use client';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Divider } from '@mui/material';
 
 import { giyotinGenelBilgiColumns, giyotinMalzemeColumns } from '../../_constants_/systems/system-columns/giyotin-sistemi';
 
@@ -38,6 +38,8 @@ export default function GiyotinTables({ summaryData, materialData }: Props) {
           },
         }}
       />
+
+      <Divider sx={{ my: 3 }} />
 
       <Typography variant="h6" mt={5} mb={1} px={1}>
         Malzeme Listesi

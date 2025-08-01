@@ -2,8 +2,9 @@
 
 import { SistemOzet } from './systemTypes';
 import { GiyotinProfilHesapli } from './systemTypes';
+
 // İleride diğer sistemler için de import edebilirsin:
-// import { KapiProfilHesapli } from '../systems/kapi-sistemi/types';
+// import { CamBalkonProfilHesapli } from '../systems/cam-balkon-sistemi/types';
 
 
 // ✅ Genel Request tipi (generic)
@@ -24,6 +25,7 @@ export type RequestRow<T = unknown> = {
     username: string;
     email: string;
     company: string;
+    country: string;
   };
 };
 
@@ -32,6 +34,6 @@ export type RequestRow<T = unknown> = {
 export type RequestRowUnion =
   | (RequestRow<GiyotinProfilHesapli> & { system_slug: 'giyotin-sistemi' })
 
-  // | (RequestRow<KapiProfilHesapli> & { system_slug: 'kapi-sistemi' })
+  // | (RequestRow<KapiProfilHesapli> & { system_slug: 'cam-balkon-sistemi' })
   // | Diğer sistemler buraya eklenebilir...
   ;

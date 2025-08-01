@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
 import { useParams, notFound } from 'next/navigation';
 
 import { Typography, CircularProgress, Box, Card, CardContent, Grid, Chip, Divider, Button } from '@mui/material';
@@ -212,7 +211,7 @@ export default function RequestDetailPage() {
                       width: '100%',
                       backgroundColor: 'green',
                       textTransform: 'capitalize',
-                      borderRadius: 0,
+                      borderRadius: 7,
                       '&:hover': {
                         backgroundColor: 'darkgreen',
                       },
@@ -233,7 +232,7 @@ export default function RequestDetailPage() {
                       width: '100%',
                       backgroundColor: 'orangered',
                       textTransform: 'capitalize',
-                      borderRadius: 0,
+                      borderRadius: 7,
                       '&:hover': {
                         backgroundColor: 'darkred',
                       },
