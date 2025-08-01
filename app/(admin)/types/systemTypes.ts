@@ -1,5 +1,3 @@
-// app/(admin)/types/systemTypes.ts
-
 // Supabase'den gelen ham profil
 export type GiyotinProfil = {
   profil_resmi: string;
@@ -15,7 +13,7 @@ export type GiyotinProfilHesapli = GiyotinProfil & {
   verilecek_adet: number;
 };
 
-// Özet tablo için
+// Özet tablo tipi
 export type SistemOzet = {
   id: number;
   sistem_metraj: string;
@@ -26,13 +24,43 @@ export type SistemOzet = {
   toplam_kg: string;
 };
 
-// Hesaplama fonksiyonları için tipler
-export type SummaryCalculator = (
-  form: Record<string, string>,
+// Ortak alanlar
+export type BaseFormData = {
+  description?: string;
+};
+
+// Sistem 1 – Giyotin Sistemi form tipi
+export type GiyotinFormData = BaseFormData & {
+  sistem_adet: string;
+  sistem_yukseklik: string;
+  sistem_genislik: string;
+};
+
+// Sistem 2 – Cam Balkon Sistemi form tipi (örnek)
+export type CamBalkonFormData = BaseFormData & {
+  panel_sayisi: string;
+  kanat_genislik: string;
+};
+
+// ✅ Hesaplama fonksiyonu tipleri (generic)
+export type SummaryCalculator<TForm extends BaseFormData = BaseFormData> = (
+  form: TForm,
   rows2: GiyotinProfilHesapli[]
 ) => SistemOzet[];
 
-export type MaterialCalculator = (
-  form: Record<string, string>,
+export type MaterialCalculator<TForm extends BaseFormData = BaseFormData> = (
+  form: TForm,
   profiles: GiyotinProfil[]
 ) => GiyotinProfilHesapli[];
+
+// ✅ systemStep3Config tipi (generic)
+import { GridColDef } from '@mui/x-data-grid';
+
+export type SystemStep3Config<TForm extends BaseFormData> = {
+  summaryColumns: GridColDef[];
+  materialColumns: GridColDef[];
+  supabaseTable: string;
+  supabaseFilterColumn: string;
+  summaryCalculator: SummaryCalculator<TForm>;
+  materialCalculator: MaterialCalculator<TForm>;
+};

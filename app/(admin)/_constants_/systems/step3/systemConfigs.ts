@@ -1,7 +1,5 @@
 // app/_constants_/systems/step3/systemConfigs.ts
 
-import { GridColDef } from '@mui/x-data-grid';
-
 import {
   giyotinGenelBilgiColumns,
   giyotinMalzemeColumns,
@@ -19,22 +17,12 @@ import {
   parseKesimOlcusu,
 } from '../../../_utils_/giyotin-formulas';
 
-import { 
-  SummaryCalculator,
-  MaterialCalculator,
- } from '../../../types/systemTypes';
+import { SystemStep3Config } from '../../../types/systemTypes';
+import { GiyotinFormData } from '../../../types/systemTypes';
 
+// ****************************************************************************************************
 
-export type SystemStep3Config = {
-  summaryColumns: GridColDef[];
-  materialColumns: GridColDef[];
-  supabaseTable: string;
-  supabaseFilterColumn: string;
-  summaryCalculator: SummaryCalculator;
-  materialCalculator: MaterialCalculator;
-};
-
-export const systemStep3Configs: Record<string, SystemStep3Config> = {
+export const systemStep3Configs: Record<string, SystemStep3Config<GiyotinFormData>> = {
   'giyotin-sistemi': {
     summaryColumns: giyotinGenelBilgiColumns,
     materialColumns: giyotinMalzemeColumns,

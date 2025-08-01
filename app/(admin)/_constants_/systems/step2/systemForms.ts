@@ -56,24 +56,5 @@ export const systemForms: Record<string, SystemFormConfig> = {
     ],
   },
 
-  // ileride başka sistemler:
-  'cam-balkon-sistemi': {
-    fields: [
-      {
-        name: 'panel_sayisi',
-        label: 'Panel Sayısı',
-        type: 'number',
-        min: 1,
-        required: true,
-      },
-      {
-        name: 'kanat_genislik',
-        label: 'Kanat Genişliği',
-        type: 'number',
-        min: 1000,
-        max: 3000,
-        required: true,
-      },
-    ],
-  },
+  // İleride başka sistemler...
 };
