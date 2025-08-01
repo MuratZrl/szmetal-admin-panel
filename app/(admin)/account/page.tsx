@@ -103,7 +103,7 @@ export default function AccountPage() {
 
 
   const roleLabelMap: Record<string, string> = {
-    Admin: 'Yönetici',
+    Admin: 'Admin',
     Moderator: 'Moderatör',
     User: 'Kullanıcı',
   };

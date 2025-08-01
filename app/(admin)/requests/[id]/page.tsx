@@ -124,7 +124,7 @@ export default function RequestDetailPage() {
           }}
         >
           <CardContent>
-            <Grid container spacing={2}>
+            <Grid container spacing={1.25}>
               <Grid size={{ xs: 12, sm: 6 }} >
                 <Typography>
                   <strong>Durum:</strong>{' '}
@@ -158,10 +158,7 @@ export default function RequestDetailPage() {
 
               <Grid size={{ xs: 12, sm: 6 }} >
                 <Typography>
-                  <strong>Oluşturulma Tarihi:</strong>{' '}
-                  {new Date(request.created_at).toLocaleString('tr-TR', {
-                    timeZone: 'Europe/Istanbul',
-                  })}
+                  <strong>Proje Adı:</strong> {request?.description ?? '—'}
                 </Typography>
               </Grid>
 
@@ -177,17 +174,27 @@ export default function RequestDetailPage() {
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }} >
                 <Typography>
                   <strong>E-posta:</strong> {request.users?.email ?? '—'}
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }} >
                 <Typography>
                   <strong>Ülke:</strong> {request.users?.country ?? '—'}
                 </Typography>
               </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }} >
+                <Typography>
+                  <strong>Oluşturulma Tarihi:</strong>{' '}
+                  {new Date(request.created_at).toLocaleString('tr-TR', {
+                    timeZone: 'Europe/Istanbul',
+                  })}
+                </Typography>
+              </Grid>
+
             </Grid>
 
             <Divider sx={{ my: 2 }} />

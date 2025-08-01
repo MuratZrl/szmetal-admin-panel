@@ -1,7 +1,7 @@
 // app/metadata.ts
 import type { Metadata } from 'next';
 
-const baseUrl = 'https://alutem.com'; // kendi domain'inle değiştir
+const baseUrl = 'https://szmetal-admin-panel.com'; // kendi domain'inle değiştir
 
 export const metadata: Metadata = {
   title: {
@@ -9,16 +9,14 @@ export const metadata: Metadata = {
     template: '%s | SZ Metal',
   },
   description: 'SZ Metal için modern, hızlı ve güvenli bir yönetim paneli.',
-  applicationName: 'SZ Metal Panel',
+  applicationName: 'SZ Metal Admin Panel',
   generator: 'Next.js 15 + App Router',
   keywords: [
     'SZ Metal',
-    'Admin Panel',
-    'Yönetim Sistemi',
-    'Next.js',
-    'Supabase',
-    'MUI',
-    'Tailwind',
+    'Alutem',
+    'SZ Metal Sipariş',
+    'Alutem Sipariş',
+    'SZ Metal Panel',
     'Web Paneli',
   ],
   authors: [
@@ -57,7 +55,7 @@ export const metadata: Metadata = {
 
   manifest: '/site.webmanifest',
 
-  category: 'technology',
+  category: 'structure and aluminium',
 
   robots: {
     index: true,

@@ -20,6 +20,7 @@ export type RequestRow<T = unknown> = {
   created_at: string;
 
   status: 'pending' | 'approved' | 'rejected';
+  description: string;
 
   users?: {
     username: string;
