@@ -18,4 +18,12 @@ export const accountSchema = yup.object({
     .optional()
     .nullable()
     .transform((value, originalValue) => originalValue.trim() === '' ? null : value),
+
+  country: yup
+    .string()
+    .optional()
+    .nullable()
+    .transform((value, originalValue) =>
+      originalValue?.trim() === '' ? null : value
+    ),
 });

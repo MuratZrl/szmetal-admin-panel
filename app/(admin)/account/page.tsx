@@ -19,6 +19,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { accountSchema } from '../_constants_/form-validations/accountSchemas';
 import { passwordSchema } from '../_constants_/form-validations/passwordSchemas';
 
+import { countries } from '../_constants_/_data_/countries';
+
 import {
   Avatar,
   Box,
@@ -52,6 +54,7 @@ type UserData = {
   role: string;
   phone: string | null;
   company: string | null;
+  country: string | null;
 };
 
 export default function AccountPage() {
@@ -314,6 +317,7 @@ export default function AccountPage() {
         username: data.username,
         phone: data.phone,
         company: data.company,
+        country: data.country, // EKLENDİ
       })
       .eq('id', user.id);
 
@@ -351,6 +355,7 @@ export default function AccountPage() {
         username: userData.username ?? '',
         phone: userData.phone ?? '',
         company: userData.company ?? '',
+        country: userData?.country ?? '', // EKLENDİ
       });
     }
   }, [userData, reset]);
@@ -370,7 +375,7 @@ export default function AccountPage() {
 
       const { data, error } = await supabase
         .from('users')
-        .select('image, username, email, role, phone, company')
+        .select('image, username, email, role, phone, company, country')
         .eq('id', user.id)
         .single();
 
@@ -541,10 +546,11 @@ if (!userData) {
                 </Box>
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }} >
                 <TextField
                   fullWidth
                   label="Telefon"
+
                   {...register('phone')}
                   helperText={errors.phone?.message}
                   error={!!errors.phone}
@@ -557,22 +563,30 @@ if (!userData) {
                 <TextField
                   fullWidth
                   label="Şirket"
+
                   {...register('company')}
                   {...commonTextFieldProps}
                 />
               </Grid>
 
-              <FormControl fullWidth >
-                <TextField
-                  select
-                  label="Ülke"
-                  {...commonTextFieldProps}
-                >
-                  <MenuItem value={10}>Türkiye</MenuItem>
-                  <MenuItem value={20}>İngiltere</MenuItem>
-                  <MenuItem value={30}>Amerika Birleşik Devletleri</MenuItem>
-                </TextField>
-              </FormControl>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth>
+                  <TextField
+                    select
+                    label="Ülke"
+                    defaultValue={null}
+
+                    {...register('country')}
+                    {...commonTextFieldProps}
+                  >
+                    {countries.map((country) => (
+                      <MenuItem key={country.code} value={country.name}>
+                        {country.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </FormControl>
+              </Grid>
 
             </Grid>
 
