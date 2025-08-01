@@ -29,8 +29,7 @@ export default function Step2Page() {
 
   const router = useRouter();
   const params = useParams(); // slug erişimi için
-  const slug = params.slug as string;
-
+  const slug = params.slug as keyof typeof systemForms;
   const formConfig = systemForms[slug];
 
   const [form, setForm] = useState(
@@ -50,157 +49,161 @@ export default function Step2Page() {
   }, [adet, yukseklik, genislik]);
 
   const handleNext = () => {
-    // Burada form doğrulama yapabilirsin
-    // Geçici olarak localStorage ile veri saklayalım (örnek amaçlı)
-    localStorage.setItem('systemData', JSON.stringify(form));
-    router.push(`/systems/${slug}/step3`);
+    try {
+      localStorage.setItem('systemData', JSON.stringify(form));
+      router.push(`/systems/${slug}/step3`);
+    } catch (error) {
+      alert('Veri kaydedilemedi. Tarayıcı ayarlarınızı kontrol ediniz.');
+    }
   };
 
   const handleBack = () => {
     router.push('/systems');
   };
 
-  return (
-    <Box sx={{ py: { xs: 2, md: 4 } }}>
+  if (!formConfig) {
+    return (
+      <Box sx={{ py: { xs: 2, md: 4 } }}>
 
-        {/* Stepper */}
-        <Box mb={{ xs: 2, sm: 3 }}>
-          <StepperComponent activeStep={1} />
-        </Box>
-
-        {/* Form Card */}
-        <Card
-          sx={{
-            px: { xs: 2, sm: 3 },
-            py: { xs: 2, sm: 3 },
-            maxWidth: 700,
-            mx: 'auto',
-            boxShadow: 2,
-            borderRadius: 7,
-          }}
-        >
-          <Typography variant="h6" px={1} gutterBottom>
-            Lütfen Sistem Bilgilerini Giriniz
-          </Typography>
-
-          <Grid container spacing={2}>
-            {formConfig?.fields.map((field) => {
-              const value = form[field.name] || '';
-              const error =
-                field.required &&
-                ((field.min !== undefined && Number(value) < field.min) ||
-                  (field.max !== undefined && Number(value) > field.max));
-
-              return (
-                <Grid key={field.name} size={{ xs: 12 }} >
-                  <TextField
-                    fullWidth
-                    label={field.label}
-                    type={field.type || 'text'}
-                    value={value}
-                    placeholder={field.placeholder}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, [field.name]: e.target.value }))
-                    }
-                    error={error}
-                    helperText={error ? field.helperText : ''}
-                    {...commonTextFieldProps}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-
-          {/* Butonlar */}
-          <Box
-            mt={4}
-            px={1}
-            display="flex"
-            flexDirection={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            gap={2}
-          >
-            <Button
-              variant="outlined"
-              onClick={handleBack}
-              sx={{
-                px: 4,
-                py: 1,
-                color: 'darkred',
-                borderColor: 'darkred',
-                borderRadius: 7,
-                textTransform: 'capitalize',
-                width: { xs: '100%', sm: 'auto' },
-              }}
-            >
-              Geri
-            </Button>
-
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={!isValidForm}
-              sx={{
-                px: 4,
-                py: 1,
-                borderRadius: 7,
-                backgroundColor: 'darkred',
-                textTransform: 'capitalize',
-                '&.Mui-disabled': {
-                  backgroundColor: '#ffd2b3',
-                  color: '#fff',
-                },
-                width: { xs: '100%', sm: 'auto' },
-              }}
-            >
-              İleri
-            </Button>
+          {/* Stepper */}
+          <Box mb={{ xs: 2, sm: 3 }}>
+            <StepperComponent activeStep={1} />
           </Box>
-        </Card>
 
-        {/* Uyarı Bilgileri */}
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          py={4}
-          px={{ xs: 2, sm: 3 }}
-        >
-          <Box sx={{ maxWidth: 700 }}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              textAlign={{ xs: 'center', sm: 'left' }}
-            >
-              Dikkat Edilmesi Gerekenler
+          {/* Form Card */}
+          <Card
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: { xs: 2, sm: 3 },
+              maxWidth: 700,
+              mx: 'auto',
+              boxShadow: 2,
+              borderRadius: 7,
+            }}
+          >
+            <Typography variant="h6" px={1} gutterBottom>
+              Lütfen Sistem Bilgilerini Giriniz
             </Typography>
 
-            <List dense>
-              <ListItem>
-                <ListItemIcon>
-                  <ArrowRightIcon />
-                </ListItemIcon>
-                <ListItemText primary="Sistem adedi pozitif bir sayı olmalıdır." />
-              </ListItem>
+            <Grid container spacing={2}>
+              {formConfig?.fields?.map((field) => {
+                if (!field.name) return null;
+                const value = form[field.name] || '';
+                const error =
+                  field.required &&
+                  ((field.min !== undefined && Number(value) < field.min) ||
+                    (field.max !== undefined && Number(value) > field.max));
 
-              <ListItem>
-                <ListItemIcon>
-                  <ArrowRightIcon />
-                </ListItemIcon>
-                <ListItemText primary="Yükseklik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
-              </ListItem>
+                return (
+                  <Grid key={field.name} size={{ xs: 12 }} >
+                    <TextField
+                      fullWidth
+                      label={field.label}
+                      type={field.type || 'text'}
+                      value={value}
+                      placeholder={field.placeholder}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, [field.name]: e.target.value }))
+                      }
+                      error={error}
+                      helperText={error ? field.helperText : ''}
+                      {...commonTextFieldProps}
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
 
-              <ListItem>
-                <ListItemIcon>
-                  <ArrowRightIcon />
-                </ListItemIcon>
-                <ListItemText primary="Genişlik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
-              </ListItem>
-            </List>
+            {/* Butonlar */}
+            <Box
+              mt={4}
+              px={1}
+              display="flex"
+              flexDirection={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              gap={2}
+            >
+              <Button
+                variant="outlined"
+                onClick={handleBack}
+                sx={{
+                  px: 4,
+                  py: 1,
+                  color: 'darkred',
+                  borderColor: 'darkred',
+                  borderRadius: 7,
+                  textTransform: 'capitalize',
+                  width: { xs: '100%', sm: 'auto' },
+                }}
+              >
+                Geri
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                disabled={!isValidForm}
+                sx={{
+                  px: 4,
+                  py: 1,
+                  borderRadius: 7,
+                  backgroundColor: 'darkred',
+                  textTransform: 'capitalize',
+                  '&.Mui-disabled': {
+                    backgroundColor: '#ffd2b3',
+                    color: '#fff',
+                  },
+                  width: { xs: '100%', sm: 'auto' },
+                }}
+              >
+                İleri
+              </Button>
+            </Box>
+          </Card>
+
+          {/* Uyarı Bilgileri */}
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            py={4}
+            px={{ xs: 2, sm: 3 }}
+          >
+            <Box sx={{ maxWidth: 700 }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                textAlign={{ xs: 'center', sm: 'left' }}
+              >
+                Dikkat Edilmesi Gerekenler
+              </Typography>
+
+              <List dense>
+                <ListItem>
+                  <ListItemIcon>
+                    <ArrowRightIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Sistem adedi pozitif bir sayı olmalıdır." />
+                </ListItem>
+
+                <ListItem>
+                  <ListItemIcon>
+                    <ArrowRightIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Yükseklik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
+                </ListItem>
+
+                <ListItem>
+                  <ListItemIcon>
+                    <ArrowRightIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Genişlik değeri 1500 mm ile 4000 mm arasında olmalıdır." />
+                </ListItem>
+              </List>
+            </Box>
           </Box>
-        </Box>
 
-    </Box>
-  );
-
+      </Box>
+    );
+  }
 }

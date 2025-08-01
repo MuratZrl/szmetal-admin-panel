@@ -80,6 +80,7 @@ export default function AccountPage() {
     handleSubmit,
     formState: { errors, isValid, isDirty },
     reset,
+    watch,
   } = useForm<FormValues>({
       resolver: yupResolver(accountSchema) as Resolver<FormValues>, // 👈 daha tip güvenli cast
       mode: 'onChange',
@@ -101,26 +102,44 @@ export default function AccountPage() {
   });
 
 
-  const getRoleColor = (role: string | null) => {
-    switch (role) {
-      case 'Admin':
-        return {
-          background: 'linear-gradient(90deg, purple, orangered)',
-          color: 'white',
-          fontWeight: 'bold',
-        };
-      case 'Moderator':
-        return {
-          backgroundColor: 'purple',
-          color: 'white',
-        };
-      default:
-        return {
-          backgroundColor: 'orangered',
-          color: 'white',
-        };
-    }
+  const roleLabelMap: Record<string, string> = {
+    Admin: 'Yönetici',
+    Moderator: 'Moderatör',
+    User: 'Kullanıcı',
   };
+
+  const getRoleColor = (role: string | null) => {
+    const label = roleLabelMap[role ?? ''] ?? 'Kullanıcı'; // Türkçe label
+    const baseStyle = {
+      color: 'white',
+      fontWeight: 'bold',
+    };
+
+    const style = (() => {
+      switch (role) {
+        case 'Admin':
+          return {
+            background: 'linear-gradient(90deg, purple, orangered)',
+            ...baseStyle,
+          };
+        case 'Moderator':
+          return {
+            backgroundColor: 'darkred',
+            ...baseStyle,
+          };
+        case 'User':
+        default:
+          return {
+            backgroundColor: 'orangered',
+            ...baseStyle,
+          };
+      }
+    })();
+
+    return { label, style };
+  };
+
+  const { label, style } = getRoleColor(userData?.role ?? null);
 
   const showSnackbar = (msg: string, type: 'success' | 'error' | 'info') => {
     setSnackbarMessage(msg);
@@ -355,7 +374,7 @@ export default function AccountPage() {
         username: userData.username ?? '',
         phone: userData.phone ?? '',
         company: userData.company ?? '',
-        country: userData?.country ?? '', // EKLENDİ
+        country: userData.country ?? '', // EKLENDİ
       });
     }
   }, [userData, reset]);
@@ -424,7 +443,15 @@ if (!userData) {
       sx={{ py: 2 }}
     >
 
-        <Paper elevation={1} sx={{ mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, p: 3, borderRadius: 7 }} >
+        <Paper elevation={1} 
+          sx={{ 
+            maxWidth: 1200, // ✅ sabit genişlik sınırı
+            mx: 'auto', 
+            px: { xs: 2, sm: 3, md: 4 }, 
+            p: 3, 
+            borderRadius: 7 
+          }} 
+        >
 
           {/* Profil */}
           <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} mb={3}>
@@ -449,14 +476,13 @@ if (!userData) {
                 </Typography>
 
                 <Chip
-                  label={userData?.role ?? '...'}
+                  label={label} // ✅ artık Türkçe olarak görünür: Yönetici, Kullanıcı, Moderatör
                   size="small"
                   sx={{
                     mt: 1,
-                    fontWeight: 'bold',
                     boxShadow: 1,
                     pointerEvents: 'none',
-                    ...getRoleColor(userData?.role ?? null), // 👈 renkler ayrı fonksiyonla
+                    ...style, // ✅ sadece stil buraya verilir
                   }}
                 />
 
@@ -573,12 +599,15 @@ if (!userData) {
                 <FormControl fullWidth>
                   <TextField
                     select
-                    label="Ülke"
-                    defaultValue={null}
+                    label="Ülke Seçimi"
+                    value={watch('country') || ''} // ✅ Burası çok kritik
 
                     {...register('country')}
                     {...commonTextFieldProps}
                   >
+                    <MenuItem value="">
+                      <em>Ülke Seçimi</em>
+                    </MenuItem>
                     {countries.map((country) => (
                       <MenuItem key={country.code} value={country.name}>
                         {country.name}
@@ -595,7 +624,7 @@ if (!userData) {
                 type='submit'
                 variant="contained"
                 disabled={!isDirty || !isValid} // 👈 Değişiklik yapılmadıysa veya form geçersizse
-                sx={{ px: 2, py: 1, backgroundColor: 'orangered', borderRadius: 10, textTransform: 'capitalize' }}
+                sx={{ px: 3.25, py: 1, backgroundColor: 'orangered', borderRadius: 10, textTransform: 'capitalize' }}
               >
                 Kaydet
               </Button>

@@ -57,7 +57,7 @@ export const systemForms: Record<string, SystemFormConfig> = {
   },
 
   // ileride başka sistemler:
-  'katlanir-sistem': {
+  'cam-balkon-sistemi': {
     fields: [
       {
         name: 'panel_sayisi',
