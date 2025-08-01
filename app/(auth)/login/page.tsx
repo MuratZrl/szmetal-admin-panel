@@ -10,7 +10,6 @@ import {
   TextField,
   Typography,
   Box,
-  Card,
   Button,
   Snackbar,
   Alert,
@@ -18,6 +17,8 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+import AuthCard from '../components/layout/AuthCard';
 
 import { commonTextFieldProps } from '../_constants_/formstyles';
 
@@ -134,20 +135,7 @@ export default function LoginPage() {
       }}
     >
 
-      <Card
-        sx={{
-          width: '100%',
-          p: 4,
-          borderRadius: 10,
-          boxShadow: 10,
-
-          // 🧊 Glassmorphism stilleri:
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)', // Safari desteği
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-        }}
-      >
+      <AuthCard>
 
         {/* ******************************************************************************** */}
 
@@ -177,10 +165,6 @@ export default function LoginPage() {
             {...commonTextFieldProps}
             InputProps={{
               ...commonTextFieldProps.InputProps,
-              sx: {
-                ...commonTextFieldProps.InputProps?.sx,
-                borderRadius: 5, // özel stilinle birleştirildi
-              },
             }}
           />
 
@@ -190,16 +174,20 @@ export default function LoginPage() {
             type={showPassword ? 'text' : 'password'}
             value={form.password}
             onChange={handleChange}
+
+            variant="outlined"
             fullWidth
             required
+
             // Ortak propsları ekle
             {...commonTextFieldProps}
+
             // InputProps içindeki override'ları özel olarak birleştir
             InputProps={{
               ...commonTextFieldProps.InputProps,
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={handleClickShowPassword} edge="end" sx={{ color: 'white' }}>
+                  <IconButton onClick={handleClickShowPassword} edge="end" sx={{ color: 'white' }} >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -271,7 +259,7 @@ export default function LoginPage() {
 
         </Box>
 
-      </Card>
+      </AuthCard>
 
       <Snackbar
         open={snackbarOpen}

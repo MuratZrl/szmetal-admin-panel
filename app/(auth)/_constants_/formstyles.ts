@@ -4,6 +4,7 @@ export const commonTextFieldProps: Partial<TextFieldProps> = {
   variant: 'outlined',
   InputProps: {
     sx: {
+      color: 'white',
       '& .MuiOutlinedInput-notchedOutline': {
         borderColor: 'white',
         borderRadius: 5,

@@ -7,11 +7,14 @@ import {
   TextField,
   Typography,
   Box,
-  Card,
   Button,
   Snackbar,
   Alert,
 } from '@mui/material';
+
+import AuthCard from '../components/layout/AuthCard';
+
+import { commonTextFieldProps } from '../_constants_/formstyles';
 
 import { supabase } from '../../lib/supabase/supabaseClient';
 
@@ -70,36 +73,58 @@ export default function ForgotPasswordPage() {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        width: '70%',
+        width: '75%',
         mx: 'auto',
       }}
     >
-      <Card sx={{ width: '100%', p: 3, borderRadius: 0 }}>
-        <Typography variant='h5' fontWeight={600} mb={1}>
+      <AuthCard>
+
+        <Typography 
+          variant='h5' 
+
+          color='white'
+          fontWeight={600} 
+          mb={1}
+        >
           Kendi E-posta Adresinizi Giriniz
         </Typography>
 
-        <Typography mb={3}>
+        <Typography 
+          variant='subtitle1'
+        
+          color='white'
+          mb={3}
+        >
           E-posta adresinize sıfırlama linki gönderebilmek için lütfen e-posta bilginizi giriniz.
         </Typography>
 
         <Box display="flex" flexDirection="column" width='100%' gap={2}>
           <TextField
+            fullWidth
             label="E-posta"
             type="email"
             variant="outlined"
             onChange={(e) => setEmail(e.target.value)}
-            fullWidth
             required
+
+            {...commonTextFieldProps}
+            InputProps={{
+              ...commonTextFieldProps.InputProps,
+              sx: {
+                ...commonTextFieldProps.InputProps?.sx,
+                borderRadius: 5, // özel stilinle birleştirildi
+              },
+            }}
           />
 
           <Button
-            type="submit"
-            variant="contained"
-            color="primary"
             fullWidth
+            type="submit"
+            variant="outlined"
+            color="primary"
+
             onClick={handleResetPassword}
-            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 0, backgroundColor: 'orangered' }}
+            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
           >
             {loading ? 'Gönderiliyor...' : 'Sıfırlama Bağlantısı Gönder'}
           </Button>
@@ -108,7 +133,7 @@ export default function ForgotPasswordPage() {
         <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
           <Typography textAlign="right" mt={3}>
             <Link href="/login" passHref>
-              <Typography component="span" color="primary" fontStyle='italic' fontWeight={500}
+              <Typography component="span" color="white" fontStyle='italic' fontWeight={500}
                 sx={{
                   cursor: 'pointer',
                   textDecoration: 'none',
@@ -122,10 +147,16 @@ export default function ForgotPasswordPage() {
             </Link>
           </Typography>
 
-          <Typography textAlign="right" mt={3}>
+          <Typography 
+            textAlign="right" 
+
+            color='lightblue'
+            mt={3}
+          >
             Hesabınız yoksa{' '}
+
             <Link href="/register" passHref>
-              <Typography component="span" color="primary" fontStyle='italic' fontWeight={500}
+              <Typography component="span" color="white" fontStyle='italic' fontWeight={500}
                 sx={{
                   cursor: 'pointer',
                   textDecoration: 'none',
@@ -137,9 +168,11 @@ export default function ForgotPasswordPage() {
                 kayıt olun
               </Typography>
             </Link>
+
           </Typography>
         </Box>
-      </Card>
+
+      </AuthCard>
 
       <Snackbar
         open={snackbarOpen}

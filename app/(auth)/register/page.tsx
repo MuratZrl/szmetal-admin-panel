@@ -9,7 +9,6 @@ import {
   TextField,
   Typography,
   Box,
-  Card,
   Button,
   Snackbar,
   Alert,
@@ -18,6 +17,10 @@ import {
 } from '@mui/material';
 
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+import AuthCard from '../components/layout/AuthCard';
+
+import { commonTextFieldProps } from '../_constants_/formstyles';
 
 import { supabase } from '../../lib/supabase/supabaseClient';
 
@@ -149,17 +152,23 @@ export default function RegisterPage() {
         display: 'flex',
         flexDirection: 'column',
 
-        width: '70%',
+        width: '75%',
 
         mx: 'auto',
       }}
     >
 
-      <Card sx={{ width: '100%', p: 3, borderRadius: 0 }}>
+      <AuthCard>
 
         {/* ******************************************************************************** */}
 
-        <Typography variant='h5' fontWeight={600} mb={3} >
+        <Typography 
+          variant='h5' 
+
+          color='white'
+          fontWeight={600} 
+          mb={3} 
+        >
           Hemen Kayıt Olun
         </Typography>
 
@@ -178,6 +187,19 @@ export default function RegisterPage() {
             variant='outlined'
             fullWidth
             required
+
+              InputProps={{
+    sx: {
+      color: 'white', // input yazı rengi
+      '& input': {
+        color: 'white', // bazen direkt input alanına özel gerekebilir
+      },
+    },
+  }}
+
+            {...commonTextFieldProps}
+
+            
           />
                     
           <TextField
@@ -191,6 +213,8 @@ export default function RegisterPage() {
             variant="outlined"
             fullWidth
             required
+
+            {...commonTextFieldProps}
           />
 
           <TextField
@@ -202,14 +226,23 @@ export default function RegisterPage() {
             variant="outlined"
             fullWidth
             required
+
+            // Ortak propsları ekle
+            {...commonTextFieldProps}
+
+            // InputProps içindeki override'ları özel olarak birleştir
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={handleClickShowPassword} edge="end">
+                  <IconButton onClick={handleClickShowPassword} edge="end" sx={{ color: 'white' }} >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
+              sx: {
+                ...commonTextFieldProps.InputProps?.sx,
+                borderRadius: 5, // özel stilinle birleştirildi
+              },
             }}
             inputProps={{
               onPaste: (e) => e.preventDefault(), // Yapıştırmayı engeller
@@ -227,14 +260,23 @@ export default function RegisterPage() {
             variant="outlined"
             fullWidth
             required
+
+            // Ortak propsları ekle
+            {...commonTextFieldProps}
+
+            // InputProps içindeki override'ları özel olarak birleştir
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={handleClickShowConfirmPassword} edge="end">
+                  <IconButton onClick={handleClickShowConfirmPassword} edge="end" sx={{ color: 'white' }}>
                     {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
+              sx: {
+                ...commonTextFieldProps.InputProps?.sx,
+                borderRadius: 5, // özel stilinle birleştirildi
+              },
             }}
             inputProps={{
               onPaste: (e) => e.preventDefault(), // Yapıştırmayı engeller
@@ -245,11 +287,11 @@ export default function RegisterPage() {
 
           <Button
             type="submit"
-            variant="contained"
+            variant="outlined"
             color="primary"
             fullWidth
             disabled={loading}
-            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 0, backgroundColor: 'orangered' }}
+            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
           >
             {loading ? 'Kayıt olunuyor...' : 'Kayıt Ol'}
           </Button>
@@ -260,10 +302,17 @@ export default function RegisterPage() {
 
         <Box display={'flex'} justifyContent={'end'} alignItems={'center'}>
 
-          <Typography textAlign="right" mt={3}>
+          <Typography 
+
+            textAlign="right" 
+
+            color='lightblue'
+            mt={3}
+          >
             Hesabınız varsa{' '}
+
             <Link href="/login" passHref>
-              <Typography component="span" color="primary" fontStyle='italic' fontWeight={500}                 
+              <Typography component="span" color="white" fontStyle='italic' fontWeight={500}                 
                 sx={{
                   cursor: 'pointer',
                   textDecoration: 'none',
@@ -279,7 +328,7 @@ export default function RegisterPage() {
 
         </Box>
 
-      </Card>
+      </AuthCard>
 
       <Snackbar
         open={snackbarOpen}

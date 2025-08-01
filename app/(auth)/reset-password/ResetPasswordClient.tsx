@@ -13,7 +13,6 @@ import {
   TextField,
   Typography,
   Box,
-  Card,
   Button,
   Snackbar,
   Alert,
@@ -21,6 +20,8 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+import AuthCard from '../components/layout/AuthCard';
 
 import { supabase } from '../../lib/supabase/supabaseClient';
 
@@ -132,11 +133,12 @@ export default function ResetPasswordPage() {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            width: '70%',
+            width: '75%',
             mx: 'auto',
           }}
         >
-          <Card sx={{ width: '100%', p: 3, borderRadius: 0 }}>
+          <AuthCard>
+
             <Typography variant='h5' fontWeight={600} mb={3}>
               Şifrenizi Sıfırlayın
             </Typography>
@@ -236,7 +238,8 @@ export default function ResetPasswordPage() {
                 </Link>
               </Typography>
             </Box>
-          </Card>
+
+          </AuthCard>
 
           <Snackbar
             open={snackbarOpen}
@@ -270,21 +273,31 @@ export default function ResetPasswordPage() {
             404
           </Typography>
 
-          <Typography variant="h5" fontWeight={600} mb={1}>
+          <Typography 
+            variant="h5" 
+
+            color="white" 
+            fontWeight={600} 
+            mb={1}
+          >
             Bağlantı geçersiz veya süresi dolmuş.
           </Typography>
 
-          <Typography variant="body1" color="text.primary" mb={3}>
+          <Typography 
+            variant="subtitle1" 
+
+            color="white" 
+            mb={3}
+          >
             Şifre sıfırlama bağlantınız geçersiz olabilir, süresi dolmuş olabilir ya da eksik parametre içeriyor olabilir.
           </Typography>
 
           <Button
-            variant="contained"
-            color="primary"
-            href="/forgot-password"
-            sx={{ textTransform: 'capitalize', backgroundColor: 'orangered', borderRadius: 0, px: 4, py: 1.5 }}
+            variant="outlined"
+            href="/"
+            sx={{ px: 3.25, py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
           >
-            Yeni bağlantı iste
+            Ana Sayfa
           </Button>
         </Box>
       
