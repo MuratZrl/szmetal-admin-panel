@@ -1,37 +1,35 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { RadarChart } from '@mui/x-charts/RadarChart';
-import { CircularProgress, Box, Typography } from '@mui/material';
-
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { BarChart } from '@mui/x-charts/BarChart';
 import { supabase } from '../../../../lib/supabase/supabaseClient';
 
-type RawRow = {
+type SupabaseRawRow = {
   system_slug: string;
-  users: {
-    country: string;
-  };
+  users: { country: string | null };
 };
 
-type SupabaseRow = {
-  system_slug: string;
-  users: Array<{ country: string | null }>;
+type DatasetRow = {
+  country: string;
+  [system_slug: string]: number | string;
 };
 
-export default function CountrySystemRadarChart() {
+export default function CountrySystemBarChart() {
+  const [dataset, setDataset] = useState<DatasetRow[]>([]);
+  const [seriesKeys, setSeriesKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState<string[]>([]);
-  const [series, setSeries] = useState<
-    { label: string; data: number[] }[]
-  >([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-
       const { data, error } = await supabase
         .from('requests')
-        .select('system_slug, users ( country )')
+        .select(`
+          system_slug,
+          users:users (
+            country
+          )
+        `);
 
       if (error || !data) {
         console.error('Veri alınamadı:', error?.message);
@@ -39,45 +37,34 @@ export default function CountrySystemRadarChart() {
         return;
       }
 
-      const rawData = data as RawRow[];
+      const typedData = data as SupabaseRawRow[];
 
-      // 🔢 Benzersiz sistem slug'ları
-      const uniqueSystems = Array.from(
-        new Set(rawData.map((row) => row.system_slug))
-      );
+      const cleanRows = typedData.map((row) => ({
+        system_slug: row.system_slug,
+        country: row.users?.country ?? 'Bilinmiyor',
+      }));
 
-      // 🔢 { country: { system_slug: count } }
       const grouped: Record<string, Record<string, number>> = {};
+      const systemSet = new Set<string>();
 
-      rawData.forEach((row) => {
-        const country = row.users?.country || 'Bilinmiyor';
-        const system = row.system_slug;
-
-        if (!grouped[country]) {
-          grouped[country] = {};
-        }
-
-        if (!grouped[country][system]) {
-          grouped[country][system] = 1;
-        } else {
-          grouped[country][system]++;
-        }
+      cleanRows.forEach(({ country, system_slug }) => {
+        systemSet.add(system_slug);
+        if (!grouped[country]) grouped[country] = {};
+        grouped[country][system_slug] = (grouped[country][system_slug] || 0) + 1;
       });
 
-      // 🔁 Series formatına dönüştür
-      const seriesData = Object.entries(grouped).map(
-        ([country, systems]) => ({
-          label: country,
-          data: uniqueSystems.map((s) => systems[s] || 0),
-        })
-      );
+      const systemKeys = Array.from(systemSet);
 
-      const systemLabels = uniqueSystems.map((slug) =>
-        slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
-      );
+      const finalDataset: DatasetRow[] = Object.entries(grouped).map(([country, systems]) => {
+        const row: DatasetRow = { country };
+        systemKeys.forEach((key) => {
+          row[key] = systems[key] || 0;
+        });
+        return row;
+      });
 
-      setMetrics(systemLabels);
-      setSeries(seriesData);
+      setSeriesKeys(systemKeys);
+      setDataset(finalDataset);
       setLoading(false);
     };
 
@@ -92,7 +79,7 @@ export default function CountrySystemRadarChart() {
     );
   }
 
-  if (!series.length) {
+  if (!dataset.length) {
     return (
       <Typography color="text.secondary" textAlign="center" py={4}>
         Gösterilecek veri bulunamadı.
@@ -101,19 +88,18 @@ export default function CountrySystemRadarChart() {
   }
 
   return (
-    <Box mt={4}>
-      <Typography variant="h6" gutterBottom>
-        Ülkeye Göre Sistem Talepleri
-      </Typography>
+    <Box style={{ width: '100%' }} >
 
-      <RadarChart
-        height={360}
-        series={series}
-        radar={{
-          max: Math.max(...series.flatMap((s) => s.data)) + 1,
-          metrics,
-        }}
-        margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
+      <BarChart
+        dataset={dataset}
+        xAxis={[{ scaleType: 'band', dataKey: 'country' }]}
+        series={seriesKeys.map((key) => ({
+          dataKey: key,
+          label: key.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        }))}
+        height={300}
+        margin={{ top: 20, bottom: 30, left: 50, right: 20 }}
+        yAxis={[{ label: 'Talep Sayısı', valueFormatter: (v) => `${v}` }]}
       />
     </Box>
   );

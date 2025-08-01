@@ -11,7 +11,7 @@ import BasicBars from '../_components_/ui/charts/DashboardGroupedBarChart';
 // ********************************************************************************
 import SimpleCharts from '../_components_/ui/charts/DashboardBarChart';
 import MultiSeriesRadar from '../_components_/ui/charts/DashboardRadarChart';
-import ScatterDataset from '../_components_/ui/charts/DashboardStacktedAresChart';
+import DashboardStackedAreaChart from '../_components_/ui/charts/DashboardStacktedAreaChart';
 // ********************************************************************************
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';
@@ -209,7 +209,7 @@ export default function DashboardPage() {
 
             <Divider sx={{ my: 1 }} />
 
-            <ScatterDataset />
+            <DashboardStackedAreaChart />
 
           </Card>
         </Grid>

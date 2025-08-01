@@ -15,7 +15,7 @@ type StatusStats = {
   rejected: number;
 };
 
-export default function DashboardStatusAreaChart() {
+export default function DashboardStackedAreaChart() {
   const [dataset, setDataset] = useState<StatusStats[]>([]);
 
   useEffect(() => {
@@ -57,8 +57,6 @@ export default function DashboardStatusAreaChart() {
 
     fetchData();
   }, []);
-
-
 
   return (
     <Box style={{ width: '100%' }}>
