@@ -1,63 +1,118 @@
-import Image from 'next/image';
-import { ReactNode } from 'react';
-import { Paper, Box } from '@mui/material';
+'use client';
+
+import { ReactNode, useEffect } from 'react';
+import { Box, Paper } from '@mui/material';
+import { motion, useAnimation } from 'framer-motion';
 import Footer from './Footer';
+import Image from 'next/image';
+
+import ParticlesBackground from '../ui/ParticlesBackground';
 
 type Props = {
   children: ReactNode;
 };
 
-const AuthRightPanel = ({ children }: Props) => {
-  return (
-    <Box sx={{ position: 'relative', width: '100%', height: '100vh' }}>
+// Sabit gradient renkler (düz renk gibi ele alınacak)
+const gradients = [
+  '#ff411bff',
+  '#dd2443ff',
+  '#e73b7dff',
+  '#514a9d',
+  '#3271cfff',
+  '#4bdbc3ff',
+  '#4bdb82ff', 
+];
 
-      {/* Logo - Sağ üst köşe */}
+const AuthRightPanel = ({ children }: Props) => {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    const loopGradient = async () => {
+      while (true) {
+        for (let i = 0; i < gradients.length; i++) {
+          const next = gradients[(i + 1) % gradients.length];
+          await controls.start({
+            background: `linear-gradient(145deg, ${gradients[i]}, ${next})`,
+            transition: { duration: 7, ease: 'easeInOut' },
+          });
+        }
+      }
+    };
+
+    loopGradient();
+  }, [controls]);
+
+  return (
+    <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
+      
+      {/* Arka plan - framer motion ile */}
+      <motion.div
+        animate={controls}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(135deg, ${gradients[0]}, ${gradients[1]})`,
+          backgroundSize: '400% 400%',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Saydam blur layer */}
+      <Paper
+        square
+        sx={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          zIndex: 1,
+          backgroundColor: 'rgba(255,255,255,0.05)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: 2,
+        }}
+      >
+
+        <ParticlesBackground />
+
+        <Box sx={{ width: '100%', maxWidth: 700 }}>{children}</Box>
+      </Paper>
+
+      {/* Logo */}
       <Box
         sx={{
           position: 'absolute',
           top: 16,
           right: 16,
-          zIndex: 15,
-          height: 40, // sabit ölçü
+          zIndex: 2,
+          height: 40,
+          width: 120,
         }}
       >
         <Image
           src="/szmetal-logo.png"
           alt="SZ Metal Logo"
           fill
-          style={{ objectFit: 'cover' }}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"     
+          style={{ objectFit: 'contain' }}
         />
       </Box>
 
-      {/* Ana içerik alanı */}
-      <Paper
-        square
-        sx={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundImage: 'linear-gradient(to right, orangered, darkred)',
-          px: 2,
-        }}
-      >
-        <Box sx={{ width: '100%' }}>{children}</Box>
-      </Paper>
-
-      {/* Footer - Sayfanın en altına sabitlenmiş */}
+      {/* Footer */}
       <Box
         sx={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           width: '100%',
+          zIndex: 2,
         }}
       >
         <Footer />
       </Box>
-
     </Box>
   );
 };
