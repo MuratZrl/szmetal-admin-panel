@@ -21,7 +21,7 @@ const AuthLeftPanel = () => {
 
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % texts.length);
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -31,27 +31,40 @@ const AuthLeftPanel = () => {
   return (
     <Box
       style={{
-        background: 'linear-gradient(135deg, #292724ff, #4e493eb9)',
+        position: 'relative', // ✅
+        backgroundImage: `
+          linear-gradient(135deg, #292724ff, #3f3a31b9),
+          url('/left-panel-background.jpg')
+        `,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+
         width: '100%',
         height: '100%',
+
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1rem',
+
       }}
     >
       <AnimatePresence mode="wait">
         <MotionTypography
           key={texts[index]}
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -40 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
           variant="h2"
           textAlign="center"
           fontWeight={600}
           color="white"
-          sx={{ textShadow: '2px 2px 15px rgba(0, 0, 0, 0.25)' }}
+          sx={{
+            textShadow: '2px 2px 15px rgba(0, 0, 0, 0.25)',
+            position: 'absolute', // 👈 önemli!
+            width: '100%', // içerik kaymasın
+          }}
         >
           {texts[index]}
         </MotionTypography>

@@ -19,6 +19,8 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
+import { commonTextFieldProps } from '../_constants_/formstyles';
+
 import { supabase } from '../../lib/supabase/supabaseClient';
 
 export default function LoginPage() {
@@ -126,17 +128,37 @@ export default function LoginPage() {
         display: 'flex',
         flexDirection: 'column',
 
-        width: '70%',
+        width: '75%',
 
         mx: 'auto',
       }}
     >
 
-      <Card sx={{ width: '100%', p: 3, borderRadius: 0, boxShadow: 10 }}>
+      <Card
+        sx={{
+          width: '100%',
+          p: 4,
+          borderRadius: 10,
+          boxShadow: 10,
+
+          // 🧊 Glassmorphism stilleri:
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)', // Safari desteği
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+        }}
+      >
 
         {/* ******************************************************************************** */}
 
-        <Typography variant='h5' fontWeight={600} mb={3} >
+        <Typography 
+          variant='h5' 
+          
+          color='white'
+          fontWeight={600}
+          mb={2}
+          gutterBottom
+        >
           Giriş Yapın
         </Typography>
 
@@ -146,32 +168,38 @@ export default function LoginPage() {
 
           <TextField
             label="E-posta"
-            name="email" // 👈 Gerekli
+            name="email"
             type="email"
-            variant="outlined"
-
             value={form.email}
             onChange={handleChange}
-
             fullWidth
             required
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+            {...commonTextFieldProps}
+            InputProps={{
+              ...commonTextFieldProps.InputProps,
+              sx: {
+                ...commonTextFieldProps.InputProps?.sx,
+                borderRadius: 5, // özel stilinle birleştirildi
+              },
+            }}
           />
 
           <TextField
             label="Şifre"
             name="password"
-            type={showPassword ? 'text' : 'password'} // 👈 toggle
-            variant="outlined"
+            type={showPassword ? 'text' : 'password'}
             value={form.password}
             onChange={handleChange}
             fullWidth
             required
+            // Ortak propsları ekle
+            {...commonTextFieldProps}
+            // InputProps içindeki override'ları özel olarak birleştir
             InputProps={{
-              sx: { borderRadius: 0 }, // 👈 buraya eklendi
+              ...commonTextFieldProps.InputProps,
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={handleClickShowPassword} edge="end">
+                  <IconButton onClick={handleClickShowPassword} edge="end" sx={{ color: 'white' }}>
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -181,11 +209,11 @@ export default function LoginPage() {
 
           <Button
             type="submit"
-            variant="contained"
+            variant="outlined"
             color="primary"
             fullWidth
             disabled={loading}
-            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 0, backgroundColor: 'orangered' }}
+            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
           >
             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </Button>
@@ -199,7 +227,7 @@ export default function LoginPage() {
             <Link href="/forgot-password" passHref>
               <Typography
                 component="span"
-                color="primary"
+                color="white"
                 fontStyle="italic"
                 fontWeight={500}
                 sx={{
@@ -215,12 +243,17 @@ export default function LoginPage() {
             </Link>
           </Typography>
 
-          <Typography textAlign="right" mt={3}>
+          <Typography 
+            textAlign="right" 
+
+            color='lightblue'
+            mt={3}
+          >
             Hesabınız yoksa{' '}
             <Link href="/register" passHref>
               <Typography
                 component="span"
-                color="primary"
+                color="white"
                 fontStyle="italic"
                 fontWeight={500}
                 sx={{

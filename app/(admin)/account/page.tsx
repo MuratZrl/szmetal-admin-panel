@@ -86,7 +86,6 @@ export default function AccountPage() {
       mode: 'onChange',
     });
 
-
   const {
     register: passwordRegister,
     handleSubmit: handlePasswordSubmit,
