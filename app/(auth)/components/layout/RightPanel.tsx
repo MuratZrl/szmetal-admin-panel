@@ -15,32 +15,30 @@ type Props = {
 // Sabit gradient renkler (düz renk gibi ele alınacak)
 const gradients = [
   '#514a9d',
-  '#3271cfff',
-  '#4bdbc3ff',
-  '#278b4dff', 
-  '#1c5230ff', 
-  '#171b19ff', 
-  '#397786ff', 
-  '#2b57aaff', 
+  '#186decff',
+  '#3af0d1ff',
+  '#2adb89ff', 
+  '#f0d125ff', 
+  '#f1831bff', 
+  '#f13b1bff', 
+  '#911bf1ff', 
 ];
 
 const AuthRightPanel = ({ children }: Props) => {
   const controls = useAnimation();
 
   useEffect(() => {
-    const loopGradient = async () => {
-      while (true) {
-        for (let i = 0; i < gradients.length; i++) {
-          const next = gradients[(i + 1) % gradients.length];
-          await controls.start({
-            background: `linear-gradient(145deg, ${gradients[i]}, ${next})`,
-            transition: { duration: 7, ease: 'easeInOut' },
-          });
-        }
-      }
-    };
+    let index = 0;
+    const interval = setInterval(() => {
+      const next = gradients[(index + 1) % gradients.length];
+      controls.start({
+        background: `linear-gradient(145deg, ${gradients[index]}, ${next})`,
+        transition: { duration: 7, ease: 'easeInOut' },
+      });
+      index = (index + 1) % gradients.length;
+    }, 1000);
 
-    loopGradient();
+    return () => clearInterval(interval);
   }, [controls]);
 
   return (

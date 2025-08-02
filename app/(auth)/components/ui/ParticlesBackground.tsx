@@ -40,7 +40,7 @@ const ParticlesBackground = () => {
       particles: {
         
         number: {
-          value: 150,
+          value: 1000,
           density: {
             enable: true,
             width: 1920,
@@ -54,15 +54,15 @@ const ParticlesBackground = () => {
           type: 'circle',
         },
         opacity: {
-          value: 0.85,
+          value: 0.25,
         },
         size: {
-          value: 10,
+          value: 3,
         },
         move: {
           enable: true,
           speed: 0.95,
-          direction: 'bottom',
+          direction: 'top-left',
           random: true,
           straight: false,
           outModes: {
@@ -89,7 +89,7 @@ const ParticlesBackground = () => {
           color: {
             value: '#ffffff',
           },
-          blur: 5,
+          blur: 25,
           offset: {
             x: 0,
             y: 0,
@@ -97,8 +97,8 @@ const ParticlesBackground = () => {
         },
         zIndex: {
           value: {
-            min: 0,
-            max: 100,
+            min: 35,
+            max: 150,
           },
         },
       },
