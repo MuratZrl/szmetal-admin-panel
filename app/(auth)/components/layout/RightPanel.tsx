@@ -28,17 +28,19 @@ const AuthRightPanel = ({ children }: Props) => {
   const controls = useAnimation();
 
   useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      const next = gradients[(index + 1) % gradients.length];
-      controls.start({
-        background: `linear-gradient(145deg, ${gradients[index]}, ${next})`,
-        transition: { duration: 7, ease: 'easeInOut' },
-      });
-      index = (index + 1) % gradients.length;
-    }, 1000);
+    const loopGradient = async () => {
+      while (true) {
+        for (let i = 0; i < gradients.length; i++) {
+          const next = gradients[(i + 1) % gradients.length];
+          await controls.start({
+            background: `linear-gradient(145deg, ${gradients[i]}, ${next})`, // ✅ backtick kullanıldı
+            transition: { duration: 7, ease: 'easeInOut' },
+          });
+        }
+      }
+    };
 
-    return () => clearInterval(interval);
+    loopGradient(); // ✅ animasyonu başlat
   }, [controls]);
 
   return (
