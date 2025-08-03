@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: 'SZ Metal Panel',
     template: '%s | SZ Metal',
   },
-  description: 'SZ Metal için modern, hızlı ve güvenli bir yönetim paneli.',
+  description: 'A fully customizable and responsive admin panel developed for SZ Metal.',
   applicationName: 'SZ Metal Admin Panel',
   generator: 'Next.js 15 + App Router',
   keywords: [
