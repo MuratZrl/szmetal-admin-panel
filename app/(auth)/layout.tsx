@@ -10,7 +10,7 @@ import AuthRightPanel from './components/layout/RightPanel';
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', color: 'text.primary' }}>
+    <Box sx={{ minHeight: '100vh' }} >
       
       <Grid container sx={{ height: '100vh' }} >
 

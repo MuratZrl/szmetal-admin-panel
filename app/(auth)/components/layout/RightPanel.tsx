@@ -44,7 +44,7 @@ const AuthRightPanel = ({ children }: Props) => {
   }, [controls]);
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }} >
       
       {/* Arka plan - framer motion ile */}
       <motion.div
