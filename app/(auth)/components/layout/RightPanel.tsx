@@ -32,6 +32,7 @@ const AuthRightPanel = ({ children }: Props) => {
       while (true) {
         for (let i = 0; i < gradients.length; i++) {
           const next = gradients[(i + 1) % gradients.length];
+          
           await controls.start({
             background: `linear-gradient(145deg, ${gradients[i]}, ${next})`, // ✅ backtick kullanıldı
             transition: { duration: 7, ease: 'easeInOut' },

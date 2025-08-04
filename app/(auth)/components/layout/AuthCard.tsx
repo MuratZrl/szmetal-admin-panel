@@ -1,4 +1,4 @@
-// app/components/AuthCard.tsx
+// app/(auth)/layout/AuthCard.tsx
 'use client';
 
 import { Card, CardProps } from '@mui/material';
