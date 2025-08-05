@@ -1,6 +1,4 @@
 // app/(admin)/_constants_/product-columns/cam-balkon-sistemi.tsx
-'use client';
-
 import Image from 'next/image';
 
 import { GridColDef } from '@mui/x-data-grid';

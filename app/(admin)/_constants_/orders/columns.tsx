@@ -1,4 +1,5 @@
 // app/(admin)/notifications/_constants_/columns.ts
+'use server'
 
 import { GridColDef } from '@mui/x-data-grid';
 import { Chip } from '@mui/material';

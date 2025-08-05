@@ -1,3 +1,6 @@
+// app/(admin)/layout.tsx
+'use client';
+
 import React from 'react';
 import Sidebar from './_components_/layout/Sidebar';
 import Breadcrumb from './_components_/layout/Breadcrumb';

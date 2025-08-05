@@ -1,5 +1,4 @@
 // app/(admin)/_constants_/product-columns/giyotin-sistemi.tsx
-'use client';
 
 import Image from 'next/image';
 

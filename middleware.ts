@@ -56,6 +56,7 @@ export async function middleware(req: NextRequest) {
     '/requests',
     '/clients',
     '/products',
+    '/categories',
     '/admin',
   ]
 
@@ -77,6 +78,7 @@ export const config = {
     '/clients',
     '/products/:path*',   // ✅ dinamik slug dahil
     '/orders/:path*',   // ✅ dinamik slug dahil
+    '/categories/:path*',
     '/admin/:path*',
     
     '/auth/:path*', // 👈 bunu ekledik
