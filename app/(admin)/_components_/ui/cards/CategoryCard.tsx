@@ -1,76 +1,47 @@
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
+import Link from 'next/link';
 
-import { Card, CardActionArea, CardContent, Typography, Box } from '@mui/material';
-import { motion } from 'framer-motion';
+import { FC } from 'react';
+import { Card, CardMedia, CardContent, Typography, Button, Box } from '@mui/material';
 
-export type CategoryCardProps = {
+type Props = {
+  image: string;
   title: string;
   description: string;
-  imageUrl?: string;
-  icon?: React.ReactNode;
-  onClick?: () => void;
+  buttonText: string;
+  slug: string;
 };
 
-const MotionCard = motion(Card);
+const CategoryCard: FC<Props> = ({ image, title, description, buttonText, slug }) => (
+  <Card className="h-full flex flex-col justify-between">
+<Box className="overflow-hidden">
+  <CardMedia
+    component="img"
+    height="140"
+    image={image}
+    alt={title}
+    className="transition-transform duration-300 hover:scale-105"
+  />
+</Box>    <CardContent className="flex flex-col flex-grow justify-between">
+      <Typography variant="h6">{title}</Typography>
+      <Typography variant="body2" color="text.secondary">
+        {description}
+      </Typography>
+      <Box className="flex justify-end mt-4">
+        <Button
+          variant="contained"
+          component={Link}
+          href={`/categories/${slug}`}
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ title, imageUrl, icon, onClick }) => {
-  return (
-    <MotionCard
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ type: 'spring', stiffness: 250, damping: 15 }}
-      elevation={0}
-      sx={{
-        borderRadius: 7,
-        minHeight: 180,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        bgcolor: 'rgba(255, 255, 255, 0.15)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.2)',
-        color: '#fff',
-      }}
-    >
-      <CardActionArea onClick={onClick} sx={{ height: '100%', p: 2 }}>
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          height="100%"
-          textAlign="center"
+          draggable={false}
+          sx={{ px: 2.75, backgroundColor: 'orangered', borderRadius: 7, textTransform: 'capitalize' }}
         >
-          
-          {/* İkon veya görsel */}
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={title}
-              width={64}
-              height={64}
-              className="mb-3 object-contain"
-            />
-          ) : (
-            icon && <Box className="mb-3" sx={{ fontSize: 48, color: '#fff' }}>{icon}</Box>
-          )}
-
-          {/* Başlık */}
-          <CardContent sx={{ p: 0 }}>
-            <Typography variant="h6" fontWeight={600} sx={{ color: 'gray' }}>
-              {title}
-            </Typography>
-          </CardContent>
-
-        </Box>
-      </CardActionArea>
-    </MotionCard>
-  );
-};
+          {buttonText}
+        </Button>
+      </Box>
+    </CardContent>
+  </Card>
+);
 
 export default CategoryCard;

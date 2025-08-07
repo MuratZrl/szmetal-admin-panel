@@ -1,22 +1,33 @@
-// app/(admin)/categories/page.tsx
-'use client';
+'use server'
 
-import React from 'react';
-import Grid from '@mui/material/Grid';
+import { Grid } from '@mui/material';
 
 import CategoryCard from '../_components_/ui/cards/CategoryCard';
-import { categoryData } from '../_constants_/categories/data';
 
-export default function CategoriesPage() {
+import { supabase } from '../../lib/supabase/supabaseClient';
+
+export default async function CategoriesPage() {
+  // Supabase üzerinden kategorileri çek
+  const { data: categories, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Kategori verisi alınamadı:', error.message);
+    return <p>Kategoriler yüklenemedi.</p>;
+  }
+
   return (
     <Grid container spacing={2} p={2} >
-      {categoryData.map((cat, index) => (
-        <Grid size={{ xs: 12, sm: 6, md: 2, }} key={index}>
+      {categories?.map((category) => (
+        <Grid key={category.id} size={{ xs: 12, sm: 6, md: 3 }} >
           <CategoryCard
-            title={cat.title}
-            icon={cat.icon}
-            imageUrl={cat.imageUrl}
-            onClick={() => console.log(cat.title)}
+            image={category.image}
+            title={category.title}
+            description={category.description}
+            buttonText="Görüntüle"
+            slug={category.slug} // 👈 Yeni ekledik
           />
         </Grid>
       ))}
