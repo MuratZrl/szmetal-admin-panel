@@ -14,11 +14,11 @@ type Props = {
 };
 
 const CategoryCard: FC<Props> = ({ image, title, description, buttonText, slug }) => (
-  <Card className="h-full flex flex-col justify-between" 
-    sx={{ borderRadius: 7}}
+  <Card className="flex flex-col justify-between" 
+    sx={{ borderRadius: 7 }}
   >
 
-    <Box className="overflow-hidden aspect-[16/9]">
+    <Box className="overflow-hidden aspect-[16/9]" >
       <CardMedia
         component="img"
         image={image}
@@ -27,7 +27,7 @@ const CategoryCard: FC<Props> = ({ image, title, description, buttonText, slug }
       />
     </Box>
 
-    <CardContent className="flex flex-col flex-grow justify-between">
+    <CardContent className="flex flex-col justify-between">
 
       <Typography 
         variant="h6"

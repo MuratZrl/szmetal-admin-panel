@@ -155,7 +155,7 @@ export default function NewSubCategoryForm() {
                 Dosya Seç
               </Button>
               {selectedFileName && (
-                <Typography variant="body2" sx={{ ml: 2, display: 'inline' }}>
+                <Typography variant="body2" sx={{ ml: 2, display: 'inline' }} >
                   {selectedFileName}
                 </Typography>
               )}
