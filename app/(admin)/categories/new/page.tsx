@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { Box, Button, Card, Stack, Typography, TextField } from '@mui/material';
+import { Box, Button, Card, Stack, Typography, TextField, Snackbar, Alert } from '@mui/material';
 import { useForm } from 'react-hook-form';
 
 import { commonTextFieldProps } from '../../_constants_/formstyles';
@@ -32,7 +32,9 @@ export default function NewCategoryForm() {
     formState: { isSubmitting },
   } = useForm<FormValues>();
 
-    const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   const onSubmit = async (data: FormValues) => {
     const file = data.image[0];
@@ -68,8 +70,13 @@ export default function NewCategoryForm() {
       return;
     }
 
-    // Başarılıysa yönlendir
-    window.location.href = '/categories';
+    // ✅ Başarılıysa snackbar göster
+    setOpenSnackbar(true);
+
+    // ✅ 0.5 saniye sonra yönlendir
+    setTimeout(() => {
+      window.location.href = '/categories';
+    }, 500);
   };
 
   return (
@@ -162,6 +169,16 @@ export default function NewCategoryForm() {
         </Stack>
       </Card>
 
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          Kategori başarıyla eklendi!
+        </Alert>
+      </Snackbar>
 
     </Box>
   );

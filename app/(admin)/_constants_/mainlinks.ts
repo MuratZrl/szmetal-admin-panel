@@ -26,7 +26,7 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Clients', labelTr: 'Müşteriler', href: '/clients', icon: People },
   { label: 'Products', labelTr: 'Ürünler', href: '/products', icon: Inventory },
   { label: 'Orders', labelTr: 'Siparişler', href: '/orders', icon: ShoppingBasket },
-  { label: 'Categories', labelTr: 'Categoriler', href: '/categories', icon: Category },
+  { label: 'Categories', labelTr: 'Kategoriler', href: '/categories', icon: Category },
   { label: 'Logout', labelTr: 'Çıkış Yap', href: '/login', icon: Logout },
 ];
 
