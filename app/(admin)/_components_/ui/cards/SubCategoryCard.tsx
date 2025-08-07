@@ -33,9 +33,19 @@ const SubCategoryCard: FC<Props> = ({ image, title, description, buttonText, cat
 
     <CardContent className="flex flex-col flex-grow justify-between">
 
-      <Typography variant="h6">{title}</Typography>
+      <Typography 
+        variant="h6"
 
-      <Typography variant="body2" color="text.secondary">
+        fontWeight={500}
+      >
+        {title}
+      </Typography>
+
+      <Typography 
+        variant="body2" 
+        
+        color="text.secondary"
+      >
         {description}
       </Typography>
 

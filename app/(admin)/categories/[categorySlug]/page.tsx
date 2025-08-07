@@ -1,7 +1,7 @@
 // app/(admin)/categories/[categorySlug]/page.tsx
 'use server'
 
-import { Grid } from '@mui/material';
+import { Box, Button, Grid } from '@mui/material';
 
 import SubCategoryCard from '../../_components_/ui/cards/SubCategoryCard';
 
@@ -37,19 +37,37 @@ export default async function SubCategoriesPage(ctx: { params: { categorySlug: s
   }
 
   return (
-    <Grid container spacing={2} p={2}>
-      {subcategories?.map((subcategory) => (
-        <Grid key={subcategory.id} size={{ xs: 12, sm: 6, md: 3 }} >
-          <SubCategoryCard
-            image={subcategory.image}
-            title={subcategory.title}
-            description={subcategory.description}
-            buttonText="Görüntüle"
-            slug={subcategory.slug}
-            categorySlug={categorySlug} // 👈 SubCategoryCard bileşenine geçiyoruz
-          />
-        </Grid>
-      ))}
-    </Grid>
+    <Box p={2}>
+
+      <Box className="flex justify-end mb-4">
+        <Button
+          variant="contained"
+          href={`/categories/${categorySlug}/new`}
+          sx={{
+            backgroundColor: 'orangered',
+            borderRadius: 7,
+            textTransform: 'capitalize'
+          }}
+        >
+          + Alt Ktegori Ekle
+        </Button>
+      </Box>
+
+      <Grid container spacing={2} >
+        {subcategories?.map((subcategory) => (
+          <Grid key={subcategory.id} size={{ xs: 12, sm: 6, md: 3 }} >
+            <SubCategoryCard
+              image={subcategory.image}
+              title={subcategory.title}
+              description={subcategory.description}
+              buttonText="Görüntüle"
+              slug={subcategory.slug}
+              categorySlug={categorySlug} // 👈 SubCategoryCard bileşenine geçiyoruz
+            />
+          </Grid>
+        ))}
+      </Grid>
+
+    </Box>
   );
 }
