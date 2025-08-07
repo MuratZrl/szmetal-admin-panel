@@ -1,3 +1,4 @@
+'use server';
 
 import { createSupabaseServerClient } from '../../lib/supabase/supabaseServer';
 
@@ -21,7 +22,7 @@ export default async function CategoriesPage() {
     .eq('category_id', selectedCategory.id);
 
   return (
-    <Grid container spacing={4} padding={4}>
+    <Grid container spacing={4} padding={4} >
 
       {/* Sol Panel */}
       <Grid size={{ xs: 12, sm: 4, md: 3 }} >
@@ -29,7 +30,7 @@ export default async function CategoriesPage() {
         <Typography variant="h6" gutterBottom>Kategoriler</Typography>
         <List>
           {categories.map((cat) => (
-            <ListItemButton key={cat.id}>
+            <ListItemButton key={cat.id} >
               <ListItemText primary={cat.name} />
             </ListItemButton>
           ))}
