@@ -28,7 +28,8 @@
     "react-countup": "^6.5.3",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "zustand": "^5.0.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
