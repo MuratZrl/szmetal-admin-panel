@@ -1,3 +1,5 @@
+// app/(admin)/categories/page.tsx
+
 'use server'
 
 import { Grid } from '@mui/material';
