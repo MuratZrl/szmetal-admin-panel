@@ -4,6 +4,7 @@
 import Image from 'next/image';
 
 import { GridColDef } from '@mui/x-data-grid';
+import { Box } from '@mui/material';
 
 export const productColumns: GridColDef[] = [
   {
@@ -18,15 +19,19 @@ export const productColumns: GridColDef[] = [
     disableColumnMenu: true,
     
     renderCell: (params) => (
-      <Image
-        src={params.value}
-        alt="Ürün Görseli"
-        
-        width={50}
-        height={25}
+      <Box display={'flex'} justifyContent={'flex-start'} alignItems={'center'} height={'100%'}>
 
-        style={{ objectFit: 'cover', borderRadius: 4 }}
-      />
+        <Image
+          src={params.value}
+          alt="Ürün Görseli"
+          
+          width={50}
+          height={25}
+
+          style={{ objectFit: 'cover', borderRadius: 4 }}
+        />
+
+      </Box>
     ),
   },
   { 
@@ -89,7 +94,9 @@ export const productColumns: GridColDef[] = [
     disableColumnMenu: true,    
 
     renderCell: (params) => (
-      <span>{new Date(params.value).toLocaleDateString('tr-TR')}</span>
+      <span>
+        {new Date(params.value).toLocaleDateString('tr-TR')}
+      </span>
     ),
   }
 ];

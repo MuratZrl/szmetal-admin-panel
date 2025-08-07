@@ -49,7 +49,7 @@ export default async function SubCategoriesPage(ctx: { params: { categorySlug: s
             textTransform: 'capitalize'
           }}
         >
-          + Alt Ktegori Ekle
+          + Alt Kategori Ekle
         </Button>
       </Box>
 
@@ -60,7 +60,7 @@ export default async function SubCategoriesPage(ctx: { params: { categorySlug: s
               image={subcategory.image}
               title={subcategory.title}
               description={subcategory.description}
-              buttonText="Görüntüle"
+              buttonText="Profilleri İncele"
               slug={subcategory.slug}
               categorySlug={categorySlug} // 👈 SubCategoryCard bileşenine geçiyoruz
             />

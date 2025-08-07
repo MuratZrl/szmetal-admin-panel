@@ -91,7 +91,7 @@ export default function NewSubCategoryForm() {
 
     // ✅ 0.5 saniye sonra yönlendir
     setTimeout(() => {
-      window.location.href = '/categories/${categorySlug}';
+      window.location.href = `/categories/${categorySlug}`;
     }, 500);
   };
 
