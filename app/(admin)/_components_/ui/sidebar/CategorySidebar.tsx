@@ -1,3 +1,4 @@
+// app/(admin)/_components_ui/sidebar/CategorySidebar.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
