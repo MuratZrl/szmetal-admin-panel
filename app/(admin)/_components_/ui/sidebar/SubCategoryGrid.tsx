@@ -1,63 +1,54 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
 import { useCategoryStore } from '../../../../lib/stores/categoryStore';
-
 import { supabase } from '../../../../lib/supabase/supabaseClient';
+import { Grid, Card, CardContent, Typography, CardMedia } from '@mui/material';
 
-import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  CardMedia,
-} from '@mui/material';
-
-type SubCategory = {
+type Product = {
   id: string;
   name: string;
   image_url?: string;
 };
 
 export default function SubCategoryGrid() {
-  const selectedCategoryId = useCategoryStore((s) => s.selectedCategoryId);
-  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const selectedSubCategoryId = useCategoryStore((s) => s.selectedSubCategoryId);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (!selectedCategoryId) return;
+    if (!selectedSubCategoryId) return;
 
-    const fetchSubCategories = async () => {
+    const fetchProducts = async () => {
       const { data, error } = await supabase
-        .from('sub_categories')
+        .from('products')
         .select('id, name, image_url')
-        .eq('category_id', selectedCategoryId);
+        .eq('sub_category_id', selectedSubCategoryId);
 
-      if (!error && data) setSubCategories(data);
+      if (!error && data) setProducts(data);
     };
 
-    fetchSubCategories();
-  }, [selectedCategoryId]);
+    fetchProducts();
+  }, [selectedSubCategoryId]);
 
-  if (!selectedCategoryId) {
-    return <Typography>Lütfen bir kategori seçin.</Typography>;
+  if (!selectedSubCategoryId) {
+    return <Typography>Lütfen bir alt kategori seçin.</Typography>;
   }
 
   return (
     <Grid container spacing={2}>
-      {subCategories.map((sc) => (
-        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={sc.id}>
+      {products.map((p) => (
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={p.id}>
           <Card>
-            {sc.image_url && (
+            {p.image_url && (
               <CardMedia
                 component="img"
                 height="160"
-                image={sc.image_url}
-                alt={sc.name}
+                image={p.image_url}
+                alt={p.name}
               />
             )}
             <CardContent>
-              <Typography variant="h6">{sc.name}</Typography>
+              <Typography variant="h6">{p.name}</Typography>
             </CardContent>
           </Card>
         </Grid>
