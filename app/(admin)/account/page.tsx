@@ -72,7 +72,6 @@ export default function AccountPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-
   type FormValues = Asserts<typeof accountSchema>;
 
   const {
@@ -100,7 +99,7 @@ export default function AccountPage() {
     mode: 'onChange',
   });
 
-
+  
   const roleLabelMap: Record<string, string> = {
     Admin: 'Admin',
     Moderator: 'Moderatör',
@@ -139,6 +138,17 @@ export default function AccountPage() {
   };
 
   const { label, style } = getRoleColor(userData?.role ?? null);
+
+
+
+
+
+
+
+
+
+
+
 
   const showSnackbar = (msg: string, type: 'success' | 'error' | 'info') => {
     setSnackbarMessage(msg);
@@ -409,15 +419,6 @@ export default function AccountPage() {
 
     fetchUserData();
   }, []);
-
-
-
-
-
-
-
-
-
 
 
 

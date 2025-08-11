@@ -77,7 +77,7 @@ export default function CategorySidebar() {
       title="Filtrele"
       titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
       sx={{
-        background: 'linear-gradient(90deg, #858180ff, #e6e6e6ff)',
+        background: 'linear-gradient(15deg, orangered, gray)',
         color: 'white',
         py: 1,
       }}

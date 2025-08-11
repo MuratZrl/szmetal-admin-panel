@@ -18,8 +18,8 @@ export default function TopBar({ totalProducts, sortOrder, onSortChange, onAdd }
         Toplam ürün: {totalProducts}
       </Typography>
 
-      <Box display="flex" alignItems="center" gap={1}>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+      <Box display="flex" alignItems="center" gap={2} >
+        <FormControl size="small" sx={{ minWidth: 140 }} >
           <Select 
             value={sortOrder}
             onChange={(e) => onSortChange(e.target.value as 'newest' | 'oldest')}

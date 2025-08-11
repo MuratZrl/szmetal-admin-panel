@@ -12,7 +12,7 @@ type Product = {
   id: string;
   name: string;
   image_url?: string;
-  description?: string;
+  kg_per_m?: number;
   created_at?: string;
   property?: string;
 };
@@ -24,6 +24,7 @@ export default function SubCategoryGrid() {
 
   const selectedSubCategoryIds = useCategoryStore((s) => s.selectedSubCategoryIds);
   const selectedProperties = useCategoryStore((s) => s.selectedProperties);
+  const kgPerMRange = useCategoryStore((s) => s.kgPerMRange);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState<number>(0);
@@ -35,7 +36,7 @@ export default function SubCategoryGrid() {
     const fetchProducts = async () => {
       let query = supabase
         .from('products')
-        .select('id, name, image_url, description, property, created_at', { count: 'exact' });
+        .select('id, name, image_url, kg_per_m, property, created_at', { count: 'exact' })
 
       if (selectedSubCategoryIds.length > 0) {
         query = query.in('sub_category_id', selectedSubCategoryIds);
@@ -47,6 +48,10 @@ export default function SubCategoryGrid() {
 
       if (searchTerm.trim()) {
         query = query.ilike('name', `%${searchTerm}%`);
+      }
+
+      if (kgPerMRange) {
+        query = query.gte('kg_per_m', kgPerMRange[0]).lte('kg_per_m', kgPerMRange[1]);
       }
 
       query = query
@@ -62,7 +67,7 @@ export default function SubCategoryGrid() {
     };
 
     fetchProducts();
-  }, [selectedSubCategoryIds, selectedProperties, searchTerm, sortOrder, page, perPage]);
+  }, [selectedSubCategoryIds, selectedProperties, searchTerm, kgPerMRange, sortOrder, page, perPage]);
 
   const totalPages = Math.ceil(totalProducts / perPage);
 
@@ -83,12 +88,12 @@ export default function SubCategoryGrid() {
           </Grid>
         ) : (
           products.map((p) => (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={p.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={p.id} >
               <ProductCard
                 id={p.id}
                 name={p.name}
                 image_url={p.image_url}
-                description={p.description}
+                kg_per_m={p.kg_per_m}
                 property={p.property}
                 created_at={p.created_at}
               />

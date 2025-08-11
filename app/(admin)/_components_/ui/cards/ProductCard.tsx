@@ -7,7 +7,7 @@ export type ProductCardProps = {
   id: string;
   name: string;
   image_url?: string;
-  description?: string;
+  kg_per_m?: number; // ✅ yeni
   property?: string;
   created_at?: string; // ✅ yeni eklendi
   onEdit?: (id: string) => void;
@@ -17,7 +17,7 @@ export default function ProductCard({
   id,
   name,
   image_url,
-  description,
+  kg_per_m,
   property,
   created_at,
   onEdit
@@ -87,9 +87,9 @@ export default function ProductCard({
           </Box>
         )}
 
-        {description && (
+        {kg_per_m !== undefined && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {description}
+            {kg_per_m} kg/m
           </Typography>
         )}
 
