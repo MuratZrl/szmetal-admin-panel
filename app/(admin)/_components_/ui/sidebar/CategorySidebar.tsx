@@ -1,17 +1,18 @@
-// app/(admin)/_components_ui/sidebar/CategorySidebar.tsx
-'use client';
-
-import { useEffect, useState } from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import { useCategoryStore } from '../../../../lib/stores/categoryStore';
 import { supabase } from '../../../../lib/supabase/supabaseClient';
 import {
+  Box,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Typography,
   List,
-  ListItemButton,
-  ListItemText
+  ListItem,
+  Checkbox,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -27,9 +28,11 @@ type Category = {
 };
 
 export default function CategorySidebar() {
-  const setSelectedSubCategoryId = useCategoryStore((s) => s.setSelectedSubCategoryId);
+  const setSelectedSubCategoryIdsStore = useCategoryStore((s) => s.setSelectedSubCategoryIds); // store setter
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedSubCategoryIdsState, setSelectedSubCategoryIdsState] = useState<string[]>([]); // local state
 
+  // Kategorileri çek
   useEffect(() => {
     const fetchCategories = async () => {
       const { data, error } = await supabase
@@ -43,28 +46,83 @@ export default function CategorySidebar() {
     fetchCategories();
   }, []);
 
+  // Checkbox tıklama
+  const handleToggle = (subId: string) => {
+    setSelectedSubCategoryIdsState((prev: string[]) => {
+      const updated = prev.includes(subId)
+        ? prev.filter((id: string) => id !== subId)
+        : [...prev, subId];
+      console.log('Güncellenmiş seçim listesi:', updated);
+      return updated;
+    });
+  };
+
+  // Local state değişince store’a yaz
+  useEffect(() => {
+    setSelectedSubCategoryIdsStore(selectedSubCategoryIdsState);
+  }, [selectedSubCategoryIdsState, setSelectedSubCategoryIdsStore]);
+
   return (
-    <>
-      <Typography variant="h6" gutterBottom>Kategoriler</Typography>
-      {categories.map((cat) => (
-        <Accordion key={cat.id}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography>{cat.name}</Typography>
+  <Box
+    display={'flex'}
+    justifyContent={'center'}
+    alignItems={'stretch'}
+    flexDirection={'column'}
+  >
+    <Typography variant="h6" gutterBottom sx={{ px: 1.25 }}>
+      Filtrele
+    </Typography>
+
+    {categories.map((cat, index) => (
+      <React.Fragment key={cat.id}>
+        <Accordion
+          disableGutters
+          sx={{
+            boxShadow: 'none',
+            '&:before': { display: 'none' },
+            '&.MuiAccordion-root': { margin: 0, padding: 0 },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              minHeight: 46,
+              '& .MuiAccordionSummary-content': { margin: 0, padding: 0 },
+              '&.Mui-expanded': { minHeight: 28, px: 1.5 },
+            }}
+          >
+            <Typography variant="body2">{cat.name}</Typography>
           </AccordionSummary>
-          <AccordionDetails>
-            <List>
+
+          <AccordionDetails sx={{ p: 0.5 }}>
+            <List disablePadding dense>
               {cat.sub_categories.map((sub) => (
-                <ListItemButton
+                <ListItem
                   key={sub.id}
-                  onClick={() => setSelectedSubCategoryId(sub.id)}
+                  disablePadding
+                  sx={{ pl: 1.35 }}
                 >
-                  <ListItemText primary={sub.name} />
-                </ListItemButton>
+                  <Checkbox
+                    size="small"
+                    checked={selectedSubCategoryIdsState.includes(sub.id)}
+                    onChange={() => handleToggle(sub.id)}
+                  />
+                  <ListItemText
+                    primary={sub.name}
+                    primaryTypographyProps={{ variant: 'body2' }}
+                  />
+                </ListItem>
               ))}
             </List>
           </AccordionDetails>
         </Accordion>
-      ))}
-    </>
-  );
+
+        {/* Kategori ile diğer kategori arasına çizgi */}
+        {index < categories.length - 1 && (
+          <Divider sx={{ borderColor: "rgba(0, 0, 0, 1)" }} />
+        )}
+      </React.Fragment>
+    ))}
+  </Box>
+);
 }

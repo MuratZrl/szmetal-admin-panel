@@ -12,12 +12,12 @@ export default function CategoriesPage() {
     <Grid container spacing={4} padding={4}>
       
       {/* Sol Sidebar */}
-      <Grid size={{ xs: 12, sm: 4, md: 3 }} >
+      <Grid size={{ xs: 12, sm: 3, md: 2 }} >
         <CategorySidebar />
       </Grid>
 
       {/* Sağ İçerik */}
-      <Grid size={{ xs: 12, sm: 8, md: 9 }} >
+      <Grid size={{ xs: 12, sm: 9, md: 10 }} >
         <SubCategoryGrid />
       </Grid>
     
