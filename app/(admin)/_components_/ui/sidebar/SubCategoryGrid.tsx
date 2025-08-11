@@ -15,6 +15,7 @@ type Product = {
   kg_per_m?: number;
   created_at?: string;
   property?: string;
+  is_active?: boolean;
 };
 
 export default function SubCategoryGrid() {
@@ -35,8 +36,11 @@ export default function SubCategoryGrid() {
   useEffect(() => {
     const fetchProducts = async () => {
       let query = supabase
-        .from('products')
-        .select('id, name, image_url, kg_per_m, property, created_at', { count: 'exact' })
+      .from('products')
+      .select(
+        'id, name, image_url, kg_per_m, property, created_at, is_active', // ✅ is_active eklendi
+        { count: 'exact' }
+      );
 
       if (selectedSubCategoryIds.length > 0) {
         query = query.in('sub_category_id', selectedSubCategoryIds);
@@ -96,6 +100,7 @@ export default function SubCategoryGrid() {
                 kg_per_m={p.kg_per_m}
                 property={p.property}
                 created_at={p.created_at}
+                is_active={p.is_active} // ✅ burası da eklendi
               />
             </Grid>
           ))

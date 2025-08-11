@@ -27,11 +27,26 @@ export default function KgPerMRangeFilter() {
       <Slider
         value={kgPerMRange}
         onChange={(_, newValue) => setKgPerMRange(newValue as [number, number])}
-        valueLabelDisplay="auto"
+        valueLabelDisplay="off"
         min={0}
         max={25000}
         sx={{
-          color: 'orangered',
+          height: 8,
+          '& .MuiSlider-track': {
+            background: 'linear-gradient(90deg, orangered 0%, orangered 30%, darkred 100%)',
+            border: 'none',
+          },
+          '& .MuiSlider-rail': {
+            opacity: 0.3,
+            backgroundColor: '#ccc',
+          },
+          '& .MuiSlider-thumb': {
+            backgroundColor: '#fff',
+            border: '2px solid orangered',
+            '&:hover': {
+              boxShadow: '0 0 0 8px rgba(255, 69, 0, 0.16)',
+            },
+          },
         }}
       />
       <Typography variant="caption" color="text.secondary">

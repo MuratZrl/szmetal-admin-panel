@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardMedia, Typography, Button, Box } from '@mui/material';
+import { Card, CardContent, CardMedia, Typography, Button, Box, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 
 export type ProductCardProps = {
@@ -10,6 +10,7 @@ export type ProductCardProps = {
   kg_per_m?: number; // ✅ yeni
   property?: string;
   created_at?: string; // ✅ yeni eklendi
+  is_active?: boolean; // ✅ eklendi
   onEdit?: (id: string) => void;
 };
 
@@ -20,8 +21,13 @@ export default function ProductCard({
   kg_per_m,
   property,
   created_at,
+  is_active,
   onEdit
 }: ProductCardProps) {
+
+  const isActiveBool = typeof is_active === 'boolean'
+    ? is_active
+    : String(is_active).toLowerCase() === 'true';
 
   // ✅ Tarihi DD/MM formatına çevir
   const formattedDate = created_at
@@ -68,6 +74,25 @@ export default function ProductCard({
             {property}
           </Box>
         )}
+
+        {/* Sağ alt köşede durum badge */}
+        <Tooltip title={isActiveBool ? 'Active' : 'Not Active'} arrow>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 10,
+              right: 10,
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              bgcolor: isActiveBool ? 'green' : 'red',
+              border: '1px solid white',
+              boxShadow: 1,
+              cursor: 'default', // hover olabileceğini hissettirmek için
+            }}
+          />
+        </Tooltip>
+
       </Box>
 
       <CardContent sx={{ flexGrow: 1 }} >
@@ -101,7 +126,7 @@ export default function ProductCard({
             onClick={() => onEdit?.(id)}
             sx={{
               px: 2.25,
-              background: 'linear-gradient(90deg, orangered, orange)',
+              background: 'linear-gradient(75deg, orangered 0%, orangered 65%, darkred 100%)',
               borderRadius: 7,
               textTransform: 'capitalize',
             }}
