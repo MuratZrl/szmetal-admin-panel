@@ -42,8 +42,8 @@ export default function TopBar({ totalProducts, sortOrder, onSortChange, onAdd }
               },
             }}
           >
-            <MenuItem value="newest">Yeniden Eskiye</MenuItem>
-            <MenuItem value="oldest">Eskiden Yeniye</MenuItem>
+            <MenuItem value="newest">Yeniden eskiye</MenuItem>
+            <MenuItem value="oldest">Eskiden yeniye</MenuItem>
           </Select>
         </FormControl>
 

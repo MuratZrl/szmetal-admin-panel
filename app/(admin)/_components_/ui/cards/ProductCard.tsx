@@ -126,7 +126,7 @@ export default function ProductCard({
             onClick={() => onEdit?.(id)}
             sx={{
               px: 2.25,
-              background: 'linear-gradient(75deg, orangered 0%, orangered 65%, darkred 100%)',
+              background: 'linear-gradient(75deg, orangered 0%, orangered 55%, darkred 100%)',
               borderRadius: 7,
               textTransform: 'capitalize',
             }}

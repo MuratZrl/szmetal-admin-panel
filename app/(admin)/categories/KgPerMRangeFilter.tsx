@@ -1,6 +1,6 @@
 'use client';
 
-import { Typography, Slider, Card, CardHeader } from '@mui/material';
+import { Typography, Slider, Card, CardHeader, CardContent } from '@mui/material';
 
 import { useCategoryStore } from '../../lib/stores/categoryStore';
 
@@ -11,6 +11,7 @@ export default function KgPerMRangeFilter() {
   return (
     <Card
       sx={{
+        my: 1,
         borderRadius: 3,
         boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
         border: '1px solid',
@@ -19,7 +20,7 @@ export default function KgPerMRangeFilter() {
     >
 
       <CardHeader 
-        title="Kg/m"
+        title="Kg/m Aralığı"
         titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} 
 
         sx={{
@@ -27,11 +28,10 @@ export default function KgPerMRangeFilter() {
           color: 'white',
           py: { xs: 0.5, sm: 1}, // mobilde daha az padding
         }}
-      >
-        Kg/m Aralığı
-      </CardHeader>
+      />
 
-      <Slider
+      <CardContent sx={{ py: 1.5 }} >
+        <Slider
         value={kgPerMRange}
         onChange={(_, newValue) => setKgPerMRange(newValue as [number, number])}
         valueLabelDisplay="off"
@@ -55,10 +55,12 @@ export default function KgPerMRangeFilter() {
             },
           },
         }}
-      />
-      <Typography variant="caption" color="text.secondary">
-        {kgPerMRange[0]} - {kgPerMRange[1]} kg/m
-      </Typography>
+        />
+        <Typography variant="caption" color="text.secondary">
+          {kgPerMRange[0]} - {kgPerMRange[1]} kg/m
+        </Typography>
+      </CardContent>
+
     </Card>
   );
 }

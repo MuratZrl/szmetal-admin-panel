@@ -75,7 +75,8 @@ export default function CategorySidebar() {
       >
         <CardHeader
           title="Filtrele"
-          fontWeight={600}
+          titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} 
+  
           sx={{
             background: 'linear-gradient(75deg, orangered 0%, orangered 1%, darkred 100%)',
             color: 'white',

@@ -36,20 +36,24 @@ export default function PropertyFilter() {
         my: 1,
       }}
     >
-      <CardHeader title="Özellik" titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} 
+
+      <CardHeader
+        title="Özellik" 
+        titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} 
+        
         sx={{
           background: 'linear-gradient(75deg, orangered 0%, orangered 1%, darkred 100%)',
           color: 'white',
           py: { xs: 0.5, sm: 1 }, // mobilde daha az padding
         }}
       />
-      <CardContent sx={{ pt: 0 }} >
+
+      <CardContent sx={{ py: 1.25 }} >
         <List dense disablePadding>
           {PROPERTY_OPTIONS.map((prop) => (
             <ListItem
               key={prop}
               disablePadding
-              sx={{ pl: 1 }}
               onClick={() => handleToggle(prop)}
             >
              <Checkbox
