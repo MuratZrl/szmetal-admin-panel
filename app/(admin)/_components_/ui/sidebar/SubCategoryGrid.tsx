@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useCategoryStore } from '../../../../lib/stores/categoryStore';
-import { Grid, Typography, FormControl, Select, MenuItem, Box } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
+import TopBar from './TopBar';
 import ProductCard from '../cards/ProductCard';
+import CustomPagination from '../pagination/Pagination';
 import { supabase } from '../../../../lib/supabase/supabaseClient';
 
 type Product = {
@@ -16,54 +18,56 @@ type Product = {
 };
 
 export default function SubCategoryGrid() {
+
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(12); // sayfa başına ürün sayısı
+
   const selectedSubCategoryIds = useCategoryStore((s) => s.selectedSubCategoryIds);
+  const selectedProperties = useCategoryStore((s) => s.selectedProperties);
+
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState<number>(0);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
     const fetchProducts = async () => {
       let query = supabase
         .from('products')
-        .select('id, name, image_url, description, property, created_at');
+        .select('id, name, image_url, description, property, created_at', { count: 'exact' });
 
-      // Filtre varsa uygula
-      if (selectedSubCategoryIds && selectedSubCategoryIds.length > 0) {
+      if (selectedSubCategoryIds.length > 0) {
         query = query.in('sub_category_id', selectedSubCategoryIds);
       }
 
-      // Sıralama ekle
-      if (sortOrder === 'newest') {
-        query = query.order('created_at', { ascending: false });
-      } else {
-        query = query.order('created_at', { ascending: true });
+      if (selectedProperties.length > 0) {
+        query = query.in('property', selectedProperties);
       }
 
-      const { data, error } = await query;
+      query = query
+        .order('created_at', { ascending: sortOrder === 'oldest' })
+        .range((page - 1) * perPage, page * perPage - 1); // ✅ sayfalama
+
+      const { data, error, count } = await query;
+
       if (!error && data) {
         setProducts(data);
+        setTotalProducts(count || 0);
       }
     };
 
     fetchProducts();
-  }, [selectedSubCategoryIds, sortOrder]);
+  }, [selectedSubCategoryIds, selectedProperties, sortOrder, page, perPage]);
+
+  const totalPages = Math.ceil(totalProducts / perPage);
 
   return (
     <>
       {/* Üst bar */}
-      <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2} gap={1}>
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          Sırala:
-        </Typography>
-        <FormControl size="small">
-          <Select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
-          >
-            <MenuItem value="newest">En Yeni</MenuItem>
-            <MenuItem value="oldest">En Eski</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+      <TopBar
+        totalProducts={totalProducts}
+        sortOrder={sortOrder}
+        onSortChange={(val) => setSortOrder(val)}
+      />
 
       {/* Ürünler grid */}
       <Grid container spacing={2}>
@@ -79,12 +83,21 @@ export default function SubCategoryGrid() {
                 name={p.name}
                 image_url={p.image_url}
                 description={p.description}
-                property={p.property} // Supabase'ten gelen property sütunu
+                property={p.property}
               />
             </Grid>
           ))
         )}
       </Grid>
+
+      {/* Sayfalama */}
+      {totalPages > 1 && (
+        <CustomPagination
+          page={page}
+          totalPages={totalPages}
+          onChange={(_, value) => setPage(value)}
+        />
+      )}
     </>
   );
 }

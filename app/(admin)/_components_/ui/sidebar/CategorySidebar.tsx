@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import { useCategoryStore } from '../../../../lib/stores/categoryStore';
 import { supabase } from '../../../../lib/supabase/supabaseClient';
 import {
-  Box,
+  Card,
+  CardContent,
+  CardHeader,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -52,7 +54,6 @@ export default function CategorySidebar() {
       const updated = prev.includes(subId)
         ? prev.filter((id: string) => id !== subId)
         : [...prev, subId];
-      console.log('Güncellenmiş seçim listesi:', updated);
       return updated;
     });
   };
@@ -63,66 +64,77 @@ export default function CategorySidebar() {
   }, [selectedSubCategoryIdsState, setSelectedSubCategoryIdsStore]);
 
   return (
-  <Box
-    display={'flex'}
-    justifyContent={'center'}
-    alignItems={'stretch'}
-    flexDirection={'column'}
+  <Card
+    sx={{
+      borderRadius: 3,
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+      border: '1px solid',
+      borderColor: 'divider',
+    }}
   >
-    <Typography variant="h6" gutterBottom sx={{ px: 1.25 }}>
-      Filtrele
-    </Typography>
 
-    {categories.map((cat, index) => (
-      <React.Fragment key={cat.id}>
-        <Accordion
-          disableGutters
-          sx={{
-            boxShadow: 'none',
-            '&:before': { display: 'none' },
-            '&.MuiAccordion-root': { margin: 0, padding: 0 },
-          }}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
+    <CardHeader
+      title="Filtrele"
+      titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
+      sx={{
+        background: 'linear-gradient(90deg, #858180ff, #e6e6e6ff)',
+        color: 'white',
+        py: 1,
+      }}
+    />
+
+    <CardContent sx={{ py: 0, px: 0 }} >
+      {categories.map((cat, index) => (
+        <React.Fragment key={cat.id}>
+          <Accordion
+            disableGutters
             sx={{
-              minHeight: 46,
-              '& .MuiAccordionSummary-content': { margin: 0, padding: 0 },
-              '&.Mui-expanded': { minHeight: 28, px: 1.5 },
+              boxShadow: 'none',
+              '&:before': { display: 'none' },
+              '&.MuiAccordion-root': { margin: 0, padding: 0 },
             }}
           >
-            <Typography variant="body2">{cat.name}</Typography>
-          </AccordionSummary>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}
+              sx={{
+                minHeight: 52,
+                '& .MuiAccordionSummary-content': { margin: 0, padding: 0 },
+                '&.Mui-expanded': { minHeight: 46, px: 1.75 },
+              }}
+            >
+              <Typography variant="body2">{cat.name}</Typography>
+            </AccordionSummary>
 
-          <AccordionDetails sx={{ p: 0.5 }}>
-            <List disablePadding dense>
-              {cat.sub_categories.map((sub) => (
-                <ListItem
-                  key={sub.id}
-                  disablePadding
-                  sx={{ pl: 1.35 }}
-                >
-                  <Checkbox
-                    size="small"
-                    checked={selectedSubCategoryIdsState.includes(sub.id)}
-                    onChange={() => handleToggle(sub.id)}
-                  />
-                  <ListItemText
-                    primary={sub.name}
-                    primaryTypographyProps={{ variant: 'body2' }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </AccordionDetails>
-        </Accordion>
+            <AccordionDetails sx={{ p: 0.75 }}>
+              <List disablePadding dense>
+                {cat.sub_categories.map((sub) => (
+                  <ListItem key={sub.id} disablePadding sx={{ pl: 1 }}>
+                    <Checkbox
+                      size="small"
+                      checked={selectedSubCategoryIdsState.includes(sub.id)}
+                      onChange={() => handleToggle(sub.id)}
+                      sx={{
+                        py: 1.25,
+                        '&.Mui-checked': { color: 'orangered' },
+                      }}
+                    />
+                    <ListItemText
+                      primary={sub.name}
+                      primaryTypographyProps={{ variant: 'body2' }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </AccordionDetails>
+          </Accordion>
 
-        {/* Kategori ile diğer kategori arasına çizgi */}
-        {index < categories.length - 1 && (
-          <Divider sx={{ borderColor: "rgba(0, 0, 0, 1)" }} />
-        )}
-      </React.Fragment>
-    ))}
-  </Box>
+          {index < categories.length - 1 && (
+            <Divider sx={{ borderColor: 'divider' }} />
+          )}
+        </React.Fragment>
+      ))}
+    </CardContent>
+  </Card>
 );
+
 }
