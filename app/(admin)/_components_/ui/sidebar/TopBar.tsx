@@ -29,9 +29,16 @@ export default function TopBar({ totalProducts, sortOrder, onSortChange, onAdd }
               </Box>
             }
             sx={{
-              borderRadius: 2,
+              borderRadius: 3,
               '& .MuiSelect-select': {
                 py: 1,
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#a0a0a0ff', // normal durum
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'orangered', // focus olduğunda
+                borderWidth: 2,
               },
             }}
           >
@@ -46,7 +53,7 @@ export default function TopBar({ totalProducts, sortOrder, onSortChange, onAdd }
             sx={{ backgroundColor: 'orangered', borderRadius: 5, textTransform: 'none' }}
             onClick={onAdd}
           >
-            Ekle
+            Ürün Ekle
         </Button>
       </Box>
     </Box>

@@ -29,6 +29,8 @@ export default function SubCategoryGrid() {
   const [totalProducts, setTotalProducts] = useState<number>(0);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
+  const searchTerm = useCategoryStore((s) => s.searchTerm);
+
   useEffect(() => {
     const fetchProducts = async () => {
       let query = supabase
@@ -41,6 +43,10 @@ export default function SubCategoryGrid() {
 
       if (selectedProperties.length > 0) {
         query = query.in('property', selectedProperties);
+      }
+
+      if (searchTerm.trim()) {
+        query = query.ilike('name', `%${searchTerm}%`);
       }
 
       query = query
@@ -56,7 +62,7 @@ export default function SubCategoryGrid() {
     };
 
     fetchProducts();
-  }, [selectedSubCategoryIds, selectedProperties, sortOrder, page, perPage]);
+  }, [selectedSubCategoryIds, selectedProperties, searchTerm, sortOrder, page, perPage]);
 
   const totalPages = Math.ceil(totalProducts / perPage);
 
@@ -84,6 +90,7 @@ export default function SubCategoryGrid() {
                 image_url={p.image_url}
                 description={p.description}
                 property={p.property}
+                created_at={p.created_at}
               />
             </Grid>
           ))

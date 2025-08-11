@@ -15,8 +15,21 @@ export default function CustomPagination({ page, totalPages, onChange }: Paginat
         count={totalPages}
         page={page}
         onChange={onChange}
-        color="primary"
         shape="rounded"
+        showFirstButton
+        showLastButton
+        sx={{
+          '& .MuiPaginationItem-root': {
+            color: 'orangered', // sayfa numarası rengi
+          },
+          '& .MuiPaginationItem-root.Mui-selected': {
+            backgroundColor: 'orangered',
+            color: '#fff',
+            '&:hover': {
+              backgroundColor: '#cc3700', // hover için koyu ton
+            },
+          },
+        }}
       />
     </Box>
   );
