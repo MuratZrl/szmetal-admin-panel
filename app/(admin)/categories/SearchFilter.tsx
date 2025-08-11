@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TextField, InputAdornment, Card, CardHeader, CardContent } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useCategoryStore } from '../../../../lib/stores/categoryStore';
+import { useCategoryStore } from '../../lib/stores/categoryStore';
 
 export default function SearchFilter() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,14 +18,21 @@ export default function SearchFilter() {
       sx={{
         borderRadius: 3,
         boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-        border: '1px solid',
-        borderColor: 'divider',
       }}
     >
 
-      <CardHeader title="Ara" titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} />
+      <CardHeader 
+        title="Ara" 
+        titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} 
 
-      <CardContent sx={{ pt: 0 }} >
+        sx={{
+          background: 'linear-gradient(75deg, orangered 0%, orangered 1%, darkred 100%)',
+          color: 'white',
+          py: { xs: 0.5, sm: 1 }, // mobilde daha az padding
+        }}
+      />
+
+      <CardContent sx={{ py: 1.5 }} >
         <TextField
           size="small"
           fullWidth

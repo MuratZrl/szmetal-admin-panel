@@ -1,8 +1,8 @@
 'use client';
 
-import { Typography, Slider, Card } from '@mui/material';
+import { Typography, Slider, Card, CardHeader } from '@mui/material';
 
-import { useCategoryStore } from '../../../../lib/stores/categoryStore';
+import { useCategoryStore } from '../../lib/stores/categoryStore';
 
 export default function KgPerMRangeFilter() {
   const kgPerMRange = useCategoryStore((s) => s.kgPerMRange);
@@ -11,19 +11,26 @@ export default function KgPerMRangeFilter() {
   return (
     <Card
       sx={{
-        px: 2,
-        py: 2,
-        my: 1,
-
         borderRadius: 3,
         boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
         border: '1px solid',
         borderColor: 'divider',
       }}
     >
-      <Typography variant="body2" fontWeight={600} gutterBottom>
+
+      <CardHeader 
+        title="Kg/m"
+        titleTypographyProps={{ variant: 'body2', fontWeight: 600 }} 
+
+        sx={{
+          background: 'linear-gradient(75deg, orangered 0%, orangered 1%, darkred 100%)',
+          color: 'white',
+          py: { xs: 0.5, sm: 1}, // mobilde daha az padding
+        }}
+      >
         Kg/m Aralığı
-      </Typography>
+      </CardHeader>
+
       <Slider
         value={kgPerMRange}
         onChange={(_, newValue) => setKgPerMRange(newValue as [number, number])}

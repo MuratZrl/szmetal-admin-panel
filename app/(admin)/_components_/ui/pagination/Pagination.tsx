@@ -10,7 +10,7 @@ type PaginationProps = {
 
 export default function CustomPagination({ page, totalPages, onChange }: PaginationProps) {
   return (
-    <Box display="flex" justifyContent="center" mt={3}>
+    <Box display="flex" justifyContent="center" my={2}>
       <Pagination
         count={totalPages}
         page={page}
@@ -20,11 +20,12 @@ export default function CustomPagination({ page, totalPages, onChange }: Paginat
         showLastButton
         sx={{
           '& .MuiPaginationItem-root': {
+            borderRadius: 5,
             color: 'orangered', // sayfa numarası rengi
           },
           '& .MuiPaginationItem-root.Mui-selected': {
             backgroundColor: 'orangered',
-            color: '#fff',
+            color: 'white',
             '&:hover': {
               backgroundColor: '#cc3700', // hover için koyu ton
             },

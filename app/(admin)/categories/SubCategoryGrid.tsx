@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useCategoryStore } from '../../../../lib/stores/categoryStore';
-import { Grid, Typography } from '@mui/material';
+import { useCategoryStore } from '../../lib/stores/categoryStore';
+import { Container, Box, Grid, Typography } from '@mui/material';
 import TopBar from './TopBar';
-import ProductCard from '../cards/ProductCard';
-import CustomPagination from '../pagination/Pagination';
-import { supabase } from '../../../../lib/supabase/supabaseClient';
+import ProductCard from '../_components_/ui/cards/ProductCard';
+import CustomPagination from '../_components_/ui/pagination/Pagination';
+import { supabase } from '../../lib/supabase/supabaseClient';
 
 type Product = {
   id: string;
@@ -76,7 +76,8 @@ export default function SubCategoryGrid() {
   const totalPages = Math.ceil(totalProducts / perPage);
 
   return (
-    <>
+    <Container maxWidth="xl" >
+
       {/* Üst bar */}
       <TopBar
         totalProducts={totalProducts}
@@ -85,14 +86,14 @@ export default function SubCategoryGrid() {
       />
 
       {/* Ürünler grid */}
-      <Grid container spacing={2}>
+      <Grid container spacing={{ xs: 2, sm: 2 }} >
         {products.length === 0 ? (
-          <Grid size={{ xs: 12 }}>
-            <Typography>Ürün bulunamadı.</Typography>
+          <Grid size={{ xs: 12 }} >
+            <Typography align="center">Ürün bulunamadı.</Typography>
           </Grid>
         ) : (
           products.map((p) => (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={p.id} >
+            <Grid size={{ xs: 12, sm: 4, md: 3 }} key={p.id} >
               <ProductCard
                 id={p.id}
                 name={p.name}
@@ -100,7 +101,7 @@ export default function SubCategoryGrid() {
                 kg_per_m={p.kg_per_m}
                 property={p.property}
                 created_at={p.created_at}
-                is_active={p.is_active} // ✅ burası da eklendi
+                is_active={p.is_active}
               />
             </Grid>
           ))
@@ -109,12 +110,15 @@ export default function SubCategoryGrid() {
 
       {/* Sayfalama */}
       {totalPages > 1 && (
-        <CustomPagination
-          page={page}
-          totalPages={totalPages}
-          onChange={(_, value) => setPage(value)}
-        />
+        <Box display="flex" justifyContent="center" mt={3}>
+          <CustomPagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(_, value) => setPage(value)}
+          />
+        </Box>
       )}
-    </>
+
+    </Container>
   );
 }

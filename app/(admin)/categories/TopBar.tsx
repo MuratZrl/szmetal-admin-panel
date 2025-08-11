@@ -13,7 +13,7 @@ type TopBarProps = {
 
 export default function TopBar({ totalProducts, sortOrder, onSortChange, onAdd }: TopBarProps) {
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={1}>
+    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={1} >
       <Typography variant="h5" sx={{ fontWeight: 600 }}>
         Toplam ürün: {totalProducts}
       </Typography>
