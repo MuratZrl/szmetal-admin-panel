@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // ✅ yönlendirme için
 import { useCategoryStore } from '../../lib/stores/categoryStore';
+
 import { Container, Box, Grid, Typography } from '@mui/material';
+
 import TopBar from './TopBar';
 import ProductCard from '../_components_/ui/cards/ProductCard';
 import CustomPagination from '../_components_/ui/pagination/Pagination';
+
 import { supabase } from '../../lib/supabase/supabaseClient';
 
 type Product = {
@@ -19,6 +23,7 @@ type Product = {
 };
 
 export default function SubCategoryGrid() {
+  const router = useRouter(); // ✅ yönlendirme hook'u
 
   const [page, setPage] = useState(1);
   const [perPage] = useState(12); // sayfa başına ürün sayısı
@@ -88,12 +93,12 @@ export default function SubCategoryGrid() {
       {/* Ürünler grid */}
       <Grid container spacing={{ xs: 2, sm: 2 }} >
         {products.length === 0 ? (
-          <Grid size={{ xs: 12 }} >
+          <Grid size={{ xs: 12 }}>
             <Typography align="center">Ürün bulunamadı.</Typography>
           </Grid>
         ) : (
           products.map((p) => (
-            <Grid size={{ xs: 12, sm: 4, md: 3 }} key={p.id} >
+            <Grid size={{ xs: 12, sm: 4, md: 3 }} key={p.id}>
               <ProductCard
                 id={p.id}
                 name={p.name}
@@ -102,6 +107,7 @@ export default function SubCategoryGrid() {
                 property={p.property}
                 created_at={p.created_at}
                 is_active={p.is_active}
+                onEdit={(id) => router.push(`/products/${id}`)} // ✅ yönlendirme çalışır
               />
             </Grid>
           ))

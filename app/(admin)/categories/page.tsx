@@ -19,7 +19,7 @@ export default function CategoriesPage() {
         
         {/* Sol Sidebar */}
         <Grid size={{ xs: 12, sm: 6, md: 3, lg: 2 }} >
-          <Box sx={{ position: 'sticky', top: 16 }}>
+          <Box sx={{ position: 'sticky', top: 16 }} >
             <CategorySidebar />
             <Box mt={2}><PropertyFilter /></Box>
             <Box mt={2}><SearchFilter /></Box>
