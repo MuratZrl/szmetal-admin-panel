@@ -2,7 +2,7 @@
 
 import AreaChart from './AreaChart';
 
-import useMonthlyUserStats from '../../../_hooks_/useMonthlyUserStats';
+import useMonthlyUserStats from '../../../hooks/useMonthlyUserStats';
 
 export default function MonthlyUserChart() {
   const { data, loading } = useMonthlyUserStats();

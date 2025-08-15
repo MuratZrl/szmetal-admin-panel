@@ -15,7 +15,7 @@ import {
   hesaplaKesimAdet,
   hesaplaVerilecekAdet,
   parseKesimOlcusu,
-} from '../../../_utils_/giyotin-formulas';
+} from '../../../utils/giyotin-formulas';
 import { SystemStep3Config } from '../../../types/systemTypes';
 import { GiyotinFormData } from '../../../types/systemTypes';
 // ****************************************************************************************************

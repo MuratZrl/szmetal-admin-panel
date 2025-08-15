@@ -107,7 +107,7 @@ export default function SubCategoryGrid() {
                 property={p.property}
                 created_at={p.created_at}
                 is_active={p.is_active}
-                onEdit={(id) => router.push(`/products/${id}`)} // ✅ yönlendirme çalışır
+                onEdit={(id) => router.push(`/categories/${id}`)} // ✅ yönlendirme çalışır
               />
             </Grid>
           ))
