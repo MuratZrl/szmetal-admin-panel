@@ -22,7 +22,7 @@ type Props = Pick<
   onDetailsClick?: () => void;
 };
 
-const FALLBACK_IMAGE = '/images/fallback-system.jpg';
+const FALLBACK_IMAGE = 'https://placehold.co/600x400';
 
 export default memo(function SystemCard({
   imageUrl,

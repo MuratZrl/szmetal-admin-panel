@@ -15,7 +15,8 @@ export type SidebarLink = {
   label: string;
   labelTr: string;
   href: string;
-  icon: typeof Dashboard;
+  icon: React.ElementType;  // works for MUI icon components
+  disabled?: boolean;       // <- add this optional property
 };
 
 export const mainLinks: SidebarLink[] = [
@@ -25,7 +26,7 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Requests', labelTr: 'Talepler', href: '/requests', icon: ListAlt },
   { label: 'Clients', labelTr: 'Müşteriler', href: '/clients', icon: People },
   { label: 'Products', labelTr: 'Ürünler', href: '/products', icon: Inventory },
-  { label: 'Orders', labelTr: 'Siparişler', href: '/orders', icon: ShoppingBasket },
+  { label: 'Orders', labelTr: 'Siparişler', href: '/orders', icon: ShoppingBasket, disabled: false },
   { label: 'Categories', labelTr: 'Kategoriler', href: '/categories', icon: Category },
   { label: 'Logout', labelTr: 'Çıkış Yap', href: '/login', icon: Logout },
 ];

@@ -18,15 +18,15 @@ export default function SystemsGrid({
   const isEmpty = !systems || systems.length === 0;
 
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={2} >
       {isEmpty
         ? Array.from({ length: 8 }).map((_, i) => (
-            <GridItem key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+            <GridItem key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }} >
               <SystemCardSkeleton />
             </GridItem>
           ))
         : systems.map((s) => (
-            <GridItem key={s.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+            <GridItem key={s.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }} >
               <SystemCard {...s} onRequestClick={() => onRequestClick(s.links.requestPage.split('/systems/')[1])} />
             </GridItem>
           ))}

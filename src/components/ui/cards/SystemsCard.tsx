@@ -1,22 +1,30 @@
-// src/features/systems/components/SystemCard.tsx
+// src/components/ui/SystemCard.tsx
 'use client';
 
 import React, { memo } from 'react';
 import Image from 'next/image';
-import { Card, Typography, Box, Button } from '@mui/material';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
+import {
+  Card,
+  Box,
+  Typography,
+  Button,
+  CardContent,
+  CardActions,
+} from '@mui/material';
 import type { SystemCardType } from '@/types/systems';
 
-type SystemsCardProps = Pick<
+type Props = Pick<
   SystemCardType,
   'id' | 'imageUrl' | 'title' | 'description' | 'tag' | 'buttonLabels'
 > & {
   onRequestClick?: () => void;
+  onDetailsClick?: () => void;
 };
 
-const FALLBACK_IMAGE = '/images/fallback-system.jpg'; // add a fallback in /public
+const FALLBACK_IMAGE = 'https://placehold.co/600x400';
 
-const SystemsCard = ({
+export default memo(function SystemCard({
   id,
   imageUrl,
   title,
@@ -24,35 +32,34 @@ const SystemsCard = ({
   tag,
   buttonLabels,
   onRequestClick,
-}: SystemsCardProps) => {
+  onDetailsClick,
+}: Props) {
+  const titleId = `system-title-${id}`;
+
   return (
     <Card
-      className="overflow-hidden"
+      id={`system-card-${id}`}
+      data-system-id={id}
+      className="h-full flex flex-col"
       sx={{
         height: '100%',
-        backgroundColor: 'white',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        borderRadius: 2, // smaller numeric radius matches MUI scale
+        borderRadius: 3,
         boxShadow: 3,
+        overflow: 'hidden',
       }}
-      role="article"
-      aria-label={title}
+      role="group"
+      aria-labelledby={titleId}
     >
-      {/* Image container: next/image with fill needs parent relative + aspect ratio */}
+      {/* Image */}
       <Box
         sx={{
           position: 'relative',
           width: '100%',
-          pt: '56.25%', // 16:9 aspect ratio
+          pt: '56.25%',
           overflow: 'hidden',
-          '& img': {
-            transition: 'transform 0.3s ease',
-          },
-          '&:hover img': {
-            transform: 'scale(1.05)',
-          },
+          '&:hover img': { transform: 'scale(1.03)' },
         }}
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -61,18 +68,15 @@ const SystemsCard = ({
             sx={{
               position: 'absolute',
               top: 10,
-              left: 16,
-              boxShadow: 1,
-              background: 'linear-gradient(135deg, #ef4444, #7f1d1d)',
-              color: 'white',
+              left: 12,
+              zIndex: 2,
               px: 1.5,
               py: 0.5,
-              borderRadius: 10,
+              borderRadius: 2,
+              fontWeight: 700,
               fontSize: 12,
-              fontWeight: 600,
-              fontStyle: 'italic',
-              textTransform: 'capitalize',
-              zIndex: 1,
+              color: 'white',
+              background: 'linear-gradient(135deg,#ef4444,#7f1d1d)',
               pointerEvents: 'none',
             }}
           >
@@ -84,77 +88,93 @@ const SystemsCard = ({
           src={imageUrl ?? FALLBACK_IMAGE}
           alt={title}
           fill
-          style={{ objectFit: 'cover', pointerEvents: 'none' }}
+          style={{
+            objectFit: 'cover',
+            transition: 'transform 0.35s ease',
+            pointerEvents: 'none',
+          }}
           draggable={false}
-          // NOTE: set priority only for hero images - avoid many priority images.
-          // remove priority unless this is the only image on the page.
         />
       </Box>
 
       {/* Content */}
-      <Box sx={{ flexGrow: 1, px: { xs: 2, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
+      <CardContent
+        sx={{
+          px: { xs: 2, sm: 2.5 },
+          py: { xs: 1.25, sm: 1.75 },
+          flex: 1,
+        }}
+      >
         <Typography
-          variant="subtitle2"
-          color="text.secondary"
-          sx={{ mb: 0.5, fontWeight: 700 }}
+          id={titleId}
+          variant="h6"
+          component="h3"
+          sx={{ fontWeight: 700, mb: 0.5 }}
+          noWrap
         >
-          {tag ?? ''}
-        </Typography>
-
-        <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
           {title}
         </Typography>
 
         <Typography
-          component="div"
           variant="body2"
           color="text.secondary"
           sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            minHeight: 48,
-            maxHeight: 48,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            lineHeight: 1.3,
+            minHeight: 40,
           }}
         >
           {description}
         </Typography>
-      </Box>
+      </CardContent>
 
       {/* Actions */}
-      <Box
+      <CardActions
         sx={{
           px: { xs: 2, sm: 2.5 },
           pb: { xs: 2, sm: 2.5 },
           display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 1.5,
+          gap: 1.25,
           justifyContent: 'flex-end',
-          alignItems: { xs: 'stretch', sm: 'center' },
-          width: '100%',
+          alignItems: 'center',
+          mt: 1,
         }}
       >
+        {buttonLabels?.primary && (
+          <Button
+            size="small"
+            variant="text"
+            onClick={onDetailsClick}
+            sx={{ textTransform: 'capitalize' }}
+            aria-label={`${buttonLabels.primary} ${title}`}
+          >
+            {buttonLabels.primary}
+          </Button>
+        )}
+
         <Button
           variant="contained"
           endIcon={<FlashOnIcon />}
-          size="small"
           onClick={onRequestClick}
+          size="small"
           sx={{
-            px: 3,
-            py: 1,
+            px: 2.8,
+            py: 0.9,
             borderRadius: 2,
-            background: 'linear-gradient(90deg, #ef4444 0%, #7f1d1d 100%)',
+            background: 'linear-gradient(90deg,#ef4444 0%, #7f1d1d 100%)',
             textTransform: 'capitalize',
+            boxShadow: 'none',
+            '&:hover': { boxShadow: 4 },
           }}
-          aria-label={`${buttonLabels.request} ${title}`}
+          aria-label={`${buttonLabels?.request ?? 'Request'} ${title}`}
         >
-          {buttonLabels.request}
+          {buttonLabels?.request ?? 'Request'}
         </Button>
-      </Box>
+      </CardActions>
     </Card>
   );
-};
-
-export default memo(SystemsCard);
+});
