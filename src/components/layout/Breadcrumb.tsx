@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Breadcrumbs, Typography, Divider } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 
-import { mainLinks } from '../../app/(admin)/constants/mainlinks';
+import { mainLinks } from '@/constants/mainlinks';
 
 const formatBreadcrumb = (str: string) =>
   str

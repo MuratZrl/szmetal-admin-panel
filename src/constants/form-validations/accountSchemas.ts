@@ -14,10 +14,25 @@ export const accountSchema = yup.object({
     .transform((value, originalValue) => originalValue.trim() === '' ? null : value),
 
   company: yup
-    .string()
-    .optional()
-    .nullable()
-    .transform((value, originalValue) => originalValue.trim() === '' ? null : value),
+  .string()
+  .transform((value, originalValue) => {
+    if (typeof originalValue === 'string') {
+      const trimmed = originalValue.trim();
+      return trimmed === '' ? null : trimmed;
+    }
+    return value;
+  })
+  .nullable()
+  .notRequired()
+  .test(
+    'min-or-empty',
+    'Şirket adı en az 3 karakter olmalıdır.',
+    (val) => {
+      // val === null => boş bırakılmış, geçerli
+      // aksi halde length >= 3 olmalı
+      return val == null || (typeof val === 'string' && val.length >= 3);
+    }
+  ),
 
   country: yup
     .string()

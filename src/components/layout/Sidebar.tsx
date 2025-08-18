@@ -17,7 +17,7 @@ import {
   Badge,
 } from '@mui/material';
 
-import { mainLinks, SidebarLink } from '../../app/(admin)/constants/mainlinks';
+import { mainLinks, SidebarLink } from '@/constants/mainlinks';
 
 import { supabase } from '../../lib/supabase/supabaseClient';
 import { User } from '@supabase/supabase-js';
