@@ -24,6 +24,7 @@ export default function UsersDataGrid({
         loading={loading}
         autoHeight
         hideFooter
+        disableRowSelectionOnClick
         initialState={{
           pagination: { paginationModel: { pageSize, page: 0 } },
         }}

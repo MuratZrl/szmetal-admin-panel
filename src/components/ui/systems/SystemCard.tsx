@@ -40,7 +40,7 @@ export default memo(function SystemCard({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 3,
+        borderRadius: 7,
         boxShadow: 3,
         overflow: 'hidden',
       }}
