@@ -1,45 +1,48 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import AreaChart from './AreaChart';
-import { RequestRowUnion } from '../../../types/requestsTypes';
+import type { ChartRow } from '@/types/chart';
 
-interface MonthlyRequestsChartProps {
-  rows: RequestRowUnion[];
-}
+type MonthlyRequestsChartProps = {
+  rows: ChartRow[];
+  monthsToShow?: number;
+};
 
-export default function MonthlyRequestsChart({ rows }: MonthlyRequestsChartProps) {
-  const now = new Date();
-  const months: string[] = [];
+export default function MonthlyRequestsChart({ rows, monthsToShow = 3 }: MonthlyRequestsChartProps) {
+  const { xData, series } = useMemo(() => {
+    const now = new Date(); // ← NOW inside useMemo
 
-  // ✅ Son 3 ayı oluştur
-  for (let i = 2; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // örn: "2025-03"
-    months.push(key);
-  }
-
-  // ✅ Her ay için varsayılan 0 verisi oluştur
-  const monthlyTotals: Record<string, number> = {};
-  months.forEach((m) => {
-    monthlyTotals[m] = 0;
-  });
-
-  // ✅ Gelen request verilerini bu aylara işle
-  rows.forEach((r) => {
-    const date = new Date(r.created_at);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    if (monthlyTotals.hasOwnProperty(key)) {
-      monthlyTotals[key]++;
+    // build month keys for last `monthsToShow` months (inclusive current month)
+    const months: string[] = [];
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); // YYYY-MM
     }
-  });
 
-  const xData = months;
-  const series = [
-    {
-      data: xData.map((m) => monthlyTotals[m]),
-      label: 'Toplam Talepler',
-    },
-  ];
+    // initialize totals
+    const totals = Object.fromEntries(months.map(m => [m, 0])) as Record<string, number>;
+
+    // accumulate safely
+    for (const r of rows) {
+      const created = r?.created_at;
+      if (!created) continue;
+      const d = new Date(created);
+      if (isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (key in totals) totals[key]++;
+    }
+
+    const xData = months;
+    const series = [
+      {
+        data: xData.map((m) => totals[m] ?? 0),
+        label: 'Toplam Talepler',
+      },
+    ];
+
+    return { xData, series };
+  }, [rows, monthsToShow]); // stable deps
 
   return <AreaChart xData={xData} series={series} />;
 }

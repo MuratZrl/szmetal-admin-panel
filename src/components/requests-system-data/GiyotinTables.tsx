@@ -3,7 +3,7 @@
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Typography, Divider } from '@mui/material';
 
-import { giyotinGenelBilgiColumns, giyotinMalzemeColumns } from '../../app/(admin)/constants/systems/system-columns/giyotin-sistemi';
+import { giyotinGenelBilgiColumns, giyotinMalzemeColumns } from '@/constants/systems/system-columns/giyotin-sistemi';
 
 import { SistemOzet, GiyotinProfilHesapli } from '../../types/systemTypes';
 
