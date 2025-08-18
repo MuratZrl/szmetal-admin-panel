@@ -1,25 +1,30 @@
+// src/features/systems/components/SystemCard.tsx
 'use client';
 
+import React, { memo } from 'react';
 import Image from 'next/image';
-
 import { Card, Typography, Box, Button } from '@mui/material';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
+import type { SystemCardType } from '@/types/systems';
 
-type SystemsCardProps = {
-  imageUrl: string;
-  title: string;
-  description: string;
-  tag?: string;
-  buttonLabels: {
-    details: string;
-    request: string;
-  };
-  onRequestClick: () => void; // 👈 yeni prop
+type SystemsCardProps = Pick<
+  SystemCardType,
+  'id' | 'imageUrl' | 'title' | 'description' | 'tag' | 'buttonLabels'
+> & {
+  onRequestClick?: () => void;
 };
 
-// ****************************************************************************************************
+const FALLBACK_IMAGE = '/images/fallback-system.jpg'; // add a fallback in /public
 
-const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onRequestClick }: SystemsCardProps) => {
+const SystemsCard = ({
+  id,
+  imageUrl,
+  title,
+  description,
+  tag,
+  buttonLabels,
+  onRequestClick,
+}: SystemsCardProps) => {
   return (
     <Card
       className="overflow-hidden"
@@ -29,16 +34,18 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRadius: 7,
+        borderRadius: 2, // smaller numeric radius matches MUI scale
         boxShadow: 3,
       }}
+      role="article"
+      aria-label={title}
     >
-      {/* Image */}
+      {/* Image container: next/image with fill needs parent relative + aspect ratio */}
       <Box
         sx={{
           position: 'relative',
           width: '100%',
-          pt: '56.25%',
+          pt: '56.25%', // 16:9 aspect ratio
           overflow: 'hidden',
           '& img': {
             transition: 'transform 0.3s ease',
@@ -56,7 +63,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
               top: 10,
               left: 16,
               boxShadow: 1,
-              background: 'linear-gradient(135deg, red, darkred)',
+              background: 'linear-gradient(135deg, #ef4444, #7f1d1d)',
               color: 'white',
               px: 1.5,
               py: 0.5,
@@ -72,28 +79,34 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
             {tag}
           </Box>
         )}
+
         <Image
-          src={imageUrl}
+          src={imageUrl ?? FALLBACK_IMAGE}
           alt={title}
           fill
           style={{ objectFit: 'cover', pointerEvents: 'none' }}
           draggable={false}
-          priority
+          // NOTE: set priority only for hero images - avoid many priority images.
+          // remove priority unless this is the only image on the page.
         />
       </Box>
 
       {/* Content */}
       <Box sx={{ flexGrow: 1, px: { xs: 2, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
         <Typography
-          variant="h6"
-          fontWeight={600}
-          fontSize={{ xs: '1rem', sm: '1.1rem', md: '1.2rem' }}
+          variant="subtitle2"
+          color="text.secondary"
+          sx={{ mb: 0.5, fontWeight: 700 }}
         >
+          {tag ?? ''}
+        </Typography>
+
+        <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
           {title}
         </Typography>
 
         <Typography
-          component={'div'}
+          component="div"
           variant="body2"
           color="text.secondary"
           sx={{
@@ -110,7 +123,7 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
         </Typography>
       </Box>
 
-      {/* Button */}
+      {/* Actions */}
       <Box
         sx={{
           px: { xs: 2, sm: 2.5 },
@@ -123,28 +136,25 @@ const SystemsCard = ({ imageUrl, title, description, tag, buttonLabels, onReques
           width: '100%',
         }}
       >
-
         <Button
           variant="contained"
           endIcon={<FlashOnIcon />}
-
-          color="primary"
           size="small"
           onClick={onRequestClick}
           sx={{
             px: 3,
             py: 1,
-            borderRadius: 10,
-            background: 'linear-gradient(90deg, red 0%, darkred 75%, darkred 100%)',
+            borderRadius: 2,
+            background: 'linear-gradient(90deg, #ef4444 0%, #7f1d1d 100%)',
             textTransform: 'capitalize',
           }}
+          aria-label={`${buttonLabels.request} ${title}`}
         >
           {buttonLabels.request}
         </Button>
-
       </Box>
     </Card>
   );
 };
 
-export default SystemsCard;
+export default memo(SystemsCard);

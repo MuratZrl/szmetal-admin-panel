@@ -1,118 +1,88 @@
-// app/(admin)/_constants_/systemcards.ts
+// src/components/ui/_constants_/systemcards.ts
+import type { SystemCardType } from '@/types/systems'; // adjust path if needed
 
-export type SystemButtonLabels = {
-  details: string;
-  request: string;
-};
+// tiny slug helper
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-');
 
-export type SystemLinks = {
-  detailsPage: string;
-  requestPage: string;
-};
-
-export type System = {
-  imageUrl: string;
-  title: string;
-  description: string;
-
-  tag?: string; // 👈 optional tag
-
-  buttonLabels: SystemButtonLabels;
-  links: SystemLinks;
-};
-
-export const systems = [
+export const systems: SystemCardType[] = [
   {
-    imageUrl: '/systemcards/giyotin-sistemi.jpeg',
+    id: 'giyotin-sistemi',
     title: 'Giyotin Sistemi',
-    description: 'Malzeme giriş-çıkış takibi, envanter analizi ve raporlama çözümleri.',
-    tag: 'Yeni', // 👈 sadece bazılarında olur
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/giyotin-sistemi',
-      requestPage: '/systems/giyotin-sistemi',
-    },
+    description:
+      'Malzeme giriş-çıkış takibi, envanter analizi ve raporlama çözümleri.',
+    imageUrl: '/systemcards/giyotin-sistemi.jpeg',
+    tag: 'Yeni',
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/giyotin-sistemi', details: '/details/giyotin-sistemi' },
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    meta: {},
   },
   {
-    imageUrl: '/systemcards/cam-balkon-sistemi.jpg',
+    id: 'cam-balkon-sistemi',
     title: 'Cam Balkon Sistemi',
     description: 'Üretim aşamalarını anlık takip edin ve verimliliği ölçün.',
+    imageUrl: '/systemcards/cam-balkon-sistemi.jpg',
     tag: 'Popüler',
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/cam-balkon-sistemi',
-      requestPage: '/systems/cam-balkon-sistemi',
-    },
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/cam-balkon-sistemi', details: '/details/cam-balkon-sistemi' },
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    meta: {},
   },
   {
-    imageUrl: '/systemcards/giydirme-cephe-sistemi.jpg',
+    id: 'giydirme-cephe-sistemi',
     title: 'Giydirme Cephe Sistemi',
     description: 'Ürün kalitesini ölçümleyin, hataları erken tespit edin.',
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/giydirme-cephe-sistemi',
-      requestPage: '/systems/giydirme-cephe-sistemi',
-    },
+    imageUrl: '/systemcards/giydirme-cephe-sistemi.jpg',
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/giydirme-cephe-sistemi', details: '/details/giydirme-cephe-sistemi' },
+    isActive: true,
+    meta: {},
   },
   {
-    imageUrl: '/systemcards/kupeste-sistemi.jpg',
+    id: 'kupeste-sistemi',
     title: 'Küpeşte Sistemi',
     description: 'Vardiya planlama, izin ve performans takibi.',
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/kupeste-sistemi',
-      requestPage: '/systems/kupeste-sistemi',
-    },
+    imageUrl: '/systemcards/kupeste-sistemi.jpg',
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/kupeste-sistemi', details: '/details/kupeste-sistemi' },
+    isActive: true,
+    meta: {},
   },
   {
-    imageUrl: '/systemcards/seramik-cephe-kaplama-sistemi.jpg',
+    id: 'seramik-cephe-kaplama-sistemi',
     title: 'Seramik Cephe Kaplama Sistemi',
     description: 'Tedarik sürecinizi optimize edin ve maliyetleri yönetin.',
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/seramik-cephe-kaplama-sistemi',
-      requestPage: '/systems/seramik-cephe-kaplama-sistemi',
-    },
+    imageUrl: '/systemcards/seramik-cephe-kaplama-sistemi.jpg',
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/seramik-cephe-kaplama-sistemi', details: '/details/seramik-cephe-kaplama-sistemi' },
+    isActive: true,
+    meta: {},
   },
   {
-    imageUrl: '/systemcards/profil-sistemi.jpg',
+    id: 'profil-sistemi',
     title: 'Profil Sistemi',
     description: 'Ekipmanlarınızın bakım takvimini ve geçmişini yönetin.',
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/profil-sistemi',
-      requestPage: '/systems/profil-sistemi',
-    },
+    imageUrl: '/systemcards/profil-sistemi.jpg',
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/profil-sistemi', details: '/details/profil-sistemi' },
+    isActive: true,
+    meta: {},
   },
   {
-    imageUrl: '/systemcards/aluminyum-dograma-sistemi.jpg',
+    id: 'aluminyum-dograma-sistemi',
     title: 'Alüminyum Doğrama Sistemi',
     description: 'Enerji tüketimini analiz edin, verimlilik sağlayın.',
-    buttonLabels: {
-      details: 'Detaylar',
-      request: 'Hemen Talep Oluştur',
-    },
-    links: {
-      detailsPage: '/details/aluminyum-dograma-sistemi',
-      requestPage: '/systems/aluminyum-dograma-sistemi',
-    },
+    imageUrl: '/systemcards/aluminyum-dograma-sistemi.jpg',
+    buttonLabels: { request: 'Hemen Talep Oluştur', primary: 'Detaylar' },
+    links: { requestPage: '/systems/aluminyum-dograma-sistemi', details: '/details/aluminyum-dograma-sistemi' },
+    isActive: true,
+    meta: {},
   },
 ];
