@@ -4,7 +4,7 @@ import React from 'react';
 
 import { GridColDef } from '@mui/x-data-grid';
 
-import { RequestRowUnion } from '../../types/requestsTypes';
+import { RequestRowUnion } from '@/types/requestsTypes';
 
 import { Chip } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
