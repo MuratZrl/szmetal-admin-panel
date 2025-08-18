@@ -7,20 +7,20 @@ import Image from 'next/image';
 import { useState, useEffect, ChangeEvent } from 'react';
 
 import { yupResolver } from '@hookform/resolvers/yup';
-import { productDialogSchema } from '../../../_constants_/form-validations/productDialogSchemas';
+import { productDialogSchema } from '../../../app/(admin)/constants/form-validations/productDialogSchemas';
 
 import {
   Box, Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Stack
 } from '@mui/material';
 
-import { commonTextFieldProps } from '../../../_constants_/formstyles';
+import { commonTextFieldProps } from '../../../app/(admin)/constants/formstyles';
 
 import { useForm, Controller } from 'react-hook-form';
 
-import type { StaticFormValues, AddProductDialogProps } from '../../../types/addproductsTypes';
+import type { StaticFormValues, AddProductDialogProps } from '../../../app/(admin)/types/addproductsTypes';
 
-import { supabase } from '../../../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 export default function AddProductDialog({
     open,

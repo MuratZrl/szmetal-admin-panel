@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Typography, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-import { mainLinks } from '../../_constants_/mainlinks';
+import { mainLinks } from '../../app/(admin)/constants/mainlinks';
 
 export default function Header() {
   const pathname = usePathname();

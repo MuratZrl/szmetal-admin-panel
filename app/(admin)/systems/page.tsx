@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 
 import { Box, Grid } from "@mui/material";
 
-import StepperComponent from "../_components_/ui/stepper/Stepper";
-import SystemsCard from "../_components_/ui/cards/SystemsCard";
+import StepperComponent from "../../../components/ui/stepper/Stepper";
+import SystemsCard from "../../../components/ui/cards/SystemsCard";
 
-import SystemsCardSkeleton from "../_components_/skeletons/SystemCard";
+import SystemsCardSkeleton from "../../../components/skeletons/SystemCard";
 
-import { systems } from "../_constants_/systemcards";
+import { systems } from "../constants/systemcards";
 
 const SystemsPage = () => {
   const router = useRouter();

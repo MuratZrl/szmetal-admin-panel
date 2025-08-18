@@ -17,9 +17,9 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import productFormSchema, {
   ProductFormValues,
   defaultProductFormValues,
-} from '../../_constants_/form-validations/categoryProductSchemas'; // aynı klasördeki schema dosyası
+} from '../../constants/form-validations/categoryProductSchemas'; // aynı klasördeki schema dosyası
 
-import { supabase } from '../../../lib/supabase/supabaseClient';
+import { supabase } from '../../../../lib/supabase/supabaseClient';
 
 type Props = {
   id: string;

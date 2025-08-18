@@ -3,9 +3,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-const ProfileSkeleton = dynamic(() => import('../_components_/skeletons/AccountCard'), { ssr: false });
+const ProfileSkeleton = dynamic(() => import('../../../components/skeletons/AccountCard'), { ssr: false });
 
-import ChangeEmailDialog from '../_components_/ui/dialogs/ChangeEmailDialog';
+import ChangeEmailDialog from '../../../components/ui/dialogs/ChangeEmailDialog';
 
 import * as yup from 'yup';
 import { Asserts } from 'yup';
@@ -16,10 +16,10 @@ import { useForm, Resolver } from 'react-hook-form';
 
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { accountSchema } from '../_constants_/form-validations/accountSchemas';
-import { passwordSchema } from '../_constants_/form-validations/passwordSchemas';
+import { accountSchema } from '../constants/form-validations/accountSchemas';
+import { passwordSchema } from '../constants/form-validations/passwordSchemas';
 
-import { countries } from '../_constants_/_data_/countries';
+import { countries } from '../constants/data/countries';
 
 import {
   Avatar,
@@ -41,9 +41,9 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
-import { commonTextFieldProps } from '../_constants_/formstyles';
+import { commonTextFieldProps } from '../constants/formstyles';
 
-import { supabase } from '../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 // **********************************************************************************************************************
 

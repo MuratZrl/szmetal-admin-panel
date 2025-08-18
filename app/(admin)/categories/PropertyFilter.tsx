@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCategoryStore } from '../../lib/stores/categoryStore';
+import { useCategoryStore } from '../../../lib/stores/categoryStore';
 import {
   Card,
   CardHeader,

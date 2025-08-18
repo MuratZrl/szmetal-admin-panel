@@ -4,9 +4,9 @@
 
 import { Box, Grid } from '@mui/material';
 
-import ProductCard from '../_components_/ui/cards/ProductCard';
+import ProductCard from '../../../components/ui/cards/ProductCard';
 
-import { products } from '../_constants_/productcards';
+import { products } from '../constants/productcards';
 
 export default function ProductsPage() {
   return (

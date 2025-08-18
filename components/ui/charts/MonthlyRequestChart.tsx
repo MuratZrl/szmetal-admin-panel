@@ -1,7 +1,7 @@
 'use client';
 
 import AreaChart from './AreaChart';
-import { RequestRowUnion } from '../../../types/requestsTypes';
+import { RequestRowUnion } from '../../../app/(admin)/types/requestsTypes';
 
 interface MonthlyRequestsChartProps {
   rows: RequestRowUnion[];

@@ -23,7 +23,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import AuthCard from '../components/layout/AuthCard';
 
-import { supabase } from '../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 export default function ResetPasswordPage() {
   const router = useRouter();

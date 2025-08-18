@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation'; // ✅ yönlendirme için
-import { useCategoryStore } from '../../lib/stores/categoryStore';
+import { useCategoryStore } from '../../../lib/stores/categoryStore';
 
 import { Container, Box, Grid, Typography } from '@mui/material';
 
 import TopBar from './TopBar';
-import ProductCard from '../_components_/ui/cards/ProductCard';
-import CustomPagination from '../_components_/ui/pagination/Pagination';
+import ProductCard from '../../../components/ui/cards/ProductCard';
+import CustomPagination from '../../../components/ui/pagination/Pagination';
 
-import { supabase } from '../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 type Product = {
   id: string;

@@ -14,19 +14,19 @@ import {
 from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
-import ConfirmDialog from '../../../_components_/ui/dialogs/ConfirmDialog';
+import ConfirmDialog from '../../../../../components/ui/dialogs/ConfirmDialog';
 
-import FormGuard from '../../../_components_/guard/SystemFormGuard';
+import FormGuard from '../../../../../components/guard/SystemFormGuard';
 
-import StepperComponent from '../../../_components_/ui/stepper/Stepper';
-import { systemStep3Configs } from '../../../_constants_/systems/step3/systemConfigs';
+import StepperComponent from '../../../../../components/ui/stepper/Stepper';
+import { systemStep3Configs } from '../../../constants/systems/step3/systemConfigs';
 
 import { 
   GiyotinProfilHesapli, 
   SistemOzet 
 } from '../../../types/systemTypes';
 
-import { supabase } from '../../../../lib/supabase/supabaseClient';
+import { supabase } from '../../../../../lib/supabase/supabaseClient';
 
 // ******************************************************************************************
 

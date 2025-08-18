@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
-import { ordersColumns } from '../_constants_/orders/columns';
+import { ordersColumns } from '../constants/orders/columns';
 
-import { supabase } from '../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 type Notification = {
   id: string;

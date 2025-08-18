@@ -7,12 +7,12 @@ import { useParams } from 'next/navigation';
 import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 // ****************************************************************************************************
-import AddProductDialog from '../../_components_/ui/dialogs/AddProductDialog';
+import AddProductDialog from '../../../../components/ui/dialogs/AddProductDialog';
 import { DynamicRow } from '../../types/productsTypes';
 // ****************************************************************************************************
-import { deleteRow } from '../../../lib/CUD';
+import { deleteRow } from '../../../../lib/CUD';
 // ****************************************************************************************************
-import { supabase } from '../../../lib/supabase/supabaseClient';
+import { supabase } from '../../../../lib/supabase/supabaseClient';
 // ****************************************************************************************************
 
 export default function ProductDetailPage() {

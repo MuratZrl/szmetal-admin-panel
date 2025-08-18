@@ -2,9 +2,9 @@
 'use client';
 
 import React from 'react';
-import Sidebar from './_components_/layout/Sidebar';
-import Breadcrumb from './_components_/layout/Breadcrumb';
-import Header from './_components_/layout/Header';
+import Sidebar from '../../components/layout/Sidebar';
+import Breadcrumb from '../../components/layout/Breadcrumb';
+import Header from '../../components/layout/Header';
 
 import { Box, Paper, CssBaseline } from '@mui/material';
 

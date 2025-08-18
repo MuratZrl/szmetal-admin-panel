@@ -16,7 +16,7 @@ import AuthCard from '../components/layout/AuthCard';
 
 import { commonTextFieldProps } from '../_constants_/formstyles';
 
-import { supabase } from '../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

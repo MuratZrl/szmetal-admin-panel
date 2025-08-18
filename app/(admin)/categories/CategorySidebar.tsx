@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { useCategoryStore } from '../../lib/stores/categoryStore';
-import { supabase } from '../../lib/supabase/supabaseClient';
+import { useCategoryStore } from '../../../lib/stores/categoryStore';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 import {
   Grid,
   Card,

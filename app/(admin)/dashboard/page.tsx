@@ -4,14 +4,14 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 // ********************************************************************************
 import { Box, Grid, Card, Typography, Divider } from '@mui/material';
 // ********************************************************************************
-import StatCard from '../_components_/ui/cards/StatCard';
+import StatCard from '../../../components/ui/cards/StatCard';
 // ********************************************************************************
-import BasicArea from '../_components_/ui/charts/DashboardAreaChart';
-import BasicBars from '../_components_/ui/charts/DashboardGroupedBarChart';
+import BasicArea from '../../../components/ui/charts/DashboardAreaChart';
+import BasicBars from '../../../components/ui/charts/DashboardGroupedBarChart';
 // ********************************************************************************
-import SimpleCharts from '../_components_/ui/charts/DashboardBarChart';
-import MultiSeriesRadar from '../_components_/ui/charts/DashboardRadarChart';
-import DashboardStackedAreaChart from '../_components_/ui/charts/DashboardStacktedAreaChart';
+import SimpleCharts from '../../../components/ui/charts/DashboardBarChart';
+import MultiSeriesRadar from '../../../components/ui/charts/DashboardRadarChart';
+import DashboardStackedAreaChart from '../../../components/ui/charts/DashboardStacktedAreaChart';
 // ********************************************************************************
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';

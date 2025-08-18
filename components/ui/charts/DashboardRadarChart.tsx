@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { supabase } from '../../../../lib/supabase/supabaseClient';
+import { supabase } from '../../../lib/supabase/supabaseClient';
 
 type SupabaseRawRow = {
   system_slug: string;

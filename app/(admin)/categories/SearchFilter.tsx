@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { TextField, InputAdornment, Card, CardHeader, CardContent } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useCategoryStore } from '../../lib/stores/categoryStore';
+import { useCategoryStore } from '../../../lib/stores/categoryStore';
 
 export default function SearchFilter() {
   const [searchTerm, setSearchTerm] = useState('');

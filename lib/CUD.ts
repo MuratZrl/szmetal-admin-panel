@@ -1,5 +1,5 @@
 // app/lib/CUD.ts
-import type { DynamicRow } from '../(admin)/types/productsTypes';
+import type { DynamicRow } from '../app/(admin)/types/productsTypes';
 
 import { supabase } from './supabase/supabaseClient';
 

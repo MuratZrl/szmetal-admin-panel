@@ -2,7 +2,7 @@
 
 import CustomBarChart from './BarChart';
 
-import { RequestRowUnion } from '../../../types/requestsTypes';
+import { RequestRowUnion } from '../../../app/(admin)/types/requestsTypes';
 
 interface GroupedRequestedBarChartProps {
   rows: RequestRowUnion[];

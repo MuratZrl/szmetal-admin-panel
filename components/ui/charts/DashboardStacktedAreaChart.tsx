@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Box } from '@mui/material';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '../../../../../types/supabase';
+import { Database } from '../../../types/supabase';
 
 // Supabase istemcisi
 const supabase = createClientComponentClient<Database>();

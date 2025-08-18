@@ -8,10 +8,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-import GiyotinTables from '../../_components_/requests-system-data/GiyotinTables';
+import GiyotinTables from '../../../../components/requests-system-data/GiyotinTables';
 import { RequestRowUnion } from '../../types/requestsTypes';
 
-import { supabase } from '../../../lib/supabase/supabaseClient';
+import { supabase } from '../../../../lib/supabase/supabaseClient';
 
 function renderSystemTables(request: RequestRowUnion) {
   switch (request.system_slug) {

@@ -3,7 +3,7 @@
 import { Box } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
-import { productColumns } from '../../../_constants_/categories/columns';
+import { productColumns } from '../../../app/(admin)/constants/categories/columns';
 
 export type Product = {
   id: string; // UUID

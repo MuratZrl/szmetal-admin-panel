@@ -2,7 +2,7 @@
 
 import { Typography, Slider, Card, CardHeader, CardContent } from '@mui/material';
 
-import { useCategoryStore } from '../../lib/stores/categoryStore';
+import { useCategoryStore } from '../../../lib/stores/categoryStore';
 
 export default function KgPerMRangeFilter() {
   const kgPerMRange = useCategoryStore((s) => s.kgPerMRange);

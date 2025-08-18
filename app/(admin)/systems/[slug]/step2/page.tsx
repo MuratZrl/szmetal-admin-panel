@@ -19,11 +19,11 @@ import {
 } from '@mui/material';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 
-import { commonTextFieldProps } from '../../../_constants_/formstyles';
+import { commonTextFieldProps } from '../../../constants/formstyles';
 
-import { systemForms } from '../../../_constants_/systems/step2/systemForms';
+import { systemForms } from '../../../constants/systems/step2/systemForms';
 
-import StepperComponent from '../../../_components_/ui/stepper/Stepper';
+import StepperComponent from '../../../../../components/ui/stepper/Stepper';
 
 export default function Step2Page() {
 

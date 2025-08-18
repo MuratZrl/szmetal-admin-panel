@@ -5,7 +5,7 @@ import {
   BarChart,
 } from '@mui/x-charts/BarChart';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '../../../../../types/supabase';
+import { Database } from '../../../types/supabase';
 
 import { Box, Stack } from '@mui/material';
 

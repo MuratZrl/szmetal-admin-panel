@@ -6,11 +6,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Grid, Card, CardHeader, CardContent, Typography } from '@mui/material';
 
-import StatCard from '../_components_/ui/cards/StatCard';
-import MonthlyUserChart from '../_components_/ui/charts/MonthlyUserChart';
-import GroupedBarChart from '../_components_/ui/charts/GroupedUserBarChart';
+import StatCard from '../../../components/ui/cards/StatCard';
+import MonthlyUserChart from '../../../components/ui/charts/MonthlyUserChart';
+import GroupedBarChart from '../../../components/ui/charts/GroupedUserBarChart';
 
-import { usersTableColumns } from '../_constants_/clients/columns';
+import { usersTableColumns } from '../constants/clients/columns';
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '../../../types/supabase';

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '../../../../../types/supabase';
+import { Database } from '../../../types/supabase';
 
 type MonthlyCount = {
   label: string;
