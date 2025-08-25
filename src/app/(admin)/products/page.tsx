@@ -14,7 +14,7 @@ export default function ProductsPage() {
 
       <Grid container spacing={3}>
         {products.map((product, index) => (
-          <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }} >
             <ProductCard
               imageSrc={product.imageSrc}
               title={product.title}
