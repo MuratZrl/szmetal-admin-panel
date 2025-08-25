@@ -102,20 +102,9 @@ C:.
 |   |       Sidebar.tsx
 |   |       
 |   +---requests-system-data
-|   |       AluminyumDograma.tsx
-|   |       CamBalkonTables.tsx
-|   |       GiyotinTables.tsx
-|   |       KupesteTables.tsx
-|   |       ProfilTables.tsx
-|   |       
 |   +---skeletons
-|   |       AccountCard.tsx
-|   |       Stepper.tsx
-|   |       SystemCard.tsx
-|   |       
 |   \---ui
 |       +---cards
-|       |       ProductCard.tsx
 |       |       StatCard.tsx
 |       |       SystemsCard.tsx
 |       |       
@@ -144,10 +133,6 @@ C:.
 |       |       Pagination.tsx
 |       |       
 |       +---requests
-|       |       RequestsCharts.tsx
-|       |       RequestsDataGrid.tsx
-|       |       RequestsStats.tsx
-|       |       
 |       +---stepper
 |       |       Stepper.tsx
 |       |       
@@ -157,8 +142,6 @@ C:.
 |       |       SystemsGrid.tsx
 |       |       
 |       \---tables
-|               ProductTables.tsx
-|               
 +---constants
 |   |   formstyles.ts
 |   |   mainlinks.ts
@@ -216,22 +199,47 @@ C:.
 |   |   |   useAccount.ts
 |   |   |   
 |   |   +---components
+|   |   |       AccountCard.client.tsx
+|   |   |       
 |   |   \---hooks
 |   +---clients
 |   |   |   ClientStats.tsx
 |   |   |   
-|   |   \---components
+|   |   +---components
+|   |   \---services
+|   |           users.server.ts
+|   |           
 |   +---dashboard
 |   |   \---services
+|   |           dashboard.server.ts
+|   |           
 |   +---products
 |   |   \---components
+|   |           ProductCard.client.tsx
+|   |           ProductTables.client.tsx
+|   |           
 |   +---requests
-|   |   \---components
+|   |   +---components
+|   |   |       RequestsCharts.client.tsx
+|   |   |       RequestsDataGrid.client.tsx
+|   |   |       RequestsStats.client.tsx
+|   |   |       
+|   |   \---services
+|   |           requests.server.ts
+|   |           
 |   \---systems
 |       |   SystemsShell.tsx
 |       |   useSystems.ts
 |       |   
 |       \---components
+|               AluminyumDograma.client.tsx
+|               CamBalkonTables.client.tsx
+|               GiyotinTables.client.tsx
+|               KupesteTables.client.tsx
+|               ProfilTables.client.tsx
+|               Stepper.client.tsx
+|               SystemCard.client.tsx
+|               
 +---hooks
 |       useMonthlyUserStats.ts
 |       useRequests.ts
@@ -254,10 +262,6 @@ C:.
 |           supabaseServer.ts
 |           
 +---services
-|       dashboard.server.ts
-|       requests.server.ts
-|       users.server.ts
-|       
 +---types
 |       addproductsTypes.ts
 |       chart.ts

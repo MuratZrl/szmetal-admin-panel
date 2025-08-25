@@ -4,7 +4,7 @@
 
 import { Box, Grid } from '@mui/material';
 
-import ProductCard from '@/components/ui/cards/ProductCard';
+import ProductCard from 'features/products/components/ProductCard.client';
 
 import { products } from '@/constants/productcards';
 

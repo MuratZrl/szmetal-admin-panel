@@ -11,7 +11,7 @@ import AccountForm from "@/features/account/AccountForm"; // ayırdığın form 
 import PasswordForm from "@/features/account/PasswordForm"; // ayrı component
 import { getRoleInfo } from "@/features/account/helpers";
 
-import AccountSkeleton from "@/components/skeletons/AccountCard";
+import AccountSkeleton from "@/features/account/components/AccountCard.client";
 
 export default function AccountPageWrapper() {
   return (
