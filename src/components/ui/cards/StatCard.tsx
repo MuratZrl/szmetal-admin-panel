@@ -40,7 +40,6 @@ const StatCard = ({ title, value, trend, percentage }: StatCardProps) => {
           <Typography
             variant="subtitle2"
             color="text.secondary"
-            fontSize={{ xs: '0.85rem', sm: '0.95rem' }}
           >
             {title}
           </Typography>
@@ -58,7 +57,6 @@ const StatCard = ({ title, value, trend, percentage }: StatCardProps) => {
               <Typography
                 variant="body2"
                 color={trend === 'up' ? 'success.main' : 'error.main'}
-                fontSize={{ xs: '0.85rem', sm: '0.95rem' }}
               >
                 <CountUp
                   end={percentage || 0}
@@ -79,7 +77,7 @@ const StatCard = ({ title, value, trend, percentage }: StatCardProps) => {
           {/* 👇 Burada animasyonlu değer */}
           <CountUp end={Number(value)} duration={1.2} separator="," />
         </Typography>
-
+        
       </CardContent>
 
     </Card>

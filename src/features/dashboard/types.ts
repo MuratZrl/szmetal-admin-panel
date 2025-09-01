@@ -1,30 +1,19 @@
-// src/types/dashboard.ts
-export type Trend = 'up' | 'down' | undefined;
+// src/features/dashboard/types.ts
+import type { Trend } from "./utils/calcChange";
 
-export interface DashboardTotals {
+export type DashboardTotals = {
   totalUsers: number;
-  totalRequests: number;
-  uniqueSystems: number;
+  totalRequests: number;      // pending
+  uniqueSystems: number;      // unique slug count
+};
 
-  userChangePercent: number;
-  userTrend?: Trend;
+export type DashboardTrends = {
+  user: { change: number; trend: Trend };
+  request: { change: number; trend: Trend };
+  system: { change: number; trend: Trend };
+};
 
-  requestChangePercent: number;
-  requestTrend?: Trend;
-
-  systemChangePercent: number;
-  systemTrend?: Trend;
-}
-
-export type ChartPoint = { x: string; y: number }; // simple; charts beklentine göre genişlet
-export interface ChartSeries {
-  name: string;
-  data: ChartPoint[];
-}
-
-export interface DashboardData {
+export type DashboardData = {
   totals: DashboardTotals;
-  monthlyUsersSeries: ChartSeries[];    // örn: [{ name: 'Users', data: [...] }]
-  roleSeries?: ChartSeries[];           // rol bazlı çubuklar
-  // gerektiği kadar genişlet
-}
+  trends: DashboardTrends;
+};

@@ -1,7 +1,7 @@
 'use client';
 
 import CustomBarChart from './BarChart';
-import useUserStatusStats from '../../../hooks/useUserStatusStats';
+import useUserStatusStats from '@/features/dashboard/hooks/useUserStatusStats.client';
 
 export default function GroupedBarChart() {
   const { data, loading } = useUserStatusStats();

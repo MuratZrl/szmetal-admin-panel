@@ -1,8 +1,8 @@
 // app/(admin)/requests/page.tsx
-import RequestStats from '@/components/ui/requests/RequestsStats'; // client
-import RequestsDataGrid from '@/components/ui/requests/RequestsDataGrid';
-import RequestsCharts from '@/components/ui/requests/RequestsCharts';
-import { fetchAllRequests } from '@/services/requests.server';
+import RequestStats from '@/features/requests/components/RequestsStats.client'; // client
+import RequestsDataGrid from '@/features/requests/components/RequestsDataGrid.client';
+import RequestsCharts from '@/features/requests/components/RequestsCharts.client';
+import { fetchAllRequests } from '@/features/requests/services/requests.server';
 
 export const revalidate = 60;
 

@@ -1,76 +1,86 @@
-import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+// src/features/dashboard/services/fetchStats.server.ts
+import { createClient } from "@supabase/supabase-js";
+import { calcChange, getTrend } from "../utils/calcChange";
+import { getMonthRanges } from "../utils/dateRanges";
+import type { DashboardData } from "../types";
+import type { Database } from "@/types/supabase";
 
-import { getMonthBounds } from '@/utils/date';
-import { calcChangeAndTrend } from '@/utils/stats';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-import type { DashboardData } from '@/types/dashboard';
+const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// örnek: tek sorumlu yer — hata fırlatır, page katmanında yakalanır
-export async function fetchDashboardData(): Promise<DashboardData> {
-  const supabase = await createSupabaseServerClient();
-  const { startOfThisMonthISO, startOfLastMonthISO, endOfLastMonthISO } = getMonthBounds(new Date());
+export async function fetchDashboardData(now = new Date()): Promise<DashboardData> {
+  const { startOfThisMonth, startOfLastMonth, endOfLastMonth } = getMonthRanges(now);
 
-  // toplamlar
+  // 1) Totaller
   const [{ data: allUsers }, { data: allRequests }, { data: allSystems }] = await Promise.all([
-    supabase.from('users').select('id'),
-    supabase.from('requests').select('id').eq('status', 'pending'),
-    supabase.from('system_profiles').select('system_slug'),
+    supabase.from("users").select("id"),
+    supabase.from("requests").select("id").eq("status", "pending"),
+    supabase.from("system_drafts").select("slug"),
   ]);
 
   const totalUsers = allUsers?.length ?? 0;
   const totalRequests = allRequests?.length ?? 0;
-  const uniqueSystems = new Set(allSystems?.map(s => s.system_slug)).size;
+  const uniqueSystems = new Set((allSystems ?? []).map(s => s.slug)).size;
 
-  // this / last month user counts
-  const [{ data: thisMonthUsers }, { data: lastMonthUsers }] = await Promise.all([
-    supabase.from('users').select('id').gte('created_at', startOfThisMonthISO),
-    supabase.from('users').select('id').gte('created_at', startOfLastMonthISO).lte('created_at', endOfLastMonthISO),
+  // 2) Aylık kıyaslar
+  const [
+    { data: thisMonthUsers },
+    { data: lastMonthUsers },
+    { data: thisMonthRequests },
+    { data: lastMonthRequests },
+    { data: thisMonthSystems },
+    { data: lastMonthSystems },
+  ] = await Promise.all([
+    supabase.from("users")
+      .select("id")
+      .gte("created_at", startOfThisMonth.toISOString()),
+    supabase.from("users")
+      .select("id")
+      .gte("created_at", startOfLastMonth.toISOString())
+      .lte("created_at", endOfLastMonth.toISOString()),
+    supabase.from("requests")
+      .select("id")
+      .eq("status", "pending")
+      .gte("created_at", startOfThisMonth.toISOString()),
+    supabase.from("requests")
+      .select("id")
+      .eq("status", "pending")
+      .gte("created_at", startOfLastMonth.toISOString())
+      .lte("created_at", endOfLastMonth.toISOString()),
+    supabase.from("system_drafts")
+      .select("slug")
+      .gte("created_at", startOfThisMonth.toISOString()),
+    supabase.from("system_drafts")
+      .select("slug")
+      .gte("created_at", startOfLastMonth.toISOString())
+      .lte("created_at", endOfLastMonth.toISOString()),
   ]);
-  const { percent: userChangePercent, trend: userTrend } = calcChangeAndTrend(lastMonthUsers?.length ?? 0, thisMonthUsers?.length ?? 0);
 
-  // requests (pending) this/last month
-  const [{ data: thisMonthRequests }, { data: lastMonthRequests }] = await Promise.all([
-    supabase.from('requests').select('id').eq('status', 'pending').gte('created_at', startOfThisMonthISO),
-    supabase.from('requests').select('id').eq('status', 'pending').gte('created_at', startOfLastMonthISO).lte('created_at', endOfLastMonthISO),
-  ]);
-  const { percent: requestChangePercent, trend: requestTrend } = calcChangeAndTrend(lastMonthRequests?.length ?? 0, thisMonthRequests?.length ?? 0);
+  const thisMonthUserCount = thisMonthUsers?.length ?? 0;
+  const lastMonthUserCount = lastMonthUsers?.length ?? 0;
 
-  // systems unique this/last month
-  const [{ data: thisMonthSystems }, { data: lastMonthSystems }] = await Promise.all([
-    supabase.from('system_profiles').select('system_slug').gte('created_at', startOfThisMonthISO),
-    supabase.from('system_profiles').select('system_slug').gte('created_at', startOfLastMonthISO).lte('created_at', endOfLastMonthISO),
-  ]);
-  const uniqueThisMonth = new Set(thisMonthSystems?.map(s => s.system_slug)).size;
-  const uniqueLastMonth = new Set(lastMonthSystems?.map(s => s.system_slug)).size;
-  const { percent: systemChangePercent, trend: systemTrend } = calcChangeAndTrend(uniqueLastMonth, uniqueThisMonth);
+  const thisMonthActiveCount = thisMonthRequests?.length ?? 0;
+  const lastMonthActiveCount = lastMonthRequests?.length ?? 0;
 
-  // basit chart serisi (örnek) — gerçek veriyi almak için date_trunc sorgusu önerilir
-  const monthlyUsersSeries = await buildMonthlyUsersSeries();
+  const uniqueThisMonth = new Set((thisMonthSystems ?? []).map(s => s.slug)).size;
+  const uniqueLastMonth = new Set((lastMonthSystems ?? []).map(s => s.slug)).size;
 
-  const totals = {
-    totalUsers,
-    totalRequests,
-    uniqueSystems,
-    userChangePercent,
-    userTrend,
-    requestChangePercent,
-    requestTrend,
-    systemChangePercent,
-    systemTrend,
+  const userChange = calcChange(thisMonthUserCount, lastMonthUserCount);
+  const requestChange = calcChange(thisMonthActiveCount, lastMonthActiveCount);
+  const systemChange = calcChange(uniqueThisMonth, uniqueLastMonth);
+
+  return {
+    totals: {
+      totalUsers,
+      totalRequests,
+      uniqueSystems,
+    },
+    trends: {
+      user: { change: userChange, trend: getTrend(thisMonthUserCount, lastMonthUserCount) },
+      request: { change: requestChange, trend: getTrend(thisMonthActiveCount, lastMonthActiveCount) },
+      system: { change: systemChange, trend: getTrend(uniqueThisMonth, uniqueLastMonth) },
+    },
   };
-
-  return { totals, monthlyUsersSeries, roleSeries: [] };
-}
-
-// quick helper: burada gerçek SQL daha iyi; örnek placeholder
-async function buildMonthlyUsersSeries() {
-  const now = new Date();
-  const series = { name: 'Kullanıcılar', data: [] as { x: string; y: number }[] };
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const label = d.toLocaleString('tr-TR', { month: 'short', year: 'numeric' });
-    // optimizasyon: tek sorguda date_trunc + group by yap
-    series.data.push({ x: label, y: Math.floor(Math.random() * 200) });
-  }
-  return [series];
 }

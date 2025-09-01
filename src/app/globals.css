@@ -24,3 +24,30 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Yalnızca yazdırma davranışı */
+@media print {
+  @page {
+    size: A4 portrait;         /* A4 dikey */
+    margin: 12mm;              /* yazıcı kenarları */
+  }
+
+  /* Yalnızca #print-area kalsın */
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area { position: absolute; inset: 0; }
+
+  /* Renklerin solmaması */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Çizim kutuları sayfa ortasında bölünmesin */
+  .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+}
+
+/* Ekranda print alanını saklamak istersen opsiyonel */
+@media screen {
+  #print-area { display: none; }
+}

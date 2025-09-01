@@ -70,7 +70,8 @@ export const usersTableColumns: GridColDef[] = [
         color="default"
         size="small"
         variant="outlined"
-      />
+        sx={{ pointerEvents: 'none' }}
+        />
     ),
     sortable: false, 
     filterable: false, 
@@ -120,7 +121,7 @@ export const usersTableColumns: GridColDef[] = [
           break;
       }
 
-      return <Chip label={label} color={color} size="small" icon={icon} />;
+      return <Chip label={label} color={color} size="small" icon={icon} sx={{ pointerEvents: 'none' }}/>;
     },
     sortable: false, 
     filterable: false, 

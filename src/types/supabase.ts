@@ -7,16 +7,214 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          slug: string
+          sort: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string
+          category_id: string | null
+          code: string
+          control: string | null
+          created_at: string
+          date: string
+          display_name: string
+          drawer: string | null
+          file_bucket: string | null
+          file_ext: string | null
+          file_mime: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: number
+          image: string | null
+          manufacturer_code: string | null
+          name: string
+          outer_size_mm: number | null
+          profile_code: string | null
+          scale: string | null
+          section_mm2: number | null
+          sub_category: string
+          subcategory_id: string | null
+          temp_code: string | null
+          unit_weight_gr_pm: number | null
+          unit_weight_kg: number
+          variant: string
+        }
+        Insert: {
+          category: string
+          category_id?: string | null
+          code: string
+          control?: string | null
+          created_at?: string
+          date: string
+          display_name: string
+          drawer?: string | null
+          file_bucket?: string | null
+          file_ext?: string | null
+          file_mime?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: number
+          image?: string | null
+          manufacturer_code?: string | null
+          name: string
+          outer_size_mm?: number | null
+          profile_code?: string | null
+          scale?: string | null
+          section_mm2?: number | null
+          sub_category: string
+          subcategory_id?: string | null
+          temp_code?: string | null
+          unit_weight_gr_pm?: number | null
+          unit_weight_kg: number
+          variant: string
+        }
+        Update: {
+          category?: string
+          category_id?: string | null
+          code?: string
+          control?: string | null
+          created_at?: string
+          date?: string
+          display_name?: string
+          drawer?: string | null
+          file_bucket?: string | null
+          file_ext?: string | null
+          file_mime?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: number
+          image?: string | null
+          manufacturer_code?: string | null
+          name?: string
+          outer_size_mm?: number | null
+          profile_code?: string | null
+          scale?: string | null
+          section_mm2?: number | null
+          sub_category?: string
+          subcategory_id?: string | null
+          temp_code?: string | null
+          unit_weight_gr_pm?: number | null
+          unit_weight_kg?: number
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requests: {
         Row: {
           created_at: string
+          description: string
           form_data: Json
           id: string
           material_data: Json
@@ -27,6 +225,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description: string
           form_data: Json
           id?: string
           material_data: Json
@@ -37,6 +236,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string
           form_data?: Json
           id?: string
           material_data?: Json
@@ -55,40 +255,41 @@ export type Database = {
           },
         ]
       }
-      system_profiles: {
+      system_drafts: {
         Row: {
-          birim_agirlik: number | null
+          birim_agirlik: number
           created_at: string | null
           id: string
           profil_adi: string
           profil_kodu: string
-          profil_resmi: string | null
-          system_slug: string
+          profil_resmi: string
+          slug: string
         }
         Insert: {
-          birim_agirlik?: number | null
+          birim_agirlik: number
           created_at?: string | null
           id?: string
           profil_adi: string
           profil_kodu: string
-          profil_resmi?: string | null
-          system_slug: string
+          profil_resmi: string
+          slug: string
         }
         Update: {
-          birim_agirlik?: number | null
+          birim_agirlik?: number
           created_at?: string | null
           id?: string
           profil_adi?: string
           profil_kodu?: string
-          profil_resmi?: string | null
-          system_slug?: string
+          profil_resmi?: string
+          slug?: string
         }
         Relationships: []
       }
       users: {
         Row: {
           company: string | null
-          created_at: string | null
+          country: string | null
+          created_at: string
           email: string
           id: string
           image: string | null
@@ -99,7 +300,8 @@ export type Database = {
         }
         Insert: {
           company?: string | null
-          created_at?: string | null
+          country?: string | null
+          created_at?: string
           email: string
           id: string
           image?: string | null
@@ -110,7 +312,8 @@ export type Database = {
         }
         Update: {
           company?: string | null
-          created_at?: string | null
+          country?: string | null
+          created_at?: string
           email?: string
           id?: string
           image?: string | null
@@ -121,44 +324,90 @@ export type Database = {
         }
         Relationships: []
       }
+      variants: {
+        Row: {
+          id: string
+          key: string
+          name: string
+          sort: number
+        }
+        Insert: {
+          id?: string
+          key: string
+          name: string
+          sort?: number
+        }
+        Update: {
+          id?: string
+          key?: string
+          name?: string
+          sort?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      category_stats: {
+        Row: {
+          id: string | null
+          name: string | null
+          parent_id: string | null
+          product_count: number | null
+          slug: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_monthly_user_counts: {
         Args: Record<PropertyKey, never>
         Returns: {
-          month: string
           count: number
+          month: string
         }[]
       }
       get_monthly_user_counts_with_zeros: {
         Args: Record<PropertyKey, never>
         Returns: {
-          month: string
           count: number
+          month: string
         }[]
       }
       get_monthly_user_status_counts: {
         Args: Record<PropertyKey, never>
         Returns: {
+          count: number
           month: string
           status: string
-          count: number
         }[]
       }
       get_monthly_user_status_counts_with_zeros: {
         Args: Record<PropertyKey, never>
         Returns: {
+          count: number
           month: string
           status: string
-          count: number
         }[]
       }
     }
     Enums: {
-      [_ in never]: never
+      product_category: "Profil" | "Kapı" | "Pencere" | "Aksesuar"
+      product_variant: "Kasa" | "Kanat" | "Ray" | "Fitil" | "Kilit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -285,6 +534,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      product_category: ["Profil", "Kapı", "Pencere", "Aksesuar"],
+      product_variant: ["Kasa", "Kanat", "Ray", "Fitil", "Kilit"],
+    },
   },
 } as const

@@ -25,9 +25,9 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Systems', labelTr: 'Sistemler', href: '/systems', icon: Storage },
   { label: 'Requests', labelTr: 'Talepler', href: '/requests', icon: ListAlt },
   { label: 'Clients', labelTr: 'Müşteriler', href: '/clients', icon: People },
-  { label: 'Products', labelTr: 'Ürünler', href: '/products', icon: Inventory },
+  { label: 'System Products', labelTr: 'Sistem Ürünleri', href: '/system_products', icon: Inventory },
   { label: 'Orders', labelTr: 'Siparişler', href: '/orders', icon: ShoppingBasket, disabled: false },
-  { label: 'Categories', labelTr: 'Kategoriler', href: '/categories', icon: Category },
+  { label: 'Products', labelTr: 'Ürünler', href: '/products', icon: Category },
   { label: 'Logout', labelTr: 'Çıkış Yap', href: '/login', icon: Logout },
 ];
 

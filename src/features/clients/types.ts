@@ -1,28 +1,33 @@
-// src/types/clients.ts
-export type Trend = 'up' | 'down' | undefined;
+// src/features/clients/types.ts
+import type { Database } from "@/types/supabase";
 
-export interface ClientTotals {
-  totalUsers: number;
-  activeUsers: number;
-  passiveUsers: number;
-  bannedUsers: number;
+type UsersRow = Database["public"]["Tables"]["users"]["Row"];
 
-  thisMonthTotal: number;
-  lastMonthTotal: number;
+// DB'deki alanlarla birebir. Nullable olanlar nullable kalsın.
+export type ClientUser = Pick<
+  UsersRow,
+  | "id"
+  | "image"
+  | "email"
+  | "username"
+  | "company"
+  | "country"
+  | "role"
+  | "phone"
+  | "status"
+  | "created_at"
+>;
 
-  totalChange: number;   // yüzde (0..100..)
-  totalTrend?: Trend;
+export type UsersTotals = {
+  total: number;
+  active: number;
+  inactive: number;
+  thisMonth: number;
+  lastMonth: number;
+  changePct: number;
+};
 
-  activeChange: number;
-  activeTrend?: Trend;
-
-  passiveChange: number;
-  passiveTrend?: Trend;
-
-  bannedChange: number;
-  bannedTrend?: Trend;
-
-  // opsiyonel: grafik verileri veya başka meta
-  monthlySeries?: unknown;   // istersen burayı daha spesifik bir tiple değiştir
-  groupedSeries?: unknown;
-}
+export type ClientsPageData = {
+  users: ClientUser[];
+  totals: UsersTotals;
+};

@@ -3,11 +3,11 @@
 
 import { Grid, useTheme, useMediaQuery, Box } from '@mui/material';
 
-import CategorySidebar from './CategorySidebar';
-import PropertyFilter from './PropertyFilter';
-import SearchFilter from './SearchFilter';
-import KgPerMRangeFilter from './KgPerMRangeFilter';
-import SubCategoryGrid from './SubCategoryGrid';
+import CategorySidebar from '@/features/categories/components/CategorySidebar.client';
+import PropertyFilter from '@/features/categories/components/PropertyFilter.client';
+import SearchFilter from '@/features/categories/components/SearchFilter.client';
+import KgPerMRangeFilter from '@/features/categories/components/KgPerMRangeFilter.client';
+import SubCategoryGrid from '@/features/categories/components/SubCategoryGrid.client';
 
 export default function CategoriesPage() {
   const theme = useTheme();

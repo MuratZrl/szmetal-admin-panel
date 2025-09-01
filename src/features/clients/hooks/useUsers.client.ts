@@ -1,98 +1,56 @@
-'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/supabaseClient';
-import type { Database } from '@/types/supabase';
-import { getMonthBounds } from '@/utils/date';
-import { calcChangeAndTrend } from '@/utils/stats';
+// src/features/clients/hooks/useUsers.client.ts
+"use client";
 
-type User = Database['public']['Tables']['users']['Row'];
+import { useState, useCallback } from "react";
+import { supabase } from "@/lib/supabase/supabaseClient";
+import type { ClientUser, UsersTotals } from "../types";
 
-export function useUsers() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [thisMonthUsers, setThisMonthUsers] = useState<User[]>([]);
-  const [lastMonthUsers, setLastMonthUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
+function calcTotals(list: ClientUser[]): UsersTotals {
+  const total = list.length;
+  const active = list.filter(u => u.status === "active").length;
+  const inactive = list.filter(u => u.status === "inactive").length;
 
-  const fetch = useCallback(async () => {
+  const now = new Date();
+  const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startLast = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endLast = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  const thisMonth = list.filter(u => new Date(u.created_at) >= startThis).length;
+  const lastMonth = list.filter(u => {
+    const d = new Date(u.created_at);
+    return d >= startLast && d <= endLast;
+  }).length;
+
+  const changePct = lastMonth === 0 ? (thisMonth > 0 ? 100 : 0) : Math.round(((thisMonth - lastMonth) / lastMonth) * 100);
+  return { total, active, inactive, thisMonth, lastMonth, changePct };
+}
+
+export function useUsers(opts?: { initialUsers?: ClientUser[]; initialTotals?: UsersTotals }) {
+  const [users, setUsers] = useState<ClientUser[]>(opts?.initialUsers ?? []);
+  const [totals, setTotals] = useState<UsersTotals>(
+    opts?.initialTotals ?? { total: 0, active: 0, inactive: 0, thisMonth: 0, lastMonth: 0, changePct: 0 }
+  );
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
     setLoading(true);
-    setError(null);
-
     try {
-      const { startOfThisMonth, startOfLastMonth, endOfLastMonth } = getMonthBounds(new Date());
+      // GEREKLİ TÜM KOLONLARI SEÇ: id, image, email, username, company, country, role, phone, status, created_at
+      const { data } = await supabase
+        .from("users")
+        .select("id, image, email, username, company, country, role, phone, status, created_at")
+        .order("created_at", { ascending: false })
+        .returns<ClientUser[]>();  // ← burası kritik
 
-      const [{ data: allUsers, error: allError }, { data: thisM, error: thisError }, { data: lastM, error: lastError }] = await Promise.all([
-        supabase.from('users').select('*'),
-        supabase.from('users').select('*').gte('created_at', startOfThisMonth.toISOString()),
-        supabase
-          .from('users')
-          .select('*')
-          .gte('created_at', startOfLastMonth.toISOString())
-          .lte('created_at', endOfLastMonth.toISOString()),
-      ]);
+      // `returns<ClientUser[]>()` da yazabilirdik ama UsersRow’dan türetmek daha güvenli.
+      const nextUsers = data ?? [];
 
-      if (allError || thisError || lastError) {
-        throw allError ?? thisError ?? lastError;
-      }
-
-      setUsers(allUsers ?? []);
-      setThisMonthUsers(thisM ?? []);
-      setLastMonthUsers(lastM ?? []);
-    } catch (err) {
-      setError(err as Error);
-      console.error('useUsers fetch error', err);
+      setUsers(nextUsers);
+      setTotals(calcTotals(nextUsers));
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void fetch();
-  }, [fetch]);
-
-  const totals = useMemo(() => {
-    const totalUsers = users.length;
-    const activeUsers = users.filter(u => (u.status ?? '').toLowerCase() === 'active').length;
-    const passiveUsers = users.filter(u => (u.status ?? '').toLowerCase() === 'inactive').length;
-    const bannedUsers = users.filter(u => (u.status ?? '').toLowerCase() === 'banned').length;
-
-    const { percent: totalChange, trend: totalTrend } = calcChangeAndTrend(lastMonthUsers.length, thisMonthUsers.length);
-    const { percent: activeChange, trend: activeTrend } = calcChangeAndTrend(
-      lastMonthUsers.filter(u => (u.status ?? '').toLowerCase() === 'active').length,
-      thisMonthUsers.filter(u => (u.status ?? '').toLowerCase() === 'active').length
-    );
-    const { percent: passiveChange, trend: passiveTrend } = calcChangeAndTrend(
-      lastMonthUsers.filter(u => (u.status ?? '').toLowerCase() === 'inactive').length,
-      thisMonthUsers.filter(u => (u.status ?? '').toLowerCase() === 'inactive').length
-    );
-    const { percent: bannedChange, trend: bannedTrend } = calcChangeAndTrend(
-      lastMonthUsers.filter(u => (u.status ?? '').toLowerCase() === 'banned').length,
-      thisMonthUsers.filter(u => (u.status ?? '').toLowerCase() === 'banned').length
-    );
-
-    return {
-      totalUsers,
-      activeUsers,
-      passiveUsers,
-      bannedUsers,
-      thisMonthTotal: thisMonthUsers.length,
-      lastMonthTotal: lastMonthUsers.length,
-      totalChange,
-      totalTrend,
-      activeChange,
-      activeTrend,
-      passiveChange,
-      passiveTrend,
-      bannedChange,
-      bannedTrend,
-    };
-  }, [users, thisMonthUsers, lastMonthUsers]);
-
-  return {
-    users,
-    loading,
-    error,
-    totals,
-    refresh: fetch,
-  } as const;
+  return { users, totals, loading, refresh };
 }

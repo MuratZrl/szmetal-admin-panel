@@ -2,11 +2,15 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
 import { useRouter, usePathname } from 'next/navigation';
+import { useTheme as useNextTheme } from 'next-themes';
+
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+
+import Logo from '@/components/ui/Logo';
 
 import {
   Drawer,
@@ -18,17 +22,13 @@ import {
   Badge,
   CircularProgress,
   IconButton,
-  SxProps,
-  Theme,
 } from '@mui/material';
 
 import { mainLinks, type SidebarLink } from '@/constants/mainlinks';
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
-type SidebarProps = Record<string, never>;
-
-export default function Sidebar(_props: SidebarProps) {
+export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -37,57 +37,12 @@ export default function Sidebar(_props: SidebarProps) {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // -------------------------
-  // styling + helpers
-  // -------------------------
-  const activeGradient = 'linear-gradient(180deg, #7f1d1d 0%, #3b0000 100%)';
-  const hoverGradient =
-    'linear-gradient(180deg, rgba(127,29,29,0.95) 0%, rgba(59,0,0,0.95) 100%)';
+  // theme toggle (next-themes)
+  const { resolvedTheme, setTheme } = useNextTheme();
+  const [mountedTheme, setMountedTheme] = useState(false);
+  useEffect(() => setMountedTheme(true), []);
 
-  const getButtonSx = (isActive: boolean, disabled?: boolean): SxProps<Theme> => ({
-    justifyContent: 'center',
-    borderRadius: 3,
-    width: 45,
-    height: 45,
-    position: 'relative',
-    overflow: 'hidden',
-    color: isActive ? '#fff' : 'gray.600',
-    transform: isActive ? 'translateY(-1px)' : 'none',
-
-    // target nested svgs (works with Badge wrapper)
-    '& svg, & .MuiSvgIcon-root': {
-      position: 'relative',
-      zIndex: 2,
-      transition: 'color 220ms ease, transform 150ms ease',
-      // ensure they inherit color from the button
-      color: 'inherit',
-    },
-
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      inset: 0,
-      zIndex: 1,
-      background: isActive ? activeGradient : hoverGradient,
-      opacity: isActive ? 1 : 0,
-      transition: 'opacity 220ms ease',
-      pointerEvents: 'none',
-    },
-
-    '&:hover': {
-      '&::before': { opacity: 1 },
-      // icons inherit color, but force nested svg color too just in case
-      '& svg, & .MuiSvgIcon-root': {
-        color: '#fff',
-      },
-    },
-
-    ...(disabled ? { opacity: 0.25, pointerEvents: 'none', transform: 'none' } : {}),
-  });
-
-  // -------------------------
   // logout
-  // -------------------------
   const handleLogout = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -97,9 +52,7 @@ export default function Sidebar(_props: SidebarProps) {
     router.push('/login');
   }, [router]);
 
-  // -------------------------
   // initial load: user, role, unread count
-  // -------------------------
   useEffect(() => {
     let mounted = true;
 
@@ -128,13 +81,11 @@ export default function Sidebar(_props: SidebarProps) {
 
         if (!mounted) return;
 
-        // extract role safely
         const roleData = roleRes?.data as Record<string, unknown> | null;
         const fetchedRole =
           roleData && typeof roleData.role === 'string' ? (roleData.role as string) : null;
         setRole(fetchedRole);
 
-        // extract count safely (defensive)
         const unreadObj = unreadRes as unknown as Record<string, unknown> | null;
         const count = unreadObj && typeof unreadObj.count === 'number' ? (unreadObj.count as number) : 0;
         setUnreadCount(count);
@@ -146,15 +97,12 @@ export default function Sidebar(_props: SidebarProps) {
     };
 
     load();
-
     return () => {
       mounted = false;
     };
   }, []);
 
-  // -------------------------
   // realtime notifications subscription
-  // -------------------------
   useEffect(() => {
     if (!user) return;
 
@@ -173,19 +121,15 @@ export default function Sidebar(_props: SidebarProps) {
       .subscribe();
 
     return () => {
-      // best-effort cleanup for different supabase client versions
       if (channel && typeof (supabase).removeChannel === 'function') {
-        // older API
         (supabase).removeChannel(channel);
       } else if (channel && typeof (channel).unsubscribe === 'function') {
-        channel.unsubscribe();
+        (channel).unsubscribe();
       }
     };
   }, [user]);
 
-  // -------------------------
   // filtered links by role
-  // -------------------------
   const filteredLinks = useMemo(() => {
     if (role === 'Admin') return mainLinks;
 
@@ -194,19 +138,14 @@ export default function Sidebar(_props: SidebarProps) {
       return mainLinks.filter((link) => allowedForUser.includes(link.href));
     }
 
-    // while auth resolves, show links in disabled state so layout doesn't jump
     if (loading)
-      return mainLinks.map((l) => ({ ...l } as SidebarLink & { disabled?: true })).map((l) => ({
-        ...l,
-        disabled: true,
-      })) as SidebarLink[];
+      return mainLinks
+        .map((l) => ({ ...l, disabled: true } as SidebarLink & { disabled?: boolean }));
 
     return [];
   }, [role, loading]);
 
-  // -------------------------
   // render single link
-  // -------------------------
   const renderLink = (link: SidebarLink) => {
     const { label, labelTr, href, icon: Icon } = link;
     const isActive = pathname?.startsWith(href ?? '') ?? false;
@@ -227,26 +166,27 @@ export default function Sidebar(_props: SidebarProps) {
 
     return (
       <ListItem key={href} disablePadding sx={{ justifyContent: 'center' }}>
-        <Tooltip
-          title={tooltipTitle}
-          placement="right"
-        >
+        <Tooltip title={tooltipTitle} placement="right" arrow>
           {isLogout ? (
             <ListItemButton
+              className="SidebarNavButton"
               onClick={handleLogout}
               aria-label="Logout"
               aria-current={isActive ? 'page' : undefined}
-              sx={getButtonSx(isActive, disabled)}
+              selected={isActive}
+              disabled={disabled}
             >
               {iconElement}
             </ListItemButton>
           ) : (
             <ListItemButton
+              className="SidebarNavButton"
               component={Link}
               href={href}
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
-              sx={getButtonSx(isActive, disabled)}
+              selected={isActive}
+              disabled={disabled}
             >
               {iconElement}
             </ListItemButton>
@@ -256,31 +196,26 @@ export default function Sidebar(_props: SidebarProps) {
     );
   };
 
-  // -------------------------
   // layout
-  // -------------------------
   return (
     <Drawer
       variant="permanent"
       anchor="left"
       className="hidden sm:flex"
-      PaperProps={{
-        sx: {
-          color: 'white',
-          backgroundColor: 'black',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          width: 60,
-          py: 3,
-        },
-      }}
+      // Stil yok: Drawer kâğıdı ve ölçüleri theme.ts -> components.MuiDrawer.styleOverrides.paper
     >
       {/* logo */}
-      <Box display="flex" flexDirection="column" alignItems="center" sx={{ px: 0 }}>
+      <Box display="flex" flexDirection="column" alignItems="center">
         <Link href="/dashboard" aria-label="Go to dashboard">
-          <Box sx={{ cursor: 'pointer' }}>
-            <Image src="/szmetal-logo.png" alt="Admin Logo" width={55} height={55} />
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            sx={{
+              color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111',
+            }}
+          >
+            <Logo sx={{ fontSize: 55 }} />
           </Box>
         </Link>
       </Box>
@@ -302,8 +237,29 @@ export default function Sidebar(_props: SidebarProps) {
         </List>
       </Box>
 
-      {/* logout */}
-      <Box display="flex" flexDirection="column" alignItems="center">
+      {/* bottom: theme toggle + logout */}
+      <Box display="flex" flexDirection="column" alignItems="center" sx={{ gap: 0.5 }}>
+        {mountedTheme ? (
+          <Tooltip title={resolvedTheme === 'dark' ? 'Light moda geç' : 'Dark moda geç'} placement="right">
+            <ListItemButton
+              className="SidebarNavButton"
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              aria-label="Tema değiştir"
+            >
+              {resolvedTheme === 'dark' ? (
+                <LightModeIcon fontSize="medium" />
+              ) : (
+                <DarkModeIcon fontSize="medium" />
+              )}
+            </ListItemButton>
+          </Tooltip>
+        ) : (
+          // mount olmadan önce layout zıplamasın diye placeholder
+          <ListItemButton aria-hidden>
+            <Box sx={{ width: 20, height: 20 }} />
+          </ListItemButton>
+        )}
+
         {filteredLinks.find((link) => link.label === 'Logout') ? (
           renderLink(filteredLinks.find((link) => link.label === 'Logout')!)
         ) : null}

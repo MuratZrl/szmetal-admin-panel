@@ -74,16 +74,6 @@ export default function NotificationsPage() {
           hideFooter
           disableRowSelectionOnClick
           loading={loading} // ← sadece bu satırla loading skeleton gösterilir
-          sx={{
-            borderRadius: 7,
-            '& .MuiDataGrid-columnHeader': {
-              backgroundImage: 'linear-gradient(to top, #111111ff, #4a4a4a)',
-            },
-            '& .MuiDataGrid-columnHeaderTitle': {
-              color: 'white',
-              fontWeight: 600,
-            },
-          }}
         />
       </Box>
     </Box>

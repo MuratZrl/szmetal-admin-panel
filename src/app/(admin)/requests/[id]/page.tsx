@@ -8,8 +8,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-import GiyotinTables from '../../../../components/requests-system-data/GiyotinTables';
-import { RequestRowUnion } from '../../../../types/requestsTypes';
+import GiyotinTables from '@/features/systems/components/GiyotinTables.client';
+import { RequestRowUnion } from '@/features/requests/types';
 
 import { supabase } from '../../../../lib/supabase/supabaseClient';
 

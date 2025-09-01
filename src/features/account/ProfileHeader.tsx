@@ -4,7 +4,7 @@
 import React from "react";
 import { Avatar, Box, Typography, Chip, Button } from "@mui/material";
 import type { SxProps, Theme } from "@mui/system";
-import type { UserData } from "./useAccount";
+import type { UserData } from "./hooks/useAccount";
 
 export type ProfileHeaderProps = {
   userData: UserData;

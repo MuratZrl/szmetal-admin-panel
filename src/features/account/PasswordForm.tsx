@@ -16,11 +16,10 @@ import type { Asserts } from "yup";
 
 import { passwordSchema } from "@/constants/form-validations/passwordSchemas";
 
-import { commonTextFieldProps } from "@/constants/formstyles";
+import { useSnackbar } from "@/components/ui/snackbar/useSnackbar.client";
 
 import { supabase } from "@/lib/supabase/supabaseClient";
 
-import { useSnackbar } from "@/hooks/useSnackbar";
 
 type PasswordFormValues = Asserts<typeof passwordSchema>;
 
@@ -94,7 +93,7 @@ export default function PasswordForm() {
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom>
+      <Typography fontSize={14} fontWeight={600} py={2} gutterBottom>
         Şifreyi Güncelle
       </Typography>
 
@@ -109,7 +108,6 @@ export default function PasswordForm() {
               helperText={errors.currentPassword?.message as string | undefined}
               error={!!errors.currentPassword}
               InputProps={{
-                ...commonTextFieldProps.InputProps,
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton onClick={() => setShowCurrent((s) => !s)} edge="end" aria-label="toggle current password visibility">
@@ -118,8 +116,6 @@ export default function PasswordForm() {
                   </InputAdornment>
                 ),
               }}
-              InputLabelProps={commonTextFieldProps.InputLabelProps}
-              variant={commonTextFieldProps.variant}
             />
           </Grid>
 
@@ -132,7 +128,6 @@ export default function PasswordForm() {
               helperText={errors.newPassword?.message as string | undefined}
               error={!!errors.newPassword}
               InputProps={{
-                ...commonTextFieldProps.InputProps,
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton onClick={() => setShowNew((s) => !s)} edge="end" aria-label="toggle new password visibility">
@@ -141,8 +136,6 @@ export default function PasswordForm() {
                   </InputAdornment>
                 ),
               }}
-              InputLabelProps={commonTextFieldProps.InputLabelProps}
-              variant={commonTextFieldProps.variant}
             />
           </Grid>
         </Grid>

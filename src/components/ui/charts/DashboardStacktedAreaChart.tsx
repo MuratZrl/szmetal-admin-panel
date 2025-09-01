@@ -1,3 +1,4 @@
+'use client'
 import { useEffect, useState } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Box } from '@mui/material';

@@ -3,8 +3,8 @@
 
 import React from 'react';
 import { Grid } from '@mui/material';
-import SystemCard from './SystemCard';
-import SystemCardSkeleton from '@/components/skeletons/SystemCard';
+import SystemCard from '@/features/systems/components/SystemCard.client';
+import SystemCardSkeleton from '@/features/systems/components/SystemCard.client';
 import type { SystemCardType } from '@/types/systems';
 import GridItem from './GridItem';
 

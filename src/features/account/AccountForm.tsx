@@ -7,10 +7,9 @@ import { useForm, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Asserts } from "yup";
 import { accountSchema } from "@/constants/form-validations/accountSchemas";
-import { commonTextFieldProps } from "@/constants/formstyles";
 import { countries } from "@/constants/data/countries";
 import { supabase } from "@/lib/supabase/supabaseClient";
-import type { UserData } from "./useAccount";
+import type { UserData } from "./hooks/useAccount";
 
 // FormValues tipi şemadan otomatik türetilir — böylece any yok.
 type FormValues = Asserts<typeof accountSchema>;
@@ -86,7 +85,7 @@ export default function AccountForm({
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 2 }}>
-      <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom>
+      <Typography fontSize={14} fontWeight={600} py={2} gutterBottom>
         Kişisel Bilgiler
       </Typography>
 
@@ -100,7 +99,7 @@ export default function AccountForm({
             helperText={errors.username?.message}
             error={!!errors.username}
             InputLabelProps={{ shrink: true }}
-            {...commonTextFieldProps}
+            
           />
         </Grid>
 
@@ -112,13 +111,13 @@ export default function AccountForm({
               label="E-Posta"
               value={userData?.email ?? ""}
               disabled
-              {...commonTextFieldProps}
+              
             />
             <Button
               variant="contained"
               size="small"
               onClick={() => onEmailChange?.(userData.email ?? "")}
-              sx={{ px: 2, textTransform: "capitalize", backgroundColor: "orangered" }}
+              sx={{ px: 2, py: 1, textTransform: "capitalize", backgroundColor: "orangered", whiteSpace: 'nowrap' }}
             >
               Email Değiştir
             </Button>
@@ -133,7 +132,7 @@ export default function AccountForm({
             helperText={errors.phone?.message}
             error={!!errors.phone}
             inputProps={{ maxLength: 11 }}
-            {...commonTextFieldProps}
+            
           />
         </Grid>
 
@@ -144,7 +143,7 @@ export default function AccountForm({
             {...register("company")}
             helperText={errors.company?.message}
             error={!!errors.company}
-            {...commonTextFieldProps}
+            
           />
         </Grid>
 
@@ -155,7 +154,7 @@ export default function AccountForm({
               label="Ülke Seçimi"
               value={watch("country") || ""}
               {...register("country")}
-              {...commonTextFieldProps}
+              
             >
               <MenuItem value="">
                 <em>Ülke Seçimi</em>
