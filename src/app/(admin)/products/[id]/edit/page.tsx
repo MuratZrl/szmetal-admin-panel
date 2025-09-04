@@ -8,16 +8,17 @@ import { fetchProductById, updateProduct } from '@/features/products/services/pr
 import { fetchProductDicts } from '@/features/products/dicts.server';
 import ProductEditForm, { type ProductEditValues } from '@/features/products/components/ProductEditForm.client';
 
-type Params = { id: string };
+// 1) params Promise olacak
+type Props = { params: Promise<{ id: string }> };
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const { id } = params;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   const p = await fetchProductById(id);
   return { title: p ? `${p.code} — Düzenle` : 'Ürün bulunamadı' };
 }
 
-export default async function EditProductPage({ params }: { params: Params }) {
-  const { id } = params;
+export default async function EditProductPage({ params }: Props) {
+  const { id } = await params;
 
   // Ürün + sözlükleri paralel çek
   const [product, dicts] = await Promise.all([
@@ -27,28 +28,40 @@ export default async function EditProductPage({ params }: { params: Params }) {
 
   if (!product) notFound();
 
+  // ————————————————————————————————
+  // SÖZLÜKLERİ eski API'ye dönüştür
+  // ————————————————————————————————
+  // VariantOption[] -> string[] (değer olarak KEY kullanıyoruz)
+  const variantKeys = dicts.variants.map(v => v.key) satisfies string[];
+
+  // { [cat]: { name, subs: [{slug,name}...] } } -> Record<string, string[]>
+  const legacyCategoryTree = Object
+    .entries(dicts.categoryTree)
+    .map(([slug, node]) => [slug, node.subs.map(s => s.slug)] as const);
+  
+    const categoryTreeForForm = Object.fromEntries(legacyCategoryTree) satisfies Record<string, string[]>;
+  // İstersen isimleri göstermek için ayrıca bir map de tutabilirsin; forma şu an sadece slug[] gidiyor.
+
   // Server Action
   async function saveAction(values: ProductEditValues) {
     'use server';
 
     await updateProduct(id, {
-      displayName: values.displayName,
       name: values.name,
       code: values.code,
       variant: values.variant,
       category: values.category,
       subCategory: values.subCategory,
-      unitWeightKg: values.unitWeightKg,
       date: values.date,
-
+      
       // ↓↓↓ kritik: null → undefined
       drawer: values.drawer ?? undefined,
       control: values.control ?? undefined,
+      unit_weight_g_pm: values.unit_weight_g_pm ?? 0,
       scale: values.scale ?? undefined,
 
       outerSizeMm: values.outerSizeMm ?? undefined,
       sectionMm2: values.sectionMm2 ?? undefined,
-      unitWeightGrPerM: values.unitWeightGrPerM ?? undefined,
 
       tempCode: values.tempCode ?? undefined,
       profileCode: values.profileCode ?? undefined,
@@ -62,25 +75,25 @@ export default async function EditProductPage({ params }: { params: Params }) {
     redirect(`/products/${id}`);
   }
 
-
   return (
     <Box px={2} py={2}>
+
       <Typography variant="h5" sx={{ mb: 1 }}>
         {product.code} — Düzenle
       </Typography>
+      
       <Divider sx={{ mb: 2 }} />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 8 }}>
           <ProductEditForm
             initial={{
-              displayName: product.displayName ?? product.name,
               name: product.name,
               code: product.code,
               variant: product.variant,
               category: product.category,
               subCategory: product.subCategory,
-              unitWeightKg: product.unitWeightKg,
+              unit_weight_g_pm: product.unit_weight_g_pm,
               date: product.date,
 
               drawer: product.drawer ?? '',
@@ -89,7 +102,6 @@ export default async function EditProductPage({ params }: { params: Params }) {
 
               outerSizeMm: product.outerSizeMm ?? null,
               sectionMm2: product.sectionMm2 ?? null,
-              unitWeightGrPerM: product.unitWeightGrPerM ?? null,
 
               tempCode: product.tempCode ?? '',
               profileCode: product.profileCode ?? '',
@@ -97,11 +109,13 @@ export default async function EditProductPage({ params }: { params: Params }) {
 
               image: product.image ?? '',
             }}
+            
             onSave={saveAction}
+
             // <<< KRİTİK: dicts'ten gelen props'lar
             categories={dicts.categories}
-            variants={dicts.variants}
-            categoryTree={dicts.categoryTree}
+            variants={variantKeys}
+            categoryTree={categoryTreeForForm}
           />
         </Grid>
       </Grid>

@@ -47,13 +47,15 @@ export default async function ProductsPage({
   const { items, pageCount } = await fetchFilteredProducts(filters, { page, pageSize: PAGE_SIZE });
 
   return (
-    <Box px={2} py={2}>
+    <Box px={2} py={2} >
       <ProductsSelectionProvider>
 
         <ProductsToolbar />
+        
         <Divider sx={{ mb: 2 }} />
 
         <Grid container spacing={2}>
+          
           <Grid size={{ xs: 12, md: 3 }}>
             <Filters
               categoryTree={dicts.categoryTree}
@@ -61,10 +63,15 @@ export default async function ProductsPage({
               maxUnitWeightKg={dicts.maxUnitWeightKg}
             />
           </Grid>
+
           <Grid size={{ xs: 12, md: 9 }}>
+            
             <ProductsGrid products={items} />
+            
             <ProductsPagination page={page} totalPages={pageCount} />
+
           </Grid>
+        
         </Grid>
 
       </ProductsSelectionProvider>

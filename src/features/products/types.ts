@@ -1,6 +1,5 @@
 // src/features/products/types.ts
 
-
 // Filtre parametreleri
 export type ProductFilters = {
   q?: string;                   // code veya ad arama

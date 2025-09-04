@@ -1,3 +1,4 @@
+// src/components/ui/snackbar/useSnackbar.client.tsx
 "use client";
 import React, { createContext, useContext, useState } from "react";
 import { Snackbar, Alert } from "@mui/material";
@@ -8,11 +9,7 @@ type SnackbarState = {
   severity?: "success" | "error" | "info";
 };
 
-const SnackbarContext = createContext<{
-  show: (msg: string, severity?: SnackbarState["severity"]) => void;
-}>({
-  show: () => {},
-});
+const SnackbarContext = createContext<{ show: (msg: string, severity?: SnackbarState["severity"]) => void; }>({ show: () => {} });
 
 export const SnackbarProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState<SnackbarState>({ open: false });

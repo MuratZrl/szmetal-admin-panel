@@ -97,7 +97,6 @@ export type Database = {
           control: string | null
           created_at: string
           date: string
-          display_name: string
           drawer: string | null
           file_bucket: string | null
           file_ext: string | null
@@ -116,8 +115,7 @@ export type Database = {
           sub_category: string
           subcategory_id: string | null
           temp_code: string | null
-          unit_weight_gr_pm: number | null
-          unit_weight_kg: number
+          unit_weight_g_pm: number
           variant: string
         }
         Insert: {
@@ -127,7 +125,6 @@ export type Database = {
           control?: string | null
           created_at?: string
           date: string
-          display_name: string
           drawer?: string | null
           file_bucket?: string | null
           file_ext?: string | null
@@ -146,8 +143,7 @@ export type Database = {
           sub_category: string
           subcategory_id?: string | null
           temp_code?: string | null
-          unit_weight_gr_pm?: number | null
-          unit_weight_kg: number
+          unit_weight_g_pm?: number
           variant: string
         }
         Update: {
@@ -157,7 +153,6 @@ export type Database = {
           control?: string | null
           created_at?: string
           date?: string
-          display_name?: string
           drawer?: string | null
           file_bucket?: string | null
           file_ext?: string | null
@@ -176,8 +171,7 @@ export type Database = {
           sub_category?: string
           subcategory_id?: string | null
           temp_code?: string | null
-          unit_weight_gr_pm?: number | null
-          unit_weight_kg?: number
+          unit_weight_g_pm?: number
           variant?: string
         }
         Relationships: [
@@ -257,31 +251,165 @@ export type Database = {
       }
       system_drafts: {
         Row: {
+          created_at: string
+          form_data: Json
+          id: string
+          slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          form_data?: Json
+          id?: string
+          slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          form_data?: Json
+          id?: string
+          slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      system_drafts_backup_20250902: {
+        Row: {
           birim_agirlik: number
           created_at: string | null
+          form_data: Json | null
           id: string
-          profil_adi: string
-          profil_kodu: string
+          profil_adi: string | null
+          profil_kodu: string | null
           profil_resmi: string
           slug: string
+          user_id: string
         }
         Insert: {
           birim_agirlik: number
           created_at?: string | null
+          form_data?: Json | null
           id?: string
-          profil_adi: string
-          profil_kodu: string
+          profil_adi?: string | null
+          profil_kodu?: string | null
           profil_resmi: string
           slug: string
+          user_id: string
         }
         Update: {
           birim_agirlik?: number
           created_at?: string | null
+          form_data?: Json | null
+          id?: string
+          profil_adi?: string | null
+          profil_kodu?: string | null
+          profil_resmi?: string
+          slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      system_form_configs: {
+        Row: {
+          fields: Json
+          is_active: boolean
+          slug: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          fields: Json
+          is_active?: boolean
+          slug: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          fields?: Json
+          is_active?: boolean
+          slug?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_form_configs_slug_fkey"
+            columns: ["slug"]
+            isOneToOne: true
+            referencedRelation: "systems"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
+      system_profiles: {
+        Row: {
+          birim_agirlik: number
+          id: string
+          profil_adi: string
+          profil_kodu: string
+          profil_resmi: string | null
+          sort_order: number
+          system_slug: string
+        }
+        Insert: {
+          birim_agirlik: number
+          id?: string
+          profil_adi: string
+          profil_kodu: string
+          profil_resmi?: string | null
+          sort_order?: number
+          system_slug: string
+        }
+        Update: {
+          birim_agirlik?: number
           id?: string
           profil_adi?: string
           profil_kodu?: string
-          profil_resmi?: string
+          profil_resmi?: string | null
+          sort_order?: number
+          system_slug?: string
+        }
+        Relationships: []
+      }
+      systems: {
+        Row: {
+          button_labels: Json
+          created_at: string
+          description: string | null
+          image_url: string | null
+          is_active: boolean
+          links: Json
+          meta: Json
+          slug: string
+          tag: string | null
+          title: string
+        }
+        Insert: {
+          button_labels?: Json
+          created_at?: string
+          description?: string | null
+          image_url?: string | null
+          is_active?: boolean
+          links?: Json
+          meta?: Json
+          slug: string
+          tag?: string | null
+          title: string
+        }
+        Update: {
+          button_labels?: Json
+          created_at?: string
+          description?: string | null
+          image_url?: string | null
+          is_active?: boolean
+          links?: Json
+          meta?: Json
           slug?: string
+          tag?: string | null
+          title?: string
         }
         Relationships: []
       }

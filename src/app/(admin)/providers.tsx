@@ -8,6 +8,9 @@ import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'n
 import darkTheme from '@/theme';        // theme.ts (dark)
 import lightTheme from '@/theme-light'; // theme-light.ts (light)
 
+// ✅ EKLE: SnackbarProvider
+import { SnackbarProvider } from '@/components/ui/snackbar/useSnackbar.client';
+
 function ThemeBridge({ children }: { children: React.ReactNode }) {
   // next-themes tarafa kulak ver
   const { resolvedTheme } = useNextTheme();
@@ -21,8 +24,14 @@ function ThemeBridge({ children }: { children: React.ReactNode }) {
 
   return (
     <MuiThemeProvider theme={muiTheme}>
+      
       <CssBaseline />
-      {children}
+
+      {/* ⬇️ Tüm uygulamayı sar */}
+      <SnackbarProvider>
+        {children}
+      </SnackbarProvider>
+    
     </MuiThemeProvider>
   );
 }

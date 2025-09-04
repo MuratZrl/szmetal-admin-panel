@@ -1,4 +1,4 @@
-// app/(admin)/_constants_/data/countries.ts
+// app/(admin)/constants/data/countries.ts
 
 export const countries = [
   { code: 'TR', name: 'Türkiye' },

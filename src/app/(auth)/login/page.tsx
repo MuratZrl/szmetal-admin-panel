@@ -106,7 +106,7 @@ export default function LoginPage() {
 
       setTimeout(() => {
         router.refresh();
-        router.push('/systems');
+        router.push('/create_request');
       }, 500);
 
     } catch (err) {

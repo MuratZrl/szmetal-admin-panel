@@ -21,14 +21,12 @@ const toNullNumberOptional = () =>
     .default(null)
     .min(0, 'Negatif olamaz');
 
-
 // Şema factory: kategoriler/variantlar dışarıdan gelir
 const makeProductSchema = (
   categories: string[],
   variants: string[],
   categoryTree: Record<string, string[]>
 ) => yup.object({
-  displayName: yup.string().required('Zorunlu'),
   name: yup.string().required('Zorunlu'),
   code: yup.string().required('Zorunlu'),
 
@@ -43,18 +41,17 @@ const makeProductSchema = (
       return subs.includes(value);
     })
     .required('Zorunlu'),
-
-  unitWeightKg: yup.number().typeError('Sayı gir').min(0).required('Zorunlu'),
+    
   date: yup.string().required('Zorunlu'),
-
+    
   // Burada .defined() kullanıyoruz ki tip saf string olsun
   drawer: yup.string().default('').defined(),
   control: yup.string().default('').defined(),
   scale: yup.string().default('').defined(),
+  unit_weight_g_pm: yup.number().typeError('Sayı gir').min(0).required('Zorunlu'),
 
   outerSizeMm: toNullNumberOptional(),
   sectionMm2: toNullNumberOptional(),
-  unitWeightGrPerM: toNullNumberOptional(),
 
   tempCode: yup.string().default('').defined(),
   profileCode: yup.string().default('').defined(),
@@ -157,20 +154,14 @@ export default function ProductEditForm({
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+
       <Box
         component={'form'}
         onSubmit={handleSubmit(onSubmit)}  // ← burada biter
       >
+
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="İsim (display)"
-              fullWidth
-              {...register('displayName')}
-              error={!!errors.displayName}
-              helperText={errors.displayName?.message}
-            />
-          </Grid>
+          
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Ad (name)"
@@ -238,13 +229,13 @@ export default function ProductEditForm({
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              label="Birim Ağırlık (kg)"
+              label="Birim Ağırlık (gr/m)"
               type="number"
               inputProps={{ step: '0.01' }}
               fullWidth
-              {...register('unitWeightKg', { valueAsNumber: true })}
-              error={!!errors.unitWeightKg}
-              helperText={errors.unitWeightKg?.message}
+              {...register('unit_weight_g_pm', { valueAsNumber: true })}
+              error={!!errors.unit_weight_g_pm}
+              helperText={errors.unit_weight_g_pm?.message}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
@@ -279,7 +270,7 @@ export default function ProductEditForm({
               helperText={errors.outerSizeMm?.message}
             />
           </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Kesit (mm²)"
               type="number"
@@ -287,16 +278,6 @@ export default function ProductEditForm({
               {...register('sectionMm2', { valueAsNumber: true })}
               error={!!errors.sectionMm2}
               helperText={errors.sectionMm2?.message}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              label="Birim Ağırlığı (gr/m)"
-              type="number"
-              fullWidth
-              {...register('unitWeightGrPerM', { valueAsNumber: true })}
-              error={!!errors.unitWeightGrPerM}
-              helperText={errors.unitWeightGrPerM?.message}
             />
           </Grid>
 
@@ -319,7 +300,7 @@ export default function ProductEditForm({
                 hidden
                 onChange={(e) => handlePdfPick(e.target.files?.[0] ?? null)}
               />
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
                 <Button
                   variant="outlined"
                   component="label"
@@ -330,7 +311,7 @@ export default function ProductEditForm({
                   {uploading ? 'Yükleniyor…' : 'PDF Seç ve Yükle'}
                 </Button>
 
-                <Box sx={{ flex: 1, textAlign: 'right', opacity: 0.8, fontSize: 13 }}>
+                <Box sx={{ textAlign: 'right', opacity: 0.8, fontSize: 13 }}>
                   {pdfName
                     ? `${pdfName} yüklendi`
                     : (watch('image') ? 'PDF yüklü' : 'PDF seçilmedi')}

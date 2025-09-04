@@ -2,14 +2,18 @@
 'use client';
 
 import * as React from 'react';
+
 import {
   Card, CardActionArea, CardContent, CardMedia,
   Typography, Chip, Stack, Checkbox, Box
 } from '@mui/material';
+
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { alpha } from '@mui/material/styles';
+
 import type { Product } from '../model';
+
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
 
 // --- yardımcılar
@@ -43,6 +47,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <Card variant="outlined" sx={{ height: '100%', borderRadius: 4, position: 'relative' }}>
+
       <CardActionArea
         href={`/products/${product.id}`}
         draggable={false}
@@ -56,8 +61,25 @@ export default function ProductCard({ product }: { product: Product }) {
           transition: 'outline-color .2s',
         }}
       >
-        <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4 / 3' }}>
-          {/* Sadece placeholder resim */}
+
+      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', overflow: 'hidden' }}>
+        {isPdf ? (
+          <Box
+            component={'iframe'}
+            // Tarayıcıların çoğu bu parametrelerle ilk sayfayı araç çubuksuz gösterir
+            src={`${product.image}#page=1&view=FitH&toolbar=0&navpanes=0&`}
+            title={`${product.name} PDF`}
+            loading='eager'
+            aria-hidden
+            sx={{
+              width: '100%',
+              height: '100%',
+              border: 0,
+              pointerEvents: 'none',  // kart tıklanabilir kalsın
+              bgcolor: 'background.default',
+            }}
+          />
+        ) : (
           <CardMedia
             component="img"
             image={previewSrc}
@@ -70,7 +92,8 @@ export default function ProductCard({ product }: { product: Product }) {
               bgcolor: 'background.default',
             }}
           />
-        </Box>
+        )}
+      </Box>
 
         <CardContent sx={{ display: 'grid', gap: 0.5 }}>
           <Typography variant="subtitle1" noWrap title={`${product.code} • ${product.name}`}>
@@ -84,13 +107,14 @@ export default function ProductCard({ product }: { product: Product }) {
 
           <Stack direction="column" spacing={0}>
             <Typography variant="caption" color="text.secondary">
-              Ağırlık: {product.unitWeightKg.toFixed(2)} kg
+              Birim Ağırlık: {product.unit_weight_g_pm} gr
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Tarih: {product.date}
             </Typography>
           </Stack>
         </CardContent>
+
       </CardActionArea>
 
       {/* Alt sağ checkbox */}
@@ -99,7 +123,7 @@ export default function ProductCard({ product }: { product: Product }) {
           position: 'absolute',
           right: 8,
           bottom: 8,
-          bgcolor: theme => alpha(theme.palette.background.paper, 0.9),
+          bgcolor: theme => alpha(theme.palette.background.paper, 0.5),
           borderRadius: '35%',
           boxShadow: 1,
         }}
@@ -111,6 +135,7 @@ export default function ProductCard({ product }: { product: Product }) {
           onClick={(e) => e.stopPropagation()}
           icon={<RadioButtonUncheckedIcon />}
           checkedIcon={<RadioButtonCheckedIcon />}
+          sx={{ zIndex: 0 }}
         />
       </Box>
     </Card>

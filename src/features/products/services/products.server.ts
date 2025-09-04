@@ -71,16 +71,21 @@ export async function fetchFilteredProducts(
   if (filters.categories?.length) q = q.in('category', filters.categories as Row['category'][]);
   if (filters.subCategories?.length) q = q.in('sub_category', filters.subCategories);
   if (filters.variants?.length) q = q.in('variant', filters.variants as Row['variant'][]);
-  if (typeof filters.wMin === 'number') q = q.gte('unit_weight_kg', filters.wMin);
-  if (typeof filters.wMax === 'number') q = q.lte('unit_weight_kg', filters.wMax);
+
+  // UI kg veriyorsa sunucuda gr/m'ye çevir
+  if (typeof filters.wMin === 'number') q = q.gte('unit_weight_g_pm', Math.round(filters.wMin * 1000));
+  if (typeof filters.wMax === 'number') q = q.lte('unit_weight_g_pm', Math.round(filters.wMax * 1000));
+
   if (filters.from) q = q.gte('date', filters.from);
   if (filters.to) q = q.lte('date', filters.to);
 
   switch (filters.sort) {
     case 'date-desc':   q = q.order('date', { ascending: false }); break;
     case 'date-asc':    q = q.order('date', { ascending: true }); break;
-    case 'weight-asc':  q = q.order('unit_weight_kg', { ascending: true }); break;
-    case 'weight-desc': q = q.order('unit_weight_kg', { ascending: false }); break;
+
+    case 'weight-asc':  q = q.order('unit_weight_g_pm', { ascending: true }); break;
+    case 'weight-desc': q = q.order('unit_weight_g_pm', { ascending: false }); break;
+
     case 'code-asc':    q = q.order('code', { ascending: true }); break;
     case 'code-desc':   q = q.order('code', { ascending: false }); break;
     default:            q = q.order('created_at', { ascending: false }); break;

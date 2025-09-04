@@ -22,7 +22,7 @@ export type SidebarLink = {
 export const mainLinks: SidebarLink[] = [
   { label: 'Account', labelTr: 'Hesabım', href: '/account', icon: AccountCircle },
   { label: 'Dashboard', labelTr: 'Kontrol Paneli', href: '/dashboard', icon: Dashboard },
-  { label: 'Systems', labelTr: 'Sistemler', href: '/systems', icon: Storage },
+  { label: 'Create Request', labelTr: 'Talep Oluştur', href: '/create_request', icon: Storage },
   { label: 'Requests', labelTr: 'Talepler', href: '/requests', icon: ListAlt },
   { label: 'Clients', labelTr: 'Müşteriler', href: '/clients', icon: People },
   { label: 'System Products', labelTr: 'Sistem Ürünleri', href: '/system_products', icon: Inventory },

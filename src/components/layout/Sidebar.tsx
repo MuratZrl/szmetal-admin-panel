@@ -1,7 +1,10 @@
 // app/(admin)/_components_/layout/Sidebar.tsx
 'use client';
 
+import React from 'react';
+
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -9,8 +12,6 @@ import { useTheme as useNextTheme } from 'next-themes';
 
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-
-import Logo from '@/components/ui/Logo';
 
 import {
   Drawer,
@@ -40,6 +41,8 @@ export default function Sidebar() {
   // theme toggle (next-themes)
   const { resolvedTheme, setTheme } = useNextTheme();
   const [mountedTheme, setMountedTheme] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
   useEffect(() => setMountedTheme(true), []);
 
   // logout
@@ -58,10 +61,14 @@ export default function Sidebar() {
 
     const load = async () => {
       setLoading(true);
+      
       try {
+        
         const { data: userData } = await supabase.auth.getUser();
         const currentUser = userData?.user ?? null;
+        
         if (!mounted) return;
+        
         setUser(currentUser);
 
         if (!currentUser) {
@@ -89,8 +96,10 @@ export default function Sidebar() {
         const unreadObj = unreadRes as unknown as Record<string, unknown> | null;
         const count = unreadObj && typeof unreadObj.count === 'number' ? (unreadObj.count as number) : 0;
         setUnreadCount(count);
+      
       } catch (err) {
         console.error('Sidebar load error', err);
+      
       } finally {
         if (mounted) setLoading(false);
       }
@@ -134,7 +143,7 @@ export default function Sidebar() {
     if (role === 'Admin') return mainLinks;
 
     if (role === 'User') {
-      const allowedForUser = ['/account', '/systems', '/orders', '/login'];
+      const allowedForUser = ['/account', '/create_request', '/orders', '/login'];
       return mainLinks.filter((link) => allowedForUser.includes(link.href));
     }
 
@@ -181,12 +190,12 @@ export default function Sidebar() {
           ) : (
             <ListItemButton
               className="SidebarNavButton"
-              component={Link}
               href={href}
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
               selected={isActive}
               disabled={disabled}
+              draggable={false}
             >
               {iconElement}
             </ListItemButton>
@@ -206,16 +215,26 @@ export default function Sidebar() {
     >
       {/* logo */}
       <Box display="flex" flexDirection="column" alignItems="center">
-        <Link href="/dashboard" aria-label="Go to dashboard">
+        <Link href="/create_request" aria-label="Go to request">
           <Box
             display="flex"
             justifyContent="center"
             alignItems="center"
-            sx={{
-              color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111',
-            }}
+            sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111' }}
           >
-            <Logo sx={{ fontSize: 55 }} />
+            {mounted ? (
+              <Image
+                src={resolvedTheme === 'dark' ? '/logo_white.png' : '/logo_black.png'}
+                width={55}
+                height={45}
+                alt="Logo"
+                priority
+                draggable={false}
+              />
+            ) : (
+              // Hydration tamamlanana kadar boş yer tutucu
+              <Box sx={{ width: 55, height: 45 }} />
+            )}
           </Box>
         </Link>
       </Box>

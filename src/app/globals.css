@@ -29,13 +29,16 @@ body {
 @media print {
   @page {
     size: A4 portrait;         /* A4 dikey */
-    margin: 12mm;              /* yazıcı kenarları */
+    margin: 10mm;              /* yazıcı kenarları */
   }
 
   /* Yalnızca #print-area kalsın */
   body * { visibility: hidden !important; }
-  #print-area, #print-area * { visibility: visible !important; }
-  #print-area { position: absolute; inset: 0; }
+  /* Gereksiz boşlukların ekstra sayfa açmasını engelle */
+  #print-area section:last-child { margin-bottom: 0 !important; }
+  #print-area .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  #print-area table { page-break-inside: auto; }
+  #print-area tr { break-inside: avoid; page-break-inside: avoid; }
 
   /* Renklerin solmaması */
   * {

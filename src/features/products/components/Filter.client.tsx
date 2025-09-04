@@ -8,20 +8,33 @@ import {
   FormGroup, FormControlLabel, Checkbox, List, ListItemButton,
   ListItemText, Collapse, Divider
 } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+
+export type CategoryTree = Record<
+  string, // slug
+  { name: string; subs: { slug: string; name: string }[] }
+>;
+
+export type VariantOption = { key: string; name: string };
 
 export default function Filters({
   categoryTree,
   variants,
   maxUnitWeightKg = 2,
 }: {
-  categoryTree: Record<string, string[]>;
-  variants: string[];
+  categoryTree: CategoryTree;
+  variants: VariantOption[];
   maxUnitWeightKg?: number;
 }) {
-  const subsOf = React.useCallback(
-    (cat: string) => categoryTree[cat] ?? [],
-    [categoryTree]
-  );
+  
+  // Yardımcılar: slug listesi ve görünen ad
+  const subsOf = React.useCallback((catSlug: string): string[] => {
+    // runtime compat: eski şema (string[]) mı, yeni şema mı?
+    const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
+    if (Array.isArray(raw)) return raw; // eski: ['katlanir-cam', ...]
+    const node = raw as CategoryTree[string] | undefined; // yeni: { name, subs: [...] }
+    return node?.subs?.map(s => s.slug) ?? [];
+  }, [categoryTree]);
 
   const router = useRouter();
   const sp = useSearchParams();
@@ -34,20 +47,23 @@ export default function Filters({
   const [categories, setCategories] = React.useState<string[]>(initialCategories);
   const [subCategories, setSubCategories] = React.useState<string[]>(initialSubCategories);
 
-  // Çoklu expand
+  // Expand başlangıcı: URL'de seçili olan parent veya child açık gelsin
   const [expanded, setExpanded] = React.useState<string[]>(() => {
     const set = new Set<string>(initialCategories);
-    for (const [cat, subs] of Object.entries(categoryTree)) {
-      if (subs.some(s => initialSubCategories.includes(s))) set.add(cat);
+    for (const catSlug of Object.keys(categoryTree)) {
+      const subs = subsOf(catSlug);
+      if (subs.some(s => initialSubCategories.includes(s))) set.add(catSlug);
     }
     return Array.from(set);
   });
 
   const [variantsSel, setVariantsSel] = React.useState<string[]>(sp.getAll('variants'));
+
   const [wRange, setWRange] = React.useState<[number, number]>([
     Number(sp.get('wMin') ?? 0) || 0,
     Number(sp.get('wMax') ?? maxUnitWeightKg) || maxUnitWeightKg,
   ]);
+  
   const [from, setFrom] = React.useState(sp.get('from') ?? '');
   const [to, setTo] = React.useState(sp.get('to') ?? '');
   const [sort, setSort] = React.useState(sp.get('sort') ?? 'date-desc');
@@ -85,8 +101,8 @@ export default function Filters({
     });
   }
 
-  function toggleVariant(v: string) {
-    setVariantsSel(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
+  function toggleVariant(key: string) {
+    setVariantsSel(prev => prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]);
   }
 
   function apply() {
@@ -94,7 +110,7 @@ export default function Filters({
     if (q.trim()) params.set('q', q.trim());
     categories.forEach(c => params.append('category', c));
     subCategories.forEach(s => params.append('subCategory', s));
-    variantsSel.forEach(v => params.append('variants', v));
+    variantsSel.forEach(key => params.append('variants', key)); // ← key gönder
     if (wRange[0] > 0) params.set('wMin', String(wRange[0]));
     if (wRange[1] < maxUnitWeightKg) params.set('wMax', String(wRange[1]));
     if (from) params.set('from', from);
@@ -119,57 +135,82 @@ export default function Filters({
   // <<< BURADAN İTİBAREN render >>>
   return (
     <Box className="space-y-4" sx={{ position: 'sticky', top: 16 }}>
-      <TextField label="Ara (code veya ad)" size="small" value={q} onChange={e => setQ(e.target.value)} fullWidth />
 
-            {/* Kategori ağacı */}
+      <TextField label="Ara (code veya ad)" size="small" value={q} onChange={e => setQ(e.target.value)} fullWidth />
+      
+      {/* Kategori ağacı */}
       <Box>
         <Typography variant="body2" gutterBottom mt={2}>Kategori</Typography>
-        <List dense disablePadding>
-          {Object.entries(categoryTree).map(([cat, subs]) => {
-            const open =
-              expanded.includes(cat) ||
-              categories.includes(cat) ||
-              subs.some(s => subCategories.includes(s));
 
-            const allSelected = subs.every(s => subCategories.includes(s));
-            const someSelected = subs.some(s => subCategories.includes(s));
-            const catChecked = categories.includes(cat) || allSelected;
+        <List dense disablePadding>
+          {Object.keys(categoryTree).map((catSlug) => {
+
+            const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
+            const node =
+              Array.isArray(raw)
+              ? { name: catSlug, subs: raw.map(sl => ({ slug: sl, name: sl })) }
+              : (raw as CategoryTree[string] | undefined) ?? { name: catSlug, subs: [] };
+            const { name, subs } = node;
+
+            const subSlugs = subs.map(s => s.slug);
+            const open =
+              expanded.includes(catSlug) ||
+              categories.includes(catSlug) ||
+              subSlugs.some(s => subCategories.includes(s));
+
+            const allSelected = subSlugs.every(s => subCategories.includes(s));
+            const someSelected = subSlugs.some(s => subCategories.includes(s));
+            const catChecked = categories.includes(catSlug) || allSelected;
 
             return (
-              <Box key={cat}>
-                <ListItemButton onClick={() => toggleExpand(cat)} sx={{ borderRadius: 1 }}>
+              <Box key={catSlug}>
+
+                <ListItemButton onClick={() => toggleExpand(catSlug)} sx={{ display: 'flex', justifyContent: 'space-between', borderRadius: 1 }}>
+
                   <FormControlLabel
                     sx={{ m: 0 }}
                     control={
                       <Checkbox
                         checked={catChecked}
                         indeterminate={!allSelected && someSelected}
-                        onChange={(e) => { e.stopPropagation(); toggleCategory(cat); }}
+                        onChange={(e) => { e.stopPropagation(); toggleCategory(catSlug); }}
                         onClick={(e) => e.stopPropagation()}
                       />
                     }
-                    label={<ListItemText primary={cat} />}
+                    label={<ListItemText primary={name} />}
                   />
+
+                  {/* Sağdaki chevron */}
+                  <KeyboardArrowDownIcon
+                    aria-hidden
+                    sx={{
+                      transition: 'transform 0.2s ease',
+                      transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                      opacity: subs.length ? 1 : 0,          // alt kategori yoksa gizle
+                      pointerEvents: 'none',                 // tıklama davranışı ListItemButton’da kalsın
+                    }}
+                  />
+
                 </ListItemButton>
 
                 <Collapse in={open} timeout="auto" unmountOnExit>
                   <List disablePadding dense sx={{ pl: 3 }}>
-                    {subs.map(sub => (
+                    {subs.map(({ slug: subSlug, name: subLabel }) => (
                       <ListItemButton
-                        key={sub}
-                        onClick={(e) => { e.stopPropagation(); toggleSubCategory(cat, sub); }}
+                        key={subSlug}
+                        onClick={(e) => { e.stopPropagation(); toggleSubCategory(catSlug, subSlug); }}
                         sx={{ borderRadius: 1 }}
                       >
                         <FormControlLabel
                           sx={{ m: 0 }}
                           control={
                             <Checkbox
-                              checked={subCategories.includes(sub)}
-                              onChange={(e) => { e.stopPropagation(); toggleSubCategory(cat, sub); }}
+                              checked={subCategories.includes(subSlug)}
+                              onChange={(e) => { e.stopPropagation(); toggleSubCategory(catSlug, subSlug); }}
                               onClick={(e) => e.stopPropagation()}
                             />
                           }
-                          label={<ListItemText primary={sub} />}
+                          label={<ListItemText primary={subLabel} />}
                         />
                       </ListItemButton>
                     ))}
@@ -182,15 +223,35 @@ export default function Filters({
         </List>
       </Box>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       {/* Variant */}
       <Box>
         <Typography variant="body2" gutterBottom>Variant</Typography>
         <FormGroup>
           {variants.map(v => (
             <FormControlLabel
-              key={v}
-              control={<Checkbox checked={variantsSel.includes(v)} onChange={() => toggleVariant(v)} />}
-              label={v}
+              key={v.key}
+              control={
+                <Checkbox
+                  checked={variantsSel.includes(v.key)}
+                  onChange={() => toggleVariant(v.key)}
+                />
+              }
+              label={v.name}   // ← UI’da name göster
             />
           ))}
         </FormGroup>
@@ -204,7 +265,7 @@ export default function Filters({
           onChange={(_, val) => setWRange(val as [number, number])}
           min={0}
           max={maxUnitWeightKg}
-          step={0.01}
+          step={0.1}
           valueLabelDisplay="auto"
         />
         <Grid container spacing={1}>

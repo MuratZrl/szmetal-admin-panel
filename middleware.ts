@@ -47,7 +47,7 @@ export async function middleware(req: NextRequest) {
 
     // ✅ Kullanıcı giriş yaptıysa /auth sayfalarına erişemesin
   if (user && pathname.startsWith('/auth')) {
-    return NextResponse.redirect(new URL('/systems', req.url))
+    return NextResponse.redirect(new URL('/create_request', req.url))
   }
 
   // 🚫 Sadece admin'lere özel sayfalar
@@ -73,7 +73,7 @@ export const config = {
   matcher: [
     '/account',
     '/dashboard',
-    '/systems/:path*',    // ✅ dinamik slug dahil
+    '/create_request/:path*',    // ✅ dinamik slug dahil
     '/requests/:path*',   // ✅ dinamik id dahil
     '/clients',
     '/products/:path*',   // ✅ dinamik slug dahil
