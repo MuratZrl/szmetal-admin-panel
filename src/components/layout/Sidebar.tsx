@@ -8,7 +8,10 @@ import Image from 'next/image';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+
 import { useTheme as useNextTheme } from 'next-themes';
+
+import { SIDEBAR_WIDTH } from '@/constants/layout';
 
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -38,8 +41,11 @@ export default function Sidebar() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // theme toggle (next-themes)
   const { resolvedTheme, setTheme } = useNextTheme();
+  const current: 'light' | 'dark' = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const nextMode: 'light' | 'dark' = current === 'dark' ? 'light' : 'dark';
+  const ThemeIcon: React.ElementType = current === 'dark' ? DarkModeIcon : LightModeIcon;
+
   const [mountedTheme, setMountedTheme] = useState(false);
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -154,13 +160,16 @@ export default function Sidebar() {
     return [];
   }, [role, loading]);
 
-  // render single link
-  const renderLink = (link: SidebarLink) => {
+  // renderLink'i güncelle
+  const renderLink = (link: SidebarLink, opts?: { center?: boolean }) => {
     const { label, labelTr, href, icon: Icon } = link;
-    const isActive = pathname?.startsWith(href ?? '') ?? false;
     const isLogout = label === 'Logout';
-
+    const isActive = pathname?.startsWith(href ?? '') ?? false;
     const disabled = Boolean((link as Partial<SidebarLink>).disabled);
+    const tooltipTitle = labelTr ?? label;
+
+    // bottom için kompakt ölçüler (ikon butonu)
+    const compact = Boolean(opts?.center);
 
     const iconElement =
       label === 'Orders' ? (
@@ -171,10 +180,17 @@ export default function Sidebar() {
         <Icon fontSize="medium" />
       );
 
-    const tooltipTitle = labelTr ?? label;
-
     return (
-      <ListItem key={href} disablePadding sx={{ justifyContent: 'center' }}>
+
+      <ListItem
+        key={href ?? label}
+        disablePadding
+        sx={{
+          justifyContent: 'center',
+          width: compact ? 'auto' : '100%', // ⬅️ alt tarafta genişleme olmasın
+        }}
+      >
+
         <Tooltip title={tooltipTitle} placement="right" arrow>
           {isLogout ? (
             <ListItemButton
@@ -184,23 +200,40 @@ export default function Sidebar() {
               aria-current={isActive ? 'page' : undefined}
               selected={isActive}
               disabled={disabled}
+              sx={{
+                justifyContent: compact ? 'center' : undefined, // ⬅️ merkezle
+                width: compact ? 44 : undefined,
+                height: compact ? 44 : undefined,
+                minWidth: compact ? 44 : undefined,
+                px: compact ? 0 : undefined,
+              }}
             >
               {iconElement}
             </ListItemButton>
           ) : (
             <ListItemButton
               className="SidebarNavButton"
-              href={href}
+              component={Link}        // ← kritik
+              href={href}             // ← kritik
+              prefetch                // istersen false yapabilirsin
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
               selected={isActive}
               disabled={disabled}
               draggable={false}
+              sx={{
+                justifyContent: compact ? 'center' : undefined,
+                width: compact ? 44 : undefined,
+                height: compact ? 44 : undefined,
+                minWidth: compact ? 44 : undefined,
+                px: compact ? 0 : undefined,
+              }}
             >
               {iconElement}
             </ListItemButton>
           )}
         </Tooltip>
+
       </ListItem>
     );
   };
@@ -210,31 +243,49 @@ export default function Sidebar() {
     <Drawer
       variant="permanent"
       anchor="left"
-      className="hidden sm:flex"
-      // Stil yok: Drawer kâğıdı ve ölçüleri theme.ts -> components.MuiDrawer.styleOverrides.paper
+      // className="hidden sm:flex" yerine MUI breakpoint istersen:
+      sx={{
+        display: { xs: 'none', sm: 'flex' },
+
+        // ⬇️ KÖK genişlik (main’i doğru itmek için şart)
+        width: SIDEBAR_WIDTH,
+        flexShrink: 0,
+
+        // ⬇️ Paper genişlik (görünen drawer’ın gerçek eni)
+        '& .MuiDrawer-paper': (theme) => ({
+          width: SIDEBAR_WIDTH,
+          boxSizing: 'border-box',
+          borderRadius: 0,
+          backgroundColor: theme.palette.surface[1],
+          borderRight: `1px solid ${theme.palette.surface.outline}`,
+          paddingTop: theme.spacing(3.5),
+          paddingBottom: theme.spacing(3.5),
+        }),
+      }}
     >
+
       {/* logo */}
       <Box display="flex" flexDirection="column" alignItems="center">
         <Link href="/create_request" aria-label="Go to request">
+          {/* Sabit bir alan ayır: genişlik ve yükseklik */}
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111' }}
+            sx={{
+              position: 'relative',
+              width: 60,            // sidebar genişliğine göre ayarla (120–160 iyi)
+              height: 40,            // logonun gerçek oranına yakın bir yükseklik
+              mx: 'auto',
+            }}
           >
             {mounted ? (
               <Image
-                src={resolvedTheme === 'dark' ? '/logo_white.png' : '/logo_black.png'}
-                width={55}
-                height={45}
+                src={current === 'dark' ? '/logo_white.png' : '/logo_black.png'}
                 alt="Logo"
+                fill                          // width/height yerine fill
+                style={{ objectFit: 'contain', objectPosition: 'center' }}
                 priority
                 draggable={false}
               />
-            ) : (
-              // Hydration tamamlanana kadar boş yer tutucu
-              <Box sx={{ width: 55, height: 45 }} />
-            )}
+            ) : null}
           </Box>
         </Link>
       </Box>
@@ -246,43 +297,38 @@ export default function Sidebar() {
             <ListItem disablePadding sx={{ justifyContent: 'center' }}>
               <ListItemButton sx={{ justifyContent: 'center' }}>
                 <IconButton size="small" disabled>
-                  <CircularProgress size={20} color="inherit" />
+                  <CircularProgress size={35} color="inherit" />
                 </IconButton>
               </ListItemButton>
             </ListItem>
           ) : (
-            filteredLinks.filter((link) => link.label !== 'Logout').map(renderLink)
+            filteredLinks
+              .filter(link => link.label !== 'Logout')
+              .map(link => renderLink(link))
           )}
         </List>
       </Box>
 
       {/* bottom: theme toggle + logout */}
-      <Box display="flex" flexDirection="column" alignItems="center" sx={{ gap: 0.5 }}>
-        {mountedTheme ? (
-          <Tooltip title={resolvedTheme === 'dark' ? 'Light moda geç' : 'Dark moda geç'} placement="right">
-            <ListItemButton
-              className="SidebarNavButton"
-              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-              aria-label="Tema değiştir"
-            >
-              {resolvedTheme === 'dark' ? (
-                <LightModeIcon fontSize="medium" />
-              ) : (
-                <DarkModeIcon fontSize="medium" />
-              )}
-            </ListItemButton>
-          </Tooltip>
-        ) : (
-          // mount olmadan önce layout zıplamasın diye placeholder
-          <ListItemButton aria-hidden>
-            <Box sx={{ width: 20, height: 20 }} />
-          </ListItemButton>
-        )}
+      <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column" sx={{ gap: 0.5 }}>
+        
+        {/* toggle */}
 
-        {filteredLinks.find((link) => link.label === 'Logout') ? (
-          renderLink(filteredLinks.find((link) => link.label === 'Logout')!)
-        ) : null}
+        <ListItemButton
+          onClick={() => setTheme(nextMode)}
+          sx={{ justifyContent: 'center', width: 44, height: 44, px: 0 }}
+        >
+          <ThemeIcon fontSize="medium" />
+        </ListItemButton>
+
+
+        {/* logout'u merkezli (compact) render et */}
+        {filteredLinks.find((l) => l.label === 'Logout')
+          ? renderLink(filteredLinks.find((l) => l.label === 'Logout')!, { center: true })
+          : null}
+
       </Box>
+
     </Drawer>
   );
 }

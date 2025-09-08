@@ -12,7 +12,7 @@ export default async function ProductCreatePage() {
     <Box px={2} py={2}>
 
       <Typography variant="h5" sx={{ mb: 1 }}>
-        Yeni Ürün
+        Yeni Ürün Oluştur
       </Typography>
 
       <Divider sx={{ mb: 2 }} />

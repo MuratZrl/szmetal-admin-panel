@@ -10,43 +10,74 @@ import {
 
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles'; // ⬅️ useTheme eklendi
 
 import type { Product } from '../model';
-
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
 
 // --- yardımcılar
-function extFrom(url?: string | null) {
+function extFrom(url?: string | null): string {
   if (!url) return '';
   const clean = url.split('?')[0];
   const dot = clean.lastIndexOf('.');
   return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : '';
 }
 
+function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): string {
+  // 4:3 responsive SVG; 800x600 metadata koyuyoruz ama viewBox ölçeklenebilir
+  const { bg, fg, text } = opts;
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 4 3" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="${bg}"/>
+        <stop offset="1" stop-color="${bg}"/>
+      </linearGradient>
+    </defs>
+    <rect width="4" height="3" fill="url(#g)"/>
+    <g fill="${fg}">
+      <rect x="0.25" y="0.25" width="3.5" height="2.5" fill="none" stroke="${fg}" stroke-width="0.03" stroke-dasharray="0.12 0.12"/>
+      <text x="2" y="1.55" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="0.32" font-weight="600">${text}</text>
+    </g>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 export default function ProductCard({ product }: { product: Product }) {
+  const theme = useTheme();
   const { isSelected, toggle } = useProductsSelection();
   const selected = isSelected(product.id);
 
-  // yardımcı
-  const isRaster = (u?: string | null) => {
+  const isRaster = (u?: string | null): boolean => {
     const ext = (u ? extFrom(u) : '').toLowerCase();
     return /^(png|jpe?g|webp|gif|avif)$/.test(ext) ||
-          (u?.startsWith('data:image/') && !u.startsWith('data:image/svg'));
+      (u?.startsWith('data:image/') && !u.startsWith('data:image/svg'));
   };
 
   const ext = String(product.fileExt ?? extFrom(product.image)).toLowerCase();
   const isPdf = ext === 'pdf';
 
+  // Tema uyumlu placeholder üret
+  const placeholderSrc = React.useMemo<string>(() => {
+    const bg = theme.palette.mode === 'dark'
+      ? alpha(theme.palette.grey[900], 0.6)
+      : theme.palette.grey[100];
+    const fg = theme.palette.mode === 'dark'
+      ? theme.palette.grey[300]
+      : theme.palette.text.secondary;
+    return svgPlaceholder4x3({ bg, fg, text: 'Görsel yok' });
+  }, [theme.palette.mode, theme.palette.grey, theme.palette.text]);
+
+  // Önizleme kaynağı: PDF değilse ve raster yoksa placeholder
   const previewSrc =
     isPdf
-      ? 'https://placehold.co/800x600/png?text=PDF+%C3%96nizleme'
+      ? 'about:blank' // iframe kullanıyoruz; img değil
       : isRaster(product.image)
-        ? product.image!                                    // ← Supabase/remote raster'ı göster
-        : 'https://placehold.co/800x600/png?text=Dosya+Yok';
+        ? (product.image as string)
+        : placeholderSrc;
 
   return (
-    <Card variant="outlined" sx={{ height: '100%', borderRadius: 4, position: 'relative' }}>
+    <Card variant="outlined" sx={{ height: '100%', borderRadius: 2, position: 'relative' }}>
 
       <CardActionArea
         href={`/products/${product.id}`}
@@ -62,38 +93,38 @@ export default function ProductCard({ product }: { product: Product }) {
         }}
       >
 
-      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', overflow: 'hidden' }}>
-        {isPdf ? (
-          <Box
-            component={'iframe'}
-            // Tarayıcıların çoğu bu parametrelerle ilk sayfayı araç çubuksuz gösterir
-            src={`${product.image}#page=1&view=FitH&toolbar=0&navpanes=0&`}
-            title={`${product.name} PDF`}
-            loading='eager'
-            aria-hidden
-            sx={{
-              width: '100%',
-              height: '100%',
-              border: 0,
-              pointerEvents: 'none',  // kart tıklanabilir kalsın
-              bgcolor: 'background.default',
-            }}
-          />
-        ) : (
-          <CardMedia
-            component="img"
-            image={previewSrc}
-            alt={product.name}
-            draggable={false}
-            sx={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              bgcolor: 'background.default',
-            }}
-          />
-        )}
-      </Box>
+        {/* Medya alanı: en = 100%, oran = 4:3 ⇒ H = W × 0.75 */}
+        <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', overflow: 'hidden' }}>
+          {isPdf && product.image ? (
+            <Box
+              component="iframe"
+              src={`${product.image}#page=1&view=FitH&toolbar=0&navpanes=0&`}
+              title={`${product.name} PDF`}
+              loading="eager"
+              aria-hidden
+              sx={{
+                width: '100%',
+                height: '100%',
+                border: 0,
+                pointerEvents: 'none',  // kart tıklanabilir kalsın
+                bgcolor: 'background.default',
+              }}
+            />
+          ) : (
+            <CardMedia
+              component="img"
+              image={previewSrc}
+              alt={product.name || 'Ürün'}
+              draggable={false}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                bgcolor: 'background.default',
+              }}
+            />
+          )}
+        </Box>
 
         <CardContent sx={{ display: 'grid', gap: 0.5 }}>
           <Typography variant="subtitle1" noWrap title={`${product.code} • ${product.name}`}>
@@ -123,7 +154,7 @@ export default function ProductCard({ product }: { product: Product }) {
           position: 'absolute',
           right: 8,
           bottom: 8,
-          bgcolor: theme => alpha(theme.palette.background.paper, 0.5),
+          bgcolor: t => alpha(t.palette.background.paper, 0.5),
           borderRadius: '35%',
           boxShadow: 1,
         }}

@@ -1,50 +1,66 @@
 // app/(admin)/layout.tsx
 import * as React from 'react';
-import Sidebar from '@/components/layout/Sidebar';
-import Breadcrumb from '@/components/layout/Breadcrumb';
-import Header from '@/components/layout/Header';
-
 import Providers from '@/app/(admin)/providers';
 
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 
-const SIDEBAR_WIDTH = 72; // Sidebar ile aynı
+import Breadcrumb from '@/components/layout/Breadcrumb';
+import Header from '@/components/layout/Header';
+import { SIDEBAR_WIDTH } from '@/constants/layout';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+// 🔁 yeni importlar
+import Sidebar from '@/features/sidebar'; // barrel export
+import { getSidebarInitialData } from '@/features/sidebar/services/sidebar.server';
+import { mainLinks } from '@/constants/mainlinks';
+
+// Supabase auth cookie'lerine güveniyorsan bu iyi fikir.
+// İstemiyorsan kaldır; ama "cached user" saçmalıkları görürsen geri ekle.
+export const dynamic = 'force-dynamic';
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  
+  // 🔁 SSR: rol + unread + userId
+  const initialData = await getSidebarInitialData();
+
   return (
     <Providers>
+
       <Box
         sx={{
           display: 'flex',
           minHeight: '100vh',
-          bgcolor: 'background.default', // callback yok
+          bgcolor: 'background.default',
           color: 'text.primary',
         }}
       >
-        <Sidebar />
+
+        {/* 🔁 Artık Sidebar'a veri geçiyoruz */}
+        <Sidebar initialData={initialData} mainLinks={mainLinks} />
 
         <Box
-          component={'main'}
+          component="main"
           sx={{
             flexGrow: 1,
-            ml: { sm: `${SIDEBAR_WIDTH}px`, xs: 0 },
+            ml: { sm: `${SIDEBAR_WIDTH}px`, xs: 0, md: 1 },
             overflowX: 'hidden',
-            px: { xs: 1.5, md: 2 },
-            py: { xs: 1, md: 1.5 },
+            px: { xs: 1.5 },
+            py: { xs: 1, md: 2 },
           }}
         >
+          
           {/* Dış çerçeve: surface[1] */}
           <Paper
             variant="outlined"
             sx={{
               p: 2,
-              // theme.shape.borderRadius * 2 yerine CSS var kullan
-              borderRadius: 'calc(var(--mui-shape-borderRadius) * 2)',
-              bgcolor: 'var(--rs-surface-1)', // CssBaseline'da bastık
+              borderRadius: 'calc(var(--rs-radius) * 2)',
+              bgcolor: 'var(--rs-surface-1)',
             }}
           >
+
             <Breadcrumb />
+
             <Header />
 
             {/* İçerik kutusu: surface[2] */}
@@ -55,15 +71,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 px: { xs: 2, md: 3 },
                 py: { xs: 1.5, md: 2 },
                 my: 2,
-                borderRadius: 'calc(var(--mui-shape-borderRadius) * 2)',
+                borderRadius: 'calc(var(--rs-radius) * 2)',
                 bgcolor: 'var(--rs-surface-2)',
               }}
             >
+
               <Box>{children}</Box>
+
             </Paper>
+
           </Paper>
+
         </Box>
+
       </Box>
+
     </Providers>
   );
 }

@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Grid, Box, Typography, Button } from '@mui/material';
-import SystemCard from '@/features/create_request/components/SystemCard';
+import SystemCard from '@/features/create_request/components/SystemCard.client';
 import SystemCardSkeleton from '@/features/create_request/components/SystemCardSkeleton.client';
 import type { SystemCardType } from '@/features/create_request/types/card';
 import GridItem from './GridItem';

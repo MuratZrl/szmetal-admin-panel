@@ -2,24 +2,32 @@
 import * as React from 'react';
 import { redirect, notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { Box } from '@mui/material';
+
+import StepperComponent from '@/components/ui/stepper/Stepper';
 import Step2Client from './Step2Client';
-import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+
+import { CREATE_REQUEST_STEPS } from '@/features/create_request/constants/steps';
+
 import { fetchSystemFormConfig } from '@/features/create_request/services/step2RequestForm.server';
+
 import type { FormConfig } from '@/features/create_request/types/step2Form';
 
-type Props = { params: Promise<{ slug: string }> }; // ← Promise!
+import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+
+type Props = { params: Promise<{ slug: string }> };
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params; // ← await
+  const { slug } = await params;
   const cfg = await fetchSystemFormConfig(slug);
   const name = cfg.fields.length ? slug : 'Bilinmeyen Sistem';
   return { title: `Sistem Adımı 2 — ${name}` };
 }
 
 export default async function Step2Page({ params }: Props) {
-  const { slug } = await params; // ← await
+  const { slug } = await params;
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -42,8 +50,13 @@ export default async function Step2Page({ params }: Props) {
   const initialDraft = (draftRow?.form_data as Record<string, unknown> | null) ?? null;
 
   return (
-    <main>
+    <Box py={2} >
+      {/* 2. adım = index 1 */}
+      <Box >
+        <StepperComponent activeStep={1} steps={CREATE_REQUEST_STEPS} />
+      </Box>
+
       <Step2Client slug={slug} formConfig={formConfig} initialDraft={initialDraft} />
-    </main>
+    </Box>
   );
 }

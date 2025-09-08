@@ -1,101 +1,117 @@
+'use client';
+
+import * as React from 'react';
 import {
+  Box,
+  Card,
   Stepper,
   Step,
   StepLabel,
-  Box,
-  Card,
-  StepIconProps,
+  Typography,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { styled, alpha } from '@mui/material/styles';
+import type { StepIconProps } from '@mui/material/StepIcon';
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 
-type StepperProps = {
-  activeStep: number;
-};
+type StepItem = { label: string; caption?: string };
+type Props = { activeStep: number; steps?: ReadonlyArray<StepItem> };
 
-const steps = ['Sistem Seçimi', 'Sistem Bilgileri', 'Sistem Özeti'];
+const DEFAULT_STEPS: StepItem[] = [
+  { label: 'Sistem Seçimi', caption: 'Adım 1' },
+  { label: 'Sistem Bilgileri', caption: 'Adım 2' },
+  { label: 'Sistem Özeti', caption: 'Adım 3' },
+];
 
-const CustomStepIcon = ({ active, completed, icon }: StepIconProps) => {
-  let backgroundStyle = {};
+const IconRoot = styled('div')<{
+  ownerState: { active: boolean; completed: boolean };
+}>(({ theme, ownerState }) => ({
+  zIndex: 1,
+  width: 28,
+  height: 28,
+  borderRadius: '50%',
+  display: 'grid',
+  placeItems: 'center',
+  color: theme.palette.common.white,
+  position: 'relative',
+  background: ownerState.completed
+    ? theme.palette.success.main
+    : ownerState.active
+    ? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+    : alpha(theme.palette.text.primary, 0.35),
+  boxShadow: ownerState.active
+    ? `0 0 0 4px ${alpha(theme.palette.primary.main, 0.18)}`
+    : 'none',
+  transition: 'box-shadow .25s ease, transform .25s ease, background .25s ease',
+  '&:after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '50%',
+    border: `2px solid ${alpha(
+      theme.palette.common.white,
+      ownerState.completed ? 0.5 : 0.35
+    )}`,
+  },
+}));
 
-  if (completed) {
-    backgroundStyle = {
-      backgroundColor: 'green',
-    };
-  } else if (active) {
-    backgroundStyle = {
-      backgroundImage: 'linear-gradient(45deg, orangered, red)',
-    };
-  } else {
-    backgroundStyle = {
-      backgroundColor: '#e0e0e0',
-    };
-  }
-
+function CustomStepIcon(props: StepIconProps) {
+  const { active = false, completed = false, className, icon } = props;
   return (
-    <Box
-      sx={{
-        width: 24,
-        height: 24,
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontWeight: 600,
-        fontSize: 14,
-        ...backgroundStyle,
-      }}
-    >
-      {completed ? <CheckCircleIcon fontSize="small" /> : icon}
-    </Box>
+    <IconRoot ownerState={{ active, completed }} className={className}>
+      {completed ? (
+        <CheckRoundedIcon fontSize="small" />
+      ) : (
+        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+          {String(icon)}
+        </Typography>
+      )}
+    </IconRoot>
   );
-};
+}
 
-const StepperComponent = ({ activeStep }: StepperProps) => {
+export default function StepperComponent({
+  activeStep,
+  steps = DEFAULT_STEPS,
+}: Props) {
   return (
-    <Box
-      sx={{
-        width: '100%',
-        mx: 'auto',
-        px: { xs: 1, sm: 2 },
-        py: { xs: 1, sm: 2 },
-      }}
-    >
+
+    <Box sx={{ width: '100%', mx: 'auto', px: { xs: 1, sm: 2 }, py: { xs: 1, sm: 2 } }}>
+
       <Card
+        variant="outlined"
         sx={{
-          px: { xs: 1, sm: 2 },
-          py: { xs: 1.5, sm: 2 },
+          px: { xs: 1.25, sm: 2 },
+          py: { xs: 1.25, sm: 2 },
           borderRadius: 3,
-          boxShadow: 0.25,
+          boxShadow: 0,
+          backdropFilter: 'saturate(120%) blur(4px)',
         }}
       >
-        <Stepper activeStep={activeStep}>
-          {steps.map((label) => (
-            <Step key={label}>
+
+        {/* Connector prop'unu kaldır. Stil temadan gelecek. */}
+        <Stepper activeStep={activeStep} alternativeLabel>
+          {steps.map((s) => (
+            <Step key={s.label}>
               <StepLabel
                 StepIconComponent={CustomStepIcon}
-                sx={{
-                  '& .MuiStepLabel-label': {
-                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                    fontWeight: 500,
-                    color: 'gray',
-                  },
-                  '& .Mui-active .MuiStepLabel-label': {
-                    color: 'orangered',
-                  },
-                  '& .Mui-completed .MuiStepLabel-label': {
-                    color: 'green',
-                  },
-                }}
+                // NOT: label sx blocğunu sildik; renk/boyut temadan geliyor.
               >
-                {label}
+                <Box textAlign="center">
+                  <Typography component="span" variant="subtitle2">
+                    {s.label}
+                  </Typography>
+                  {s.caption && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {s.caption}
+                    </Typography>
+                  )}
+                </Box>
               </StepLabel>
             </Step>
           ))}
         </Stepper>
+
       </Card>
     </Box>
   );
-};
-
-export default StepperComponent;
+}

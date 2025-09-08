@@ -20,7 +20,7 @@ export default function ProductsToolbar() {
     <>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
 
-        <Typography variant="h5" >Ürünler</Typography>
+        <Typography variant="h5" >Ürünleri Listele</Typography>
 
         {/* Sağ taraf: Vazgeç + Seçilenleri sil + Ürün Ekle */}
         <Stack direction="row" spacing={1}>

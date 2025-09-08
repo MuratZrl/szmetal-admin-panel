@@ -140,7 +140,7 @@ export default function Filters({
       
       {/* Kategori ağacı */}
       <Box>
-        <Typography variant="body2" gutterBottom mt={2}>Kategori</Typography>
+        <Typography variant="body2" gutterBottom mt={2}>Kategoriler</Typography>
 
         <List dense disablePadding>
           {Object.keys(categoryTree).map((catSlug) => {
@@ -165,7 +165,16 @@ export default function Filters({
             return (
               <Box key={catSlug}>
 
-                <ListItemButton onClick={() => toggleExpand(catSlug)} sx={{ display: 'flex', justifyContent: 'space-between', borderRadius: 1 }}>
+                <ListItemButton 
+                  disableRipple 
+                  disableTouchRipple
+                  onClick={() => toggleExpand(catSlug)} 
+                  sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    borderRadius: 1 
+                    }}
+                  >
 
                   <FormControlLabel
                     sx={{ m: 0 }}
@@ -223,24 +232,16 @@ export default function Filters({
         </List>
       </Box>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       {/* Variant */}
       <Box>
-        <Typography variant="body2" gutterBottom>Variant</Typography>
+        <Typography 
+          variant="body2" 
+          gutterBottom
+
+          mt={2}
+        >
+          Variant
+        </Typography>
         <FormGroup>
           {variants.map(v => (
             <FormControlLabel
@@ -258,7 +259,7 @@ export default function Filters({
       </Box>
 
       {/* Ağırlık */}
-      <Box>
+      <Box my={2} >
         <Typography variant="body2" gutterBottom>Birim ağırlık aralığı (kg)</Typography>
         <Slider
           value={wRange}
@@ -281,7 +282,7 @@ export default function Filters({
       </Box>
 
       {/* Tarih aralığı */}
-      <Grid container spacing={1}>
+      <Grid container spacing={1} my={2} >
         <Grid size={{ xs: 6 }}>
           <TextField label="Tarih baş." type="date" size="small"
             value={from} onChange={e => setFrom(e.target.value)} fullWidth InputLabelProps={{ shrink: true }} />

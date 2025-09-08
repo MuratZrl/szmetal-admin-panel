@@ -10,6 +10,7 @@ import type { SystemCardType } from '@/features/create_request/types/card';
 import useSystems from '@/features/create_request/hooks/useSystems';
 
 export default function SystemsShell({ initialSystems }: { initialSystems: SystemCardType[] }) {
+  
   const router = useRouter();
   const { systems, loading, refresh } = useSystems(initialSystems);
 
@@ -17,6 +18,7 @@ export default function SystemsShell({ initialSystems }: { initialSystems: Syste
 
   return (
     <Box py={2}>
+
       <Box>
         <StepperComponent activeStep={0} />
       </Box>
@@ -29,6 +31,7 @@ export default function SystemsShell({ initialSystems }: { initialSystems: Syste
           onRetry={refresh}
         />
       </Box>
+      
     </Box>
   );
 }

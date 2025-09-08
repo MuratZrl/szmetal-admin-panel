@@ -1,11 +1,10 @@
-// app/(admin)/_constants_/systems/types/requestsTypes.ts
+// features/requests/types/types.ts
 
-import { SistemOzet } from './systemTypes';
-import { GiyotinProfilHesapli } from './systemTypes';
+import { SistemOzet } from '@/features/create_request/types/system';
+import { GiyotinProfilHesapli } from '@/features/create_request/types/system';
 
 // İleride diğer sistemler için de import edebilirsin:
 // import { CamBalkonProfilHesapli } from '../systems/cam-balkon-sistemi/types';
-
 
 // ✅ Genel Request tipi (generic)
 export type RequestRow<T = unknown> = {

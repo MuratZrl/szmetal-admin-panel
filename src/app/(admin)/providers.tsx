@@ -3,35 +3,33 @@
 
 import * as React from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
-import darkTheme from '@/theme';        // theme.ts (dark)
-import lightTheme from '@/theme-light'; // theme-light.ts (light)
-
-// ✅ EKLE: SnackbarProvider
+import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
+import { createAppTheme } from '@/theme';
 import { SnackbarProvider } from '@/components/ui/snackbar/useSnackbar.client';
 
-function ThemeBridge({ children }: { children: React.ReactNode }) {
-  // next-themes tarafa kulak ver
+function ClientReady({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = React.useState(false);
+  React.useEffect(() => {
+    // Eski kayıt 'system' ise sil
+    if (typeof window !== 'undefined' && localStorage.getItem('theme-mode') === 'system') {
+      localStorage.removeItem('theme-mode');
+    }
+    setReady(true);
+  }, []);
+  if (!ready) return null;
+  return <>{children}</>;
+}
+
+function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useNextTheme();
-
-  // Hydration çakışmasını önlemek için mount bekle
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-
-  const muiTheme = resolvedTheme === 'light' ? lightTheme : darkTheme;
+  const mode: 'light' | 'dark' = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const theme = React.useMemo(() => createAppTheme(mode), [mode]);
 
   return (
-    <MuiThemeProvider theme={muiTheme}>
-      
+    <MuiThemeProvider theme={theme}>
       <CssBaseline />
-
-      {/* ⬇️ Tüm uygulamayı sar */}
-      <SnackbarProvider>
-        {children}
-      </SnackbarProvider>
-    
+      {children}
     </MuiThemeProvider>
   );
 }
@@ -40,12 +38,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AppRouterCacheProvider options={{ key: 'mui', enableCssLayer: true, speedy: true }}>
       <NextThemesProvider
-        attribute="class"          // <html class="light|dark"> atar, Tailwind ile uyumlu
-        defaultTheme="system"      // sistem temasını kullan
-        enableSystem
-        disableTransitionOnChange  // tema değişince göz kırpmasın
+        attribute="class"
+        defaultTheme="system"
+        enableSystem={false}
+        storageKey="theme-mode"
+        disableTransitionOnChange
       >
-        <ThemeBridge>{children}</ThemeBridge>
+        <ClientReady>
+          <MuiThemeBridge>
+            <SnackbarProvider>{children}</SnackbarProvider>
+          </MuiThemeBridge>
+        </ClientReady>
       </NextThemesProvider>
     </AppRouterCacheProvider>
   );

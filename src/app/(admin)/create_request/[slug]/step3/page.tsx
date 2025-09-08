@@ -1,8 +1,16 @@
 // src/app/(admin)/create_request/[slug]/step3/page.tsx
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
+
+import { Box } from '@mui/material';
+
+import StepperComponent from '@/components/ui/stepper/Stepper';
 import Step3Client from './Step3Client';
+
+import { CREATE_REQUEST_STEPS } from '@/features/create_request/constants/steps';
+
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+
 import { systemStep3Configs } from '@/features/create_request/constants/systemConfigs';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -53,7 +61,13 @@ export default async function Step3Page({ params }: Props) {
   const computedSummary   = config.summaryCalculator(form, computedMaterials);
 
   return (
-    <main>
+    <Box py={2} >
+
+      {/* 2. adım = index 1 */}
+      <Box >
+        <StepperComponent activeStep={2} steps={CREATE_REQUEST_STEPS} />
+      </Box>
+
       <Step3Client
         slug={slug}
         form={form}
@@ -61,6 +75,7 @@ export default async function Step3Page({ params }: Props) {
         materials={computedMaterials}
         successRedirect="/create_request"
       />
-    </main>
+
+    </Box>
   );
 }

@@ -1,266 +1,113 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useParams, notFound } from 'next/navigation';
-
-import { Typography, CircularProgress, Box, Card, CardContent, Grid, Chip, Divider, Button } from '@mui/material';
+// app/(admin)/requests/[id]/page.tsx
+import { notFound } from 'next/navigation';
+import { Box, Card, CardContent, Chip, Divider, Grid, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-import GiyotinTables from '@/features/systems/components/GiyotinTables.client';
-import { RequestRowUnion } from '@/features/requests/types';
+import StatusActions from '@/app/(admin)/requests/[id]/StatusActions.client';
+import { fetchRequestById } from '@/features/requests/services/requests_id.server';
+import { updateRequestStatusAction } from './actions';
+import GiyotinTables from '@/features/create_request/components/GiyotinTables.client';
+import type { RequestRowUnion } from '@/features/requests/types';
 
-import { supabase } from '../../../../lib/supabase/supabaseClient';
+export const dynamic = 'force-dynamic'; // SSR, cache yoka
 
-function renderSystemTables(request: RequestRowUnion) {
-  switch (request.system_slug) {
+function StatusChip({ status }: { status: RequestRowUnion['status'] }) {
+  const icon =
+    status === 'approved' ? <CheckCircleIcon sx={{ fontSize: 16 }} /> :
+    status === 'pending'  ? <HourglassTopIcon sx={{ fontSize: 16 }} /> :
+                            <CancelIcon sx={{ fontSize: 16 }} />;
 
+  const label =
+    status === 'approved' ? 'Onaylandı' :
+    status === 'pending'  ? 'Bekleyen'  :
+                            'Reddedildi';
+
+  const color: 'success' | 'warning' | 'error' =
+    status === 'approved' ? 'success' : status === 'pending' ? 'warning' : 'error';
+
+  return (
+    <Chip
+      label={<Box component="span" display="flex" alignItems="center" gap={1}>{icon}{label}</Box>}
+      color={color}
+      size="small"
+      variant="outlined"
+    />
+  );
+}
+
+function renderSystemTables(req: RequestRowUnion) {
+  switch (req.system_slug) {
     case 'giyotin-sistemi':
       return (
         <GiyotinTables
-          summaryData={request.summary_data}
-          materialData={request.material_data}
+          summaryData={req.summary_data}
+          materialData={req.material_data}
         />
       );
-      
     default:
       return <Typography>Tanımsız sistem.</Typography>;
   }
 }
 
-export default function RequestDetailPage() {
-  const { id } = useParams() as { id: string };
+export default async function RequestDetailPage({ params }: { params: { id: string } }) {
+  const idNum = String(params.id);
+  if (Number.isNaN(idNum)) notFound();
 
-  const [request, setRequest] = useState<RequestRowUnion | null>(null);
-  const [updating, setUpdating] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const updateStatus = async (newStatus: 'approved' | 'rejected') => {
-    setUpdating(true);
-
-    // 1. status güncelle
-    const { error } = await supabase
-      .from('requests')
-      .update({ status: newStatus })
-      .eq('id', id);
-
-    if (!error) {
-      // 2. arayüzde state güncelle
-      setRequest((prev) => (prev ? { ...prev, status: newStatus } : prev));
-
-      // 3. notification oluştur (yalnızca status approved/rejected ise)
-      const userId = request?.user_id;
-      const systemName = request?.system_slug?.replace(/-/g, ' '); // örn: 'giyotin-sistemi' → 'giyotin sistemi'
-
-      if (userId) {
-        await supabase.from('orders').insert([
-          {
-            user_id: userId,
-            title: `Talebiniz ${newStatus === 'approved' ? 'Onaylandı' : 'Reddedildi'}`,
-            message:
-              newStatus === 'approved'
-                ? `Yapmış olduğunuz ${systemName} sistemi talebi başarılı bir şekilde onaylanmıştır.`
-                : `Yapmış olduğunuz ${systemName} sistemi talebi maalesef reddedilmiştir.`,
-            type: newStatus === 'approved' ? 'success' : 'rejected',
-          },
-        ]);
-      }
-    } else {
-      console.error('Durum güncelleme hatası:', error.message);
-    }
-
-    setUpdating(false);
-  };
-
-  useEffect(() => {
-    const fetchRequest = async () => {
-      const { data, error } = await supabase
-        .from('requests')
-        .select(`
-          *,
-          users (
-            username,
-            email,
-            company,
-            country
-          )
-        `)
-        .eq('id', id)
-        .single();
-
-
-      if (error || !data) {
-        notFound();
-      } else {
-        setRequest(data as RequestRowUnion);
-        setLoading(false);
-      }
-    };
-
-    fetchRequest();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <Box className="flex justify-center py-10">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!request) return null;
+  const request = await fetchRequestById(idNum);
+  if (!request) notFound();
 
   return (
     <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
-
-        {/* Kart: Genel Bilgiler */}
-        <Card
-          variant="outlined"
-          sx={{
-            mb: 4,
-            borderRadius: 5,
-            boxShadow: 2,
-          }}
-        >
-          <CardContent>
-            <Grid container spacing={1.25}>
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>Durum:</strong>{' '}
-                  <Chip
-                    label={
-                      <Box component="span" display="flex" alignItems="center" gap={1}>
-                        {request.status === 'approved' && <CheckCircleIcon sx={{ fontSize: 16 }} />}
-                        {request.status === 'pending' && <HourglassTopIcon sx={{ fontSize: 16 }} />}
-                        {request.status === 'rejected' && <CancelIcon sx={{ fontSize: 16 }} />}
-                        {
-                          request.status === 'approved'
-                            ? 'Onaylandı'
-                            : request.status === 'pending'
-                            ? 'Bekleyen'
-                            : 'Reddedildi'
-                        }
-                      </Box>
-                    }
-                    color={
-                      request.status === 'approved'
-                        ? 'success'
-                        : request.status === 'pending'
-                        ? 'warning'
-                        : 'error'
-                    }
-                    size="small"
-                    variant="outlined"
-                  />
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>Proje Adı:</strong> {request?.description ?? '—'}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>Kullanıcı:</strong> {request.users?.username ?? '—'}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>Şirket / Firma:</strong> {request.users?.company ?? '—'}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>E-posta:</strong> {request.users?.email ?? '—'}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>Ülke:</strong> {request.users?.country ?? '—'}
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }} >
-                <Typography>
-                  <strong>Oluşturulma Tarihi:</strong>{' '}
-                  {new Date(request.created_at).toLocaleString('tr-TR', {
-                    timeZone: 'Europe/Istanbul',
-                  })}
-                </Typography>
-              </Grid>
-
+      {/* Kart: Genel Bilgiler */}
+      <Card variant="outlined" sx={{ mb: 4, borderRadius: 5, boxShadow: 2 }}>
+        <CardContent>
+          <Grid container spacing={1.25}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography><strong>Durum:</strong> <StatusChip status={request.status} /></Typography>
             </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography><strong>Proje Adı:</strong> {request.description ?? '—'}</Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography><strong>Kullanıcı:</strong> {request.users?.username ?? '—'}</Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography><strong>Şirket / Firma:</strong> {request.users?.company ?? '—'}</Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography><strong>E-posta:</strong> {request.users?.email ?? '—'}</Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography><strong>Ülke:</strong> {request.users?.country ?? '—'}</Typography>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography>
+                <strong>Oluşturulma Tarihi:</strong>{' '}
+                {new Date(request.created_at).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}
+              </Typography>
+            </Grid>
+          </Grid>
 
-            <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: 2 }} />
 
-            {request.status === 'pending' && (
-              <Grid
-                container
-                spacing={2}
-                justifyContent={{ xs: 'center', sm: 'flex-end' }}
-                mt={1}
-              >
+          {/* Onay / Red butonları sadece pending ise */}
+          {/* Client bileşenine server action'ı prop olarak geçiriyoruz */}
+          {/* Bu pattern ile sayfa "use client" istemez */}
+          {/* Butonlar MUI, grid kuralına uyuyor */}
+          <StatusActions
+            requestId={request.id}
+            status={request.status}
+            action={updateRequestStatusAction}
+          />
+        </CardContent>
+      </Card>
 
-                <Grid size={{ xs: 12, sm: 6 }} >
-                  <Button
-                    variant="contained"
-                    onClick={() => updateStatus('approved')}
-                    disabled={updating}
-                    sx={{
-                      px: 4,
-                      py: 1,
-                      width: '100%',
-                      backgroundColor: 'green',
-                      textTransform: 'capitalize',
-                      borderRadius: 7,
-                      '&:hover': {
-                        backgroundColor: 'darkgreen',
-                      },
-                    }}
-                  >
-                    Onayla
-                  </Button>
-                </Grid>
+      <Divider sx={{ my: 2 }} />
 
-                <Grid size={{ xs: 12, sm: 6 }} >
-                  <Button
-                    variant="contained"
-                    onClick={() => updateStatus('rejected')}
-                    disabled={updating}
-                    sx={{
-                      px: 4,
-                      py: 1,
-                      width: '100%',
-                      backgroundColor: 'orangered',
-                      textTransform: 'capitalize',
-                      borderRadius: 7,
-                      '&:hover': {
-                        backgroundColor: 'darkred',
-                      },
-                    }}
-                  >
-                    Reddet
-                  </Button>
-                </Grid>
-                
-              </Grid>
-
-            )}
-          </CardContent>
-        </Card>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Detayları renderla */}
-        {renderSystemTables(request)}
-
+      {/* Sistem detayları */}
+      {renderSystemTables(request)}
     </Box>
   );
-
 }

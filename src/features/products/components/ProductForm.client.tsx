@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Paper, Box, Grid, TextField, MenuItem, Button, Stack, FormHelperText, Typography, Divider } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ImageIcon from '@mui/icons-material/Image';
 
 import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 
@@ -13,7 +14,11 @@ import * as yup from 'yup';
 
 import { ProductDicts } from '@/features/products/dicts.server';
 import { createProduct } from '@/features/products/services/products.client';
-import { uploadProductPdfAndGetUrl } from '@/features/products/services/storage.client';
+
+import {
+  uploadProductPdfAndGetUrl,
+  uploadProductImageAndGetUrl,
+} from '@/features/products/services/storage.client';
 
 import { supabase } from '@/lib/supabase/supabaseClient';
 
@@ -171,10 +176,6 @@ export default function ProductForm({ dicts }: Props) {
     return m;
   }, [dicts.categoryTree]);
 
-
-
-
-
   // dicts değişirse formu sıfırla (güvenli)
   React.useEffect(() => {
     reset(defaultValues);
@@ -185,21 +186,44 @@ export default function ProductForm({ dicts }: Props) {
     setValue('subCategory', '', { shouldValidate: true, shouldDirty: true });
   }, [watchedCategory, setValue]);
 
-  // PDF upload durumu
-  const [uploadingPdf, setUploadingPdf] = React.useState(false);
-  const [pdfName, setPdfName] = React.useState<string | null>(null);
+  // 🧩 state
+  const [uploadingFile, setUploadingFile] = React.useState(false);
+  const [fileMeta, setFileMeta] = React.useState<{ name: string; kind: 'pdf' | 'image' } | null>(null);
 
-  // SADECE PDF kabul eden upload
-  
-  async function handlePdfPick(file?: File | null) {
+  // ✅ yalnızca istediğimiz MIME türleri
+  const ACCEPTED_MIME: ReadonlySet<string> = new Set([
+    'application/pdf',
+    'image/png',
+    'image/webp',
+    'image/jpeg', // jpg de bu MIME ile gelir
+  ]);
+
+  // boyut sınırları (istersen tek limit de kullanabilirsin)
+  const MAX_BYTES: Readonly<Record<'pdf' | 'image', number>> = {
+    pdf: 10 * 1024 * 1024,    // 10 MB
+    image: 8 * 1024 * 1024,   // 8 MB
+  };
+
+  function classify(file: File): 'pdf' | 'image' | null {
+    if (file.type === 'application/pdf') return 'pdf';
+    if (file.type.startsWith('image/') && ACCEPTED_MIME.has(file.type)) return 'image';
+    return null;
+  }
+
+  // 🔁 PDF + Görsel için tek handler
+  async function handleFilePick(file?: File | null) {
     if (!file) return;
-    if (file.type !== 'application/pdf') {
-      show('Sadece PDF yükleyin.', 'error');
+
+    const kind = classify(file);
+    if (!kind) {
+      show('Sadece PDF, PNG, WEBP, JPEG kabul ediyorum.', 'error');
       return;
     }
-    const MAX = 10 * 1024 * 1024;
-    if (file.size > MAX) {
-      show('PDF 10 MB sınırını aşıyor.', 'error');
+
+    const limit = MAX_BYTES[kind];
+    if (file.size > limit) {
+      const mb = (limit / (1024 * 1024)).toFixed(0);
+      show(`${kind.toUpperCase()} ${mb} MB sınırını aşıyor.`, 'error');
       return;
     }
 
@@ -209,18 +233,29 @@ export default function ProductForm({ dicts }: Props) {
       return;
     }
 
-    setUploadingPdf(true);
+    setUploadingFile(true);
     try {
       const code = watch('code')?.trim() || `product-${Date.now()}`;
-      const publicUrl = await uploadProductPdfAndGetUrl(code, file); // ⬅️ servis çağrısı
+
+      // türüne göre uygun servis
+      let publicUrl: string;
+      if (kind === 'pdf') {
+        publicUrl = await uploadProductPdfAndGetUrl(code, file);
+      } else {
+        publicUrl = await uploadProductImageAndGetUrl(code, file); // 👈 bunu ekle
+      }
+
+      // Not: sende alan adı "image" ama PDF de gelebiliyor.
+      // Daha temiz için formda assetUrl + assetType tutmayı düşün.
       setValue('image', publicUrl, { shouldDirty: true, shouldValidate: true });
-      setPdfName(file.name);
-      show('PDF yüklendi.', 'success');
+
+      setFileMeta({ name: file.name, kind });
+      show(`${file.name} yüklendi.`, 'success');
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message ?? String(err);
-      show(`PDF yüklenemedi: ${msg}`, 'error');
+      show(`Dosya yüklenemedi: ${msg}`, 'error');
     } finally {
-      setUploadingPdf(false);
+      setUploadingFile(false);
     }
   }
 
@@ -536,33 +571,33 @@ export default function ProductForm({ dicts }: Props) {
           <Grid size={{ xs: 12 }}>
             <Box>
               <input
-                id="pdf-input"
+                id="file-input"
                 type="file"
-                accept="application/pdf"
+                // accept sadece seçim filtresi. JPEG/JPG aynı MIME’dır.
+                accept="application/pdf,image/png,image/webp,image/jpeg"
                 hidden
-                onChange={(e) => handlePdfPick(e.target.files?.[0] ?? null)}
+                onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
               />
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
                 <Button
                   variant="outlined"
-                  startIcon={<PictureAsPdfIcon />}
+                  startIcon={fileMeta?.kind === 'pdf' ? <PictureAsPdfIcon /> : <ImageIcon />}
                   component="label"
-                  htmlFor="pdf-input"
-                  disabled={uploadingPdf || isSubmitting}
+                  htmlFor="file-input"
+                  disabled={uploadingFile || isSubmitting}
                   sx={{ textTransform: 'capitalize' }}
                 >
-                  {uploadingPdf ? 'Yükleniyor…' : 'PDF Seç ve Yükle'}
+                  {uploadingFile ? 'Yükleniyor…' : 'Dosya Seç ve Yükle'}
                 </Button>
+
                 <Box sx={{ textAlign: 'right', opacity: 0.8, fontSize: 13 }}>
-                  {pdfName
-                    ? `${pdfName} yüklendi`
-                    : (watch('image') ? 'PDF yüklü' : 'PDF seçilmedi')}
+                  {fileMeta
+                    ? `${fileMeta.name} yüklendi (${fileMeta.kind.toUpperCase()})`
+                    : (watch('image') ? 'Dosya yüklü' : 'Dosya seçilmedi')}
                 </Box>
               </Stack>
 
-              {errors.image && (
-                <FormHelperText error>{errors.image.message}</FormHelperText>
-              )}
+              {errors.image && <FormHelperText error>{errors.image.message}</FormHelperText>}
             </Box>
           </Grid>
 

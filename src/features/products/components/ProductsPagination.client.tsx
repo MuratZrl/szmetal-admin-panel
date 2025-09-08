@@ -3,9 +3,10 @@
 
 import * as React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { Route } from 'next'; // ⬅️ önemli
 import CustomPagination from '@/components/ui/pagination/Pagination';
 
-type Props = { page: number; totalPages: number; };
+type Props = { page: number; totalPages: number };
 
 export default function ProductsPagination({ page, totalPages }: Props) {
   const router = useRouter();
@@ -14,10 +15,14 @@ export default function ProductsPagination({ page, totalPages }: Props) {
 
   const onChange = React.useCallback(
     (_e: React.ChangeEvent<unknown>, value: number) => {
-      const params = new URLSearchParams(sp);
+      const params = new URLSearchParams(sp); // ReadonlyURLSearchParams → kopya
       if (value <= 1) params.delete('page');
       else params.set('page', String(value));
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+      const query = params.toString();
+      const href = (query ? `${pathname}?${query}` : pathname) as Route; // ⬅️ assert
+
+      router.push(href, { scroll: false });
     },
     [router, pathname, sp]
   );

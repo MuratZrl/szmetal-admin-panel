@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -10,25 +10,10 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { FormConfig } from '@/features/create_request/types/step2Form';
+
 // ✨ EKLE
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
-
-type FieldType = 'text' | 'number' | 'textarea' | 'date';
-
-export type FormField = {
-  name: string;
-  label: string;
-  type?: FieldType;
-  placeholder?: string;
-  required?: boolean;
-  min?: number;
-  max?: number;
-  helperText?: string;
-};
-
-export type FormConfig = {
-  fields: FormField[];
-};
 
 export type DraftData = Record<string, string>;
 
@@ -43,24 +28,39 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
   const router = useRouter();
   const { show } = useSnackbar(); // ✨ buradan bildirim atacağız
 
-  // Başlangıç form state'ini güvenli tiplerle hazırla
-  const initialState: DraftData = useMemo(() => {
-    const base = Object.fromEntries(formConfig.fields.map(f => [f.name, ''])) as DraftData;
-    if (!initialDraft) return base;
+  // 1) Boş form şablonu
+  const emptyForm = React.useMemo<DraftData>(() => {
+    return Object.fromEntries(formConfig.fields.map(f => [f.name, ''])) as DraftData;
+  }, [formConfig.fields]);
 
-    const normalized: DraftData = { ...base };
-    for (const key of Object.keys(base)) {
+  // 2) İlk state (draft varsa doldur)
+  const initialState = React.useMemo<DraftData>(() => {
+
+    if (!initialDraft) return emptyForm;
+    
+    const normalized: DraftData = { ...emptyForm };
+    
+    for (const key of Object.keys(emptyForm)) {
       const v = (initialDraft as Record<string, unknown>)[key];
       normalized[key] = v == null ? '' : String(v);
     }
+    
     return normalized;
-  }, [formConfig.fields, initialDraft]);
+  
+  }, [emptyForm, initialDraft]);
 
-  const [form, setForm] = useState<DraftData>(initialState);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [form, setForm] = React.useState<DraftData>(initialState);
+  const [formKey, setFormKey] = React.useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
-  // Basit doğrulama: required ve sayısal min/max kontrolleri
-  const isValid = useMemo(() => {
+  // 3) initialDraft veya fields değişince formu resetle + remount
+  React.useEffect(() => {
+    setForm(initialState);
+    setFormKey(k => k + 1);
+  }, [initialState]);
+
+  // 4) Basit doğrulama
+  const isValid = React.useMemo<boolean>(() => {
     for (const field of formConfig.fields) {
       const value = form[field.name] ?? '';
       const t = field.type ?? 'text';
@@ -82,17 +82,16 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
     return true;
   }, [form, formConfig.fields]);
 
-  const handleChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const v = e.target.value;
-    setForm((prev) => ({ ...prev, [name]: v }));
-  };
+  const handleChange = (name: string) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setForm(prev => ({ ...prev, [name]: e.target.value }));
+    };
 
   const handleNext = async () => {
     if (!isValid) {
-      show('Form doğrulaması başarısız. Lütfen alanları kontrol edin.', 'error'); // ✨
+      show('Form doğrulaması başarısız. Lütfen alanları kontrol edin.', 'error');
       return;
     }
-
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/systems/draft', {
@@ -100,24 +99,59 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, form }),
       });
-
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? `Sunucudan beklenmeyen cevap: ${res.status}`);
+        const body = await res.json().catch(() => ({} as Record<string, unknown>));
+        throw new Error((body as { error?: string }).error ?? `Sunucudan beklenmeyen cevap: ${res.status}`);
       }
-
-      show('Taslak kaydedildi. Yönlendiriliyorsunuz.', 'success'); // ✨
+      show('Taslak kaydedildi. Yönlendiriliyorsunuz.', 'success');
       router.push(`/create_request/${slug}/step3`);
     } catch (err) {
-      console.error('draft save error', err);
-      show((err as Error).message ?? 'Kayıt sırasında hata oluştu', 'error'); // ✨
+      show((err as Error).message ?? 'Kayıt sırasında hata oluştu', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 5) Tam sıfırlama (DB + local)
+  const resetLocal = React.useCallback(() => {
+    setForm(emptyForm);
+    setFormKey(k => k + 1);
+  }, [emptyForm]);    
+
+  const handleResetAll = async () => {
+    try {
+      const res = await fetch('/api/systems/draft', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({} as Record<string, unknown>));
+        throw new Error((body as { error?: string }).error ?? 'Taslak silinemedi');
+      }
+      resetLocal();
+      show('Taslak temizlendi.', 'success');
+    } catch (err) {
+      show((err as Error).message, 'error');
+    }
+  };
+
+  // 6) Geri gelince bfcache'ten yeniden mount olduğunda temizle
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      if ((e as { persisted?: boolean }).persisted) {
+        resetLocal();
+      }
+    };
+    window.addEventListener('pageshow', handler as EventListener);
+    return () => window.removeEventListener('pageshow', handler as EventListener);
+  }, [resetLocal]);
+
   return (
-    <Box component="section" sx={{ width: '100%', maxWidth: 1200, mx: 'auto', py: { xs: 1.25, md: 3 } }}>
+    <Box 
+      component="section" 
+      sx={{ width: '100%', maxWidth: 750, mx: 'auto', py: { xs: 1.25, md: 3 } }}
+    >
       
       <form
         onSubmit={(e) => {
@@ -148,6 +182,7 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
                 <TextField
                   key={f.name}
                   multiline
+                  autoComplete='off'
                   minRows={3}
                   {...commonProps}
                 />
@@ -157,6 +192,7 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
             return (
               <TextField
                 key={f.name}
+                autoComplete='off'
                 {...commonProps}
                 type={isNumber ? 'number' : (f.type ?? 'text')}
                 inputProps={
@@ -172,16 +208,26 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
             );
           })}
 
-          <Box 
-            sx={{ 
-              display: 'flex', 
+          <Box
+            sx={{
+              display: 'flex',
               justifyContent: { md: 'space-between' },
-              gap: 2, 
-              mt: 2, 
+              gap: 2,
+              mt: 2,
               flexDirection: { xs: 'column', sm: 'row' },
               width: { md: '100%', lg: '100%' }
             }}
           >
+            <Button
+              variant="text"
+              color="inherit"
+              onClick={handleResetAll}
+              disabled={isSubmitting}
+              sx={{ mr: { sm: 'auto' } }}
+            >
+              Formu Temizle
+            </Button>
+
             <Button
               variant="outlined"
               color="inherit"

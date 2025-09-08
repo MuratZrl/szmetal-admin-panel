@@ -122,8 +122,11 @@ export default function Step3Client<
   }, [materials, slug]);
 
   const handleConfirm = async () => {
+    
     if (submitting) return;
+    
     setSubmitting(true);
+    
     try {
       const res = await fetch('/api/requests', {
         method: 'POST',
