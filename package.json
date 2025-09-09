@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "types:supabase": "supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",
+    "types:supabase": "npx supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",
     "predev": "npm run types:supabase",
     "prebuild": "npm run types:supabase",
     "dev": "next dev --turbopack",
@@ -48,7 +48,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
-    "supabase": "^2.39.2",
+    "supabase": "^2.40.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

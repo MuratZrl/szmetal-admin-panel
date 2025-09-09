@@ -32,6 +32,7 @@ export default function SidebarRoot({ initialRole, initialUnread, userId, mainLi
     () => filterLinksByRole(mainLinks, role, loading),
     [mainLinks, role, loading]
   );
+  
   const logoutLink = React.useMemo(
     () => mainLinks.find(l => l.label === 'Logout') ?? null,
     [mainLinks]
