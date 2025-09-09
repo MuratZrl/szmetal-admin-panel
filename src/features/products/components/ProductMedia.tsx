@@ -84,7 +84,7 @@ export default function ProductMedia({
       {showToolbar ? (
         <Stack direction="row" spacing={0.5} sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
           <IconButton
-            component={Link}
+            LinkComponent={Link}
             href={chosen.url}
             target="_blank"
             rel="noopener noreferrer"

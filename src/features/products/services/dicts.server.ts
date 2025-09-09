@@ -104,7 +104,7 @@ export async function fetchProductDicts(): Promise<ProductDicts> {
     ? maxRow.unit_weight_g_pm / 1000
     : 2;
 
-  const maxUnitWeightKg = Math.max(2, Math.round(rawKg * 10) / 10);
+  const maxUnitWeightKg = Math.max(10, Math.round(rawKg * 10) / 10);
 
   return { categories, categoryTree, variants, maxUnitWeightKg };
 }

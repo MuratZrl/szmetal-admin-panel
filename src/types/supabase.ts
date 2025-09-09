@@ -176,6 +176,34 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_products_category"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_products_category"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_products_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_products_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false

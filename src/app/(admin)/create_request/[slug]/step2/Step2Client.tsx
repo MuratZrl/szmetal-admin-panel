@@ -50,7 +50,7 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
   }, [emptyForm, initialDraft]);
 
   const [form, setForm] = React.useState<DraftData>(initialState);
-  const [formKey, setFormKey] = React.useState<number>(0);
+  const [, setFormKey] = React.useState<number>(0);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
   // 3) initialDraft veya fields değişince formu resetle + remount

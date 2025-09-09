@@ -1,6 +1,6 @@
 // app/(admin)/products/new/page.tsx
 import { Box, Divider, Typography, Grid } from '@mui/material';
-import { fetchProductDicts } from '@/features/products/dicts.server';
+import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import ProductForm from '@/features/products/components/ProductForm.client';
 
 export const dynamic = 'force-dynamic';

@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Breadcrumbs, Typography, Divider } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-
 import { mainLinks } from '@/constants/mainlinks';
+import type { UrlObject } from 'url'; // sadece tip, runtime yok
 
 const formatBreadcrumb = (str: string) =>
   str
@@ -14,7 +14,7 @@ const formatBreadcrumb = (str: string) =>
     .join(' ');
 
 const getLabelFromMainLinks = (href: string, segment: string): string => {
-  const match = mainLinks.find(link => href === link.href || href === link.href + '/' + segment);
+  const match = mainLinks.find(link => href === link.href || href === `${link.href}/${segment}`);
   if (match) return match.labelTr;
 
   if (/^[a-zA-Z0-9_-]{6,}$/.test(segment)) return 'Detay';
@@ -26,14 +26,13 @@ const getLabelFromMainLinks = (href: string, segment: string): string => {
 
 const Breadcrumb = () => {
   const pathname = usePathname();
-  const pathParts = pathname.split('/').filter(part => part);
+  const pathParts = pathname.split('/').filter(Boolean);
+
+  // Home link: string yerine UrlObject ver
+  const homeHref: UrlObject = { pathname: '/create_request' };
 
   const breadcrumbs = [
-    <Link
-      key="home"
-      href="/systems"
-      style={{ display: 'flex', alignItems: 'center' }}
-    >
+    <Link key="home" href={homeHref} style={{ display: 'flex', alignItems: 'center' }}>
       <HomeIcon fontSize="small" />
     </Link>
   ];
@@ -41,20 +40,20 @@ const Breadcrumb = () => {
   let previousLabel: string | null = null;
 
   pathParts.forEach((part, index) => {
-    const href = '/' + pathParts.slice(0, index + 1).join('/');
+    const hrefStr = '/' + pathParts.slice(0, index + 1).join('/');
+    const hrefObj: UrlObject = { pathname: hrefStr };
     const isLast = index === pathParts.length - 1;
-    const label = getLabelFromMainLinks(href, part);
+    const label = getLabelFromMainLinks(hrefStr, part);
 
-    // Aynı label daha önce gösterildiyse atla
     if (label === previousLabel) return;
     previousLabel = label;
 
     const item = isLast ? (
-      <Typography key={href} color="text.primary" fontWeight={500}>
+      <Typography key={hrefStr} color="text.primary" fontWeight={500}>
         {label}
       </Typography>
     ) : (
-      <Link key={href} href={href} style={{ textTransform: 'capitalize' }}>
+      <Link key={hrefStr} href={hrefObj} style={{ textTransform: 'capitalize' }}>
         {label}
       </Link>
     );
@@ -64,7 +63,7 @@ const Breadcrumb = () => {
 
   return (
     <>
-      <Breadcrumbs aria-label="breadcrumb" >
+      <Breadcrumbs aria-label="breadcrumb">
         {breadcrumbs}
       </Breadcrumbs>
       <Divider sx={{ my: 1.5 }} />

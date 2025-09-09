@@ -2,18 +2,21 @@
 'use client';
 
 import * as React from 'react';
-
+import Link from 'next/link';
 import {
   Card, CardActionArea, CardContent, CardMedia,
-  Typography, Chip, Stack, Checkbox, Box
+  Typography, Chip, Stack, Checkbox, Box, useMediaQuery
 } from '@mui/material';
-
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import { alpha, useTheme } from '@mui/material/styles'; // ⬅️ useTheme eklendi
+import { alpha, useTheme } from '@mui/material/styles';
 
-import type { Product } from '../model';
+import type { Product } from '../types/product';
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
+import { LabelMaps } from '@/features/products/utils/labelMaps.server';
+import { prettyTr } from '@/features/products/utils/tr-text';
+
+type Props = { product: Product; labels?: LabelMaps };
 
 // --- yardımcılar
 function extFrom(url?: string | null): string {
@@ -24,16 +27,10 @@ function extFrom(url?: string | null): string {
 }
 
 function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): string {
-  // 4:3 responsive SVG; 800x600 metadata koyuyoruz ama viewBox ölçeklenebilir
   const { bg, fg, text } = opts;
   const svg = `
   <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 4 3" preserveAspectRatio="xMidYMid slice">
-    <defs>
-      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="${bg}"/>
-        <stop offset="1" stop-color="${bg}"/>
-      </linearGradient>
-    </defs>
+    <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="${bg}"/><stop offset="1" stop-color="${bg}"/></linearGradient></defs>
     <rect width="4" height="3" fill="url(#g)"/>
     <g fill="${fg}">
       <rect x="0.25" y="0.25" width="3.5" height="2.5" fill="none" stroke="${fg}" stroke-width="0.03" stroke-dasharray="0.12 0.12"/>
@@ -43,21 +40,30 @@ function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): stri
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product, labels }: Props) {
   const theme = useTheme();
+  const downSm = useMediaQuery(theme.breakpoints.down('sm'));
   const { isSelected, toggle } = useProductsSelection();
   const selected = isSelected(product.id);
 
-  const isRaster = (u?: string | null): boolean => {
+  function isRaster(u?: string | null): boolean {
     const ext = (u ? extFrom(u) : '').toLowerCase();
-    return /^(png|jpe?g|webp|gif|avif)$/.test(ext) ||
-      (u?.startsWith('data:image/') && !u.startsWith('data:image/svg'));
-  };
+    const rasterByExt = /^(png|jpe?g|webp|gif|avif)$/.test(ext);
+
+    // undefined → false
+    const isDataImageButNotSvg = !!(u?.startsWith('data:image/') && !u?.startsWith('data:image/svg'));
+
+    return rasterByExt || isDataImageButNotSvg;
+  }
+
+  const variantLabel   = prettyTr(product.variant,     labels?.variant);
+  const categoryLabel  = prettyTr(product.category,    labels?.category);
+  const subLabel       = prettyTr(product.subCategory, labels?.subcategory);
 
   const ext = String(product.fileExt ?? extFrom(product.image)).toLowerCase();
   const isPdf = ext === 'pdf';
 
-  // Tema uyumlu placeholder üret
+  // Tema uyumlu placeholder
   const placeholderSrc = React.useMemo<string>(() => {
     const bg = theme.palette.mode === 'dark'
       ? alpha(theme.palette.grey[900], 0.6)
@@ -65,78 +71,137 @@ export default function ProductCard({ product }: { product: Product }) {
     const fg = theme.palette.mode === 'dark'
       ? theme.palette.grey[300]
       : theme.palette.text.secondary;
-    return svgPlaceholder4x3({ bg, fg, text: 'Görsel yok' });
-  }, [theme.palette.mode, theme.palette.grey, theme.palette.text]);
+    return svgPlaceholder4x3({ bg, fg, text: isPdf ? 'PDF Önizleme' : 'Görsel yok' });
+  }, [theme.palette.mode, theme.palette.grey, theme.palette.text, isPdf]);
 
-  // Önizleme kaynağı: PDF değilse ve raster yoksa placeholder
-  const previewSrc =
-    isPdf
-      ? 'about:blank' // iframe kullanıyoruz; img değil
-      : isRaster(product.image)
-        ? (product.image as string)
-        : placeholderSrc;
+  const [imgError, setImgError] = React.useState<boolean>(false);
+
+  // Önizleme kaynağı
+  const previewSrc = isPdf
+    ? 'about:blank'
+    : isRaster(product.image)
+      ? (product.image as string)
+      : placeholderSrc;
+
+  const finalImgSrc = imgError ? placeholderSrc : previewSrc;
 
   return (
-    <Card variant="outlined" sx={{ height: '100%', borderRadius: 2, position: 'relative' }}>
+    <Card
+      variant="outlined"
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        borderRadius: 2,
+        // Küçük ekranda içerik kadar, md+ eş yükseklik grid için 100%
+        height: { xs: 'auto', md: '100%' },
+      }}
+    >
 
       <CardActionArea
+        LinkComponent={Link}
         href={`/products/${product.id}`}
         draggable={false}
         sx={{
-          height: '100%',
+          flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'stretch',
-          outline: selected ? '2px solid' : 'none',
-          outlineColor: selected ? 'primary.main' : 'transparent',
           transition: 'outline-color .2s',
         }}
       >
 
-        {/* Medya alanı: en = 100%, oran = 4:3 ⇒ H = W × 0.75 */}
-        <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', overflow: 'hidden' }}>
-          {isPdf && product.image ? (
-            <Box
-              component="iframe"
-              src={`${product.image}#page=1&view=FitH&toolbar=0&navpanes=0&`}
-              title={`${product.name} PDF`}
-              loading="eager"
-              aria-hidden
-              sx={{
-                width: '100%',
-                height: '100%',
-                border: 0,
-                pointerEvents: 'none',  // kart tıklanabilir kalsın
-                bgcolor: 'background.default',
-              }}
-            />
-          ) : (
-            <CardMedia
-              component="img"
-              image={previewSrc}
-              alt={product.name || 'Ürün'}
-              draggable={false}
-              sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                bgcolor: 'background.default',
-              }}
-            />
-          )}
+        {/* Media: 4:3 oran, destek yoksa padding fallback */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '4 / 3',
+            overflow: 'hidden',
+            '@supports not (aspect-ratio: 1)': {
+              height: 0,
+              pt: '75%',
+            },
+          }}
+        >
+          {isPdf && product.image
+            ? (
+              // Mobile’da PDF iframe yok, ağır
+              downSm ? (
+                <CardMedia
+                  component="img"
+                  image={placeholderSrc}
+                  alt={`${product.name || 'Ürün'} PDF`}
+                  draggable={false}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover', bgcolor: 'background.default' }}
+                />
+              ) : (
+                <Box
+                  component="iframe"
+                  src={`${product.image}#page=1&view=FitH&toolbar=0&navpanes=0&`}
+                  title={`${product.name} PDF`}
+                  loading="eager"
+                  aria-hidden
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    border: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    bgcolor: 'background.default',
+                  }}
+                />
+              )
+            ) : (
+              <CardMedia
+                component="img"
+                image={finalImgSrc}
+                alt={product.name || 'Ürün'}
+                draggable={false}
+                loading="lazy"
+                // <img>’e geçer, CardMedia forward eder
+                sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 33vw"
+                onError={() => setImgError(true)}
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  bgcolor: 'background.default',
+                }}
+              />
+            )
+          }
         </Box>
 
-        <CardContent sx={{ display: 'grid', gap: 0.5 }}>
-          <Typography variant="subtitle1" noWrap title={`${product.code} • ${product.name}`}>
+        <CardContent
+          sx={{
+            display: 'grid',
+            width: '85%',
+            gap: 0.75,
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 1.25, sm: 1.5 },
+          }}
+        >
+          {/* Başlık 2 satır clamp */}
+          <Typography
+            variant="subtitle1"
+            title={`${product.code} • ${product.name}`}
+            sx={{
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              overflow: 'hidden',
+              lineHeight: 1.25,
+              fontSize: { xs: '0.95rem', sm: '1rem' },
+            }}
+          >
             {product.code} — {product.name}
           </Typography>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
-            <Chip size="small" label={product.variant} />
-            <Chip size="small" label={`${product.category} / ${product.subCategory}`} variant="outlined" />
-          </Stack>
-
-          <Stack direction="column" spacing={0}>
+          <Stack direction="column" spacing={0.25} my={0.5}>
             <Typography variant="caption" color="text.secondary">
               Birim Ağırlık: {product.unit_weight_g_pm} gr
             </Typography>
@@ -144,31 +209,88 @@ export default function ProductCard({ product }: { product: Product }) {
               Tarih: {product.date}
             </Typography>
           </Stack>
+
+          <Stack
+            direction="row"
+            alignItems="center"
+            sx={{
+              flexWrap: 'wrap',
+              gap: 1,
+              maxWidth: 1, // 100%
+            }}
+          >
+            <Chip 
+              size="small" 
+              label={`${variantLabel} Profilleri`} 
+              sx={{
+                textTransform: 'none',
+                maxWidth: 1,           // 100%
+                height: 'auto',        // sabit yükseklik yok
+                alignItems: 'flex-start',
+                '& .MuiChip-label': {
+                  display: 'block',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.2,
+                  py: 0.25,
+                },
+              }}
+            />
+            
+            <Chip 
+              size="small" 
+              label={`${categoryLabel} / ${subLabel}`} 
+              variant="filled" 
+              sx={{
+                textTransform: 'none',
+                maxWidth: 1,           // 100%
+                height: 'auto',        // sabit yükseklik yok
+                alignItems: 'flex-start',
+                '& .MuiChip-label': {
+                  display: 'block',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.2,
+                  py: 0.25,
+                },
+              }}
+            />
+          </Stack>
+
         </CardContent>
 
       </CardActionArea>
 
-      {/* Alt sağ checkbox */}
+      {/* ↓↓↓ YENİ: her daim en altta duran footer */}
       <Box
+        component="footer"
         sx={{
-          position: 'absolute',
-          right: 8,
-          bottom: 8,
-          bgcolor: t => alpha(t.palette.background.paper, 0.5),
-          borderRadius: '35%',
-          boxShadow: 1,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: 1,
+          px: { xs: 1, sm: 1.5, md: 0.5 },
+          py: { xs: 0.5, sm: 0.75 },
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: t => alpha(t.palette.background.paper, 0.8),
         }}
       >
         <Checkbox
+          aria-label="Ürünü seç"
           size="small"
           checked={selected}
-          onChange={(e) => { e.stopPropagation(); toggle(product.id); }}
+          // Link CardActionArea’nın dışında kaldığı için onClick stopPropagation şart değil,
+          // yine de alışkanlıktan koyuyorum; zarar gelmez.
           onClick={(e) => e.stopPropagation()}
+          onChange={() => toggle(product.id)}
           icon={<RadioButtonUncheckedIcon />}
           checkedIcon={<RadioButtonCheckedIcon />}
-          sx={{ zIndex: 0 }}
         />
       </Box>
+
     </Card>
   );
 }

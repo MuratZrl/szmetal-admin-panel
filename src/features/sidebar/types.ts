@@ -18,7 +18,7 @@ export type SidebarLinkLabel =
 export type SidebarLink = {
   label: SidebarLinkLabel;
   labelTr: string;
-  href?: string; // Logout için opsiyonel bırakmak daha esnek
+  href: `/${string}`;        // zorunlu ve slash ile başlasın
   icon: ComponentType<SvgIconProps>;
   disabled?: boolean;
   roles?: Array<Exclude<Role, null>>;

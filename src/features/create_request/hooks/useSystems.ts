@@ -29,7 +29,6 @@ function mapRowToCard(r: Row): SystemCardType {
     },
     isActive: r.is_active ?? true,
     createdAt: r.created_at ?? undefined,
-    meta: r.meta ?? {},
   };
 }
 

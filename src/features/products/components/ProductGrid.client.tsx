@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Grid } from '@mui/material';
 import ProductCard from '@/features/products/components/ProductCard.client';
-import type { Product } from '../model';
+import type { Product } from '../types/product';
 
 export default function ProductsGrid({ products, density = 'comfortable' }: { products: Product[]; density?: 'comfortable'|'compact'; }) {
   const mdCols = density === 'compact' ? 4 : 3;

@@ -28,19 +28,31 @@ export default function BulkDeleteDialog({ open, onClose }: Props) {
   };
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose}>
+    <Dialog
+      open={open} 
+      onClose={loading ? undefined : onClose} 
+      fullWidth 
+      maxWidth="sm"
+    >
+
       <DialogTitle>Seçilenleri sil</DialogTitle>
+      
       <DialogContent>
         <Typography variant="body2">
-          {ids.length} ürünü kalıcı olarak sileceğim. Devam edelim mi?
+          {ids.length} ürün kalıcı olarak silinecektir.
         </Typography>
       </DialogContent>
+
       <DialogActions>
+
         <Button onClick={onClose} disabled={loading}>Vazgeç</Button>
+
         <Button color="error" variant="contained" onClick={handleConfirm} disabled={loading || !ids.length}>
           Sil
         </Button>
+
       </DialogActions>
+
     </Dialog>
   );
 }

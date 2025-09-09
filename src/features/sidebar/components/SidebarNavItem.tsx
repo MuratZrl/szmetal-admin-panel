@@ -36,9 +36,8 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
           </ListItemButton>
         ) : (
           <ListItemButton
-            component={Link}
+            LinkComponent={Link}
             href={href!}
-            prefetch
             aria-label={label}
             aria-current={active ? 'page' : undefined}
             selected={active}

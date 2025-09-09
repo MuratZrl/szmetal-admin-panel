@@ -1,6 +1,6 @@
 // app/(admin)/layout.tsx
 import * as React from 'react';
-import Providers from '@/app/(admin)/providers';
+import Providers from '@/providers';
 
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';

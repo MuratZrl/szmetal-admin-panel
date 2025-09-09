@@ -11,7 +11,10 @@ import { updateRequestStatusAction } from './actions';
 import GiyotinTables from '@/features/create_request/components/GiyotinTables.client';
 import type { RequestRowUnion } from '@/features/requests/types';
 
-export const dynamic = 'force-dynamic'; // SSR, cache yoka
+export const dynamic = 'force-dynamic';
+
+type PageParams = { id: string };
+type PageProps = { params: Promise<PageParams> };
 
 function StatusChip({ status }: { status: RequestRowUnion['status'] }) {
   const icon =
@@ -51,16 +54,21 @@ function renderSystemTables(req: RequestRowUnion) {
   }
 }
 
-export default async function RequestDetailPage({ params }: { params: { id: string } }) {
-  const idNum = String(params.id);
-  if (Number.isNaN(idNum)) notFound();
+export default async function RequestDetailPage({ params }: PageProps) {
+  const { id } = await params;              // <-- kritik: params Promise
+  const idStr = String(id);
 
-  const request = await fetchRequestById(idNum);
+  // ID numerik ise:
+  if (!/^\d+$/.test(idStr)) notFound();
+
+  // ID uuid ise yukarıdakini kaldırıp istersen şu kontrolü kullan:
+  // if (!/^[0-9a-f-]{36}$/i.test(idStr)) notFound();
+
+  const request = await fetchRequestById(idStr);
   if (!request) notFound();
 
   return (
     <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
-      {/* Kart: Genel Bilgiler */}
       <Card variant="outlined" sx={{ mb: 4, borderRadius: 5, boxShadow: 2 }}>
         <CardContent>
           <Grid container spacing={1.25}>
@@ -92,10 +100,6 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
 
           <Divider sx={{ my: 2 }} />
 
-          {/* Onay / Red butonları sadece pending ise */}
-          {/* Client bileşenine server action'ı prop olarak geçiriyoruz */}
-          {/* Bu pattern ile sayfa "use client" istemez */}
-          {/* Butonlar MUI, grid kuralına uyuyor */}
           <StatusActions
             requestId={request.id}
             status={request.status}
@@ -106,7 +110,6 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
 
       <Divider sx={{ my: 2 }} />
 
-      {/* Sistem detayları */}
       {renderSystemTables(request)}
     </Box>
   );

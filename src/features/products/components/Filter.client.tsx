@@ -20,7 +20,7 @@ export type VariantOption = { key: string; name: string };
 export default function Filters({
   categoryTree,
   variants,
-  maxUnitWeightKg = 2,
+  maxUnitWeightKg = 10,
 }: {
   categoryTree: CategoryTree;
   variants: VariantOption[];
@@ -153,13 +153,18 @@ export default function Filters({
             const { name, subs } = node;
 
             const subSlugs = subs.map(s => s.slug);
+            const hasSubs = subSlugs.length > 0;
+
             const open =
               expanded.includes(catSlug) ||
               categories.includes(catSlug) ||
               subSlugs.some(s => subCategories.includes(s));
 
-            const allSelected = subSlugs.every(s => subCategories.includes(s));
-            const someSelected = subSlugs.some(s => subCategories.includes(s));
+            // sadece çocuk varsa all/some hesapla
+            const allSelected  = hasSubs && subSlugs.every(s => subCategories.includes(s));
+            const someSelected = hasSubs && subSlugs.some(s => subCategories.includes(s));
+
+            // parent, ya listede seçiliyse ya da TÜM çocuklar seçiliyse checked olsun
             const catChecked = categories.includes(catSlug) || allSelected;
 
             return (

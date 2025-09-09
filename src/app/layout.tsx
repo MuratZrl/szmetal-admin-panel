@@ -1,9 +1,12 @@
-// app/layout.tsx
+import type { ReactNode } from 'react';
+import Providers from '@/providers';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

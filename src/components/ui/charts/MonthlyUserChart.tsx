@@ -20,7 +20,6 @@ export default function MonthlyUserChart() {
         {
           data: yValues,
           label: 'Toplam Kullanıcılar',
-          color: 'orangered',
         },
       ]}
       height={300}

@@ -230,7 +230,7 @@ export const componentsOverrides = (
       defaultProps: { color: 'primary' },
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: '100%',
           '&:hover': { backgroundColor: alpha(palette.primary.main, 0.06) },
         },
       },

@@ -1,10 +1,18 @@
-// src/features/products/services/products.server.ts
-import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
-import type { ProductFilters } from '../types';
-import type { Row, Product } from '../model';
-import { mapRowToProduct, mapProductPatchToRow } from '../model';
+'use server';
 
-export async function fetchProductById(id: number | string) {
+import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+import type { Database } from '@/types/supabase';
+import type { ProductFilters } from '../types/filter';
+import { mapRowToProduct, mapProductPatchToRow } from '../types/product';
+
+// Tek gerçek DB tipi
+type ProductsRow = Database['public']['Tables']['products']['Row'];
+
+/**
+ * Form sayfasının beklediği şey: DB satırı (snake_case).
+ * page.tsx içinde mapRowToForm(product) çağırıyorsun, o DB Row istiyor.
+ */
+export async function fetchProductById(id: string | number): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
   const pid = typeof id === 'string' ? Number(id) : id;
 
@@ -14,10 +22,14 @@ export async function fetchProductById(id: number | string) {
     .eq('id', pid)
     .maybeSingle();
 
-  if (error) throw error;
-  return data ? mapRowToProduct(data) : null;
+  if (error) return null;
+  return data as ProductsRow | null;
 }
 
+/**
+ * Patch → DB update. Geriye domain model (Product) döndürüyoruz,
+ * çünkü genelde liste/detail ekranlarında o kullanışlı.
+ */
 export async function updateProduct(
   id: number | string,
   patch: Parameters<typeof mapProductPatchToRow>[0]
@@ -33,13 +45,14 @@ export async function updateProduct(
     .select('*')
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   if (!data) throw new Error('Product not found');
-  return mapRowToProduct(data);
+
+  return mapRowToProduct(data as ProductsRow);
 }
 
 export type ProductPage = {
-  items: Product[];
+  items: ReturnType<typeof mapRowToProduct>[];
   total: number;
   page: number;
   pageSize: number;
@@ -63,16 +76,22 @@ export async function fetchFilteredProducts(
 
   if (filters.q?.trim()) {
     const t = filters.q.trim();
-    // İki kolonda arama
     q = q.or(`code.ilike.%${t}%,name.ilike.%${t}%`);
-    // Bazı PostgREST sürümlerinde parantez isteyebilir:
+    // Bazı PostgREST sürümlerinde parantez isterse:
     // q = q.or(`(code.ilike.%${t}%,name.ilike.%${t}%)`);
   }
-  if (filters.categories?.length) q = q.in('category', filters.categories as Row['category'][]);
-  if (filters.subCategories?.length) q = q.in('sub_category', filters.subCategories);
-  if (filters.variants?.length) q = q.in('variant', filters.variants as Row['variant'][]);
 
-  // UI kg veriyorsa sunucuda gr/m'ye çevir
+  if (filters.categories?.length) {
+    q = q.in('category', filters.categories as ProductsRow['category'][]);
+  }
+  if (filters.subCategories?.length) {
+    q = q.in('sub_category', filters.subCategories as ProductsRow['sub_category'][]);
+  }
+  if (filters.variants?.length) {
+    q = q.in('variant', filters.variants as ProductsRow['variant'][]);
+  }
+
+  // UI kg veriyor → DB gr/m
   if (typeof filters.wMin === 'number') q = q.gte('unit_weight_g_pm', Math.round(filters.wMin * 1000));
   if (typeof filters.wMax === 'number') q = q.lte('unit_weight_g_pm', Math.round(filters.wMax * 1000));
 
@@ -81,27 +100,22 @@ export async function fetchFilteredProducts(
 
   switch (filters.sort) {
     case 'date-desc':   q = q.order('date', { ascending: false }); break;
-    case 'date-asc':    q = q.order('date', { ascending: true }); break;
-
-    case 'weight-asc':  q = q.order('unit_weight_g_pm', { ascending: true }); break;
+    case 'date-asc':    q = q.order('date', { ascending: true });  break;
+    case 'weight-asc':  q = q.order('unit_weight_g_pm', { ascending: true });  break;
     case 'weight-desc': q = q.order('unit_weight_g_pm', { ascending: false }); break;
-
-    case 'code-asc':    q = q.order('code', { ascending: true }); break;
+    case 'code-asc':    q = q.order('code', { ascending: true });  break;
     case 'code-desc':   q = q.order('code', { ascending: false }); break;
-    default:            q = q.order('created_at', { ascending: false }); break;
+    default:            q = q.order('created_at', { ascending: false });       break;
   }
 
   const { data, error, count } = await q.range(from, to);
-  if (error) throw error;
+  if (error) throw new Error(error.message);
+
+  const rows = (data ?? []) as ProductsRow[];
+  const items = rows.map(mapRowToProduct);
 
   const total = count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
-  return {
-    items: (data ?? []).map(mapRowToProduct),
-    total,
-    page,
-    pageSize,
-    pageCount,
-  };
+  return { items, total, page, pageSize, pageCount };
 }

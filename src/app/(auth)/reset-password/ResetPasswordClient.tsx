@@ -1,307 +1,247 @@
-// app/(auth)/reset-password/ResetPasswordClient.tsx
-
 'use client';
-export const dynamic = 'force-dynamic';
+
+import * as React from 'react';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-import { useState, useEffect } from 'react';
-
-import { useRouter, useSearchParams } from 'next/navigation';
-
-import {
-  TextField,
-  Typography,
-  Box,
-  Button,
-  Snackbar,
-  Alert,
-  IconButton,
-  InputAdornment,
-} from '@mui/material';
+import { Box, Grid, Button, TextField, Typography, IconButton, InputAdornment } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import AuthCard from '../components/layout/AuthCard';
 
-import { supabase } from '../../../lib/supabase/supabaseClient';
+import { supabase } from '@/lib/supabase/supabaseClient';
 
-export default function ResetPasswordPage() {
+import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+
+import { glassTextFieldProps } from '../constants/formstyles';
+import type { SxProps, Theme } from '@mui/material/styles';
+import { mergeSx } from '@/utils/mergeSx';
+
+type FormState = { password: string; confirmPassword: string };
+
+export default function ResetPasswordClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { show } = useSnackbar();
 
-  const accessToken = searchParams.get('access_token');
+  const [sessionValid, setSessionValid] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [form, setForm] = React.useState<FormState>({ password: '', confirmPassword: '' });
 
-  const [sessionValid, setSessionValid] = useState(false);
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [form, setForm] = useState({ password: '', confirmPassword: '' });
-  const [loading, setLoading] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-
-  const handleClickShowPassword = () => setShowPassword((prev) => !prev);
-  const handleClickShowConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
-
+  // Şifre kuralları
   const isPasswordValid = (password: string) => {
     const minLength = 8;
-    const hasLower = /[a-z]/.test(password);
-    const hasUpper = /[A-Z]/.test(password);
-    const hasDigit = /\d/.test(password);
-    const hasSymbol = /[!@#$%^&*]/.test(password);
     return (
       password.length >= minLength &&
-      hasLower &&
-      hasUpper &&
-      hasDigit &&
-      hasSymbol
+      /[a-z]/.test(password) &&
+      /[A-Z]/.test(password) &&
+      /\d/.test(password) &&
+      /[!@#$%^&*]/.test(password)
     );
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const showSnackbar = (message: string, severity: 'success' | 'error') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
-  };
+  // Supabase’in döndürebileceği tüm varyantları oku:
+  // 1) ?code=... (exchangeCodeForSession ile)
+  // 2) #access_token=...&refresh_token=... (setSession ile)
+  React.useEffect(() => {
+    const run = async () => {
+      try {
+        const search = new URLSearchParams(window.location.search);
+        const code = search.get('code');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          setSessionValid(true);
+          return;
+        }
+
+        if (window.location.hash) {
+          const hash = new URLSearchParams(window.location.hash.slice(1));
+          const access_token = hash.get('access_token');
+          const refresh_token = hash.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+            if (error) throw error;
+            setSessionValid(true);
+            return;
+          }
+        }
+
+        show('Bağlantı geçersiz veya eksik.', 'error');
+      } catch {
+        show('Bağlantı süresi dolmuş veya geçersiz.', 'error');
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isPasswordValid(form.password)) {
-      showSnackbar(
-        'Şifreniz en az 8 karakter, büyük harf, küçük harf, rakam ve sembol içermelidir.',
-        'error'
-      );
+      show('Şifreniz en az 8 karakter, büyük/küçük harf, rakam ve sembol içermelidir.', 'error');
       return;
     }
-
     if (form.password !== form.confirmPassword) {
-      showSnackbar('Şifreler uyuşmuyor.', 'error');
+      show('Şifreler uyuşmuyor.', 'error');
       return;
     }
 
     setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: form.password });
+      if (error) throw error;
 
-    const { error } = await supabase.auth.updateUser({ password: form.password });
-
-    if (error) {
-      showSnackbar('Şifre sıfırlama başarısız: ' + error.message, 'error');
-    } else {
-      showSnackbar('Şifre başarıyla güncellendi. Giriş sayfasına yönlendiriliyorsunuz...', 'success');
-      setTimeout(() => {
-        router.push('/login');
-      }, 1000);
+      show('Şifre güncellendi. Giriş sayfasına yönlendiriliyorsunuz...', 'success');
+      router.replace('/login');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
+      show(`Şifre sıfırlama başarısız: ${message}`, 'error');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  useEffect(() => {
-    const verifyTokenAndStartSession = async () => {
-      if (!accessToken) {
-        showSnackbar('Bağlantı geçersiz veya eksik.', 'error');
-        return;
-      }
+  if (!sessionValid) {
+    // Token yok/geçersiz
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="80dvh"
+        textAlign="center"
+        px={2}
+      >
+        <Typography variant="h1" fontWeight={800} color="error" fontSize={{ xs: 60, sm: 100 }}>
+          404
+        </Typography>
+        <Typography variant="h5" color="white" fontWeight={600} mb={1}>
+          Bağlantı geçersiz veya süresi dolmuş.
+        </Typography>
+        <Typography variant="subtitle1" color="white" mb={3}>
+          Şifre sıfırlama bağlantınız geçersiz olabilir, süresi dolmuş olabilir ya da eksik parametre içeriyor olabilir.
+        </Typography>
+        <Button
+          href="/"
+          variant="outlined"
+          sx={{ px: 3.25, py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
+        >
+          Ana Sayfa
+        </Button>
+      </Box>
+    );
+  }
 
-      const { error } = await supabase.auth.exchangeCodeForSession(accessToken);
+  // Var olan sx’i güvenle genişlet
+  const baseSx = glassTextFieldProps.InputProps?.sx as SxProps<Theme> | undefined;
+  const extendedSx: SxProps<Theme> = mergeSx(baseSx, { borderRadius: 5 });
 
-      if (error) {
-        showSnackbar('Bağlantı süresi dolmuş veya geçersiz.', 'error');
-      } else {
-        setSessionValid(true);
-      }
-    };
-
-    verifyTokenAndStartSession();
-  }, [accessToken]);
 
   return (
-    <>
+    <Box
+      component="form"
+      noValidate
+      autoComplete="off"
+      onSubmit={onSubmit}
+      sx={{ display: 'flex', flexDirection: 'column', width: '75%', mx: 'auto' }}
+    >
+      <AuthCard>
+        <Typography variant="h5" fontWeight={600} mb={3} color="white">
+          Şifrenizi Sıfırlayın
+        </Typography>
 
-      {sessionValid ? (
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Şifre"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={form.password}
+              onChange={onChange}
+              required
+              {...glassTextFieldProps}
+              InputProps={{
+                ...(glassTextFieldProps.InputProps ?? {}),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onMouseDown={(e) => e.preventDefault()} onClick={() => setShowPassword(s => !s)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                sx: extendedSx, // ← tek satır, tertemiz
+              }}
+            />
+          </Grid>
 
-        <Box
-          component="form"
-          noValidate
-          autoComplete="off"
-          onSubmit={handleSubmit}
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '75%',
-            mx: 'auto',
-          }}
-        >
-          <AuthCard>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Şifre Tekrar"
+              name="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={form.confirmPassword}
+              onChange={onChange}
+              required
+              {...glassTextFieldProps}
+              InputProps={{
+                ...(glassTextFieldProps.InputProps ?? {}),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onMouseDown={(e) => e.preventDefault()} onClick={() => setShowConfirmPassword(s => !s)} edge="end">
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                sx: extendedSx, // ← tek satır, tertemiz
+              }}
+            />
+          </Grid>
 
-            <Typography variant='h5' fontWeight={600} mb={3}>
-              Şifrenizi Sıfırlayın
+          <Grid size={{ xs: 12 }}>
+            <Button
+              type="submit"
+              variant="outlined"
+              color="primary"
+              fullWidth
+              disabled={loading}
+              sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
+            >
+              {loading ? 'Kaydediliyor...' : 'Sıfırla'}
+            </Button>
+          </Grid>
+
+          <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography>
+              <Link href="/login">
+                <Typography component="span" color="white" fontStyle="italic" fontWeight={500}
+                  sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  Şifremi hatırladım
+                </Typography>
+              </Link>
             </Typography>
 
-            <Box display="flex" flexDirection="column" width='100%' gap={2}>
-              <TextField
-                label="Şifre"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleClickShowPassword} edge="end">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                label="Şifre Tekrar"
-                type={showConfirmPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleClickShowConfirmPassword} edge="end">
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                disabled={loading}
-                sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 0, backgroundColor: 'orangered' }}
-              >
-                {loading ? 'Kaydet...' : 'Sıfırla'}
-              </Button>
-            </Box>
-
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography textAlign="right" mt={3}>
-                <Link href="/login" passHref>
-                  <Typography
-                    component="span"
-                    color="primary"
-                    fontStyle="italic"
-                    fontWeight={500}
-                    sx={{
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    Şifremi hatırladım
-                  </Typography>
-                </Link>
-              </Typography>
-
-              <Typography textAlign="right" mt={3}>
-                Hesabınız yoksa{' '}
-                <Link href="/register" passHref>
-                  <Typography
-                    component="span"
-                    color="primary"
-                    fontStyle="italic"
-                    fontWeight={500}
-                    sx={{
-                      cursor: 'pointer',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    kayıt olun
-                  </Typography>
-                </Link>
-              </Typography>
-            </Box>
-
-          </AuthCard>
-
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={4000}
-            onClose={() => setSnackbarOpen(false)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Alert
-              onClose={() => setSnackbarOpen(false)}
-              severity={snackbarSeverity}
-              sx={{ width: '100%' }}
-            >
-              {snackbarMessage}
-            </Alert>
-          </Snackbar>
-        </Box>
-
-      ) : (
-
-        // TOKEN YOKSA veya SESSION BAŞLATILAMAZSA
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          height="80vh"
-          textAlign="center"
-          px={2}
-        >
-          <Typography variant="h1" fontWeight="bold" color="error" fontSize={{ xs: 60, sm: 100 }}>
-            404
-          </Typography>
-
-          <Typography 
-            variant="h5" 
-
-            color="white" 
-            fontWeight={600} 
-            mb={1}
-          >
-            Bağlantı geçersiz veya süresi dolmuş.
-          </Typography>
-
-          <Typography 
-            variant="subtitle1" 
-
-            color="white" 
-            mb={3}
-          >
-            Şifre sıfırlama bağlantınız geçersiz olabilir, süresi dolmuş olabilir ya da eksik parametre içeriyor olabilir.
-          </Typography>
-
-          <Button
-            variant="outlined"
-            href="/"
-            sx={{ px: 3.25, py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
-          >
-            Ana Sayfa
-          </Button>
-        </Box>
-      
-      )}
-    </>
+            <Typography color="lightblue">
+              Hesabınız yoksa{' '}
+              <Link href="/register">
+                <Typography component="span" color="white" fontStyle="italic" fontWeight={500}
+                  sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  kayıt olun
+                </Typography>
+              </Link>
+            </Typography>
+          </Grid>
+        </Grid>
+      </AuthCard>
+    </Box>
   );
 }

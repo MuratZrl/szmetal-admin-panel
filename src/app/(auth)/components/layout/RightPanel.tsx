@@ -4,7 +4,6 @@ import { ReactNode, useEffect } from 'react';
 import { Box, Paper } from '@mui/material';
 import { motion, useAnimation } from 'framer-motion';
 import Footer from './Footer';
-import Image from 'next/image';
 
 import ParticlesBackground from '../ui/ParticlesBackground';
 
@@ -18,10 +17,13 @@ const gradients = [
   '#186decff',
   '#3af0d1ff',
   '#2adb89ff', 
-  '#f0d125ff', 
-  '#f1831bff', 
-  '#f13b1bff', 
-  '#911bf1ff', 
+  '#b1f11bff', 
+  '#1bf171ff', 
+  '#1bd1f1ff', 
+  '#1b8df1ff', 
+  '#221bf1ff', 
+  '#621bf1ff', 
+  '#d11bf1ff', 
 ];
 
 const AuthRightPanel = ({ children }: Props) => {
@@ -45,13 +47,13 @@ const AuthRightPanel = ({ children }: Props) => {
   }, [controls]);
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }} >
+    <Box sx={{ position: 'relative', width: 1, height: 1, overflow: 'hidden' }}>
       
       {/* Arka plan - framer motion ile */}
       <motion.div
         animate={controls}
         style={{
-          position: 'absolute',
+          position: 'absolute', inset: 0, 
           top: 0,
           left: 0,
           width: '100%',
@@ -83,25 +85,6 @@ const AuthRightPanel = ({ children }: Props) => {
 
         <Box sx={{ width: '100%', maxWidth: 700 }}>{children}</Box>
       </Paper>
-
-      {/* Logo */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          zIndex: 2,
-          height: 40,
-          width: 120,
-        }}
-      >
-        <Image
-          src="/szmetal-logo.png"
-          alt="SZ Metal Logo"
-          fill
-          style={{ objectFit: 'contain' }}
-        />
-      </Box>
 
       {/* Footer */}
       <Box

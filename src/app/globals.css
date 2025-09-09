@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/* Tüm kökleri uzat */
+:root, html, body, #__next {
+  height: 100%;
+  width: 100%;
+}
+
+html, body {
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Box-sizing’i tek elde topla */
+html { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+
 /* Yalnızca yazdırma davranışı */
 @media print {
   @page {

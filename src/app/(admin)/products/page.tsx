@@ -8,8 +8,8 @@ import Filters from '@/features/products/components/Filter.client';
 import ProductsGrid from '@/features/products/components/ProductsGrid.client';
 import ProductsPagination from '@/features/products/components/ProductsPagination.client';
 import { fetchFilteredProducts } from '@/features/products/services/products.server';
-import { fetchProductDicts } from '@/features/products/dicts.server';
-import type { ProductFilters } from '@/features/products/types';
+import { fetchProductDicts } from '@/features/products/services/dicts.server';
+import type { ProductFilters } from '@/features/products/types/filter';
 
 export const dynamic = 'force-dynamic';
 

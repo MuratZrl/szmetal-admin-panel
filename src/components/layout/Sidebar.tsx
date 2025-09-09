@@ -28,7 +28,9 @@ import {
   IconButton,
 } from '@mui/material';
 
-import { mainLinks, type SidebarLink } from '@/constants/mainlinks';
+import { mainLinks} from '@/constants/mainlinks';
+import type { SidebarLink } from '@/features/sidebar/types';
+
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
@@ -46,7 +48,7 @@ export default function Sidebar() {
   const nextMode: 'light' | 'dark' = current === 'dark' ? 'light' : 'dark';
   const ThemeIcon: React.ElementType = current === 'dark' ? DarkModeIcon : LightModeIcon;
 
-  const [mountedTheme, setMountedTheme] = useState(false);
+  const [, setMountedTheme] = useState(false);
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   useEffect(() => setMountedTheme(true), []);
@@ -213,9 +215,9 @@ export default function Sidebar() {
           ) : (
             <ListItemButton
               className="SidebarNavButton"
-              component={Link}        // ← kritik
+
+              LinkComponent={Link}
               href={href}             // ← kritik
-              prefetch                // istersen false yapabilirsin
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
               selected={isActive}

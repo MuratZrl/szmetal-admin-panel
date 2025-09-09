@@ -1,36 +1,55 @@
-// app/(admin)/products/[id]/page.tsx
 import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { Box, Grid } from '@mui/material';
 
 import { fetchProductById } from '@/features/products/services/products.server';
+import { fetchProductDicts } from '@/features/products/services/dicts.server';
+
 import ProductHeader from '@/features/products/components/ProductHeader';
 import ProductMedia from '@/features/products/components/ProductMedia';
 import ProductInfo from '@/features/products/components/ProductInfo';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions';
 import ProductPrintBlock from '@/features/products/print/ProductPDF';
 
-export async function generateMetadata(
-  props: { params: Promise<{ id: string }> }
-): Promise<Metadata> {
-  const { id } = await props.params;     // <<< önemli
-  const p = await fetchProductById(id);
-  if (!p) return { title: 'Ürün bulunamadı' };
+import { mapRowToProduct } from '@/features/products/types/product';
+import { buildCategoryHelpers } from '@/features/products/forms/helpers';
+
+type Props = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params; // ← Next 15 "sync dynamic APIs" dramını keser
+  const row = await fetchProductById(id);
+  if (!row) return { title: 'Ürün bulunamadı' };
+  const p = mapRowToProduct(row);
   return { title: `${p.code} — ${p.name}` };
 }
 
-export default async function ProductDetailPage(
-  props: { params: Promise<{ id: string }> }
-) {
-  const { id } = await props.params;     // <<< önemli
-  const product = await fetchProductById(id);
-  if (!product) notFound();
+export default async function ProductDetailPage({ params }: Props) {
+  const { id } = await params;
 
+  const [row, dicts] = await Promise.all([
+    fetchProductById(id),
+    fetchProductDicts(),
+  ]);
+
+  if (!row) notFound();
+
+  // DB → domain (camelCase + türetilmiş alanlar)
+  const product = mapRowToProduct(row);
+
+  // Label map’leri (slug → görünen ad)
+  const { categoryLabelMap, subLabelMap } = buildCategoryHelpers(dicts.categoryTree);
+  const variantLabelMap = Object.fromEntries(dicts.variants.map(v => [v.key, v.name] as const));
+
+  // Print bloğu için satırlar
   const rows = [
-
-    { label: 'Variant', value: product.variant },
-    { label: 'Kategori', value: `${product.category} / ${product.subCategory}` },
+    { label: 'Varyant', value: variantLabelMap[product.variant] ?? product.variant },
+    {
+      label: 'Kategori',
+      value: [categoryLabelMap.get(product.category), subLabelMap.get(product.subCategory ?? '')]
+        .filter(Boolean)
+        .join(' / ') || '-',
+    },
     { label: 'Tarih', value: product.date },
     { label: 'ID', value: String(product.id) },
 
@@ -42,29 +61,29 @@ export default async function ProductDetailPage(
     product.scale && { label: 'Ölçek', value: product.scale },
 
     typeof product.outerSizeMm === 'number' && {
-      label: 'Dış Çevre (mm)', value: product.outerSizeMm.toLocaleString('tr-TR')
+      label: 'Dış Çevre (mm)',
+      value: product.outerSizeMm.toLocaleString('tr-TR'),
     },
     typeof product.sectionMm2 === 'number' && {
-      label: 'Kesit (mm²)', value: product.sectionMm2.toLocaleString('tr-TR')
+      label: 'Kesit (mm²)',
+      value: product.sectionMm2.toLocaleString('tr-TR'),
     },
     typeof product.unit_weight_g_pm === 'number' && {
-      label: 'Birim Ağırlığı (gr/m)', value: product.unit_weight_g_pm.toLocaleString('tr-TR')
-    },  
-  ].filter(Boolean) as { label: string; value: ReactNode }[];
+      label: 'Birim Ağırlığı (gr/m)',
+      value: product.unit_weight_g_pm.toLocaleString('tr-TR'),
+    },
+  ].filter(Boolean) as { label: string; value: React.ReactNode }[];
 
   return (
     <Box px={2} py={2}>
-
       <ProductHeader code={product.code} name={product.name} />
 
       <Grid container spacing={2}>
-
         <Grid size={{ xs: 12, md: 7 }}>
           <ProductMedia
-            // Bu bileşen artık sadece PDF gömüyor. raster/diğerleri için "önizleme yok".
-            src={product.image}
-            fileUrl={product.filePublicUrl}
-            fileExt={product.fileExt}
+            src={product.image ?? null}
+            fileUrl={product.filePublicUrl ?? null}  // mapRowToProduct bunu üretiyor olmalı
+            fileExt={product.fileExt ?? null}
           />
         </Grid>
 
@@ -72,27 +91,33 @@ export default async function ProductDetailPage(
           <ProductInfo
             variant={product.variant}
             category={product.category}
-            subCategory={product.subCategory}
-
-            unit_weight_g_pm={product.unit_weight_g_pm}
-            
+            subCategory={product.subCategory ?? undefined}
             date={product.date}
             id={String(product.id)}
+
+            // teknik
             drawer={product.drawer}
             control={product.control}
             scale={product.scale}
             outerSizeMm={product.outerSizeMm}
             sectionMm2={product.sectionMm2}
+            unit_weight_g_pm={typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined}
             tempCode={product.tempCode}
             profileCode={product.profileCode}
             manufacturerCode={product.manufacturerCode}
+
+            // slug → label çöz
+            labels={{
+              category: Object.fromEntries(categoryLabelMap),
+              subCategory: Object.fromEntries(subLabelMap),
+              variant: variantLabelMap,
+            }}
+
             footerSlot={<ProductDetailActions id={String(product.id)} />}
           />
         </Grid>
-        
       </Grid>
 
-      {/* PRINT BLOĞU: PDF ise link göster, resim yok */}
       <ProductPrintBlock
         rows={rows}
         title={`${product.code} — ${product.name}`}

@@ -28,9 +28,9 @@ const ParticlesBackground = () => {
       },
       background: {
         color: {
-          value: '#333333',
+          value: '#353535ff',
         },
-        opacity: 0.1,
+        opacity: 0.05,
       },
       detectRetina: true,
       fpsLimit: 9999,
@@ -54,7 +54,7 @@ const ParticlesBackground = () => {
           type: 'circle',
         },
         opacity: {
-          value: 0.25,
+          value: 0.75,
         },
         size: {
           value: 3,
@@ -73,8 +73,8 @@ const ParticlesBackground = () => {
           enable: true,
           distance: 50,
           speed: {
-            angle: 45,
-            move: 10,
+            angle: 75,
+            move: 100,
           },
         },
         twinkle: {
@@ -89,7 +89,7 @@ const ParticlesBackground = () => {
           color: {
             value: '#ffffff',
           },
-          blur: 25,
+          blur: 5,
           offset: {
             x: 0,
             y: 0,
