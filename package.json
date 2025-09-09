@@ -5,7 +5,6 @@
   "scripts": {
     "types:supabase": "npx supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",
     "predev": "npm run types:supabase",
-    "prebuild": "npm run types:supabase",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
