@@ -1,15 +1,20 @@
+// app/(admin)/products/[id]/page.tsx
+import { createServerClient } from '@supabase/ssr';
+
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+
 import { Box, Grid } from '@mui/material';
 
 import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 
-import ProductHeader from '@/features/products/components/ProductHeader';
-import ProductMedia from '@/features/products/components/ProductMedia';
 import ProductInfo from '@/features/products/components/ProductInfo';
-import ProductDetailActions from '@/features/products/components/ProductDetailActions';
 import ProductPrintBlock from '@/features/products/print/ProductPDF';
+import ProductMedia from '@/features/products/components/ProductMedia';
+import ProductHeader from '@/features/products/components/ProductHeader';
+import ProductDetailActions from '@/features/products/components/ProductDetailActions';
 
 import { mapRowToProduct } from '@/features/products/types/product';
 import { buildCategoryHelpers } from '@/features/products/forms/helpers';
@@ -24,8 +29,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${p.code} — ${p.name}` };
 }
 
+async function getRole(): Promise<'Admin' | 'User' | null> {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+        set() {}, remove() {},
+      }
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
+  return data?.role ?? null;
+}
+
 export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params;
+
+  const role = await getRole();
+  const canEdit = role === 'Admin';
 
   const [row, dicts] = await Promise.all([
     fetchProductById(id),
@@ -113,7 +141,7 @@ export default async function ProductDetailPage({ params }: Props) {
               variant: variantLabelMap,
             }}
 
-            footerSlot={<ProductDetailActions id={String(product.id)} />}
+            footerSlot={<ProductDetailActions id={String(product.id)} canEdit={canEdit} />}
           />
         </Grid>
       </Grid>

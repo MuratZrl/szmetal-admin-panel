@@ -16,7 +16,9 @@ import { useProductsSelection } from '../selection/ProductsSelectionContext.clie
 import BulkDeleteDialog from './BulkDeleteDialog.client';
 import BulkDeleteAllDialog from './BulkDeleteAllDialog.client';
 
-export default function ProductsToolbar() {
+type Perms = { canCreate: boolean; canBulkDelete: boolean };
+
+export default function ProductsToolbar({ perms }: { perms: Perms }) {
   const { count, clear } = useProductsSelection();
   const [open, setOpen] = React.useState(false);
   const [openAll, setOpenAll] = React.useState(false);
@@ -24,7 +26,7 @@ export default function ProductsToolbar() {
   const theme = useTheme();
   const smUp = useMediaQuery(theme.breakpoints.up('sm')); // xs: ikon-only, sm+: tam buton
 
-  const hasSelection = count > 0;
+  const hasSelection = count > 0 && perms.canBulkDelete;
 
   return (
     <>
@@ -54,6 +56,8 @@ export default function ProductsToolbar() {
                 '& > *': { minWidth: 0 },
               }}
             >
+              {perms.canBulkDelete && (
+                <>
               <Button
                 variant="outlined"
                 startIcon={<CloseIcon />}
@@ -90,6 +94,8 @@ export default function ProductsToolbar() {
               >
                 Ürün Ekle
               </Button>
+              </>
+              )}
             </Stack>
           ) : (
             // xs: ikon-only, tooltip’lü kompakt sıra
@@ -149,10 +155,14 @@ export default function ProductsToolbar() {
           )}
         </Grid>
       </Grid>
-
-      {/* Dialoglar */}
-      <BulkDeleteDialog open={open} onClose={() => setOpen(false)} />
-      <BulkDeleteAllDialog open={openAll} onClose={() => setOpenAll(false)} />
+      
+      {perms.canBulkDelete && (
+        <>
+          <BulkDeleteDialog open={open} onClose={() => setOpen(false)} />
+          <BulkDeleteAllDialog open={openAll} onClose={() => setOpenAll(false)} />
+        </>
+      )}
+      
     </>
   );
 }

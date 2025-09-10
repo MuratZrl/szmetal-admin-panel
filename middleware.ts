@@ -2,89 +2,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-// URL listelerini tek yerde topla
-const ADMIN_ONLY = ['/dashboard', '/requests', '/clients', '/products', '/categories', '/admin'];
-const PUBLIC_ROUTES = ['/login', '/register', '/reset-password', '/forget-password'];
+import { isAdminOnly } from '@/lib/supabase/auth/routeGuards';
+
+// Public rotalar
+const PUBLIC_ROUTES = ['/login', '/register', '/reset-password', '/forget-password'] as const;
+
+type Role = 'Admin' | 'User';
 
 // Cookie’leri redirect/rewrited response’a taşı
 function withSupabaseCookies(from: NextResponse, to: NextResponse) {
-  for (const c of from.cookies.getAll()) {
-    to.cookies.set(c);
-  }
+  for (const c of from.cookies.getAll()) to.cookies.set(c);
   return to;
 }
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const url = req.nextUrl;
-  const pathname = url.pathname;
+  const { pathname, search } = req.nextUrl;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value;
+        // NextRequest'ten tüm cookie'leri supabase'e ver
+        getAll() {
+          return req.cookies.getAll().map(c => ({ name: c.name, value: c.value }));
         },
-        set(name, value, options) {
-          // obje formu daha sağlam
-          res.cookies.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          res.cookies.set({ name, value: '', ...options, maxAge: -1 });
+        // Supabase'in setmek istediği cookie'leri current response'a yaz
+        setAll(cookies) {
+          cookies.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
+          });
         },
       },
     }
   );
 
-  // Oturum çek (cookie refresh de olabilir)
+  // Oturum
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Public route ise ve loginli kullanıcı geldiyse, yönlendir
-  if (user && PUBLIC_ROUTES.includes(pathname)) {
+  // Public sayfada loginli kullanıcıyı içeri salma
+  if (user && PUBLIC_ROUTES.includes(pathname as (typeof PUBLIC_ROUTES)[number])) {
     const r = NextResponse.redirect(new URL('/create_request', req.url));
     return withSupabaseCookies(res, r);
   }
 
-  // Korunan sayfalar için: kullanıcı yoksa login'e
+  // Protected: kullanıcı yoksa login'e
   if (!user) {
-    // redirect sonrası geri dönmek için parametre
-    const redirectUrl = new URL('/login', req.url);
-    redirectUrl.searchParams.set('redirectedFrom', pathname + url.search);
-    const r = NextResponse.redirect(redirectUrl);
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('redirectedFrom', pathname + search);
+    const r = NextResponse.redirect(loginUrl);
     return withSupabaseCookies(res, r);
   }
 
-  // Role: önce metadata, yoksa DB fallback
-  type Role = 'Admin' | 'User';
-  let role = (user.app_metadata?.role ?? user.user_metadata?.role) as Role | undefined;
+  // Yalnızca admin-only rotalarda rol kontrolü yap, her istekte DB dövmeyelim
+  if (isAdminOnly(pathname)) {
+    let role: Role | undefined =
+      (user.app_metadata?.role as Role | undefined) ??
+      (user.user_metadata?.role as Role | undefined);
 
-  if (!role) {
-    const { data: row, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    if (!role) {
+      const { data: row, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (error) {
+        const r = NextResponse.redirect(new URL('/unauthorized', req.url));
+        return withSupabaseCookies(res, r);
+      }
+      role = row?.role as Role | undefined;
+    }
 
-    if (error) {
+    if (role !== 'Admin') {
       const r = NextResponse.redirect(new URL('/unauthorized', req.url));
       return withSupabaseCookies(res, r);
     }
-    role = row?.role as Role | undefined;
-  }
-
-  // Admin-only kısıtlama
-  const isAdminRoute = ADMIN_ONLY.some(p => pathname.startsWith(p));
-  if (isAdminRoute && role !== 'Admin') {
-    const r = NextResponse.redirect(new URL('/unauthorized', req.url));
-    return withSupabaseCookies(res, r);
   }
 
   return res;
 }
 
-// Sadece gerçekten korumak istediklerini eşle
+// Yalnız bu yolları gerçekten koru (auth istemeyen public rotaları ekleme)
 export const config = {
   matcher: [
     '/account',
@@ -92,12 +91,9 @@ export const config = {
     '/create_request/:path*',
     '/requests/:path*',
     '/clients',
-    '/products/:path*',
+    '/products/:path*',     // gerekli; içinde 'new' ve '[id]/edit' admin-only
     '/orders/:path*',
     '/categories/:path*',
     '/admin/:path*',
-
-    // Public sayfaları BURAYA ekleme.
-    // Route group (auth) klasörü URL’ye yansımaz, o yüzden '/auth/:path*' gereksiz.
   ],
 };

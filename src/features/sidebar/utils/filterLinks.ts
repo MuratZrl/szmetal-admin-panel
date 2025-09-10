@@ -1,9 +1,17 @@
 // src/features/sidebar/utils/filterLinks.ts
 import type { SidebarLink, Role } from '../types';
+import { isAdminOnly } from '@/lib/supabase/auth/routeGuards';
 
 export function filterLinksByRole(links: SidebarLink[], role: Role, loading: boolean): SidebarLink[] {
-  if (loading) return links.map(l => ({ ...l, disabled: true }));
-  if (role === 'Admin') return links.filter(l => l.label !== 'Logout' || !l.href);
-  if (role === 'User')  return links.filter(l => !l.roles || l.roles.includes('User'));
+  if (role === 'Admin') return links;
+
+  if (role === 'User') {
+    return links.filter(l => !l.href || !isAdminOnly(l.href));
+  }
+
+  if (loading) {
+    return links.map(l => ({ ...l, disabled: true } as SidebarLink & { disabled?: boolean }));
+  }
+
   return [];
 }

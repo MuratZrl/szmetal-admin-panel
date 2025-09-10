@@ -1,4 +1,6 @@
 // app/(admin)/products/page.tsx
+import { getSessionRole } from '@/lib/supabase/auth/getSessionRole.server';
+
 import { Box, Grid, Divider } from '@mui/material';
 
 import { ProductsSelectionProvider } from '@/features/products/selection/ProductsSelectionContext.client';
@@ -19,13 +21,14 @@ function arrParam(v: string | string[] | undefined): string[] {
 
 const PAGE_SIZE = 12;
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  // Next 15 doğru: Promise
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
+
+  const role = await getSessionRole();
+  const perms = {
+    canCreate: role === 'Admin',
+    canBulkDelete: role === 'Admin',
+  };
 
   const filters: ProductFilters = {
     q: typeof sp.q === 'string' ? sp.q : undefined,
@@ -50,7 +53,7 @@ export default async function ProductsPage({
     <Box px={2} py={2} >
       <ProductsSelectionProvider>
 
-        <ProductsToolbar />
+        <ProductsToolbar perms={perms} />
         
         <Divider sx={{ mb: 2 }} />
 

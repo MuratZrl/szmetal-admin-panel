@@ -7,18 +7,23 @@ import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PrintIcon from '@mui/icons-material/Print';
 
-export default function ProductDetailActions({ id }: { id: string }) {
+type Props = {
+  id: string;
+  canEdit: boolean; // <- dışarıdan gelecek
+};
+
+export default function ProductDetailActions({ id, canEdit }: Props) {
   return (
     <Stack
       direction="row"
       alignItems="center"
-      justifyContent="space-between"   // ← sağa itmek için
+      justifyContent="space-between"
       spacing={1}
-      sx={{ width: '100%' }}           // ← container genişliğini kaplasın
+      sx={{ width: '100%' }}
     >
-      
-      {/* Sol grup: Geri + Düzenle */}
+
       <Stack direction="row" spacing={1}>
+
         <Button
           component={Link}
           href={`/products/${id}`}
@@ -34,18 +39,20 @@ export default function ProductDetailActions({ id }: { id: string }) {
           Geri
         </Button>
 
-        <Button
-          component={Link}
-          href={`/products/${id}/edit`}
-          variant="contained"
-          startIcon={<EditIcon />}
-          sx={{ textTransform: 'capitalize', borderRadius: 2 }}
-        >
-          Düzenle
-        </Button>
+        {canEdit && (
+          <Button
+            component={Link}
+            href={`/products/${id}/edit`}
+            variant="contained"
+            startIcon={<EditIcon />}
+            sx={{ textTransform: 'capitalize', borderRadius: 2 }}
+          >
+            Düzenle
+          </Button>
+        )}
+
       </Stack>
 
-      {/* Sağ uç: Yazdır */}
       <Button
         variant="outlined"
         startIcon={<PrintIcon />}
@@ -55,6 +62,7 @@ export default function ProductDetailActions({ id }: { id: string }) {
       >
         Yazdır
       </Button>
+    
     </Stack>
   );
 }

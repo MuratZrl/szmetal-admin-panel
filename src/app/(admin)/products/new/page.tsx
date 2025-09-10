@@ -1,12 +1,21 @@
 // app/(admin)/products/new/page.tsx
+import { getSessionRole } from '@/lib/supabase/auth/getSessionRole.server';
+
+import { redirect } from 'next/navigation';
+
 import { Box, Divider, Typography, Grid } from '@mui/material';
+
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
+
 import ProductForm from '@/features/products/components/ProductForm.client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProductCreatePage() {
   const dicts = await fetchProductDicts();
+
+  const role = await getSessionRole();
+  if (role !== 'Admin') redirect('/unauthorized');
 
   return (
     <Box px={2} py={2}>

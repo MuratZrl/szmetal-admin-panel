@@ -1,6 +1,12 @@
 // app/(admin)/products/[id]/edit/page.tsx
-import { notFound } from 'next/navigation';
+import { createServerClient } from '@supabase/ssr';
+
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
+
+import { redirect } from 'next/navigation';
+
 import { Box, Grid, Divider, Typography } from '@mui/material';
 import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
@@ -18,6 +24,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EditProductPage({ params }: Props) {
   const { id } = await params;                 // ← burada da await
 
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+        set() {}, remove() {},
+      }
+    }
+  );
+
   const [product, dicts] = await Promise.all([
     fetchProductById(id), 
     fetchProductDicts(),
@@ -26,6 +44,19 @@ export default async function EditProductPage({ params }: Props) {
   if (!product) notFound();
 
   const initial = { id: String(product.id), ...mapRowToForm(product) };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { data } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!data || data.role !== 'Admin') {
+    redirect('/unauthorized');
+  }
 
   return (
     <Box px={2} py={2}>

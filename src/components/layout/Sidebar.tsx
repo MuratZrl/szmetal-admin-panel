@@ -6,6 +6,8 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { isAdminOnly } from '@/lib/supabase/auth/routeGuards';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -52,6 +54,28 @@ export default function Sidebar() {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   useEffect(() => setMountedTheme(true), []);
+
+
+  const filteredLinks = useMemo(() => {
+    if (role === 'Admin') return mainLinks;
+
+    if (role === 'User') {
+      // href'i admin-only olan ikonları gizle
+      return mainLinks.filter(link => {
+        // href’i olmayan (logout vs) linkleri aynen bırak
+        if (!link.href) return true;
+        // sadece admin-only'leri ele
+        return !isAdminOnly(link.href);
+      });
+    }
+
+    // loading'de disable edilmiş placeholder'lar gösteriyordun, aynen koru
+    if (loading) {
+      return mainLinks.map(l => ({ ...l, disabled: true } as SidebarLink & { disabled?: boolean }));
+    }
+
+    return [];
+  }, [role, loading, mainLinks]);
 
   // logout
   const handleLogout = useCallback(async () => {
@@ -145,22 +169,6 @@ export default function Sidebar() {
       }
     };
   }, [user]);
-
-  // filtered links by role
-  const filteredLinks = useMemo(() => {
-    if (role === 'Admin') return mainLinks;
-
-    if (role === 'User') {
-      const allowedForUser = ['/account', '/create_request', '/orders', '/login'];
-      return mainLinks.filter((link) => allowedForUser.includes(link.href));
-    }
-
-    if (loading)
-      return mainLinks
-        .map((l) => ({ ...l, disabled: true } as SidebarLink & { disabled?: boolean }));
-
-    return [];
-  }, [role, loading]);
 
   // renderLink'i güncelle
   const renderLink = (link: SidebarLink, opts?: { center?: boolean }) => {
