@@ -6,5 +6,6 @@ export const revalidate = 60;
 
 export default async function SystemsPage() {
   const systems = await fetchSystems(); // Supabase (SSR)
+  
   return <SystemsShell initialSystems={systems} />;
 }

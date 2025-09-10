@@ -11,6 +11,8 @@ import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import HoverPreview from '@/features/products/components/HoverPreview.client';
+
 import type { Product } from '../types/product';
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
 import { LabelMaps } from '@/features/products/utils/labelMaps.server';
@@ -45,6 +47,52 @@ export default function ProductCard({ product, labels }: Props) {
   const downSm = useMediaQuery(theme.breakpoints.down('sm'));
   const { isSelected, toggle } = useProductsSelection();
   const selected = isSelected(product.id);
+
+  // component içinde, state'ler
+  const [hoverAnchor, setHoverAnchor] = React.useState<HTMLElement | null>(null);
+  const [hoverOpen, setHoverOpen] = React.useState<boolean>(false);
+
+  // Tarayıcı hover destekliyor mu? (mobilde açmayalım)
+  const canHover = React.useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  }, []);
+
+  // titreme önlemek için minik gecikme
+  const openTimer = React.useRef<number | null>(null);
+  const closeTimer = React.useRef<number | null>(null);
+
+  function clearTimers() {
+    if (openTimer.current) { window.clearTimeout(openTimer.current); openTimer.current = null; }
+    if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
+  }
+
+  function handleEnter(e: React.MouseEvent<HTMLElement>) {
+    if (!canHover) return;
+    clearTimers();
+    setHoverAnchor(e.currentTarget);
+    openTimer.current = window.setTimeout(() => setHoverOpen(true), 120);
+  }
+
+  function handleLeave() {
+    if (!canHover) return;
+    clearTimers();
+    closeTimer.current = window.setTimeout(() => setHoverOpen(false), 120);
+  }
+
+  // Popper üstüne gelince kapanmasın
+  function handlePreviewEnter() {
+    if (!canHover) return;
+    clearTimers();
+  }
+  function handlePreviewLeave() {
+    if (!canHover) return;
+    handleLeave();
+  }
+
+  // unmount'ta timer temizliği
+  React.useEffect(() => clearTimers, []);
+
 
   function isRaster(u?: string | null): boolean {
     const ext = (u ? extFrom(u) : '').toLowerCase();
@@ -87,7 +135,7 @@ export default function ProductCard({ product, labels }: Props) {
 
   return (
     <Card
-      variant="outlined"
+      variant='elevation'
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -103,25 +151,27 @@ export default function ProductCard({ product, labels }: Props) {
         href={`/products/${product.id}`}
         draggable={false}
         sx={{
-          flexGrow: 1,
+          flex: '1 1 auto',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'stretch',
+          minHeight: 0, // flex overflow/çakışma önler
+          borderRadius: 0,
           transition: 'outline-color .2s',
         }}
       >
 
         {/* Media: 4:3 oran, destek yoksa padding fallback */}
         <Box
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
           sx={{
             position: 'relative',
             width: '100%',
             aspectRatio: '4 / 3',
             overflow: 'hidden',
-            '@supports not (aspect-ratio: 1)': {
-              height: 0,
-              pt: '75%',
-            },
+            flex: '0 0 auto',     // ← büyümesin, üstte sabit dursun
+            '@supports not (aspect-ratio: 1)': { height: 0, pt: '75%' },
           }}
         >
           {isPdf && product.image
@@ -155,11 +205,11 @@ export default function ProductCard({ product, labels }: Props) {
               )
             ) : (
               <CardMedia
-                component="img"
+                component={'img'}
                 image={finalImgSrc}
                 alt={product.name || 'Ürün'}
                 draggable={false}
-                loading="lazy"
+                loading='lazy'
                 // <img>’e geçer, CardMedia forward eder
                 sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 33vw"
                 onError={() => setImgError(true)}
@@ -178,11 +228,13 @@ export default function ProductCard({ product, labels }: Props) {
 
         <CardContent
           sx={{
-            display: 'grid',
-            width: '85%',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: '1 1 auto',     // ← kalan yüksekliği alsın
             gap: 0.75,
             px: { xs: 1.5, sm: 2 },
             py: { xs: 1.25, sm: 1.5 },
+            width: 1,             // ← 85% bırak; hizalama sapması yapıyor
           }}
         >
           {/* Başlık 2 satır clamp */}
@@ -290,6 +342,17 @@ export default function ProductCard({ product, labels }: Props) {
           checkedIcon={<RadioButtonCheckedIcon />}
         />
       </Box>
+
+      <HoverPreview
+        anchorEl={hoverAnchor}
+        open={hoverOpen}
+        src={isPdf && product.image ? String(product.image) : finalImgSrc} // ← PDF ise gerçek dosya URL’si
+        alt={product.name || 'Ürün'}
+        isPdf={isPdf}
+        onMouseEnter={handlePreviewEnter}
+        onMouseLeave={handlePreviewLeave}
+        maxWidth={460}
+      />
 
     </Card>
   );

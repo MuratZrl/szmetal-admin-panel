@@ -1,3 +1,4 @@
+// app/(admin)/create_request/[slug]/step2/Step2Client.tsx
 'use client';
 
 import React from 'react';
@@ -50,7 +51,7 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
   }, [emptyForm, initialDraft]);
 
   const [form, setForm] = React.useState<DraftData>(initialState);
-  const [, setFormKey] = React.useState<number>(0);
+  const [formKey, setFormKey] = React.useState<number>(0);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
   // 3) initialDraft veya fields değişince formu resetle + remount
@@ -88,25 +89,45 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
     };
 
   const handleNext = async () => {
+    
     if (!isValid) {
       show('Form doğrulaması başarısız. Lütfen alanları kontrol edin.', 'error');
       return;
     }
     setIsSubmitting(true);
+    
     try {
       const res = await fetch('/api/systems/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({ slug, form }),
       });
+
+      const body = await res.json().catch(() => ({} as Record<string, unknown>));
+
       if (!res.ok) {
-        const body = await res.json().catch(() => ({} as Record<string, unknown>));
-        throw new Error((body as { error?: string }).error ?? `Sunucudan beklenmeyen cevap: ${res.status}`);
+        const v = body as { error?: string; details?: Array<{ path?: string; message?: string }> };
+
+        if (v.error === 'VALIDATION_FAILED' && Array.isArray(v.details)) {
+          const msg = v.details.map(d => `${d.path ?? '-'}: ${d.message ?? ''}`).join('\n');
+          throw new Error(msg);
+        }
+
+        // Diğer tüm hatalar
+        throw new Error(v.error ?? `Sunucudan beklenmeyen cevap: ${res.status}`);
       }
+      
+      if (!(body as { ok?: boolean; step?: number }).ok || (body as { step?: number }).step !== 3) {
+        throw new Error('Adım yükseltilemedi (step≠3).');
+      }
+
       show('Taslak kaydedildi. Yönlendiriliyorsunuz.', 'success');
-      router.push(`/create_request/${slug}/step3`);
+      router.replace(`/create_request/${slug}/step3`); // push da olur, replace daha temiz
+    
     } catch (err) {
       show((err as Error).message ?? 'Kayıt sırasında hata oluştu', 'error');
+    
     } finally {
       setIsSubmitting(false);
     }
@@ -123,6 +144,7 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
       const res = await fetch('/api/systems/draft', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
         body: JSON.stringify({ slug }),
       });
       if (!res.ok) {
@@ -149,15 +171,13 @@ export default function Step2Client({ formConfig, initialDraft = null, slug }: S
 
   return (
     <Box 
+      key={formKey}
       component="section" 
       sx={{ width: '100%', maxWidth: 750, mx: 'auto', py: { xs: 1.25, md: 3 } }}
     >
       
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void handleNext();
-        }}
+        onSubmit={(e) => { e.preventDefault(); void handleNext() }}
         noValidate
       >
         <Stack spacing={2}>

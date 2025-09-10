@@ -6,17 +6,32 @@ import { supabase } from '@/lib/supabase/supabaseClient';
 export const STORAGE_BUCKET = 'product-media' as const;
 
 type ImageMime = 'image/png' | 'image/webp' | 'image/jpeg';
+export type UploadKind = 'pdf' | 'image';
+
+export type UploadResult = {
+  publicUrl: string;
+  path: string;                   // bucket içi dosya yolu
+  kind: UploadKind;
+  bucket: typeof STORAGE_BUCKET;  // → literal type
+};
+
+export type UploadRef = Pick<UploadResult, 'bucket' | 'path'>;
+
+function throwMsg(msg?: string): never {
+  throw new Error(msg || 'Bilinmeyen upload hatası');
+}
 
 function normalizeExt(mime: ImageMime): 'png' | 'webp' | 'jpg' {
   return mime === 'image/jpeg' ? 'jpg' : (mime.split('/')[1] as 'png' | 'webp');
 }
 
 /** Görsel upload: PNG, WEBP, JPEG */
-export async function uploadProductImageAndGetUrl(code: string, file: File): Promise<string> {
+export async function uploadProductImageAndGetUrl(code: string, file: File): Promise<UploadResult> {
   const allowed: ReadonlySet<string> = new Set(['image/png', 'image/webp', 'image/jpeg']);
-  if (!allowed.has(file.type)) throw new Error('Yalnızca PNG, WEBP, JPEG yükleyin.');
+  if (!allowed.has(file.type)) throwMsg('Yalnızca PNG, WEBP, JPEG yükleyin.');
 
   const ext = normalizeExt(file.type as ImageMime);
+  // Not: main.ext ile overwrite; benzersiz isterse random ekle.
   const path = `images/${code}/main.${ext}`;
 
   const { error } = await supabase
@@ -28,15 +43,15 @@ export async function uploadProductImageAndGetUrl(code: string, file: File): Pro
       upsert: true,
     });
 
-  if (error) throw error;
+  if (error) throwMsg(error.message);
 
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return { publicUrl: data.publicUrl, path, kind: 'image', bucket: STORAGE_BUCKET };
 }
 
 /** PDF upload */
-export async function uploadProductPdfAndGetUrl(codeOrFallback: string, file: File): Promise<string> {
-  if (file.type !== 'application/pdf') throw new Error('Sadece PDF yükleyin.');
+export async function uploadProductPdfAndGetUrl(codeOrFallback: string, file: File): Promise<UploadResult> {
+  if (file.type !== 'application/pdf') throwMsg('Sadece PDF yükleyin.');
 
   const base = codeOrFallback || `product-${Date.now()}`;
   const fileName = `${Date.now()}-${crypto.randomUUID()}.pdf`;
@@ -51,8 +66,14 @@ export async function uploadProductPdfAndGetUrl(codeOrFallback: string, file: Fi
       upsert: true,
     });
 
-  if (error) throw error;
+  if (error) throwMsg(error.message);
 
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return { publicUrl: data.publicUrl, path, kind: 'pdf', bucket: STORAGE_BUCKET };
+}
+
+/** Storage'tan silme (tek dosya) */
+export async function removeUploaded(ref: UploadRef): Promise<void> {
+  const { error } = await supabase.storage.from(ref.bucket).remove([ref.path]);
+  if (error) throwMsg(error.message);
 }

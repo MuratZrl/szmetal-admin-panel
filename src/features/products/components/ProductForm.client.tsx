@@ -7,16 +7,18 @@ import {
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 import { FormProvider, useForm, Controller, type Resolver, type SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import type { ProductDicts } from '@/features/products/services/dicts.server';
 import { createProduct } from '@/features/products/services/products.client';
-import { uploadProductPdfAndGetUrl, uploadProductImageAndGetUrl } from '@/features/products/services/storage.client';
+import { removeUploaded, uploadProductPdfAndGetUrl, uploadProductImageAndGetUrl, UploadRef, UploadResult } from '@/features/products/services/storage.client';
 
 import { supabase } from '@/lib/supabase/supabaseClient';
 
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 
 import FormSection from '@/features/products/components/form/FormSection';
@@ -29,6 +31,27 @@ type Props = { dicts: ProductDicts };
 
 // create formu: ortak model + file alanı
 type CreateValues = ProductFormValues & { file: File | null };
+
+
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+
+  if (typeof err === 'object' && err !== null) {
+    // supabase-js çoğu zaman { error: { message } } döner
+    const maybeMsg = (err as { message?: unknown }).message;
+    if (typeof maybeMsg === 'string') return maybeMsg;
+
+    const inner = (err as { error?: { message?: unknown } }).error;
+    if (inner && typeof inner.message === 'string') return inner.message;
+
+    try {
+      return JSON.stringify(err);
+    } catch {
+      /* fallthrough */
+    }
+  }
+  return String(err);
+}
 
 export default function ProductForm({ dicts }: Props) {
   const router = useRouter();
@@ -62,6 +85,7 @@ export default function ProductForm({ dicts }: Props) {
 
   // Dicts yardımcıları
   const variants = dicts?.variants ?? [];
+  
   const { categoryOptions, getSubCatsFor, categoryLabelMap, subLabelMap, findOwnerCategory } =
     React.useMemo(() => buildCategoryHelpers(dicts?.categoryTree), [dicts]);
 
@@ -69,11 +93,16 @@ export default function ProductForm({ dicts }: Props) {
 
   // Upload state
   const [uploadingFile, setUploadingFile] = React.useState(false);
+
   const [fileMeta, setFileMeta] =
     React.useState<{ name: string; kind: 'pdf' | 'image' } | null>(null);
 
+  const [uploadedRef, setUploadedRef] = React.useState<UploadRef | null>(null);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
   const ACCEPTED_MIME: ReadonlySet<string> =
     new Set(['application/pdf', 'image/png', 'image/webp', 'image/jpeg']);
+
   const MAX_BYTES: Readonly<Record<'pdf' | 'image', number>> = {
     pdf: 10 * 1024 * 1024,
     image: 8 * 1024 * 1024,
@@ -90,10 +119,12 @@ export default function ProductForm({ dicts }: Props) {
     if (!file) return;
 
     const kind = classify(file);
+    
     if (!kind) {
       show('Sadece PDF, PNG, WEBP, JPEG kabul ediyorum.', 'error');
       return;
     }
+
     const limit = MAX_BYTES[kind];
     if (file.size > limit) {
       const mb = (limit / (1024 * 1024)).toFixed(0);
@@ -102,26 +133,32 @@ export default function ProductForm({ dicts }: Props) {
     }
 
     const { data: { session } } = await supabase.auth.getSession();
+
     if (!session) {
       show('Oturum bulunamadı. Giriş yapın.', 'error');
       return;
     }
 
     setUploadingFile(true);
+
     try {
       const code = (watch('code') ?? '').trim() || `product-${Date.now()}`;
-      const publicUrl =
+      const res: UploadResult =
         kind === 'pdf'
           ? await uploadProductPdfAndGetUrl(code, file)
           : await uploadProductImageAndGetUrl(code, file);
 
-      setValue('image', publicUrl, { shouldDirty: true, shouldValidate: true });
+      // Not: PDF için image alanına yazmak istemiyorsan formda pdfUrl alanı aç.
+      setValue('image', res.publicUrl, { shouldDirty: true, shouldValidate: true });
       setValue('file', file, { shouldDirty: true });
+
       setFileMeta({ name: file.name, kind });
+      setUploadedRef({ bucket: res.bucket, path: res.path });
+
       show(`${file.name} yüklendi.`, 'success');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      show(`Dosya yüklenemedi: ${msg}`, 'error');
+    } catch (err: unknown) {
+      show(`Dosya yüklenemedi: ${describeError(err)}`, 'error');
+      console.error('upload failed', err);
     } finally {
       setUploadingFile(false);
     }
@@ -383,6 +420,17 @@ export default function ProductForm({ dicts }: Props) {
                     {uploadingFile ? 'Yükleniyor…' : 'Dosya Seç ve Yükle'}
                   </Button>
 
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteOutlineIcon />}
+                    onClick={() => setDeleteOpen(true)}
+                    disabled={!uploadedRef || uploadingFile || isSubmitting}
+                    sx={{ textTransform: 'capitalize' }}
+                  >
+                    Sil
+                  </Button>
+
                   <Box sx={{ textAlign: 'right', opacity: 0.8, fontSize: 13 }}>
                     {fileMeta
                       ? `${fileMeta.name} yüklendi (${fileMeta.kind.toUpperCase()})`
@@ -406,6 +454,33 @@ export default function ProductForm({ dicts }: Props) {
           </Box>
         </Box>
       </FormProvider>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Dosyayı sil"
+        description="Yüklediğiniz dosyayı sunucudan kaldırmak ve formdan temizlemek istiyor musunuz?"
+        confirmText="Evet, sil"
+        cancelText="Vazgeç"
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={async () => {
+          try {
+            if (uploadedRef) {
+              await removeUploaded(uploadedRef);
+            }
+            setValue('image', '', { shouldDirty: true, shouldValidate: true });
+            setValue('file', null, { shouldDirty: true });
+            setFileMeta(null);
+            setUploadedRef(null);
+
+            show('Dosya silindi.', 'success');
+          } catch (err) {
+            show(`Silinemedi: ${describeError(err)}`, 'error');
+          } finally {
+            setDeleteOpen(false);
+          }
+        }}
+      />
+
     </Paper>
   );
 }

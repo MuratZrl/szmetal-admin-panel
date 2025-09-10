@@ -75,7 +75,7 @@ export default function StepperComponent({
 }: Props) {
   return (
 
-    <Box sx={{ width: '100%', mx: 'auto', px: { xs: 1, sm: 2 }, py: { xs: 1, sm: 2 } }}>
+    <Box sx={{ width: '100%', mx: 'auto', px: { xs: 1, sm: 2, md: 0 }, py: { xs: 1, sm: 2 } }}>
 
       <Card
         variant="outlined"

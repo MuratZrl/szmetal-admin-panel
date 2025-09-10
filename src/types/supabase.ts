@@ -236,7 +236,7 @@ export type Database = {
       requests: {
         Row: {
           created_at: string
-          description: string
+          description: string | null
           form_data: Json
           id: string
           material_data: Json
@@ -247,7 +247,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          description: string
+          description?: string | null
           form_data: Json
           id?: string
           material_data: Json
@@ -258,7 +258,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          description?: string
+          description?: string | null
           form_data?: Json
           id?: string
           material_data?: Json
@@ -283,6 +283,7 @@ export type Database = {
           form_data: Json
           id: string
           slug: string
+          step: number
           updated_at: string
           user_id: string
         }
@@ -291,6 +292,7 @@ export type Database = {
           form_data?: Json
           id?: string
           slug: string
+          step?: number
           updated_at?: string
           user_id: string
         }
@@ -299,6 +301,7 @@ export type Database = {
           form_data?: Json
           id?: string
           slug?: string
+          step?: number
           updated_at?: string
           user_id?: string
         }

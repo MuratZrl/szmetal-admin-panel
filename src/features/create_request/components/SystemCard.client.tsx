@@ -2,14 +2,12 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import {
   Card, Box, CardMedia, CardContent, CardActions, CardActionArea,
   Typography, Button, Stack, Chip, IconButton, Tooltip, Skeleton
 } from '@mui/material';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import LaunchIcon from '@mui/icons-material/Launch';
 import AddShoppingCartOutlinedIcon from '@mui/icons-material/AddShoppingCartOutlined';
 
 import type { SystemCardType } from '@/features/create_request/types/card';
@@ -51,29 +49,13 @@ export default function SystemCard({
   description,
   imageUrl,
   buttonLabels,
-  links,
   onRequestClick,
   status,
   tags = [],
-  href,
   favorite = false,
   onFavoriteToggle,
   loading = false,
 }: SystemCardProps) {
-  // Label fallback: primary > secondary > 'Detaylar'
-  const detailsLabel =
-    buttonLabels.primary ??
-    buttonLabels.secondary ??
-    'Detaylar';
-
-  // Link fallback: details > detailsPage > view > infoPage
-  const detailsHref =
-    href ??
-    links.details ??
-    links['detailsPage'] ??
-    links['view'] ??
-    links['infoPage'] ??
-    undefined;
 
   const canFavorite = typeof onFavoriteToggle === 'function';
 
@@ -94,84 +76,34 @@ export default function SystemCard({
     >
       {/* Üst görsel alanı: kart genel linki */}
       {loading ? (
-        <Skeleton variant="rectangular" sx={{ width: '100%', height: { xs: 180, sm: 220, md: 240 } }} />
+        <Skeleton
+          variant="rectangular"
+          sx={{ width: '100%', height: { xs: 180, sm: 220, md: 240 } }}
+        />
       ) : imageUrl ? (
-        detailsHref ? (
-          <CardActionArea 
-            href={detailsHref} 
-            aria-label={`${title} detaylarına git`}
+        <CardActionArea
+          onClick={onRequestClick}
+          aria-label={`${title} için talep oluştur`}
+        >
+          <Box
+            sx={{ position: 'relative', aspectRatio: { xs: '16 / 9', sm: '16 / 9' }, overflow: 'hidden' }}
           >
-          
-            <Box sx={{ position: 'relative', aspectRatio: { xs: '16 / 9', sm: '16 / 9' }, overflow: 'hidden' }}>
-              <CardMedia
-                component="img"
-                src={imageUrl}
-                alt={title}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transformOrigin: 'center',
-                  transition: 'transform .4s ease',
-                  '&:hover': { transform: 'scale(1.03)' },
-                }}
-                loading="lazy"
-              />
-              {/* Üst sol: status chip */}
-              {status && (
-                <Chip
-                  size="small"
-                  color={statusColor(status)}
-                  label={status.toUpperCase()}
-                  sx={{ position: 'absolute', top: 10, left: 10, fontWeight: 700 }}
-                />
-              )}
-              {/* Üst sağ: favori */}
-              {canFavorite && (
-                <Tooltip title={favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}>
-                  <IconButton
-                    aria-label="toggle favorite"
-                    onClick={(e) => { e.preventDefault(); onFavoriteToggle(!favorite); }}
-                    sx={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      bgcolor: theme => theme.palette.mode === 'dark'
-                        ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.6)',
-                      '&:hover': { bgcolor: theme => theme.palette.action.hover },
-                    }}
-                  >
-                    {favorite ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
-                  </IconButton>
-                </Tooltip>
-              )}
-              {/* Alt gradient + başlık */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  insetInline: 0,
-                  bottom: 0,
-                  p: 2,
-                  background: theme =>
-                    `linear-gradient(180deg, rgba(0,0,0,0) 0%, ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,.65)' : 'rgba(0,0,0,.35)'} 100%)`,
-                  color: '#fff',
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={700} noWrap title={title}>
-                  {title}
-                </Typography>
-              </Box>
-            </Box>
-          </CardActionArea>
-        ) : (
-          <Box sx={{ position: 'relative', aspectRatio: { xs: '16 / 9', sm: '16 / 9' }, overflow: 'hidden' }}>
             <CardMedia
               component="img"
               src={imageUrl}
               alt={title}
-              sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transformOrigin: 'center',
+                transition: 'transform .4s ease',
+                '&:hover': { transform: 'scale(1.03)' },
+              }}
               loading="lazy"
             />
+
+            {/* Üst sol: status chip */}
             {status && (
               <Chip
                 size="small"
@@ -180,8 +112,52 @@ export default function SystemCard({
                 sx={{ position: 'absolute', top: 10, left: 10, fontWeight: 700 }}
               />
             )}
+
+            {/* Üst sağ: favori - tıklamada bubbling'i durdur */}
+            {canFavorite && (
+              <Tooltip title={favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}>
+                <IconButton
+                  aria-label="toggle favorite"
+                  onClick={(e) => {
+                    e.stopPropagation(); // ← Step2’ye zıplamasın
+                    onFavoriteToggle?.(!favorite);
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(0,0,0,.35)'
+                        : 'rgba(255,255,255,.6)',
+                    '&:hover': { bgcolor: (theme) => theme.palette.action.hover },
+                  }}
+                >
+                  {favorite ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {/* Alt gradient + başlık */}
+            <Box
+              sx={{
+                position: 'absolute',
+                insetInline: 0,
+                bottom: 0,
+                p: 2,
+                background: (theme) =>
+                  `linear-gradient(180deg, rgba(0,0,0,0) 0%, ${
+                    theme.palette.mode === 'dark' ? 'rgba(0,0,0,.65)' : 'rgba(0,0,0,.35)'
+                  } 100%)`,
+                color: '#fff',
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={700} noWrap title={title}>
+                {title}
+              </Typography>
+            </Box>
           </Box>
-        )
+        </CardActionArea>
       ) : null}
 
       {/* İçerik */}
@@ -236,34 +212,23 @@ export default function SystemCard({
       </CardContent>
 
       {/* Aksiyonlar */}
-      <CardActions sx={{ mt: 'auto', px: 2, pb: 2, pt: 0 }}>
+      <CardActions sx={{ mt: 'auto', px: 2, pb: 2, pt: 0 }} >
         {loading ? (
           <Skeleton variant="rounded" width="100%" height={36} />
         ) : (
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
+            display={'flex'}
+            justifyContent={'flex-end'}
+            alignItems={'center'}
             sx={{ width: '100%', alignItems: { xs: 'stretch', sm: 'center' } }}
           >
-            {/* Detaylar */}
-            {detailsHref && (
-              <Button
-                component={Link}
-                href={detailsHref}
-                variant="outlined"
-                endIcon={<LaunchIcon />}
-                sx={{ flex: { xs: 1, sm: '0 0 auto' } }}
-              >
-                {detailsLabel}
-              </Button>
-            )}
-
             {/* Talep Oluştur */}
             <Button
               onClick={onRequestClick}
               variant="contained"
               endIcon={<AddShoppingCartOutlinedIcon />}
-              sx={{ ml: 'auto' }}
             >
               {buttonLabels.request}
             </Button>

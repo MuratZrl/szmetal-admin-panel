@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+
 import { useRouter } from 'next/navigation';
+
 import {
   Grid,
   TextField,
@@ -12,18 +14,29 @@ import {
   Stack,
   FormHelperText,
 } from '@mui/material';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ImageIcon from '@mui/icons-material/Image';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
-import { FormProvider, useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { FormProvider, useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form';
 
 import { supabase } from '@/lib/supabase/supabaseClient';
+
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 
 import type { ProductDicts } from '@/features/products/services/dicts.server';
 import { updateProduct, type UpdateProductInput } from '@/features/products/services/products.client';
-import { uploadProductPdfAndGetUrl, uploadProductImageAndGetUrl } from '@/features/products/services/storage.client';
+
+import {
+  STORAGE_BUCKET,
+  type UploadResult,
+  type UploadRef,
+  uploadProductPdfAndGetUrl,
+  uploadProductImageAndGetUrl,
+  removeUploaded,
+} from '@/features/products/services/storage.client';
 
 import FormSection from '@/features/products/components/form/FormSection';
 import NumberField from '@/features/products/components/form/NumberField';
@@ -58,6 +71,21 @@ type Props = {
     image?: string | null;
   };
 };
+
+function inferImagePathFromUrl(url: string, code: string): string | null {
+  try {
+    const u = new URL(url);
+    const p = u.pathname; // /storage/v1/object/public/product-media/images/ABC/main.jpg
+    const idx = p.indexOf('/images/');
+    if (idx === -1) return null;
+    const after = p.slice(idx + 1); // images/ABC/main.jpg
+    const expect = `images/${code}/main.`;
+    if (!after.startsWith(expect)) return null;
+    return after; // bucket içi path
+  } catch {
+    return null;
+  }
+}
 
 export default function ProductEditForm({ dicts, initial }: Props) {
   const router = useRouter();
@@ -101,18 +129,37 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   // Dicts → yardımcılar
   const variants = dicts?.variants ?? [];
+  
   const { categoryOptions, getSubCatsFor, categoryLabelMap, subLabelMap, findOwnerCategory } =
     React.useMemo(() => buildCategoryHelpers(dicts?.categoryTree), [dicts]);
+
+  // YENİ: initial.image varsa ve kuralımıza uyuyorsa referans hazır
+  const initialImageRef = React.useMemo<UploadRef | null>(() => {
+    if (!initial.image) return null;
+    const path = inferImagePathFromUrl(initial.image, initial.code ?? '');
+    return path ? { bucket: STORAGE_BUCKET, path } : null;
+  }, [initial.image, initial.code]);
 
   const watchedCategory = watch('category');
 
   // Upload state
   const [uploadingFile, setUploadingFile] = React.useState(false);
+  
   const [fileMeta, setFileMeta] =
     React.useState<{ name: string; kind: 'pdf' | 'image' } | null>(null);
 
+  // YENİ: bu edit oturumunda yüklenen “yeni” dosya referansı
+  const [uploadedRef, setUploadedRef] = React.useState<UploadRef | null>(null);
+
+  // YENİ: mevcut (kayıtlı) dosyayı kayıttan sonra silmek üzere işaretle
+  const [, setPendingDeleteRef] = React.useState<UploadRef | null>(null);
+
+  // YENİ: Sil onay diyaloğu
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
   const ACCEPTED_MIME: ReadonlySet<string> =
     new Set(['application/pdf', 'image/png', 'image/webp', 'image/jpeg']);
+  
   const MAX_BYTES: Readonly<Record<'pdf' | 'image', number>> = {
     pdf: 10 * 1024 * 1024,
     image: 8 * 1024 * 1024,
@@ -147,15 +194,32 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
     setUploadingFile(true);
     try {
+      // Aynı edit oturumunda ardışık yüklemelerde eskiyi çöpe at
+      if (uploadedRef) {
+        try {
+          await removeUploaded(uploadedRef);
+        } catch {
+          // sessiz geç; yeni upload öncelik
+        } finally {
+          setUploadedRef(null);
+        }
+      }
+
       const code = watch('code')?.trim() || `product-${Date.now()}`;
-      const publicUrl =
+      const res: UploadResult =
         kind === 'pdf'
           ? await uploadProductPdfAndGetUrl(code, file)
           : await uploadProductImageAndGetUrl(code, file);
 
-      setValue('image', publicUrl, { shouldDirty: true, shouldValidate: true });
+      // Not: formunda image alanına daima “güncel dosyanın publicUrl”’ini yazıyorsun
+      setValue('image', res.publicUrl, { shouldDirty: true, shouldValidate: true });
       setValue('file', file, { shouldDirty: true });
+
       setFileMeta({ name: file.name, kind });
+      setUploadedRef({ bucket: res.bucket, path: res.path });
+
+      // Eski kayıtlı dosyayı otomatik silme.
+      // Kullanıcı isterse Sil diyerek kaldırır, biz de pendingDeleteRef ile Kaydet’te temizleriz.
       show(`${file.name} yüklendi.`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -427,6 +491,17 @@ export default function ProductEditForm({ dicts, initial }: Props) {
                     {uploadingFile ? 'Yükleniyor…' : 'Dosya Seç ve Yükle'}
                   </Button>
 
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteOutlineIcon />}
+                    onClick={() => setDeleteOpen(true)}
+                    disabled={(!uploadedRef && !watch('image')) || uploadingFile || isSubmitting}
+                    sx={{ textTransform: 'capitalize' }}
+                  >
+                    Sil
+                  </Button>
+
                   <Box sx={{ textAlign: 'right', opacity: 0.8, fontSize: 13 }}>
                     {fileMeta
                       ? `${fileMeta.name} yüklendi (${fileMeta.kind.toUpperCase()})`
@@ -451,6 +526,44 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
         </Box>
       </FormProvider>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Dosyayı kaldır"
+        description={uploadedRef
+          ? 'Yüklediğiniz dosyayı sunucudan silmek ve formdan kaldırmak istiyor musunuz?'
+          : 'Mevcut dosyayı formdan kaldırmak istiyor musunuz? Kaydettiğinizde depodan da sileceğiz.'}
+        confirmText={uploadedRef ? 'Evet, sil' : 'Evet, kaldır'}
+        cancelText="Vazgeç"
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={async () => {
+          try {
+            if (uploadedRef) {
+              // Bu oturumda yeni yüklenen dosyayı anında sil
+              await removeUploaded(uploadedRef);
+              setUploadedRef(null);
+              setFileMeta(null);
+              setValue('file', null, { shouldDirty: true });
+              setValue('image', '', { shouldDirty: true, shouldValidate: true });
+              show('Dosya silindi.', 'success');
+            } else {
+              // Kayıtlı dosyayı formdan kaldır; depodan silmeyi kaydetten sonra yap
+              if (initialImageRef) setPendingDeleteRef(initialImageRef);
+              setFileMeta(null);
+              setValue('file', null, { shouldDirty: true });
+              setValue('image', '', { shouldDirty: true, shouldValidate: true });
+              show('Dosya kaldırıldı. Kaydedince depodan da silinecek.', 'success');
+            }
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            show(`Silinemedi: ${msg}`, 'error');
+          } finally {
+            setDeleteOpen(false);
+          }
+        }}
+      />
+
+
     </Paper>
   );
 }

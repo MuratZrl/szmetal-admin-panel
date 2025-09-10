@@ -133,15 +133,25 @@ export default function Step3Client<
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, form, summary, materials }),
       });
+    
+      const body = await res.json().catch(() => ({} as Record<string, unknown>));
+    
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
+        if (body?.error === 'VALIDATION_FAILED' && Array.isArray(body.details)) {
+          const msg = body.details.map((d: { path?: string; message?: string }) =>
+            `${d.path ?? '-'}: ${d.message ?? ''}`).join('\n');
+          throw new Error(msg);
+        }
         throw new Error(body?.error ?? `Sunucu hatası: ${res.status}`);
       }
+    
       show('Talep başarıyla oluşturuldu.', 'success');
       setTimeout(() => router.push(successRedirect), 900);
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Bilinmeyen hata';
       show(msg, 'error');
+    
     } finally {
       setSubmitting(false);
       setConfirmOpen(false);

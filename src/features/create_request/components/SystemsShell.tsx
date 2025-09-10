@@ -1,37 +1,82 @@
 // src/features/systems/SystemsShell.tsx
 'use client';
 
-import React from 'react';
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Box } from '@mui/material';
-import StepperComponent from '@/components/ui/stepper/Stepper';
-import SystemsGrid from '@/features/create_request/components/SystemsGrid';
-import type { SystemCardType } from '@/features/create_request/types/card';
-import useSystems from '@/features/create_request/hooks/useSystems';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 
-export default function SystemsShell({ initialSystems }: { initialSystems: SystemCardType[] }) {
-  
+import StepperComponent from '@/components/ui/stepper/Stepper';
+import SystemCard from '@/features/create_request/components/SystemCard.client';
+import SystemCardSkeleton from '@/features/create_request/components/SystemCardSkeleton.client';
+import useSystems from '@/features/create_request/hooks/useSystems';
+import type { SystemCardType } from '@/features/create_request/types/card';
+
+type SystemsShellProps = { initialSystems: SystemCardType[] };
+
+export default function SystemsShell({ initialSystems }: SystemsShellProps) {
   const router = useRouter();
   const { systems, loading, refresh } = useSystems(initialSystems);
 
-  const handleRequest = (slug: string) => router.push(`/create_request/${slug}/step2`);
+  const goStep2 = React.useCallback((slug: string) => {
+    router.push(`/create_request/${slug}/step2`);
+  }, [router]);
+
+  // Grid v2: size objesi sadece ITEM'larda kullanılır
+  const itemSize = React.useMemo(() => ({ xs: 12 as const, sm: 6 as const, md: 4 as const }), []);
+  const skeletons = React.useMemo(() => Array.from({ length: 8 }), []);
+  const justify = systems?.length === 1 ? 'flex-start' : 'flex-start';
 
   return (
     <Box py={2}>
-
       <Box>
         <StepperComponent activeStep={0} />
       </Box>
 
       <Box mt={2}>
-        <SystemsGrid
-          systems={systems}
-          loading={loading}
-          onRequestClick={handleRequest}
-          onRetry={refresh}
-        />
+        {loading ? (
+          <Grid container spacing={2} justifyContent={justify} sx={{ width: '100%' }}>
+            {skeletons.map((_, i) => (
+              <Grid key={i} size={itemSize}>
+                <SystemCardSkeleton />
+              </Grid>
+            ))}
+          </Grid>
+        ) : !systems || systems.length === 0 ? (
+          <Box
+            sx={{
+              px: 2,
+              py: 4,
+              border: '1px dashed',
+              borderColor: 'divider',
+              borderRadius: 2,
+              textAlign: 'center',
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Hiç sistem bulunamadı
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Ya gerçekten yok, ya da RLS politikaların okuma izni vermiyor.
+            </Typography>
+            {refresh && (
+              <Button variant="outlined" onClick={refresh}>
+                Yeniden Dene
+              </Button>
+            )}
+          </Box>
+        ) : (
+          <Grid container spacing={2} justifyContent={justify} sx={{ width: '100%' }}>
+            {systems.map((s) => (
+              <Grid key={s.id} size={itemSize}>
+                <SystemCard {...s} onRequestClick={() => goStep2(s.id)} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Box>
-      
     </Box>
   );
 }
