@@ -5,10 +5,10 @@ import * as React from 'react';
 
 import NextLink from 'next/link';
 
-import { Avatar, Box, Link as MUILink, Tooltip, Typography, Button, Chip, useTheme, alpha } from '@mui/material';
+import { Avatar, Box, Link as MUILink, Tooltip, Typography, Button, Chip, useTheme, alpha, Stack } from '@mui/material';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import type { RequestTableRow } from '@/features/requests/services/table.server';
+import type { RequestTableRow } from '@/features/requests/types';
 
 import { RequestStatus } from '@/features/requests/types';
 
@@ -63,6 +63,11 @@ function fallbackText(value: string | null | undefined): string {
   return s.length > 0 ? s : '---';
 }
 
+
+export type ChangeableStatus = Extract<RequestStatus, 'approved' | 'rejected'>;
+export type OnChangeStatus = (id: string, next: ChangeableStatus) => Promise<void>;
+export type IsPending = (id: string) => boolean;
+
 // src/features/requests/components/columns.tsx
 export function buildRequestHrefString(row: RequestTableRow, basePath: string = '/requests'): string | null {
   const id = row.id != null ? String(row.id) : null;
@@ -71,7 +76,10 @@ export function buildRequestHrefString(row: RequestTableRow, basePath: string = 
 }
 
 
-export function buildColumns(): GridColDef<RequestTableRow>[] {
+export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending?: IsPending }): GridColDef<RequestTableRow>[] {
+  const onChangeStatus = opts?.onChangeStatus;
+  const isPending = opts?.isPending ?? (() => false);
+
   const cols: GridColDef<RequestTableRow>[] = [
     {
       field: 'image',
@@ -209,7 +217,6 @@ export function buildColumns(): GridColDef<RequestTableRow>[] {
       align: 'left',
       headerAlign: 'left',
       sortable: true,
-      valueOptions: REQUEST_STATUS as readonly string[],
       renderCell: (params) => <StatusChipCell value={params.value ?? params.row.status ?? null} />,
     },
     {
@@ -230,13 +237,59 @@ export function buildColumns(): GridColDef<RequestTableRow>[] {
           <Button
             LinkComponent={NextLink}
             href={disabled ? undefined : hrefStr}   // ← string ya da undefined
-            variant="outlined"
+            variant="text"
             size="small"
             onClick={(e) => e.stopPropagation()}   // satır seçimini engelle
             disabled={disabled}
           >
             Görüntüle
           </Button>
+        );
+      },
+    },
+    {
+      field: 'quickActions',
+      headerName: 'Hızlı İşlem',
+      width: 190,
+      flex: 1,
+      sortable: false,
+      filterable: false,
+      align: 'left',
+      headerAlign: 'left',
+      disableExport: true,
+      renderCell: (params: GridRenderCellParams<RequestTableRow, null>) => {
+        const id = params.row.id != null ? String(params.row.id) : '';
+        const raw = params.row.status ?? 'pending';
+        const status = (typeof raw === 'string' ? raw.toLowerCase() : 'pending') as RequestStatus;
+        const disabledBase = !id || status !== 'pending';
+        const pending = isPending(id);
+
+        const handleClick = async (next: ChangeableStatus) => {
+          if (!onChangeStatus || disabledBase || pending) return;
+          await onChangeStatus(id, next);
+        };
+
+        return (
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ height: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              color="success"
+              disabled={disabledBase || pending}
+              onClick={(e) => { e.stopPropagation(); handleClick('approved'); }}
+            >
+              Onayla
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="error"
+              disabled={disabledBase || pending}
+              onClick={(e) => { e.stopPropagation(); handleClick('rejected'); }}
+            >
+              Reddet
+            </Button>
+          </Stack>
         );
       },
     }

@@ -15,9 +15,6 @@ const STATUS_TR: Record<string, string> = {
   pending: 'Bekleyen',
   approved: 'Kabul',
   rejected: 'Reddedilen',
-  canceled: 'İptal',
-  cancelled: 'İptal',
-  unknown: 'Bilinmeyen',
 };
 
 // En azından günde bir yenilensin; etiketteki gün değişiyor

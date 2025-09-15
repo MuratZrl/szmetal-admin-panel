@@ -1,44 +1,64 @@
+// app/api/requests/[id]/status/route.ts
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+import type { RequestStatus } from '@/features/requests/types';
 
-import { RequestStatus } from '@/features/requests/types';
+type Body = { status: Extract<RequestStatus, 'approved' | 'rejected' | 'pending'> };
 
-function parseStatus(v: unknown): RequestStatus | null {
+function parseStatus(v: unknown): Body['status'] | null {
   const s = typeof v === 'string' ? v.toLowerCase().trim() : '';
-  if (s === 'approved' || s === 'rejected' || s === 'pending') return s;
-  return null;
+  return s === 'approved' || s === 'rejected' || s === 'pending' ? s : null;
 }
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string }> } // ← burada Promise
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params; // ← önce await et
+  const { id } = await ctx.params;
 
-  const body = (await req.json().catch(() => null)) as unknown;
-  
-  const statusInput =
-    typeof body === 'object' && body !== null && 'status' in (body as Record<string, unknown>)
-      ? (body as Record<string, unknown>).status
-      : null;
-
-  const status = parseStatus(statusInput);
-
-  if (!status) {
+  // 1) body
+  const body = (await req.json().catch(() => null)) as Partial<Body> | null;
+  const status = parseStatus(body?.status);
+  if (!id || !status) {
     return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
   }
 
+  // 2) supabase ve kullanıcı
   const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabase
-    .from('requests')
-    .update({ status })
-    .eq('id', id)
-    .select('id, status')
+  // 3) rol kontrolü (örnek: public.users(role) tablosu varsayımı)
+  const { data: me, error: meErr } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
     .single();
 
-  if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? 'update_failed' }, { status: 400 });
+  if (meErr || !me || !['Admin','Manager'].includes(String(me.role))) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // 4) hedef sadece pending satırlar; yeni değer approved|rejected olmalı
+  if (status === 'pending') {
+    return NextResponse.json({ error: 'no_op' }, { status: 400 });
+  }
+
+  // 5) Atomik update: hem id hem de mevcut status = 'pending' koşuluyla
+  const { data, error } = await supabase
+    .from('requests')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'pending')
+    .select('id, status')
+    .maybeSingle(); // 0 satır güncellenirse error yerine null dönebilir
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  if (!data) {
+    // id var ama satır pending değil → kilit
+    return NextResponse.json({ error: 'status_locked' }, { status: 409 });
   }
 
   return NextResponse.json({ id: data.id, status: data.status as RequestStatus });

@@ -6,23 +6,57 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { useTheme, alpha } from '@mui/material/styles';
 import { Box, Typography } from '@mui/material';
 
-export type PieItem = { label: string; value: number; color?: string };
+export type ColorKey = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error';
+
+export type PieItem = {
+  label: string;
+  value: number;
+  color?: string;            // doğrudan hex/rgb (opsiyonel)
+  colorKey?: ColorKey;       // tema paletinden anahtar (opsiyonel)
+};
 
 type Props = {
   items: PieItem[];
   title?: string;
-  height?: number;               // varsayılan 320
-  donut?: boolean;               // true: donut, false: klasik pie
-  showLegend?: boolean;          // varsayılan true
-  topK?: number;                 // çok kategori varsa ilk K + "diğer"
-  othersLabel?: string;          // varsayılan 'diğer'
-  arcLabelMode?: 'percent' | 'value' | 'none'; // dilim üstü etiket modu
-  valueFormatter?: (v: number) => string;      // tooltip/etiket formatlayıcı
+  height?: number;                 // varsayılan 320
+  donut?: boolean;                 // true: donut, false: klasik pie
+  showLegend?: boolean;            // varsayılan true
+  topK?: number;                   // çok kategori varsa ilk K
+  othersLabel?: string;            // (ileride "diğer" eklemek için kalsın)
+  arcLabelMode?: 'percent' | 'value' | 'none';
+  valueFormatter?: (v: number) => string;
+
+  // Label -> palette key eşlemesi; ör: { Bekleyen:'warning', Onaylanan:'success', Reddedilen:'error' }
+  colorKeyByLabel?: Partial<Record<string, ColorKey>>;
 };
 
 function formatTR(n: number): string {
   return Number.isFinite(n) ? n.toLocaleString('tr-TR') : '0';
 }
+
+function normalizeLabel(s: string): string {
+  return s
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+}
+
+const DEFAULT_STATUS_COLORS: Record<string, ColorKey> = (() => {
+  // Hem TR hem EN etiketlerini kapsa
+  const map = new Map<string, ColorKey>([
+    ['bekleyen', 'warning'],
+    ['onaylanan', 'success'],
+    ['reddedilen', 'error'],
+    ['pending', 'warning'],
+    ['approved', 'success'],
+    ['rejected', 'error'],
+    ['iptal', 'error'],
+    ['canceled', 'error'],
+  ]);
+  const obj: Record<string, ColorKey> = {};
+  for (const [k, v] of map) obj[k] = v;
+  return obj;
+})();
 
 export default function PieDonutChart({
   items,
@@ -32,26 +66,24 @@ export default function PieDonutChart({
   topK = 6,
   arcLabelMode = 'percent',
   valueFormatter = formatTR,
+  colorKeyByLabel,
 }: Props) {
   const theme = useTheme();
 
   const safe = React.useMemo(() => {
     const cleaned = (items ?? [])
-      .map(it => ({
+      .map((it) => ({
         label: (it?.label ?? 'bilinmiyor').toString(),
         value: Number.isFinite(it?.value) ? Number(it.value) : 0,
         color: it.color,
+        colorKey: it.colorKey,
       }))
-      // En azından 0 olmayanları öne alalım; 0’lar gösterilebilir, ama sıralama için faydalı
       .sort((a, b) => b.value - a.value);
 
     if (!cleaned.length) return cleaned;
-
     if (cleaned.length > topK) {
-      const head = cleaned.slice(0, topK);
-      return head;
+      return cleaned.slice(0, topK);
     }
-
     return cleaned;
   }, [items, topK]);
 
@@ -75,7 +107,8 @@ export default function PieDonutChart({
     );
   }
 
-  const palette = [
+  // Palette fallback sırası, ama önce color/colorKey/label eşlemesi denenir
+  const fallbackPalette = [
     theme.palette.primary.main,
     theme.palette.info.main,
     theme.palette.success.main,
@@ -84,11 +117,29 @@ export default function PieDonutChart({
     theme.palette.secondary?.main ?? theme.palette.text.primary,
   ];
 
+  const getColorFromKey = (key: ColorKey): string => theme.palette[key].main;
+
+  const resolveColor = (label: string, idx: number, color?: string, colorKey?: ColorKey): string => {
+    if (color) return color;                   // doğrudan renk
+    if (colorKey) return getColorFromKey(colorKey); // item.colorKey
+
+    // Label tabanlı eşleme: önce prop, sonra default tablo
+    const norm = normalizeLabel(label);
+    const fromProp = colorKeyByLabel && colorKeyByLabel[norm as keyof typeof colorKeyByLabel];
+    if (fromProp) return getColorFromKey(fromProp);
+
+    const fromDefault = DEFAULT_STATUS_COLORS[norm];
+    if (fromDefault) return getColorFromKey(fromDefault);
+
+    // en son rotasyon
+    return fallbackPalette[idx % fallbackPalette.length];
+  };
+
   const data = safe.map((s, i) => ({
     id: i,
     label: s.label,
     value: s.value,
-    color: s.color ?? palette[i % palette.length],
+    color: resolveColor(s.label, i, s.color, s.colorKey),
   }));
 
   const innerRadius = donut ? Math.max(40, Math.floor(height * 0.22)) : 0;
@@ -99,10 +150,9 @@ export default function PieDonutChart({
       ? undefined
       : (item: { value: number }) => {
           if (arcLabelMode === 'value') return valueFormatter(item.value);
-          // percent
           if (total <= 0) return '';
           const pct = Math.round((item.value / total) * 100);
-          return pct >= 2 ? `${pct}%` : ''; // ufak dilimleri etiketlemeden geç
+          return pct >= 2 ? `${pct}%` : '';
         };
 
   return (

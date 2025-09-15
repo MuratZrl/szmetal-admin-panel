@@ -2,8 +2,12 @@
 'use client';
 
 import * as React from 'react';
-import { Box, Typography, Link } from '@mui/material';
+
+import Image from 'next/image';
+
+import { Box, Typography } from '@mui/material';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+
 import type { MaterialRow } from '@/features/requests/types';
 
 function textOrDash(v: string | null | undefined): string {
@@ -40,22 +44,44 @@ export function buildMaterialColumns(): GridColDef<MaterialRow>[] {
       align: 'left',
       headerAlign: 'left',
       renderCell: (p: GridRenderCellParams<MaterialRow, string | null>) => {
-        const src = p.value ?? '';
+        const src = (p.value ?? '').trim();
         if (!src) return <Typography variant="body2">---</Typography>;
+
         return (
-          <Link
-            href={src}
-            target="_blank"
-            rel="noopener"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={src}
-              alt={p.row.profil_adi}
-              loading="lazy"
-              style={{ width: 56, height: 36, objectFit: 'cover', borderRadius: 4 }}
-            />
-          </Link>
+          <CellCenter>
+            <Box
+              component="a"
+              href={src}
+              target="_blank"
+              rel="noopener"
+              onClick={(e) => e.stopPropagation()}
+              // baseline kazığını kapat
+              sx={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
+            >
+              <Box
+                sx={{
+                  width: 56,
+                  height: 36,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <Image
+                  src={src}
+                  alt={p.row.profil_adi ?? 'Profil görseli'}
+                  fill
+                  sizes="56px"
+                  priority={false}
+                  draggable={false}
+                  unoptimized
+                  style={{
+                    objectFit: 'contain',   // kırpmadan sığdır
+                    objectPosition: 'center',
+                  }}
+                />
+              </Box>
+            </Box>
+          </CellCenter>
         );
       },
     },

@@ -2,13 +2,17 @@
 'use client';
 
 import * as React from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
 import {
   TextField, Box, Button, IconButton, InputAdornment, Grid, Typography,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+
 import { glassTextFieldProps } from '../constants/formstyles';
 
 export default function LoginForm() {
@@ -46,7 +50,7 @@ export default function LoginForm() {
 
       if (res.status === 403) {
         // Banned
-        router.replace('/banned');
+        router.replace('/unauthorized');
         return;
       }
       if (res.status === 409) {
@@ -76,8 +80,8 @@ export default function LoginForm() {
 
   return (
     <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 12, md: 12 }}>
+      <Grid container spacing={2} >
+        <Grid size={{ xs: 12, sm: 12, md: 12 }} >
           <TextField
             label="E-posta"
             name="email"

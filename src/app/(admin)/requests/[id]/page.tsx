@@ -42,7 +42,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
   const materialRows: MaterialRow[] = buildMaterialRows(row.material_data);
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2 } }}>
+    <Box sx={{ px: 1, py: 2 }} >
       <RequestDetailHeader id={row.id} systemSlug={row.system_slug} />
 
       <Grid container spacing={2}>
@@ -57,12 +57,12 @@ export default async function RequestDetailPage({ params }: PageProps) {
         {/* Sağ kolon: Özet */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={2}>
+            <SummarySection summary={s} />
             {/* Yeni durum kartı */}
             <StatusCard
               requestId={row.id}
               status={row.status}
             />
-            <SummarySection summary={s} />
           </Stack>
         </Grid>
 

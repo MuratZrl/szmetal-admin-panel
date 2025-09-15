@@ -42,6 +42,9 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
   const [confirmOpen, setConfirmOpen] = React.useState<boolean>(false);
   const [nextStatus, setNextStatus] = React.useState<RequestStatus>('pending');
 
+  // 🔒 Tek gerçek: pending değilse işlem kapanır.
+  const actionsDisabled = loading || current !== 'pending';
+
   const openConfirm = (s: RequestStatus) => {
     setNextStatus(s);
     setConfirmOpen(true);
@@ -67,7 +70,7 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
         return;
       }
 
-      // başarılı
+      // ✅ Başarılı: artık pending değil → her iki buton da kapanır.
       setCurrent(s);
       onStatusChange?.(s);
       show(s === 'approved' ? 'Talep onaylandı.' : 'Talep reddedildi.', 'success');
@@ -83,32 +86,22 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
       <Typography variant="subtitle1" sx={{ mb: 1 }}>Talep Durumu</Typography>
       <Divider sx={{ mb: 1 }} />
 
-      {/* Tek satır: solda "Mevcut" + Chip, sağda butonlar */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          flexWrap: 'nowrap', // tek satırda kalsın
-          minHeight: 40,
-        }}
-      >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', minHeight: 40 }}>
         <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
           Mevcut
         </Typography>
 
         <Chip
           size="small"
-          label={statusTextTR(current)}   // ← PENDING yerine Bekleyen/Onaylandı/Reddedildi
+          label={statusTextTR(current)}
           color={statusChipColor(current)}
           variant="outlined"
         />
 
-        {/* Spacer yerine ml:auto da olur; ikisi de sağa iter */}
         <Stack direction="row" spacing={1} sx={{ ml: 'auto', justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
-            disabled={loading || current === 'approved'}
+            disabled={actionsDisabled}
             onClick={() => openConfirm('approved')}
             sx={{ borderRadius: 2, textTransform: 'capitalize' }}
           >
@@ -119,7 +112,7 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
           <Button
             variant="outlined"
             color="error"
-            disabled={loading || current === 'rejected'}
+            disabled={actionsDisabled}
             onClick={() => openConfirm('rejected')}
             sx={{ borderRadius: 2, textTransform: 'capitalize' }}
           >
@@ -127,10 +120,8 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
             Reddet
           </Button>
         </Stack>
-
       </Box>
 
-      {/* Onay diyaloğu */}
       <ConfirmDialog
         open={confirmOpen}
         title={nextStatus === 'approved' ? 'Onayla' : 'Reddet'}

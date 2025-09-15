@@ -243,6 +243,7 @@ export type Database = {
           status: string
           summary_data: Json
           system_slug: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -254,6 +255,7 @@ export type Database = {
           status?: string
           summary_data: Json
           system_slug: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -265,6 +267,7 @@ export type Database = {
           status?: string
           summary_data?: Json
           system_slug?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [

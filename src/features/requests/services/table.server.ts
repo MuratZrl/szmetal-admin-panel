@@ -1,34 +1,7 @@
 // src/features/requests/services/table.server.ts
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 
-export type RequestTableRow = {
-  id: string;
-  image: string | null;
-  username: string | null;
-  email: string | null;
-  system_slug: string | null;
-  phone: string | null;
-  company: string | null;
-  country: string | null;
-  created_at: string | null;
-  status?: string | null;
-  user_id?: string | null;
-};
-
-type GetTableOpts = {
-  page?: number; // 1-indexed
-  pageSize?: number;
-  sortField?: string; // ör: 'created_at' veya 'username' vb.
-  sortDir?: 'asc' | 'desc';
-  status?: string; // 'all' veya bir status key
-};
-
-type TablePage = {
-  rows: RequestTableRow[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
+import { RequestTableRow, GetTableOpts, TablePage } from '@/features/requests/types';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 25;

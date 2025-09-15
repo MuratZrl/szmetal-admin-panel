@@ -8,11 +8,15 @@ import { Box, Typography } from '@mui/material';
 
 export type ChartCurve = 'linear' | 'monotoneX' | 'natural' | 'step' | 'catmullRom';
 
+// 🎯 Yeni: semantic renk anahtarı desteği
+export type SemanticColorKey = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error';
+
 export type LineSeries = {
   label: string;
   data: number[];
   area?: boolean;
-  color?: string;       // verilmezse otomatik tema renkleri atanacak
+  color?: string;            // doğrudan hex/rgb
+  colorKey?: SemanticColorKey; // tema paletinden al
   showMark?: boolean;
   valueSuffix?: string;
   curve?: ChartCurve;
@@ -27,11 +31,20 @@ type Props = {
   tickLabelFontSize?: number;
   emptyText?: string;
   yValueFormatter?: (v: number) => string;
-  areaOpacity?: number; // yeni: alan opaklığı (0..1)
+  areaOpacity?: number;
 };
 
 function formatNumberTR(n: number): string {
   return Number.isFinite(n) ? n.toLocaleString('tr-TR') : '0';
+}
+
+// 🔎 Etiketten statüyü çöz (TR ve EN destekli)
+function normalizeStatusLabel(label: string): 'pending' | 'approved' | 'rejected' | null {
+  const s = label.toLowerCase().trim();
+  if (['pending', 'bekleyen', 'beklemede', 'beklemede', 'beklemede'].includes(s)) return 'pending';
+  if (['approved', 'kabul', 'onaylandı', 'onayli', 'onayli̇', 'onay'].includes(s)) return 'approved';
+  if (['rejected', 'reddedilen', 'reddedildi', 'ret', 'red'].includes(s)) return 'rejected';
+  return null;
 }
 
 export default function LineAreaChart({
@@ -90,19 +103,37 @@ export default function LineAreaChart({
     data: s.data.slice(0, minLenAcross).map(v => (Number.isFinite(v) ? v : 0)),
   }));
 
-  // Tema bazlı otomatik renk paleti (seri özel color verilmemişse)
+  // 🎨 Varsayılan palet: TURUNCU ÖNCE
   const autoColors = [
+    theme.palette.warning.main,  // ← turuncu ilk
     theme.palette.primary.main,
     theme.palette.info.main,
     theme.palette.success.main,
-    theme.palette.warning.main,
     theme.palette.error.main,
     theme.palette.secondary?.main ?? theme.palette.text.primary,
   ];
 
+  // 🧠 Statü bazlı renk önceliği
+  function resolveColor(s: LineSeries, index: number): string {
+    // 1) Direkt color verilmişse onu kullan
+    if (s.color) return s.color;
+
+    // 2) Semantic colorKey verilmişse temadan al
+    if (s.colorKey) return theme.palette[s.colorKey].main;
+
+    // 3) Etiketten statüyü yakala ve sabitle
+    const norm = normalizeStatusLabel(s.label);
+    if (norm === 'pending')  return theme.palette.warning.main;
+    if (norm === 'approved') return theme.palette.success.main;
+    if (norm === 'rejected') return theme.palette.error.main;
+
+    // 4) Aksi halde otomatik palet
+    return autoColors[index % autoColors.length];
+  }
+
   const resolvedSeries = safeSeries.map((s, i) => ({
     ...s,
-    color: s.color ?? autoColors[i % autoColors.length],
+    color: resolveColor(s, i),
   }));
 
   const resolvedAreaOpacity =
@@ -134,14 +165,13 @@ export default function LineAreaChart({
           area: s.area ?? true,
           curve: s.curve ?? 'monotoneX',
           showMark: s.showMark ?? true,
-          color: s.color, // önemli: siyaha düşmeyi engeller
+          color: s.color, // artık her serinin rengi çözümlendi
           valueFormatter: (v: number | null) => `${yValueFormatter(v ?? 0)}${s.valueSuffix ?? ''}`,
         }))}
         grid={{ horizontal: !!grid.horizontal, vertical: !!grid.vertical }}
         height={height}
         slotProps={{ tooltip: { trigger: 'axis' } }}
         sx={{
-          // Alan rengi seri renginden geliyor, burada sadece opaklığı ayarlıyoruz
           '.MuiAreaElement-root': {
             fillOpacity: resolvedAreaOpacity,
             transition: 'fill-opacity 160ms ease',

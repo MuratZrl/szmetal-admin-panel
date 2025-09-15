@@ -12,6 +12,36 @@ export type AdaptedRequestRow = {
   material_data: MaterialItem[];
 };
 
+// ————— table.server için tipler —————
+export type RequestTableRow = {
+  id: string;
+  image: string | null;
+  username: string | null;
+  email: string | null;
+  system_slug: string | null;
+  phone: string | null;
+  company: string | null;
+  country: string | null;
+  created_at: string | null;
+  status?: string | null;
+  user_id?: string | null;
+};
+
+export type GetTableOpts = {
+  page?: number; // 1-indexed
+  pageSize?: number;
+  sortField?: string; // ör: 'created_at' veya 'username' vb.
+  sortDir?: 'asc' | 'desc';
+  status?: string; // 'all' veya bir status key
+};
+
+export type TablePage = {
+  rows: RequestTableRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 // ————— Detay sayfasındaki JSON alanları —————
 export type FormData = {
   description?: string | null;

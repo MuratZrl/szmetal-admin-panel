@@ -3,6 +3,9 @@ import { Box, Grid } from '@mui/material';
 
 import { fetchDashboardCards } from '@/features/dashboard/services/card.server';
 import { fetchAllDashboardData } from '@/features/dashboard/services/dashboardchart.server';
+
+import DashboardHeader from '@/features/dashboard/components/DashboardHeader';
+
 import CardsGrid from '@/features/dashboard/components/CardsGrid.client';
 import ChartCard from '@/components/ui/cards/ChartCard.client';
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
@@ -22,6 +25,8 @@ export default async function DashboardPage() {
 
   return (
     <Box px={1} py={2}>
+
+      <DashboardHeader />
       
       <CardsGrid data={cards} />
 
@@ -47,9 +52,9 @@ export default async function DashboardPage() {
             <LineAreaChart
               labels={charts.requests.pending.labels}
               series={[
-                { label: 'Bekleyen',   data: charts.requests.pending.data,   valueSuffix: ' istek' },
-                { label: 'Onaylanan',  data: charts.requests.approved.data,  valueSuffix: ' istek' },
-                { label: 'Reddedilen', data: charts.requests.rejected.data,  valueSuffix: ' istek' },
+                { label: 'Bekleyen',   data: charts.requests.pending.data,   valueSuffix: ' istek', colorKey: 'warning' }, // turuncu
+                { label: 'Onaylanan',  data: charts.requests.approved.data,  valueSuffix: ' istek', colorKey: 'success' }, // yeşil
+                { label: 'Reddedilen', data: charts.requests.rejected.data,  valueSuffix: ' istek', colorKey: 'error'   }, // kırmızı
               ]}
               height={320}
             />
@@ -80,6 +85,11 @@ export default async function DashboardPage() {
               height={360}
               showLegend
               arcLabelMode="percent"
+              colorKeyByLabel={{
+                Bekleyen: 'warning',
+                Onaylanan: 'success',
+                Reddedilen: 'error',
+              }}
             />
           </ChartCard>
         </Grid>
