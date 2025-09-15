@@ -6,9 +6,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import {
-  TextField, Box, Button, IconButton, InputAdornment, Grid, Typography,
-} from '@mui/material';
+import { TextField, Box, Button, IconButton, InputAdornment, Grid, Typography} from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
@@ -53,18 +51,22 @@ export default function LoginForm() {
         router.replace('/unauthorized');
         return;
       }
+      
       if (res.status === 409) {
         // E-posta doğrulanmamış
         show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
         return;
       }
+
       if (res.status === 401) {
         show('E-posta veya şifre hatalı.', 'error');
         return;
       }
+      
       if (!res.ok) {
-        const msg = (await res.json().catch(() => null))?.error ?? 'Giriş başarısız.';
-        show(String(msg), 'error');
+        let reason = '';
+        try { reason = (await res.json()).error ?? ''; } catch {}
+        show(`Giriş başarısız (${res.status})${reason ? `: ${reason}` : ''}`, 'error');
         return;
       }
 
@@ -79,7 +81,7 @@ export default function LoginForm() {
   };
 
   return (
-    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit} >
       <Grid container spacing={2} >
         <Grid size={{ xs: 12, sm: 12, md: 12 }} >
           <TextField

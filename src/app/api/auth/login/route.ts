@@ -1,4 +1,7 @@
 // app/api/auth/login/route.ts
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -20,11 +23,8 @@ function normalizeCookieOptions(
 } {
   if (!o) return {};
   let sameSite: 'strict' | 'lax' | 'none' | undefined;
-  if (typeof o.sameSite === 'boolean') {
-    sameSite = o.sameSite ? 'strict' : undefined; // false ise hiç yazma
-  } else {
-    sameSite = o.sameSite; // 'lax' | 'strict' | 'none' | undefined
-  }
+  if (typeof o.sameSite === 'boolean') sameSite = o.sameSite ? 'strict' : undefined;
+  else sameSite = o.sameSite;
   return {
     domain: o.domain,
     expires: o.expires as Date | undefined,
@@ -37,81 +37,96 @@ function normalizeCookieOptions(
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as Body | null;
-
-  if (!body?.email || !body?.password) {
-    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
-  }
-
-  const email = body.email.trim().toLowerCase();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY!; // SADECE server env
-
-  // 1) Ban kontrolü (service role ile RLS bypass)
-  const admin = createAdminClient(url, service, { auth: { persistSession: false } });
-
-  // public.users tablosunda email sütunu varsa buradan kontrol et
-  const { data: row } = await admin
-    .from('users')
-    .select('id, status')
-    .eq('email', email)
-    .maybeSingle();
-
-  if (row?.status === 'Banned') {
-    return NextResponse.json({ error: 'banned' }, { status: 403 });
-  }
-
-  // 2) Supabase SSR client — request cookies'ten oku, response'a yazılacakları topla
-  const cookieStore = await cookies(); // Next 15'te Promise olabilir, o yüzden await
-  const pending: { name: string; value: string; options?: Partial<SerializeOptions> }[] = [];
-
-  const supabase = createServerClient(url, anon, {
-    cookies: {
-      // Route handler V2 imzası: getAll / setAll
-      getAll() {
-        return cookieStore.getAll().map(c => ({ name: c.name, value: c.value }));
-      },
-      setAll(toSet) {
-        // Şimdi yazmıyoruz, response’a uygulayacağız
-        toSet.forEach(({ name, value, options }) => {
-          pending.push({ name, value, options });
-        });
-      },
-    },
-  });
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password: body.password,
-  });
-
-  if (error || !data.user) {
-    const msg = (error?.message ?? '').toLowerCase();
-    if (msg.includes('email not confirmed')) {
-      return NextResponse.json({ error: 'email_not_confirmed' }, { status: 409 });
+  try {
+    const body = (await req.json().catch(() => null)) as Body | null;
+    if (!body?.email || !body?.password) {
+      return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
     }
-    return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
-  }
 
-  // 3) Yarış durumuna karşı: girişten sonra da ban kontrolü
-  const { data: me } = await supabase
-    .from('users')
-    .select('status')
-    .eq('id', data.user.id)
-    .single();
+    const email = body.email.trim().toLowerCase();
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (me?.status === 'Banned') {
-    await supabase.auth.signOut();
-    const r403 = NextResponse.json({ error: 'banned' }, { status: 403 });
-    pending.forEach(pc => r403.cookies.set({ name: pc.name, value: pc.value, ...(pc.options ?? {}) }));
-    return r403;
-  }
+    // 0) Env doğrula
+    const missing = ['NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY']
+      .filter(k => !process.env[k]);
+    if (missing.length > 0) {
+      console.error('ENV MISSING', missing);
+      return NextResponse.json({ error: 'env_missing', missing }, { status: 500 });
+    }
 
-  // 4) Başarılı: pending cookie'leri response’a uygula
-  const r200 = NextResponse.json({ ok: true });
-  for (const pc of pending) {
-    r200.cookies.set({ name: pc.name, value: pc.value, ...normalizeCookieOptions(pc.options) });
+    // 1) Pre-ban kontrol (service role ile)
+    const admin = createAdminClient(url!, service!, { auth: { persistSession: false } });
+    const { data: preb, error: prebErr } = await admin
+      .from('users')
+      .select('id, role, status')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (prebErr) {
+      // Prod’da RLS/conn hatası burada belli olur
+      console.error('admin precheck error:', prebErr);
+    }
+    const preBanned =
+      (preb?.role && preb.role.toLowerCase() === 'banned') ||
+      (preb?.status && preb.status.toLowerCase() === 'banned');
+
+    if (preBanned) {
+      return NextResponse.json({ error: 'banned' }, { status: 403 });
+    }
+
+    // 2) SSR Supabase + cookie toplama
+    const cookieStore = await cookies();
+    const pending: { name: string; value: string; options?: Partial<SerializeOptions> }[] = [];
+
+    const supabase = createServerClient(url!, anon!, {
+      cookies: {
+        getAll() { return cookieStore.getAll().map(c => ({ name: c.name, value: c.value })); },
+        setAll(toSet) { toSet.forEach(({ name, value, options }) => pending.push({ name, value, options })); },
+      },
+    });
+
+    // 3) Sign-in
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: body.password,
+    });
+
+    if (error || !data.user) {
+      const msg = (error?.message ?? '').toLowerCase();
+      if (msg.includes('email not confirmed')) {
+        return NextResponse.json({ error: 'email_not_confirmed' }, { status: 409 });
+      }
+      return NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
+    }
+
+    // 4) Post-ban kontrol (yarış durumları için)
+    const { data: me, error: meErr } = await supabase
+      .from('users')
+      .select('role, status')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (meErr) console.error('self row fetch error:', meErr);
+
+    const postBanned =
+      (me?.role && me.role.toLowerCase() === 'banned') ||
+      (me?.status && me.status.toLowerCase() === 'banned');
+
+    if (postBanned) {
+      await supabase.auth.signOut();
+      const r403 = NextResponse.json({ error: 'banned' }, { status: 403 });
+      pending.forEach(pc => r403.cookies.set({ name: pc.name, value: pc.value, ...normalizeCookieOptions(pc.options) }));
+      return r403;
+    }
+
+    // 5) Başarılı
+    const r200 = NextResponse.json({ ok: true });
+    pending.forEach(pc => r200.cookies.set({ name: pc.name, value: pc.value, ...normalizeCookieOptions(pc.options) }));
+    return r200;
+  } catch (e) {
+    console.error('login fatal:', e);
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
-  return r200;
 }
