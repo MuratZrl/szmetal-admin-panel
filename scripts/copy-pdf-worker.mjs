@@ -2,54 +2,42 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-
 const require = createRequire(import.meta.url);
 
-let pkgPath;
-try {
-  pkgPath = require.resolve('pdfjs-dist/package.json', { paths: [process.cwd()] });
-} catch {
-  try {
-    const reactPdfPkg = require.resolve('react-pdf/package.json', { paths: [process.cwd()] });
-    const reactPdfBase = path.dirname(reactPdfPkg);
-    pkgPath = require.resolve('pdfjs-dist/package.json', { paths: [reactPdfBase] });
-  } catch {
-    console.warn('[copy-pdf-worker] pdfjs-dist not found. Skipping.');
-    process.exit(0);
+function tryResolve(id) {
+  try { return require.resolve(id); } catch { return null; }
+}
+
+// 1) Top-level arama (pdfjs-dist 4 ESM ve eski seçenekler)
+let src =
+  tryResolve('pdfjs-dist/build/pdf.worker.min.mjs') ||
+  tryResolve('pdfjs-dist/legacy/build/pdf.worker.min.js') ||
+  tryResolve('pdfjs-dist/build/pdf.worker.min.js') ||
+  tryResolve('pdfjs-dist/build/pdf.worker.js');
+
+// 2) react-pdf altına düşmüş olabilir, oradan ara
+if (!src) {
+  const rpPkg = tryResolve('react-pdf/package.json');
+  if (rpPkg) {
+    const rpDir = path.dirname(rpPkg);
+    const candidates = [
+      path.join(rpDir, 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs'),
+      path.join(rpDir, 'node_modules/pdfjs-dist/legacy/build/pdf.worker.min.js'),
+      path.join(rpDir, 'node_modules/pdfjs-dist/build/pdf.worker.min.js'),
+      path.join(rpDir, 'node_modules/pdfjs-dist/build/pdf.worker.js'),
+    ];
+    src = candidates.find(p => fs.existsSync(p)) ?? null;
   }
 }
 
-const base = path.dirname(pkgPath);
-
-// Önce modern .mjs, sonra diğerleri
-const candidates = [
-  'build/pdf.worker.min.mjs',
-  'build/pdf.worker.mjs',
-  'build/pdf.worker.min.js',
-  'build/pdf.worker.js',
-  'legacy/build/pdf.worker.min.js',
-  'legacy/build/pdf.worker.js',
-].map(p => path.join(base, p));
-
-let src = candidates.find(p => fs.existsSync(p));
-
 if (!src) {
-  console.error('[copy-pdf-worker] Could not find pdf.worker under:', base);
+  console.error('[copy-pdf-worker] Worker bulunamadı. pdfjs-dist sürümünü kontrol et.');
   process.exit(1);
 }
 
-const destDir = path.join(process.cwd(), 'public');
-fs.mkdirSync(destDir, { recursive: true });
+const isMjs = src.endsWith('.mjs');
+const dest = path.join(process.cwd(), 'public', isMjs ? 'pdf.worker.mjs' : 'pdf.worker.js');
 
-// UZANTISINI KORU
-const destName = path.basename(src); // ör: pdf.worker.min.mjs
-const dest = path.join(destDir, destName);
+fs.mkdirSync(path.dirname(dest), { recursive: true });
 fs.copyFileSync(src, dest);
-
-// İsteğe bağlı: uyumluluk için alias yarat (mjs ise)
-if (destName.endsWith('.mjs')) {
-  const alias = path.join(destDir, 'pdf.worker.mjs');
-  if (!fs.existsSync(alias)) fs.copyFileSync(src, alias);
-}
-
-console.log(`[copy-pdf-worker] Copied\n  ${src}\n→ ${dest}`);
+console.log('[copy-pdf-worker] Copied', src, '→', dest);

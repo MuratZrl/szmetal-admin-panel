@@ -92,42 +92,44 @@ export default function ForgotPasswordForm() {
             color="primary"
             fullWidth
             disabled={loading}
-            sx={{
+            sx={(t) => ({
               py: 1.25,
               textTransform: 'capitalize',
               borderRadius: 7,
-              borderColor: 'white',
-              color: 'white',
-            }}
+              borderColor: t.palette.divider,
+              color: t.palette.text.primary,
+            })}
           >
             {loading ? 'Gönderiliyor...' : 'Sıfırlama Bağlantısı Gönder'}
           </Button>
         </Grid>
 
-        <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'space-between' }} >
           <Typography>
-            <Link href="/login">
+            <Link href="/login" style={{ textDecoration: 'none' }} >
               <Typography
                 component="span"
-                color="white"
-                fontStyle="italic"
-                fontWeight={500}
-                sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                sx={{
+                  color: 'primary.main',
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
               >
                 Giriş yapın
               </Typography>
             </Link>
           </Typography>
 
-          <Typography color="lightblue">
+          <Typography >
             Hesabınız yoksa{' '}
-            <Link href="/register">
+            <Link href="/register" style={{ textDecoration: 'none' }} >
               <Typography
                 component="span"
-                color="white"
                 fontStyle="italic"
                 fontWeight={500}
-                sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
               >
                 kayıt olun
               </Typography>

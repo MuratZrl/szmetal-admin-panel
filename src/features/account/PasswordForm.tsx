@@ -1,30 +1,27 @@
 // src/features/account/PasswordForm.tsx
-"use client";
+'use client';
 
-import React from "react";
-import { useState } from "react";
+import * as React from 'react';
+import { useState } from 'react';
+import {
+  Box, Grid, TextField, Button, InputAdornment, IconButton, Typography,
+} from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
-import { Box, Grid, TextField, Button, InputAdornment, IconButton, Typography } from "@mui/material";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { useForm, type Resolver } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import type { Asserts } from 'yup';
 
-import { useForm, type Resolver } from "react-hook-form";
-
-import { yupResolver } from "@hookform/resolvers/yup";
-
-import type { Asserts } from "yup";
-
-import { passwordSchema } from "@/constants/form-validations/passwordSchemas";
-
-import { useSnackbar } from "@/components/ui/snackbar/useSnackbar.client";
-
-import { supabase } from "@/lib/supabase/supabaseClient";
-
+import { passwordSchema } from '@/constants/account/form-validations/passwordSchemas';
+import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+import { supabase } from '@/lib/supabase/supabaseClient';
 
 type PasswordFormValues = Asserts<typeof passwordSchema>;
 
 export default function PasswordForm() {
   const { show } = useSnackbar();
+
   const {
     register,
     handleSubmit,
@@ -32,7 +29,7 @@ export default function PasswordForm() {
     formState: { errors, isDirty, isValid, isSubmitting },
   } = useForm<PasswordFormValues>({
     resolver: yupResolver(passwordSchema) as unknown as Resolver<PasswordFormValues>,
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   const [showCurrent, setShowCurrent] = useState(false);
@@ -48,69 +45,81 @@ export default function PasswordForm() {
       } = await supabase.auth.getUser();
 
       if (!user?.email) {
-        show("Oturum bulunamadı. Lütfen tekrar giriş yapın.", "error");
+        show('Oturum bulunamadı. Lütfen tekrar giriş yapın.', 'error');
         return;
       }
 
       // 2) mevcut şifreyi doğrula
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email,
-        password: currentPassword ?? "",
+        password: currentPassword ?? '',
       });
 
       if (signInError) {
-        // Kullanıcıya dost mesaj — teknik hata mesajını doğrudan gösterme
-        show("Mevcut şifreniz hatalı. Lütfen kontrol edip tekrar deneyin.", "error");
+        show('Mevcut şifreniz hatalı. Lütfen kontrol edip tekrar deneyin.', 'error');
         return;
       }
 
       // 3) yeni şifreyi güncelle
       const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword ?? "",
+        password: newPassword ?? '',
       });
 
       if (updateError) {
-        // error.message'e bakıp daha anlamlı mesaj ver
-        const msg = updateError.message ?? "";
-        if (msg.includes("Password should contain") || msg.includes("contains")) {
-          show("Yeni şifre: en az bir büyük harf, bir küçük harf, bir sayı ve bir özel karakter içermelidir.", "error");
-        } else if (msg.includes("minimum") || msg.includes("minimum length")) {
-          show("Yeni şifre çok kısa. Daha güçlü bir şifre deneyin.", "error");
+        const msg = updateError.message ?? '';
+        if (msg.includes('Password should contain') || msg.includes('contains')) {
+          show('Yeni şifre: en az bir büyük harf, bir küçük harf, bir sayı ve bir özel karakter içermelidir.', 'error');
+        } else if (msg.includes('minimum')) {
+          show('Yeni şifre çok kısa. Daha güçlü bir şifre deneyin.', 'error');
         } else {
-          show("Şifre güncellenemedi. Lütfen tekrar deneyin.", "error");
+          show('Şifre güncellenemedi. Lütfen tekrar deneyin.', 'error');
         }
         return;
       }
 
-      // Başarılı
-      show("Şifreniz başarıyla güncellendi.", "success");
+      show('Şifreniz başarıyla güncellendi.', 'success');
       reset();
     } catch (err) {
-      console.error("Şifre değiştirme hatası:", err);
-      show("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.", "error");
+      console.error('Şifre değiştirme hatası:', err);
+      show('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.', 'error');
     }
   };
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography fontSize={14} fontWeight={600} py={2} gutterBottom>
+    <Box
+      sx={(t) => ({
+        mt: 4,
+        // İstersen şık bir kart hissi:
+        p: 2, 
+        borderRadius: 2, 
+        bgcolor: 'background.paper',
+        border: `1px solid ${t.palette.divider}`, 
+      })}
+    >
+      <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom color="text.secondary">
         Şifreyi Güncelle
       </Typography>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }} >
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
-              type={showCurrent ? "text" : "password"}
+              type={showCurrent ? 'text' : 'password'}
               label="Mevcut Şifre"
-              {...register("currentPassword" as const)}
-              helperText={errors.currentPassword?.message as string | undefined}
+              autoComplete="current-password"
+              {...register('currentPassword')}
+              helperText={errors.currentPassword?.message}
               error={!!errors.currentPassword}
+              InputLabelProps={{ shrink: true }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowCurrent((s) => !s)} edge="end" aria-label="toggle current password visibility">
+                    <IconButton
+                      onClick={() => setShowCurrent((s) => !s)}
+                      edge="end"
+                      aria-label="Mevcut şifreyi göster/gizle"
+                    >
                       {showCurrent ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -119,18 +128,24 @@ export default function PasswordForm() {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }} >
+          <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
-              type={showNew ? "text" : "password"}
+              type={showNew ? 'text' : 'password'}
               label="Yeni Şifre"
-              {...register("newPassword" as const)}
-              helperText={errors.newPassword?.message as string | undefined}
+              autoComplete="new-password"
+              {...register('newPassword')}
+              helperText={errors.newPassword?.message}
               error={!!errors.newPassword}
+              InputLabelProps={{ shrink: true }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowNew((s) => !s)} edge="end" aria-label="toggle new password visibility">
+                    <IconButton
+                      onClick={() => setShowNew((s) => !s)}
+                      edge="end"
+                      aria-label="Yeni şifreyi göster/gizle"
+                    >
                       {showNew ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -143,12 +158,18 @@ export default function PasswordForm() {
         <Box mt={3} display="flex" justifyContent="flex-end">
           <Button
             type="submit"
-            variant="outlined"
-            color="secondary"
+            variant="contained"          // outlined da olur; keyfi değil, tema kararı
+            color="primary"              // sabit orangered YOK
             disabled={!isDirty || !isValid || isSubmitting}
-            sx={{ px: 2, py: 1, color: "orangered", borderColor: "orangered", borderRadius: 2 }}
+            disableElevation
+            sx={(t) => ({
+              px: 3,
+              py: 1,
+              borderRadius: t.shape.borderRadius,
+              textTransform: 'capitalize',
+            })}
           >
-            {isSubmitting ? "Kaydediliyor..." : "Şifreyi Güncelle"}
+            {isSubmitting ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
           </Button>
         </Box>
       </form>

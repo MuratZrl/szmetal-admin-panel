@@ -30,12 +30,12 @@ export default function SystemsShell({ initialSystems }: SystemsShellProps) {
   const justify = systems?.length === 1 ? 'flex-start' : 'flex-start';
 
   return (
-    <Box py={2}>
+    <Box px={1} >
       <Box>
         <StepperComponent activeStep={0} />
       </Box>
 
-      <Box mt={2}>
+      <Box >
         {loading ? (
           <Grid container spacing={2} justifyContent={justify} sx={{ width: '100%' }}>
             {skeletons.map((_, i) => (
@@ -48,7 +48,6 @@ export default function SystemsShell({ initialSystems }: SystemsShellProps) {
           <Box
             sx={{
               px: 2,
-              py: 4,
               border: '1px dashed',
               borderColor: 'divider',
               borderRadius: 2,

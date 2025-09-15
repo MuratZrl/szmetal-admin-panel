@@ -4,14 +4,11 @@ import { Box, Grid } from '@mui/material';
 
 import AuthLeftPanel from './components/layout/LeftPanel';
 import AuthRightPanel from './components/layout/RightPanel';
+
 // Tüm MUI/theme/snackbar sağlayıcılarını admin’dekiyle AYNI şekilde sar
-import Providers from '@/providers';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Providers>
-    
-      {/* Gerçek full-bleed kaplama */}
       <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'background.default' }}>
         
         <Grid
@@ -36,7 +33,5 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </Grid>
       
       </Box>
-    
-    </Providers>
   );
 }

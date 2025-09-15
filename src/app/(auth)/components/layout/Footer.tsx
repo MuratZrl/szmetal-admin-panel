@@ -1,34 +1,27 @@
 // app/(auth)/components/layout/Footer.tsx
-'use client';
-
 import { Box, Typography } from '@mui/material';
 
-const Footer = () => {
+export default function Footer() {
   return (
     <Box
       component="footer"
-      sx={{
+      
+      sx={(t) => ({
         textAlign: 'center',
         width: '100%',
-
         py: 2,
         px: 2,
-        borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-        color: 'white',
+        bgcolor: 'transparent',
+        borderTop: `1px solid ${t.palette.divider}`,
+        color: 'text.secondary',
         fontSize: 14,
-        opacity: 0.75,
-      }}
+      })}
     >
-
-      <Typography 
-        variant="body2" 
-        gutterBottom
-      >
-        © {new Date().getFullYear()} SZ Metal. Tüm hakları saklıdır.
+    
+      <Typography variant="body2" gutterBottom color="text.secondary">
+        © {new Date().getFullYear()} Alutem. Tüm hakları saklıdır.
       </Typography>
-      
+    
     </Box>
   );
-};
-
-export default Footer;
+}

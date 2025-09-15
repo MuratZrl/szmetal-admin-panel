@@ -5,18 +5,23 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { Box, Grid, Button, TextField, Typography, IconButton, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Button,
+  TextField,
+  Typography,
+  IconButton,
+  InputAdornment,
+} from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import AuthCard from '../components/layout/AuthCard';
-
-import { supabase } from '@/lib/supabase/supabaseClient';
-
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
-
 import { glassTextFieldProps } from '../constants/formstyles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { mergeSx } from '@/utils/mergeSx';
+import { supabase } from '@/lib/supabase/supabaseClient';
 
 type FormState = { password: string; confirmPassword: string };
 
@@ -24,10 +29,10 @@ export default function ResetPasswordClient() {
   const router = useRouter();
   const { show } = useSnackbar();
 
-  const [sessionValid, setSessionValid] = React.useState(false);
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const [sessionValid, setSessionValid] = React.useState<boolean>(false);
+  const [showPassword, setShowPassword] = React.useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState<boolean>(false);
+  const [loading, setLoading] = React.useState<boolean>(false);
   const [form, setForm] = React.useState<FormState>({ password: '', confirmPassword: '' });
 
   // Şifre kuralları
@@ -45,9 +50,7 @@ export default function ResetPasswordClient() {
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // Supabase’in döndürebileceği tüm varyantları oku:
-  // 1) ?code=... (exchangeCodeForSession ile)
-  // 2) #access_token=...&refresh_token=... (setSession ile)
+  // Supabase callback senaryoları: ?code=... veya #access_token=...&refresh_token=...
   React.useEffect(() => {
     const run = async () => {
       try {
@@ -79,7 +82,7 @@ export default function ResetPasswordClient() {
         show('Bağlantı süresi dolmuş veya geçersiz.', 'error');
       }
     };
-    run();
+    void run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -110,8 +113,12 @@ export default function ResetPasswordClient() {
     }
   };
 
+  // Varsayılan textfield cam efektini yumuşakça genişlet
+  const baseSx = glassTextFieldProps.InputProps?.sx as SxProps<Theme> | undefined;
+  const extendedSx: SxProps<Theme> = mergeSx(baseSx, { borderRadius: 5 });
+
   if (!sessionValid) {
-    // Token yok/geçersiz
+    // Tema dostu 404 bloğu
     return (
       <Box
         display="flex"
@@ -122,30 +129,32 @@ export default function ResetPasswordClient() {
         textAlign="center"
         px={2}
       >
-        <Typography variant="h1" fontWeight={800} color="error" fontSize={{ xs: 60, sm: 100 }}>
+        <Typography variant="h1" fontWeight={800} fontSize={{ xs: 60, sm: 100 }}>
           404
         </Typography>
-        <Typography variant="h5" color="white" fontWeight={600} mb={1}>
+        <Typography variant="h5" fontWeight={600} mb={1}>
           Bağlantı geçersiz veya süresi dolmuş.
         </Typography>
-        <Typography variant="subtitle1" color="white" mb={3}>
+        <Typography variant="subtitle1" mb={3} color="text.secondary">
           Şifre sıfırlama bağlantınız geçersiz olabilir, süresi dolmuş olabilir ya da eksik parametre içeriyor olabilir.
         </Typography>
         <Button
           href="/"
           variant="outlined"
-          sx={{ px: 3.25, py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
+          sx={(t) => ({
+            px: 3.25,
+            py: 1.25,
+            textTransform: 'capitalize',
+            borderRadius: 7,
+            borderColor: t.palette.divider,
+            color: t.palette.text.primary,
+          })}
         >
           Ana Sayfa
         </Button>
       </Box>
     );
   }
-
-  // Var olan sx’i güvenle genişlet
-  const baseSx = glassTextFieldProps.InputProps?.sx as SxProps<Theme> | undefined;
-  const extendedSx: SxProps<Theme> = mergeSx(baseSx, { borderRadius: 5 });
-
 
   return (
     <Box
@@ -156,7 +165,7 @@ export default function ResetPasswordClient() {
       sx={{ display: 'flex', flexDirection: 'column', width: '75%', mx: 'auto' }}
     >
       <AuthCard>
-        <Typography variant="h5" fontWeight={600} mb={3} color="white">
+        <Typography variant="h5" fontWeight={600} mb={3}>
           Şifrenizi Sıfırlayın
         </Typography>
 
@@ -174,12 +183,16 @@ export default function ResetPasswordClient() {
                 ...(glassTextFieldProps.InputProps ?? {}),
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onMouseDown={(e) => e.preventDefault()} onClick={() => setShowPassword(s => !s)} edge="end">
+                    <IconButton
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setShowPassword((s) => !s)}
+                      edge="end"
+                    >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
-                sx: extendedSx, // ← tek satır, tertemiz
+                sx: extendedSx,
               }}
             />
           </Grid>
@@ -197,12 +210,16 @@ export default function ResetPasswordClient() {
                 ...(glassTextFieldProps.InputProps ?? {}),
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onMouseDown={(e) => e.preventDefault()} onClick={() => setShowConfirmPassword(s => !s)} edge="end">
+                    <IconButton
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                      edge="end"
+                    >
                       {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
-                sx: extendedSx, // ← tek satır, tertemiz
+                sx: extendedSx,
               }}
             />
           </Grid>
@@ -214,27 +231,49 @@ export default function ResetPasswordClient() {
               color="primary"
               fullWidth
               disabled={loading}
-              sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
+              sx={(t) => ({
+                py: 1.25,
+                textTransform: 'capitalize',
+                borderRadius: 7,
+                borderColor: t.palette.divider,
+                color: t.palette.text.primary,
+              })}
             >
               {loading ? 'Kaydediliyor...' : 'Sıfırla'}
             </Button>
           </Grid>
 
           <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography>
-              <Link href="/login">
-                <Typography component="span" color="white" fontStyle="italic" fontWeight={500}
-                  sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+            <Typography color="text.secondary">
+              <Link href="/login" style={{ textDecoration: 'none' }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: 'primary.main',
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
                   Şifremi hatırladım
                 </Typography>
               </Link>
             </Typography>
 
-            <Typography color="lightblue">
+            <Typography color="text.secondary">
               Hesabınız yoksa{' '}
-              <Link href="/register">
-                <Typography component="span" color="white" fontStyle="italic" fontWeight={500}
-                  sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+              <Link href="/register" style={{ textDecoration: 'none' }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: 'primary.main',
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
                   kayıt olun
                 </Typography>
               </Link>

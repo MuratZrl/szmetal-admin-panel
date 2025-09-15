@@ -17,7 +17,7 @@ export default function RegisterPage() {
       <AuthCard>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12 }} >
-            <Typography variant="h5" color="white" fontWeight={600} mb={1.5}>
+            <Typography variant="h5" fontWeight={600} mb={1.5}>
               Hemen Kayıt Olun
             </Typography>
           </Grid>

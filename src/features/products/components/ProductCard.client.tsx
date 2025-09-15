@@ -161,17 +161,15 @@ export default function ProductCard({ product, labels }: Props) {
         }}
       >
 
-        {/* Media: 4:3 oran, destek yoksa padding fallback */}
         <Box
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
           sx={{
             position: 'relative',
             width: '100%',
-            aspectRatio: '4 / 3',
+            height: { xs: 250, sm: 285, md: 425 }, // istediğin kadar büyüt
             overflow: 'hidden',
-            flex: '0 0 auto',     // ← büyümesin, üstte sabit dursun
-            '@supports not (aspect-ratio: 1)': { height: 0, pt: '75%' },
+            flex: '0 0 auto',
           }}
         >
           {isPdf && product.image
@@ -188,16 +186,21 @@ export default function ProductCard({ product, labels }: Props) {
               ) : (
                 <Box
                   component="iframe"
-                  src={`${product.image}#page=1&view=FitH&toolbar=0&navpanes=0&`}
+                  // PDF'yi çerçeveye sığdır: zoom=page-fit / view=Fit
+                  // toolbar/navpanes gizle
+                  src={`${product.image}#zoom=page-fit&view=Fit&toolbar=0&navpanes=0`}
                   title={`${product.name} PDF`}
                   loading="eager"
                   aria-hidden
+                  // bazı tarayıcılarda hâlâ çalışabiliyor, dursun:
+                  scrolling="no"
                   sx={{
-                    position: 'absolute',
+                    position: 'relative',
                     inset: 0,
-                    border: 0,
-                    width: '100%',
+                    // HILE: iframe’i sağdan 20px genişlet → scrollbar görünür alanın dışında kalır
+                    width: 'calc(100% + 20px)',
                     height: '100%',
+                    border: 0,
                     pointerEvents: 'none',
                     bgcolor: 'background.default',
                   }}

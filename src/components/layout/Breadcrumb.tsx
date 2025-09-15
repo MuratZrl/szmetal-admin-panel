@@ -33,7 +33,14 @@ const Breadcrumb = () => {
 
   const breadcrumbs = [
     <Link key="home" href={homeHref} style={{ display: 'flex', alignItems: 'center' }}>
-      <HomeIcon fontSize="small" />
+      <HomeIcon
+        fontSize="small"
+        sx={(t) => ({
+          color: t.palette.mode === 'dark'
+            ? t.palette.error.light   // karanlıkta görünür kalsın
+            : t.palette.error.dark,   // aydınlıkta koyu kırmızı
+        })}
+      />
     </Link>
   ];
 

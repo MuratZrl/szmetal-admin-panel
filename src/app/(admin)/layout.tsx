@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 
 import Breadcrumb from '@/components/layout/Breadcrumb';
-import Header from '@/components/layout/Header';
 import { SIDEBAR_WIDTH } from '@/constants/layout';
 
 // 🔁 yeni importlar
@@ -60,8 +59,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           >
 
             <Breadcrumb />
-
-            <Header />
 
             {/* İçerik kutusu: surface[2] */}
             <Paper

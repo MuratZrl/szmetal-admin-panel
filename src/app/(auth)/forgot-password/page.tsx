@@ -15,10 +15,10 @@ export default function ForgotPasswordPage() {
       }}
     >
       <AuthCard>
-        <Typography variant="h5" color="white" fontWeight={600} mb={1}>
+        <Typography variant="h5" fontWeight={600} mb={1}>
           Kendi E-posta Adresinizi Giriniz
         </Typography>
-        <Typography variant="subtitle1" color="white" mb={3}>
+        <Typography variant="subtitle1" mb={3}>
           E-posta adresinize sıfırlama linki gönderebilmek için lütfen e-posta bilginizi giriniz.
         </Typography>
 

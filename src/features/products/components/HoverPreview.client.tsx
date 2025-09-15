@@ -2,8 +2,9 @@
 'use client';
 
 import * as React from 'react';
-import { Popper, Paper, Box, alpha, useTheme } from '@mui/material';
+import { Popper, Paper, Box, alpha, useTheme, CircularProgress } from '@mui/material';
 import PdfPreview from '@/features/products/components/PDFpreview.client';
+import Image from 'next/image';
 
 type HoverPreviewProps = {
   anchorEl: HTMLElement | null;
@@ -32,6 +33,9 @@ export default function HoverPreview({
   const boxRef = React.useRef<HTMLDivElement | null>(null);
   const [dims, setDims] = React.useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
+  // Yüklenme durumu
+  const [loading, setLoading] = React.useState<boolean>(false);
+
   React.useLayoutEffect(() => {
     if (!boxRef.current) return;
     const el = boxRef.current;
@@ -45,6 +49,11 @@ export default function HoverPreview({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Popper açıldığında ve kaynak değiştiğinde spinner'ı başlat
+  React.useEffect(() => {
+    if (open) setLoading(true);
+  }, [open, src, isPdf]);
 
   return (
     <Popper
@@ -70,37 +79,67 @@ export default function HoverPreview({
           boxShadow: 6,
         }}
       >
-      
         <Box
           ref={boxRef}
           sx={{
             width: { xs: Math.min(280, maxWidth), sm: maxWidth },
-            aspectRatio: '4 / 3',
-            position: 'relative',
-            overflow: 'hidden',
+            height: { xs: 250, sm: 285, md: 425 }, // istediğin kadar büyüt
+            
             borderRadius: 0,
+            overflow: 'hidden',
+            position: 'relative',
             bgcolor: 'background.default',
           }}
         >
-          
-        {isPdf ? (
-          dims.w > 0 ? (
-            <PdfPreview key={src} file={src} width={dims.w} height={dims.h} />
-          ) : null
-        ) : (
-      
-          <Box
-            component="img"
-            src={src}
-            alt={alt}
-            draggable={false}
-            loading="lazy"
-            sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        )}
-      
+          {isPdf ? (
+            dims.w > 0 ? (
+              <PdfPreview
+                key={`${src}:${dims.w}`}
+                file={src}
+                width={dims.w}
+                height={dims.h}
+              />
+            ) : null
+          ) : (
+            <Box
+              sx={{
+                position: 'relative',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              <Image
+                src={src}
+                alt={alt}
+                fill
+                loading='eager'
+                unoptimized
+                sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 33vw"
+                style={{ objectFit: 'cover' }}
+                priority={false}
+                onLoad={() => setLoading(false)}
+                onError={() => setLoading(false)}
+              />
+            </Box>
+          )}
+
+          {/* Spinner overlay */}
+          {loading && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'grid',
+                placeItems: 'center',
+                bgcolor: alpha(theme.palette.background.default, 0.08),
+                pointerEvents: 'none',
+              }}
+            >
+              <CircularProgress size={24} />
+            </Box>
+          )}
         </Box>
-      
       </Paper>
     
     </Popper>

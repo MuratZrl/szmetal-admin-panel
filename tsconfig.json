@@ -34,6 +34,6 @@
     ".next/types/**/*.ts", 
     "types/**/*.d.ts", 
     "src/theme/types.d.ts"
-  ],
+, "src/components/ui/charts/RequestsByStatusDonut.client.tsx"  ],
   "exclude": ["node_modules"]
 }

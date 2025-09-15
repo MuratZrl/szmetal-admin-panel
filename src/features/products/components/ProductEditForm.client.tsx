@@ -179,6 +179,7 @@ export default function ProductEditForm({ dicts, initial }: Props) {
       show('Sadece PDF, PNG, WEBP, JPEG kabul ediyorum.', 'error');
       return;
     }
+    
     const limit = MAX_BYTES[kind];
     if (file.size > limit) {
       const mb = (limit / (1024 * 1024)).toFixed(0);
@@ -206,6 +207,7 @@ export default function ProductEditForm({ dicts, initial }: Props) {
       }
 
       const code = watch('code')?.trim() || `product-${Date.now()}`;
+      
       const res: UploadResult =
         kind === 'pdf'
           ? await uploadProductPdfAndGetUrl(code, file)

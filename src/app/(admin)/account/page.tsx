@@ -17,7 +17,7 @@ export default async function AccountPage() {
 
   return (
     <Box px={1} py={2} >
-      <Paper sx={{ maxWidth: 1200, mx: "auto", p: 3, borderRadius: 7 }}>
+      <Paper sx={{ maxWidth: 1200, mx: "left", borderRadius: 7 }} >
         {/* Client sınırı burada başlıyor */}
         <AccountClientSection initialUserData={profile} />
       </Paper>

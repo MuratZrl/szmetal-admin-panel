@@ -92,6 +92,7 @@ export default function SystemCard({
               component="img"
               src={imageUrl}
               alt={title}
+              draggable={false}
               sx={{
                 width: '100%',
                 height: '100%',

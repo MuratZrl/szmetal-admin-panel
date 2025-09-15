@@ -1,116 +1,76 @@
-// app/(admin)/requests/[id]/page.tsx
+// app/requests/[id]/page.tsx
+import * as React from 'react';
+
 import { notFound } from 'next/navigation';
-import { Box, Card, CardContent, Chip, Divider, Grid, Typography } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HourglassTopIcon from '@mui/icons-material/HourglassTop';
-import CancelIcon from '@mui/icons-material/Cancel';
 
-import StatusActions from '@/app/(admin)/requests/[id]/StatusActions.client';
-import { fetchRequestById } from '@/features/requests/services/requests_id.server';
-import { updateRequestStatusAction } from './actions';
-import GiyotinTables from '@/features/create_request/components/GiyotinTables.client';
-import type { RequestRowUnion } from '@/features/requests/types';
+import { Box, Grid, Stack } from '@mui/material';
 
-export const dynamic = 'force-dynamic';
+import {
+  FormInfoCard,
+  SummarySection,
+  RequestDetailHeader,
+  MaterialListCard,
+} from '@/features/requests/components/id';
 
-type PageParams = { id: string };
-type PageProps = { params: Promise<PageParams> };
+import {
+  fetchRequestByParam,
+  buildMaterialRows,
+} from '@/features/requests/services/id/request.server';
 
-function StatusChip({ status }: { status: RequestRowUnion['status'] }) {
-  const icon =
-    status === 'approved' ? <CheckCircleIcon sx={{ fontSize: 16 }} /> :
-    status === 'pending'  ? <HourglassTopIcon sx={{ fontSize: 16 }} /> :
-                            <CancelIcon sx={{ fontSize: 16 }} />;
+import UserDetailCard from '@/features/requests/components/id/UserDetailCard.client';
+import StatusCard from '@/features/requests/components/id/StatusCard.client';
 
-  const label =
-    status === 'approved' ? 'Onaylandı' :
-    status === 'pending'  ? 'Bekleyen'  :
-                            'Reddedildi';
+import { fetchUserPublic } from '@/features/requests/services/id/user.server';
 
-  const color: 'success' | 'warning' | 'error' =
-    status === 'approved' ? 'success' : status === 'pending' ? 'warning' : 'error';
+import type { MaterialRow } from '@/features/requests/types';
 
-  return (
-    <Chip
-      label={<Box component="span" display="flex" alignItems="center" gap={1}>{icon}{label}</Box>}
-      color={color}
-      size="small"
-      variant="outlined"
-    />
-  );
-}
+export const revalidate = 0;
 
-function renderSystemTables(req: RequestRowUnion) {
-  switch (req.system_slug) {
-    case 'giyotin-sistemi':
-      return (
-        <GiyotinTables
-          summaryData={req.summary_data}
-          materialData={req.material_data}
-        />
-      );
-    default:
-      return <Typography>Tanımsız sistem.</Typography>;
-  }
-}
+type PageProps = { params: Promise<{ id: string }> };
 
 export default async function RequestDetailPage({ params }: PageProps) {
-  const { id } = await params;              // <-- kritik: params Promise
-  const idStr = String(id);
+  const { id } = await params;
+  const row = await fetchRequestByParam(id);
+  if (!row) return notFound();
 
-  // ID numerik ise:
-  if (!/^\d+$/.test(idStr)) notFound();
+  // Kullanıcı bilgisini server’da çek
+  const user = row.user_id ? await fetchUserPublic(row.user_id) : null;
 
-  // ID uuid ise yukarıdakini kaldırıp istersen şu kontrolü kullan:
-  // if (!/^[0-9a-f-]{36}$/i.test(idStr)) notFound();
+  const f = row.form_data;
+  const s = row.summary_data[0] ?? null;
 
-  const request = await fetchRequestById(idStr);
-  if (!request) notFound();
+  const materialRows: MaterialRow[] = buildMaterialRows(row.material_data);
 
   return (
-    <Box sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 2 } }}>
-      <Card variant="outlined" sx={{ mb: 4, borderRadius: 5, boxShadow: 2 }}>
-        <CardContent>
-          <Grid container spacing={1.25}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography><strong>Durum:</strong> <StatusChip status={request.status} /></Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography><strong>Proje Adı:</strong> {request.description ?? '—'}</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography><strong>Kullanıcı:</strong> {request.users?.username ?? '—'}</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography><strong>Şirket / Firma:</strong> {request.users?.company ?? '—'}</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography><strong>E-posta:</strong> {request.users?.email ?? '—'}</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography><strong>Ülke:</strong> {request.users?.country ?? '—'}</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography>
-                <strong>Oluşturulma Tarihi:</strong>{' '}
-                {new Date(request.created_at).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}
-              </Typography>
-            </Grid>
-          </Grid>
+    <Box sx={{ p: { xs: 1, sm: 2 } }}>
+      <RequestDetailHeader id={row.id} systemSlug={row.system_slug} />
 
-          <Divider sx={{ my: 2 }} />
+      <Grid container spacing={2}>
+        {/* Sol kolon: Form + Kullanıcı kartı */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Stack spacing={2}>
+            <FormInfoCard form={f} />
+            <UserDetailCard user={user} />
+          </Stack>
+        </Grid>
 
-          <StatusActions
-            requestId={request.id}
-            status={request.status}
-            action={updateRequestStatusAction}
-          />
-        </CardContent>
-      </Card>
+        {/* Sağ kolon: Özet */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Stack spacing={2}>
+            {/* Yeni durum kartı */}
+            <StatusCard
+              requestId={row.id}
+              status={row.status}
+            />
+            <SummarySection summary={s} />
+          </Stack>
+        </Grid>
 
-      <Divider sx={{ my: 2 }} />
-
-      {renderSystemTables(request)}
+        {/* Alt: Malzeme tablosu */}
+        <Grid size={{ xs: 12 }}>
+          <MaterialListCard rows={materialRows} />
+        </Grid>
+      </Grid>
     </Box>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
+import { useTheme, alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const texts = [
@@ -14,60 +15,63 @@ const texts = [
   'İhtiyaçlarınıza özel çözümler',
 ];
 
-const MotionTypography = motion.create(Typography); // ✅ yeni ve doğru kullanım
+const MotionTypography = motion(Typography);
 
-const AuthLeftPanel = () => {
+export default function AuthLeftPanel() {
+  
+  const theme = useTheme();
   const [index, setIndex] = useState(0);
-  const [mounted, setMounted] = useState(false); // 👈 SSR sırasında render'ı engeller
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true); // 👈 client mount edildiğinde göster
-
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % texts.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
+    setMounted(true);
+    const id = setInterval(() => setIndex(p => (p + 1) % texts.length), 5000);
+    return () => clearInterval(id);
   }, []);
 
   if (!mounted) return null;
 
+  // Overlay'i sabitle (tema değişse de aynı kalsın)
+  const overlayStart = 'rgba(41, 39, 36, 0.70)';
+  const overlayEnd   = 'rgba(63, 58, 49, 0.50)';
+
+  // Yazı rengini sadece temadan al (sadece yazılar değişsin)
+  const textColor =
+    theme.palette.mode === 'dark' ? theme.palette.grey[100] : theme.palette.common.white;
+
+  const textShadow = `0 6px 18px ${alpha(theme.palette.common.black, 0.35)}`;
+
   return (
     <Box
-      style={{
-        position: 'relative', // ✅
-        backgroundImage: `
-          linear-gradient(135deg, #292724ff, #3f3a31b9),
-          url('/left-panel-background.jpg')
-        `,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-
+      sx={{
+        position: 'relative',
+        backgroundImage: `linear-gradient(135deg, ${overlayStart}, ${overlayEnd}), url('/left-panel-background.jpg')`,
+        backgroundRepeat: 'no-repeat, no-repeat',
+        backgroundSize: '100% 100%, cover',
+        backgroundPosition: { xs: 'center, 80% 50%', md: 'center, 100% 50%' },
         width: '100%',
         height: '100%',
-
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-
       }}
     >
       <AnimatePresence mode="wait">
         <MotionTypography
-          key={texts[index]}
+          key={`${texts[index]}-${theme.palette.mode}`} // toggle'da re-animate
           initial={{ opacity: 0, scale: 0.95, letterSpacing: '0.1em' }}
           animate={{ opacity: 1, scale: 1, letterSpacing: '0' }}
           exit={{ opacity: 0, scale: 1.05, letterSpacing: '0.05em' }}
           transition={{ duration: 1.5, ease: 'easeInOut' }}
           variant="h3"
           textAlign="center"
-          fontWeight={600}
-          color="white"
+          fontWeight={700}
           sx={{
-            textShadow: '2px 2px 15px rgba(0, 0, 0, 0.25)',
-            position: 'absolute', // 👈 önemli!
-            width: '100%', // içerik kaymasın
+            color: textColor,
+            textShadow,
+            transition: 'color 300ms ease', // renk yumuşak geçsin
+            position: 'absolute',
+            width: '100%',
           }}
         >
           {texts[index]}
@@ -75,6 +79,4 @@ const AuthLeftPanel = () => {
       </AnimatePresence>
     </Box>
   );
-};
-
-export default AuthLeftPanel;
+}

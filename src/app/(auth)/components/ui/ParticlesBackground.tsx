@@ -22,46 +22,53 @@ const ParticlesBackground = () => {
 
   const options: ISourceOptions = useMemo(
     () => ({
+      
       fullScreen: {
         enable: true,
         zIndex: 0,
       },
+      
       background: {
         color: {
           value: '#353535ff',
         },
         opacity: 0.05,
       },
+
+      fpsLimit: 60,
       detectRetina: true,
-      fpsLimit: 9999,
-      pauseOnBlur: true,
       pauseOnOutsideViewport: true,
       
       particles: {
         
         number: {
-          value: 1000,
+          value: 2000,
           density: {
             enable: true,
             width: 1920,
             height: 1080,
           },
         },
+
         color: {
           value: '#ffffff',
         },
+
         shape: {
           type: 'circle',
         },
+
         opacity: {
           value: 0.75,
         },
+
         size: {
-          value: 3,
+          value: 3.25,
         },
+
         move: {
           enable: true,
-          speed: 0.95,
+          speed: 0.5,
           direction: 'top-left',
           random: true,
           straight: false,
@@ -69,38 +76,46 @@ const ParticlesBackground = () => {
             default: 'out',
           },
         },
+
         wobble: {
           enable: true,
-          distance: 50,
+          distance: 100,
           speed: {
-            angle: 75,
+            angle: 90,
             move: 100,
           },
         },
+
         twinkle: {
           particles: {
             enable: true,
-            frequency: 1,
+            frequency: 5,
             opacity: 1,
           },
         },
+
         shadow: {
           enable: true,
+          
           color: {
             value: '#ffffff',
           },
-          blur: 5,
+
+          blur: 10,
+          
           offset: {
             x: 0,
             y: 0,
           },
         },
+
         zIndex: {
           value: {
             min: 35,
             max: 150,
           },
         },
+
       },
     }),
     [],

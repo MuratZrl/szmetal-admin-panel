@@ -20,7 +20,7 @@ export default function LoginPage() {
         <Grid container spacing={2}>
     
           <Grid size={{ xs: 12 }} >
-            <Typography variant="h5" color="white" fontWeight={600} gutterBottom>
+            <Typography variant="h5" fontWeight={600} gutterBottom>
               Giriş Yapın
             </Typography>
           </Grid>

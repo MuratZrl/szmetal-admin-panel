@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Role } from '../types';
 
 export type SidebarInitialData = {
-  role: Role;
+  role: Role | null;
   unreadCount: number;
   userId: string | null;
 };
@@ -21,7 +21,7 @@ export async function getSidebarInitialData(): Promise<SidebarInitialData> {
     sb.from('orders').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false),
   ]);
 
-  const role = (roleRow?.role === 'Admin' || roleRow?.role === 'User') ? roleRow.role : null;
+  const role = (roleRow?.role ?? null) as Role | null;
 
   return {
     role,

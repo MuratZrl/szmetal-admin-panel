@@ -17,6 +17,12 @@ export const lightPalette = {
   success:  { main: '#16A34A', light: '#22C55E', dark: '#15803D', contrastText: '#FFFFFF' },
   info:     { main: '#0891B2', light: '#06B6D4', dark: '#0E7490', contrastText: '#FFFFFF' },
 
+  requestStatus: {
+    pending:  { bg: '#FFF4D6', fg: '#7A4E00', bd: '#FFE5A3' },
+    approved: { bg: '#E8F5E9', fg: '#1B5E20', bd: '#C8E6C9' },
+    rejected: { bg: '#FDECEA', fg: '#B71C1C', bd: '#FFCDD2' },
+  },
+
   text: {
     primary: TEXT,
     secondary: alpha(TEXT, 0.72),

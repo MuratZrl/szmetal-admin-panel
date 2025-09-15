@@ -1,39 +1,82 @@
-// features/requests/types/types.ts
+// src/features/requests/types.ts
 
-import { SistemOzet } from '@/features/create_request/types/system';
-import { GiyotinProfilHesapli } from '@/features/create_request/types/system';
+export type RequestStatus = 'pending' | 'approved' | 'rejected';
 
-// İleride diğer sistemler için de import edebilirsin:
-// import { CamBalkonProfilHesapli } from '../systems/cam-balkon-sistemi/types';
-
-// ✅ Genel Request tipi (generic)
-export type RequestRow<T = unknown> = {
+export type AdaptedRequestRow = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   system_slug: string;
-  
-  form_data: Record<string, string>;
-  summary_data: SistemOzet[];
-  material_data: T[];
-
-  created_at: string;
-
-  status: 'pending' | 'approved' | 'rejected';
-  description: string;
-
-  users?: {
-    username: string;
-    email: string;
-    company: string;
-    country: string;
-  };
+  status: RequestStatus;
+  form_data: FormData;
+  summary_data: SummaryItem[];
+  material_data: MaterialItem[];
 };
 
+// ————— Detay sayfasındaki JSON alanları —————
+export type FormData = {
+  description?: string | null;
+  sistem_adet?: string | null;
+  sistem_genislik?: string | null;
+  sistem_yukseklik?: string | null;
+};
 
-// ✅ Sistem bazlı union tipi
-export type RequestRowUnion =
-  | (RequestRow<GiyotinProfilHesapli> & { system_slug: 'giyotin-sistemi' })
+export type SummaryItem = {
+  id: number;
+  toplam_kg: string;           // "58.76 kg"
+  cam_metraj: string;          // "7.92"
+  sistem_metraj: string;       // "9.00"
+  kayar_cam_adet: string;      // "3"
+  kayar_cam_genislik: string;  // "2826"
+  kayar_cam_yukseklik: string; // "934"
+};
 
-  // | (RequestRow<KapiProfilHesapli> & { system_slug: 'cam-balkon-sistemi' })
-  // | Diğer sistemler buraya eklenebilir...
-  ;
+export type RawRow = {
+  id: string;
+  system_slug: string | null;
+  form_data: unknown;
+  summary_data: unknown;
+  material_data: unknown;
+  created_at?: string | null;
+}
+
+export type MaterialItem = {
+  kesim_adet: number;
+  profil_adi: string;
+  profil_kodu: string;
+  kesim_olcusu: string;
+  profil_resmi: string;
+  birim_agirlik: number;
+  verilecek_adet: number;
+};
+
+// DataGrid satırı (id zorunlu) + hesaplanan alan
+export type MaterialRow = MaterialItem & {
+  id: string;
+  toplam_agirlik: number;
+};
+
+// ————— Kart/istatistik tipleri —————
+export type CountKey = 'total' | 'pending' | 'approved';
+export type TrendDir = 'up' | 'down';
+
+export type TrendValue = {
+  change: number | null;
+  trend: TrendDir;
+};
+
+export type RequestsTotals = {
+  total: number;
+  pending: number;
+  approved: number;
+};
+
+export type RequestsTrends = Partial<Record<CountKey, TrendValue>>;
+export type RequestsDeltas = Partial<Record<CountKey, number | null | undefined>>;
+export type RequestsMonthlyAdds = Record<CountKey, number>;
+
+export type RequestsCardsData = {
+  totals: RequestsTotals;
+  trends?: RequestsTrends;
+  deltas?: RequestsDeltas;
+  adds: RequestsMonthlyAdds;
+};

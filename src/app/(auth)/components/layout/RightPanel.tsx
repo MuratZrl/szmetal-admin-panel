@@ -1,11 +1,15 @@
 'use client';
 
 import { ReactNode, useEffect } from 'react';
-import { Box, Paper } from '@mui/material';
-import { motion, useAnimation } from 'framer-motion';
-import Footer from './Footer';
 
-import ParticlesBackground from '../ui/ParticlesBackground';
+import { Box, Paper } from '@mui/material';
+
+import { motion, useAnimation } from 'framer-motion';
+
+import ParticlesBackground from '@/app/(auth)/components/ui/ParticlesBackground';
+
+import Header from '@/app/(auth)/components/layout/Header';
+import Footer from '@/app/(auth)/components/layout/Footer';
 
 type Props = {
   children: ReactNode;
@@ -13,17 +17,18 @@ type Props = {
 
 // Sabit gradient renkler (düz renk gibi ele alınacak)
 const gradients = [
-  '#514a9d',
-  '#186decff',
-  '#3af0d1ff',
-  '#2adb89ff', 
-  '#b1f11bff', 
-  '#1bf171ff', 
-  '#1bd1f1ff', 
-  '#1b8df1ff', 
-  '#221bf1ff', 
-  '#621bf1ff', 
-  '#d11bf1ff', 
+  '#9f0000ff',
+  '#ad0000ff',
+  '#aa0000ff',
+  '#910000ff', 
+  '#940000ff', 
+  '#7d0000ff', 
+  '#790000ff', 
+  '#630000ff', 
+  '#550000ff', 
+  '#5e0000ff', 
+  '#550000ff', 
+  '#380000ff', 
 ];
 
 const AuthRightPanel = ({ children }: Props) => {
@@ -53,7 +58,7 @@ const AuthRightPanel = ({ children }: Props) => {
       <motion.div
         animate={controls}
         style={{
-          position: 'absolute', inset: 0, 
+          position: 'absolute', inset: 0,
           top: 0,
           left: 0,
           width: '100%',
@@ -62,6 +67,20 @@ const AuthRightPanel = ({ children }: Props) => {
           backgroundSize: '400% 400%',
           zIndex: 0,
         }}
+      />
+
+      {/* Header en üstte */}
+      <Header
+        logo={{
+          href: 'https://www.alutem.com.tr', // dış link olduğu için <a> ile açılır
+          alt: 'Alutem',
+          srcLight: '/logo_black.png',   // açık tema
+          srcDark:  '/logo_white.png',   // koyu tema
+          width: 120,
+          height: 65, 
+        }}
+        maxContentWidth={700}
+        height={100}
       />
 
       {/* Saydam blur layer */}

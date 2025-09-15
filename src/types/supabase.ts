@@ -275,6 +275,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       system_drafts: {
@@ -531,8 +538,52 @@ export type Database = {
           },
         ]
       }
+      requests_status_counts: {
+        Row: {
+          cnt: number | null
+          status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      count_monthly: {
+        Args:
+          | { p_col: string; p_table: string }
+          | { p_col: unknown; p_schema: string; p_table: string }
+        Returns: {
+          prev_month: number
+          this_month: number
+        }[]
+      }
+      count_monthly_pending_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          prev_month: number
+          this_month: number
+        }[]
+      }
+      current_user_is_banned: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      get_dashboard_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_requests: number
+          total_systems: number
+          total_users: number
+        }[]
+      }
+      get_dashboard_timeseries: {
+        Args: { months?: number }
+        Returns: {
+          label: string
+          month_start: string
+          requests: number
+          users: number
+        }[]
+      }
       get_monthly_user_counts: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -562,6 +613,50 @@ export type Database = {
           month: string
           status: string
         }[]
+      }
+      get_pending_requests_by_country: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          label: string
+          value: number
+        }[]
+      }
+      get_pending_requests_by_system: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          label: string
+          value: number
+        }[]
+      }
+      get_requests_by_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          label: string
+          value: number
+        }[]
+      }
+      is_admin: {
+        Args: { uid: string }
+        Returns: boolean
+      }
+      is_not_banned: {
+        Args: { uid: string }
+        Returns: boolean
+      }
+      update_user_role: {
+        Args: { new_role: string; target_user_id: string }
+        Returns: {
+          company: string | null
+          country: string | null
+          created_at: string
+          email: string
+          id: string
+          image: string | null
+          phone: string | null
+          role: string
+          status: string
+          username: string
+        }
       }
     }
     Enums: {

@@ -1,3 +1,4 @@
+// src/features/auth/LoginForm.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -7,7 +8,6 @@ import {
   TextField, Box, Button, IconButton, InputAdornment, Grid, Typography,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { supabase } from '@/lib/supabase/supabaseClient';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 import { glassTextFieldProps } from '../constants/formstyles';
 
@@ -35,25 +35,37 @@ export default function LoginForm() {
 
     setLoading(true);
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+        }),
       });
 
-      if (signInError) {
-        const msg = signInError.message?.toLowerCase() ?? '';
-        if (msg.includes('email not confirmed')) {
-          await supabase.auth.resend({ type: 'signup', email: form.email.trim().toLowerCase() });
-          show('E-posta doğrulanmamış. Yeni doğrulama maili gönderildi.', 'error');
-          return;
-        }
-        show(`Giriş başarısız: ${signInError.message}`, 'error');
+      if (res.status === 403) {
+        // Banned
+        router.replace('/banned');
+        return;
+      }
+      if (res.status === 409) {
+        // E-posta doğrulanmamış
+        show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
+        return;
+      }
+      if (res.status === 401) {
+        show('E-posta veya şifre hatalı.', 'error');
+        return;
+      }
+      if (!res.ok) {
+        const msg = (await res.json().catch(() => null))?.error ?? 'Giriş başarısız.';
+        show(String(msg), 'error');
         return;
       }
 
       show('Giriş başarılı, yönlendiriliyorsunuz...', 'success');
-      router.refresh();
-      router.push('/create_request');
+      router.replace('/account');
     } catch (err) {
       console.error('Girişte beklenmeyen hata:', err);
       show('Beklenmeyen bir hata oluştu.', 'error');
@@ -64,9 +76,7 @@ export default function LoginForm() {
 
   return (
     <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
-      
       <Grid container spacing={2}>
-      
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <TextField
             label="E-posta"
@@ -105,34 +115,42 @@ export default function LoginForm() {
                 ...(typeof glassTextFieldProps.InputProps?.sx === 'function'
                   ? glassTextFieldProps.InputProps.sx(theme)
                   : (glassTextFieldProps.InputProps?.sx ?? {})),
-                // alan bazlı küçük ekler gerekiyorsa buraya
               }),
             }}
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 12, md: 12 }} >
+        <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <Button
             type="submit"
             variant="outlined"
             color="primary"
             fullWidth
             disabled={loading}
-            sx={{ py: 1.25, textTransform: 'capitalize', borderRadius: 7, borderColor: 'white', color: 'white' }}
+            sx={(t) => ({
+              py: 1.25,
+              textTransform: 'capitalize',
+              borderRadius: 7,
+              borderColor: t.palette.divider,
+              color: t.palette.text.primary,
+            })}
           >
             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </Button>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }} >
-          <Typography>
-            <Link href="/forgot-password">
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Typography color="text.secondary">
+            <Link href="/forgot-password" style={{ textDecoration: 'none' }}>
               <Typography
                 component="span"
-                color="white"
-                fontStyle="italic"
-                fontWeight={500}
-                sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                sx={{
+                  color: 'primary.main',
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
               >
                 Şifremi unuttum
               </Typography>
@@ -140,16 +158,19 @@ export default function LoginForm() {
           </Typography>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }}  sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-          <Typography color="lightblue">
+        <Grid size={{ xs: 12, sm: 6 }} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+          <Typography color="text.secondary">
             Hesabınız yoksa{' '}
-            <Link href="/register">
+            <Link href="/register" style={{ textDecoration: 'none' }}>
               <Typography
                 component="span"
-                color="white"
-                fontStyle="italic"
-                fontWeight={500}
-                sx={{ cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                sx={{
+                  color: 'primary.main',
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
               >
                 kayıt olun
               </Typography>
