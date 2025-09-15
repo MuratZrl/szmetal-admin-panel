@@ -55,8 +55,5 @@
     "supabase": "^2.40.7",
     "tailwindcss": "^4",
     "typescript": "^5.9.2"
-  },
-  "overrides": {
-    "pdfjs-dist": "4.8.69"
   }
 }
