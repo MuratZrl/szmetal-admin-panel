@@ -5,6 +5,13 @@ export type AppRole = typeof ROLE_OPTIONS[number];
 export const STATUS_OPTIONS = ['Active', 'Inactive', 'Banned'] as const;
 export type AppStatus = typeof STATUS_OPTIONS[number];
 
+
+export const STATUS_LABELS_TR: Record<AppStatus, string> = {
+  Active: 'Aktif',
+  Inactive: 'İnaktif',
+  Banned: 'Banlanan', // istersen 'Yasaklı' yaz
+};
+
 export function isAppRole(v: unknown): v is AppRole {
   return typeof v === 'string' && (ROLE_OPTIONS as readonly string[]).includes(v);
 }

@@ -16,6 +16,8 @@ import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
 // Dashboard’daki ile aynı zaman etiketi
 import { get6RollingMonthRange } from '@/features/dashboard/utils/rollingMonths';
 
+import { STATUS_OPTIONS, type AppStatus, STATUS_LABELS_TR } from '@/features/clients/constants/users';
+
 export const revalidate = 60;
 
 export default async function Page() {
@@ -27,6 +29,18 @@ export default async function Page() {
 
   const { labelTR: labelTR6 } = get6RollingMonthRange();
 
+  // Sağ kart için çoklu seri
+  const series = (STATUS_OPTIONS as readonly AppStatus[]).map((s): Parameters<
+    typeof LineAreaChart
+  >[0]['series'][number] => ({
+    label: STATUS_LABELS_TR[s],       // 👈 TR etiket
+    data: line6m.byStatus[s] ?? [],
+    area: true,
+    showMark: true,
+    valueSuffix: ' kullanıcı',
+    colorKey: s === 'Active' ? 'success' : s === 'Inactive' ? 'warning' : 'error',
+  }));
+
   return (
     <Box px={1} py={2}>
       
@@ -36,7 +50,7 @@ export default async function Page() {
       {/* 2) Grafikler (yan yana, doğrudan sayfada) */}
       <Grid container spacing={2} sx={{ mt: 2 }} alignItems="stretch">
         <Grid size={{ xs: 12, md: 6 }}>
-          <ChartCard title="Toplam Kullanıcı" timeLabel={labelTR6}>
+          <ChartCard title="Toplam Kullanıcılar" timeLabel={labelTR6}>
             <LineAreaChart
               labels={line6m.labels}
               series={[
@@ -55,18 +69,10 @@ export default async function Page() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <ChartCard title="Toplam Aktif Kullanıcı" timeLabel={labelTR6}>
-            <LineAreaChart
+          <ChartCard title="Duruma Göre Toplam Kullanıcılar" timeLabel={labelTR6}>
+             <LineAreaChart
               labels={line6m.labels}
-              series={[
-                {
-                  label: 'Aktif',
-                  data: line6m.totalActiveUsers,
-                  area: true,
-                  showMark: true,
-                  valueSuffix: ' kullanıcı',
-                },
-              ]}
+              series={series}
               height={320}
               grid={{ horizontal: true, vertical: false }}
             />

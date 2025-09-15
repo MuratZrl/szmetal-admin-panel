@@ -1,10 +1,12 @@
 // src/features/clients/services/chart.server.ts
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+import { STATUS_OPTIONS, type AppStatus } from '@/features/clients/constants/users';
 
 export type ClientsLine6M = {
-  labels: string[];            // ör: ["13 Nis ‘25","13 May ‘25", ...]
-  totalUsers: number[];        // cutoff öncesi toplam kullanıcı
-  totalActiveUsers: number[];  // cutoff öncesi toplam aktif kullanıcı (status='Active')
+  labels: string[];                   // ["13 Nis ‘25", ...]
+  totalUsers: number[];               // toplam kullanıcı
+  totalActiveUsers: number[];         // aktif kullanıcı (geri uyum için bıraktım)
+  byStatus: Record<AppStatus, number[]>; // 👈 yeni: durum bazlı seriler
 };
 
 const IST_TZ = 'Europe/Istanbul';
@@ -79,23 +81,43 @@ function getLastNAnchoredCutoffs(n: number): { y: number; m: number; d: number; 
 export async function fetchClientsLine6M(): Promise<ClientsLine6M> {
   const supabase = await createSupabaseServerClient();
 
-  const cutoffs = getLastNAnchoredCutoffs(6); // 6 adet cutoff
+  const cutoffs = getLastNAnchoredCutoffs(6);
   const labels = cutoffs.map(c => c.label);
 
-  // Toplamlar: created_at < cutoff
+  // Toplam
   const totalQueries = cutoffs.map(c =>
-    supabase
-      .from('users')
-      .select('id', { count: 'exact', head: true })
-      .lt('created_at', c.iso)
+    supabase.from('users').select('id', { count: 'exact', head: true }).lt('created_at', c.iso)
   );
 
+  // Active (geri uyum için ayrı tutuyoruz)
   const activeQueries = cutoffs.map(c =>
-    supabase
-      .from('users')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'Active')
-      .lt('created_at', c.iso)
+    supabase.from('users').select('id', { count: 'exact', head: true })
+      .eq('status', 'Active').lt('created_at', c.iso)
+  );
+
+  // 👇 Tüm durumlar için seri
+  const statuses: AppStatus[] = STATUS_OPTIONS.slice() as AppStatus[];
+  const byStatus: Record<AppStatus, number[]> =
+    Object.fromEntries(statuses.map(s => [s, Array<number>(cutoffs.length).fill(0)])) as Record<AppStatus, number[]>;
+
+  // Her status için, her cutoff’ta head count
+  await Promise.all(
+    statuses.map(async (status) => {
+      const results = await Promise.all(
+        cutoffs.map(c =>
+          supabase
+            .from('users')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', status)
+            .lt('created_at', c.iso)
+        )
+      );
+      results.forEach((r, i) => {
+        if (r.error) console.error('clients line byStatus', status, 'idx', i, r.error);
+        const n = Number.isFinite(r.count as number) ? (r.count as number) : 0;
+        byStatus[status][i] = n;
+      });
+    })
   );
 
   const [totalResArr, activeResArr] = await Promise.all([
@@ -109,5 +131,5 @@ export async function fetchClientsLine6M(): Promise<ClientsLine6M> {
   const totalUsers = totalResArr.map(r => Number.isFinite(r.count as number) ? (r.count as number) : 0);
   const totalActiveUsers = activeResArr.map(r => Number.isFinite(r.count as number) ? (r.count as number) : 0);
 
-  return { labels, totalUsers, totalActiveUsers };
+  return { labels, totalUsers, totalActiveUsers, byStatus };
 }
