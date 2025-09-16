@@ -16,6 +16,9 @@ export type ProductInfoProps = {
   date: string;
   id: string;
 
+  hasCustomerMold?: boolean | null;
+  has_customer_mold?: boolean | null;
+
   // Opsiyonel teknik alanlar
   drawer?: Maybe<string>;
   control?: Maybe<string>;
@@ -47,10 +50,16 @@ export default function ProductInfo({
   drawer, control, scale, outerSizeMm, sectionMm2,
   tempCode, profileCode, manufacturerCode,
   labels, footerSlot,
+  hasCustomerMold, has_customer_mold,
 }: ProductInfoProps) {
 
   const fmt0 = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const nf = (n?: number | null) => (typeof n === 'number' ? fmt0.format(n) : undefined);
+
+  const mold =
+    typeof hasCustomerMold === 'boolean' ? hasCustomerMold
+    : typeof has_customer_mold === 'boolean' ? has_customer_mold
+    : null;
 
   // Slug → label çöz
   const variantText = labels?.variant?.[variant] ?? variant;
@@ -62,6 +71,7 @@ export default function ProductInfo({
 
   const hasTech =
     typeof unit_weight_g_pm === 'number' ||
+    typeof mold === 'boolean' ||
     !!(tempCode || profileCode || manufacturerCode || drawer || control || scale ||
        typeof outerSizeMm === 'number' || typeof sectionMm2 === 'number');
 
@@ -84,6 +94,10 @@ export default function ProductInfo({
               Teknik Bilgiler
             </Typography>
             <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+              {typeof mold === 'boolean' && (
+                <InfoItem label="Müşteri Kalıbı:" value={mold ? 'Evet' : 'Hayır'} />
+              )}
+              
               {typeof unit_weight_g_pm === 'number' && (
                 <InfoItem label="Birim Ağırlık (gr/m):" value={nf(unit_weight_g_pm)} />
               )}

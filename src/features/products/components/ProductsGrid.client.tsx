@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Grid } from '@mui/material';
 import ProductCard from '@/features/products/components/ProductCard.client';
-import type { Product } from '../types/product';
+import type { Product } from '@/features/products/types';
 
 export default function ProductsGrid({ products }: { products: Product[] }) {
   return (

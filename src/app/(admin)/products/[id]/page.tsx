@@ -16,7 +16,9 @@ import ProductMedia from '@/features/products/components/ProductMedia';
 import ProductHeader from '@/features/products/components/ProductHeader';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions';
 
-import { mapRowToProduct } from '@/features/products/types/product';
+import { withVersion } from '@/features/products/utils/url';
+import { mapRowToProduct } from '@/features/products/types';
+
 import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 
 type Props = { params: Promise<{ id: string }> };
@@ -107,15 +109,16 @@ export default async function ProductDetailPage({ params }: Props) {
       <ProductHeader code={product.code} name={product.name} />
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <ProductMedia
-            src={product.image ?? null}
-            fileUrl={product.filePublicUrl ?? null}  // mapRowToProduct bunu üretiyor olmalı
+            src={withVersion(product.image ?? null, product.updatedAt ?? null)}
+            fileUrl={withVersion(product.filePublicUrl ?? null, product.updatedAt ?? null)}
             fileExt={product.fileExt ?? null}
+            fileMime={product.fileMime ?? null}
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <ProductInfo
             variant={product.variant}
             category={product.category}
@@ -130,6 +133,8 @@ export default async function ProductDetailPage({ params }: Props) {
             outerSizeMm={product.outerSizeMm}
             sectionMm2={product.sectionMm2}
             unit_weight_g_pm={typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined}
+            has_customer_mold={row.has_customer_mold}   // DB’den snake
+            hasCustomerMold={product.hasCustomerMold}
             tempCode={product.tempCode}
             profileCode={product.profileCode}
             manufacturerCode={product.manufacturerCode}

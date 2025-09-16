@@ -63,6 +63,7 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
                 startIcon={<CloseIcon />}
                 disabled={!hasSelection}
                 onClick={clear}
+                draggable={false}
               >
                 Vazgeç
               </Button>
@@ -73,6 +74,7 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
                 startIcon={<DeleteOutlineIcon />}
                 disabled={!hasSelection}
                 onClick={() => setOpen(true)}
+                draggable={false}
               >
                 Seçilenleri sil {hasSelection ? `(${count})` : ''}
               </Button>
@@ -82,6 +84,7 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
                 variant="outlined"
                 startIcon={<DeleteForeverIcon />}
                 onClick={() => setOpenAll(true)}
+                draggable={false}
               >
                 Tümünü Sil
               </Button>
@@ -91,6 +94,7 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
                 href="/products/new"
                 variant="contained"
                 startIcon={<AddIcon />}
+                draggable={false}
               >
                 Ürün Ekle
               </Button>

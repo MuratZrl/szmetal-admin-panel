@@ -1,67 +1,59 @@
 // src/features/products/components/ProductMedia.tsx
+'use client';
+
 import Link from 'next/link';
 import { Paper, Box, Stack, Typography, Button, IconButton } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-type MediaKind = 'pdf' | 'image' | 'unknown';
+import { detectMediaKind } from '@/features/products/utils/media';
 
 type Props = {
-  /** Dosya URL'i (PDF ya da görsel) */
+  /** Ana URL (image veya pdf) */
   src?: string | null;
-  /** Yedek URL (src çözülemezse) */
+  /** Yedek URL (ana URL çözülemezse) */
   fileUrl?: string | null;
-  /** Uzantı ipucu (örn. 'pdf', 'png', 'webp', 'jpg', 'jpeg') */
+  /** Uzantı ipucu: 'pdf' | 'png' | 'webp' | 'jpg' | 'jpeg' */
   fileExt?: string | null;
+  fileMime?: string | null;    // ← yeni
   /** Erişilebilirlik için alt metin */
   alt?: string;
-  /** Kutu oranı */
+  /** Kutu oranı (varsayılan 4:3) */
   aspectRatio?: `${number} / ${number}` | number;
+  /** Görselde kırpma modu (PDF’yi etkilemez) */
+  objectFit?: 'contain' | 'cover';
 };
-
-function extFrom(url?: string | null): string {
-  if (!url) return '';
-  const clean = url.split('?')[0];
-  const dot = clean.lastIndexOf('.');
-  return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : '';
-}
-
-function detectKind(url?: string | null, extHint?: string | null): MediaKind {
-  const u = (url ?? '').trim();
-  if (!u) return 'unknown';
-
-  // data URL kontrolleri
-  if (u.startsWith('data:application/pdf')) return 'pdf';
-  if (u.startsWith('data:image/')) return 'image';
-
-  const ext = (extHint || extFrom(u)).toLowerCase();
-
-  if (ext === 'pdf') return 'pdf';
-  if (ext === 'png' || ext === 'webp' || ext === 'jpg' || ext === 'jpeg') return 'image';
-
-  // Bazı CDN'ler uzantıyı gizler; içerik tipini burada öğrenemeyiz.
-  return 'unknown';
-}
 
 export default function ProductMedia({
   src,
   fileUrl,
   fileExt,
+  fileMime,
   alt = 'Dosya',
-  aspectRatio = '4 / 3',
+  aspectRatio = '4 / 3.3',
+  objectFit = 'contain',
 }: Props) {
+
   const srcUrl = (src ?? '').trim();
   const fallbackUrl = (fileUrl ?? '').trim();
 
-  const srcKind = detectKind(srcUrl, fileExt);
-  const fbKind = detectKind(fallbackUrl, fileExt);
+  const srcKind = detectMediaKind({ url: srcUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
+  const fbKind  = detectMediaKind({ url: fallbackUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
 
+  // Tercih sırası: src (biliniyorsa) → fileUrl (biliniyorsa) → unknown
   const chosen =
     (srcUrl && srcKind !== 'unknown' && { url: srcUrl, kind: srcKind }) ||
     (fallbackUrl && fbKind !== 'unknown' && { url: fallbackUrl, kind: fbKind }) ||
     ({ url: '', kind: 'unknown' as const });
 
-  const showToolbar = chosen.kind !== 'unknown' && !!chosen.url;
+  // Unknown olsa bile bir URL varsa en azından “bağlantıyı aç” butonu gösterebiliriz
+  const anyUrl = srcUrl || fallbackUrl;
+  const showToolbar = !!chosen.url || !!anyUrl;
+
+  // PDF’yi sayfaya sığdırmak için viewer query parametreleri
+  const pdfViewUrl = chosen.kind === 'pdf' && chosen.url
+    ? `${chosen.url}#zoom=page-fit&view=FitH&toolbar=0&navpanes=0`
+    : '';
 
   return (
     <Paper
@@ -80,12 +72,16 @@ export default function ProductMedia({
       }}
       aria-label={alt}
     >
-      {/* Üst sağ köşe: yeni sekmede aç + indir */}
+      {/* Sağ üst araç çubuğu */}
       {showToolbar ? (
-        <Stack direction="row" spacing={0.5} sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
+        <Stack
+          direction="row"
+          spacing={0.5}
+          sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+        >
           <IconButton
             LinkComponent={Link}
-            href={chosen.url}
+            href={(chosen.url || anyUrl) as string}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Yeni sekmede aç"
@@ -95,7 +91,7 @@ export default function ProductMedia({
           </IconButton>
           <IconButton
             component="a"
-            href={chosen.url}
+            href={(chosen.url || anyUrl) as string}
             download
             aria-label="İndir"
             size="small"
@@ -105,11 +101,12 @@ export default function ProductMedia({
         </Stack>
       ) : null}
 
+      {/* İçerik */}
       {chosen.kind === 'pdf' && chosen.url ? (
+        // PDF: tarayıcının yerleşik PDF görüntüleyicisi
         <Box
-          // PDF gömme: destekleyen tarayıcılarda direkt önizleme
           component="object"
-          data={`${chosen.url}#toolbar=0&navpanes=0`}
+          data={pdfViewUrl}
           type="application/pdf"
           sx={{ width: '100%', height: '100%', border: 0 }}
         >
@@ -121,47 +118,55 @@ export default function ProductMedia({
               href={chosen.url}
               target="_blank"
               rel="noopener noreferrer"
-              startIcon={<DownloadIcon />}
+              startIcon={<OpenInNewIcon />}
               size="small"
+              sx={{ textTransform: 'none' }}
             >
               PDF’i aç
             </Button>
           </Stack>
         </Box>
       ) : chosen.kind === 'image' && chosen.url ? (
-        // Görsel önizleme
+        // Görsel
         <Box
           component="img"
           src={chosen.url}
           alt={alt}
+          draggable={false}
+          loading='lazy'
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            // basit metin fallback
+            const img = e.currentTarget as HTMLImageElement;
+            img.style.display = 'none';
+            const parent = img.parentElement;
+            if (parent) parent.innerHTML = '<div style="opacity:.75;font:14px system-ui">Görsel yüklenemedi</div>';
+          }}
           sx={{
             width: '100%',
             height: '100%',
-            objectFit: 'contain',
             display: 'block',
             userSelect: 'none',
+            objectFit,
           }}
-          draggable={false}
-          loading="lazy"
-          referrerPolicy="no-referrer"
         />
       ) : (
-        // Bilinmeyen ya da URL yok
+        // Bilinmeyen/boş
         <Stack spacing={1} alignItems="center">
           <Typography variant="body2" color="text.secondary">
             Önizleme yok
           </Typography>
-          {fallbackUrl ? (
+          {anyUrl ? (
             <Button
               component={Link}
-              href={fallbackUrl}
+              href={anyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              startIcon={<DownloadIcon />}
+              startIcon={<OpenInNewIcon />}
               size="small"
               sx={{ textTransform: 'none' }}
             >
-              Dosyayı indir
+              Bağlantıyı aç
             </Button>
           ) : null}
         </Stack>

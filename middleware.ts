@@ -76,7 +76,7 @@ export async function middleware(req: NextRequest) {
   // Banned ise: oturumu kapat ve /banned
   if (!error && me?.status === 'Banned') {
     await supabase.auth.signOut();
-    const r = NextResponse.redirect(new URL('/banned', req.url));
+    const r = NextResponse.redirect(new URL('/unauthorized', req.url));
     return withSupabaseCookies(nextRes, r);
   }
 

@@ -3,31 +3,30 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+
 import {
   Card, CardActionArea, CardContent, CardMedia,
-  Typography, Chip, Stack, Checkbox, Box, useMediaQuery
+  Typography, Chip, Stack, Checkbox, Box, useMediaQuery, Button,
 } from '@mui/material';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
 import { alpha, useTheme } from '@mui/material/styles';
 
 import HoverPreview from '@/features/products/components/HoverPreview.client';
 
-import type { Product } from '../types/product';
+import { withVersion } from '@/features/products/utils/url';
+import { detectMediaKind } from '@/features/products/utils/media';
+
+import type { Product } from '@/features/products/types';
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
-import { LabelMaps } from '@/features/products/utils/labelMaps.server';
+import type { LabelMaps } from '@/features/products/utils/labelMaps.server';
+
 import { prettyTr } from '@/features/products/utils/tr-text';
 
 type Props = { product: Product; labels?: LabelMaps };
 
-// --- yardımcılar
-function extFrom(url?: string | null): string {
-  if (!url) return '';
-  const clean = url.split('?')[0];
-  const dot = clean.lastIndexOf('.');
-  return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : '';
-}
-
+/* ---------------- helpers ---------------- */
 function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): string {
   const { bg, fg, text } = opts;
   const svg = `
@@ -45,107 +44,83 @@ function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): stri
 export default function ProductCard({ product, labels }: Props) {
   const theme = useTheme();
   const downSm = useMediaQuery(theme.breakpoints.down('sm'));
+
   const { isSelected, toggle } = useProductsSelection();
   const selected = isSelected(product.id);
 
-  // component içinde, state'ler
-  const [hoverAnchor, setHoverAnchor] = React.useState<HTMLElement | null>(null);
-  const [hoverOpen, setHoverOpen] = React.useState<boolean>(false);
+  const variantLabel  = prettyTr(product.variant,     labels?.variant);
+  const categoryLabel = prettyTr(product.category,    labels?.category);
+  const subLabel      = prettyTr(product.subCategory, labels?.subcategory);
 
-  // Tarayıcı hover destekliyor mu? (mobilde açmayalım)
-  const canHover = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  }, []);
+  const versionedImage = withVersion(product.image ?? null, product.updatedAt ?? product.createdAt ?? null);
 
-  // titreme önlemek için minik gecikme
-  const openTimer = React.useRef<number | null>(null);
-  const closeTimer = React.useRef<number | null>(null);
+  const kind = detectMediaKind({
+    url: versionedImage ?? undefined,
+    mime: product.fileMime ?? undefined,
+    extHint: product.fileExt ?? undefined,
+  });
 
-  function clearTimers() {
-    if (openTimer.current) { window.clearTimeout(openTimer.current); openTimer.current = null; }
-    if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
-  }
-
-  function handleEnter(e: React.MouseEvent<HTMLElement>) {
-    if (!canHover) return;
-    clearTimers();
-    setHoverAnchor(e.currentTarget);
-    openTimer.current = window.setTimeout(() => setHoverOpen(true), 120);
-  }
-
-  function handleLeave() {
-    if (!canHover) return;
-    clearTimers();
-    closeTimer.current = window.setTimeout(() => setHoverOpen(false), 120);
-  }
-
-  // Popper üstüne gelince kapanmasın
-  function handlePreviewEnter() {
-    if (!canHover) return;
-    clearTimers();
-  }
-  function handlePreviewLeave() {
-    if (!canHover) return;
-    handleLeave();
-  }
-
-  // unmount'ta timer temizliği
-  React.useEffect(() => clearTimers, []);
-
-
-  function isRaster(u?: string | null): boolean {
-    const ext = (u ? extFrom(u) : '').toLowerCase();
-    const rasterByExt = /^(png|jpe?g|webp|gif|avif)$/.test(ext);
-
-    // undefined → false
-    const isDataImageButNotSvg = !!(u?.startsWith('data:image/') && !u?.startsWith('data:image/svg'));
-
-    return rasterByExt || isDataImageButNotSvg;
-  }
-
-  const variantLabel   = prettyTr(product.variant,     labels?.variant);
-  const categoryLabel  = prettyTr(product.category,    labels?.category);
-  const subLabel       = prettyTr(product.subCategory, labels?.subcategory);
-
-  const ext = String(product.fileExt ?? extFrom(product.image)).toLowerCase();
-  const isPdf = ext === 'pdf';
-
-  // Tema uyumlu placeholder
-  const placeholderSrc = React.useMemo<string>(() => {
+  const isPdf   = kind === 'pdf';
+  const isImage = kind === 'image';
+  
+  const placeholderSrc = React.useMemo(() => {
     const bg = theme.palette.mode === 'dark'
-      ? alpha(theme.palette.grey[900], 0.6)
-      : theme.palette.grey[100];
+    ? alpha(theme.palette.grey[900], 0.6)
+    : theme.palette.grey[100];
     const fg = theme.palette.mode === 'dark'
-      ? theme.palette.grey[300]
-      : theme.palette.text.secondary;
+    ? theme.palette.grey[300]
+    : theme.palette.text.secondary;
     return svgPlaceholder4x3({ bg, fg, text: isPdf ? 'PDF Önizleme' : 'Görsel yok' });
   }, [theme.palette.mode, theme.palette.grey, theme.palette.text, isPdf]);
+  
+  const [imgError, setImgError] = React.useState(false);
+  const imageSrc = isImage ? String(versionedImage ?? '') : placeholderSrc;
+  const hasPreview = (isPdf && !!versionedImage) || (isImage && !imgError);
+  const finalImgSrc = imgError ? placeholderSrc : imageSrc;
 
-  const [imgError, setImgError] = React.useState<boolean>(false);
+  // Hover state + anchor
+  const [hoverOpen, setHoverOpen] = React.useState(false);
+  const hoverTimers = React.useRef<{ close?: number }>({});
 
-  // Önizleme kaynağı
-  const previewSrc = isPdf
-    ? 'about:blank'
-    : isRaster(product.image)
-      ? (product.image as string)
-      : placeholderSrc;
+  // Medya alanı ölçüsü (görsel 1.5x için)
+  const [mediaRect, setMediaRect] = React.useState<{ width: number; height: number } | null>(null);
+  const mediaBoxRef = React.useRef<HTMLDivElement | null>(null);
 
-  const finalImgSrc = imgError ? placeholderSrc : previewSrc;
+  React.useEffect(() => {
+    if (!mediaBoxRef.current) return;
+    const el = mediaBoxRef.current;
+    const ro = new ResizeObserver(entries => {
+      const r = entries[0].contentRect;
+      setMediaRect({ width: r.width, height: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleEnter = () => {
+    if (hoverTimers.current.close) {
+      window.clearTimeout(hoverTimers.current.close);
+      hoverTimers.current.close = undefined;
+    }
+    // Mobilde hover saçmalığı olmasın
+    if (!downSm) setHoverOpen(true);
+  };
+
+  const handleLeave = () => {
+    hoverTimers.current.close = window.setTimeout(() => setHoverOpen(false), 100);
+  };
 
   return (
     <Card
-      variant='elevation'
+      variant="elevation"
       sx={{
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         borderRadius: 2,
-        // Küçük ekranda içerik kadar, md+ eş yükseklik grid için 100%
         height: { xs: 'auto', md: '100%' },
       }}
     >
-
       <CardActionArea
         LinkComponent={Link}
         href={`/products/${product.id}`}
@@ -155,92 +130,58 @@ export default function ProductCard({ product, labels }: Props) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'stretch',
-          minHeight: 0, // flex overflow/çakışma önler
+          minHeight: 0,
           borderRadius: 0,
           transition: 'outline-color .2s',
         }}
       >
-
-        <Box
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
-          sx={{
-            position: 'relative',
-            width: '100%',
-            height: { xs: 250, sm: 285, md: 425 }, // istediğin kadar büyüt
-            overflow: 'hidden',
-            flex: '0 0 auto',
-          }}
-        >
-          {isPdf && product.image
-            ? (
-              // Mobile’da PDF iframe yok, ağır
-              downSm ? (
-                <CardMedia
-                  component="img"
-                  image={placeholderSrc}
-                  alt={`${product.name || 'Ürün'} PDF`}
-                  draggable={false}
-                  sx={{ width: '100%', height: '100%', objectFit: 'cover', bgcolor: 'background.default' }}
-                />
-              ) : (
-                <Box
-                  component="iframe"
-                  // PDF'yi çerçeveye sığdır: zoom=page-fit / view=Fit
-                  // toolbar/navpanes gizle
-                  src={`${product.image}#zoom=page-fit&view=Fit&toolbar=0&navpanes=0`}
-                  title={`${product.name} PDF`}
-                  loading="eager"
-                  aria-hidden
-                  // bazı tarayıcılarda hâlâ çalışabiliyor, dursun:
-                  scrolling="no"
-                  sx={{
-                    position: 'relative',
-                    inset: 0,
-                    // HILE: iframe’i sağdan 20px genişlet → scrollbar görünür alanın dışında kalır
-                    width: 'calc(100% + 20px)',
-                    height: '100%',
-                    border: 0,
-                    pointerEvents: 'none',
-                    bgcolor: 'background.default',
-                  }}
-                />
-              )
-            ) : (
-              <CardMedia
-                component={'img'}
-                image={finalImgSrc}
-                alt={product.name || 'Ürün'}
-                draggable={false}
-                loading='lazy'
-                // <img>’e geçer, CardMedia forward eder
-                sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 33vw"
-                onError={() => setImgError(true)}
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  bgcolor: 'background.default',
-                }}
-              />
-            )
-          }
-        </Box>
-
+      {/* Media area */}
+      <Box
+        ref={mediaBoxRef}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '5 / 4',
+          overflow: 'hidden',
+          flex: '0 0 auto',
+        }}
+      >
+        {isPdf && versionedImage ? (
+          <Box sx={{ position: 'absolute', inset: 0, '& > iframe': { width: '100%', height: '100%', border: 0, display: 'block' } }}>
+            <iframe
+              src={`${versionedImage}#page=1&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=0`}
+              title={`${product.name} PDF`}
+              loading="lazy"
+              style={{ pointerEvents: 'none' }}
+            />
+          </Box>
+        ) : (
+          <CardMedia
+            // Not: Next/Image ile CardMedia kullanıyorsan 'image' prop'u Next/Image'a 'src' diye gitmez.
+            // En güvenlisi component="img" kullanmak.
+            component="img"
+            image={finalImgSrc}
+            alt={product.name || 'Ürün'}
+            draggable={false}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            sx={{ position: 'absolute', inset: 0, width: 1, height: 1, objectFit: 'cover', bgcolor: 'background.default' }}
+          />
+        )}
+      </Box>
         <CardContent
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            flex: '1 1 auto',     // ← kalan yüksekliği alsın
+            flex: '1 1 auto',
             gap: 0.75,
             px: { xs: 1.5, sm: 2 },
             py: { xs: 1.25, sm: 1.5 },
-            width: 1,             // ← 85% bırak; hizalama sapması yapıyor
+            width: 1,
           }}
         >
-          {/* Başlık 2 satır clamp */}
           <Typography
             variant="subtitle1"
             title={`${product.code} • ${product.name}`}
@@ -268,19 +209,15 @@ export default function ProductCard({ product, labels }: Props) {
           <Stack
             direction="row"
             alignItems="center"
-            sx={{
-              flexWrap: 'wrap',
-              gap: 1,
-              maxWidth: 1, // 100%
-            }}
+            sx={{ flexWrap: 'wrap', gap: 1, maxWidth: 1 }}
           >
-            <Chip 
-              size="small" 
-              label={`${variantLabel} Profilleri`} 
+            <Chip
+              size="small"
+              label={`${variantLabel} Profilleri`}
               sx={{
                 textTransform: 'none',
-                maxWidth: 1,           // 100%
-                height: 'auto',        // sabit yükseklik yok
+                maxWidth: 1,
+                height: 'auto',
                 alignItems: 'flex-start',
                 '& .MuiChip-label': {
                   display: 'block',
@@ -292,15 +229,14 @@ export default function ProductCard({ product, labels }: Props) {
                 },
               }}
             />
-            
-            <Chip 
-              size="small" 
-              label={`${categoryLabel} / ${subLabel}`} 
-              variant="filled" 
+            <Chip
+              size="small"
+              label={`${categoryLabel} / ${subLabel}`}
+              variant="filled"
               sx={{
                 textTransform: 'none',
-                maxWidth: 1,           // 100%
-                height: 'auto',        // sabit yükseklik yok
+                maxWidth: 1,
+                height: 'auto',
                 alignItems: 'flex-start',
                 '& .MuiChip-label': {
                   display: 'block',
@@ -313,32 +249,39 @@ export default function ProductCard({ product, labels }: Props) {
               }}
             />
           </Stack>
-
         </CardContent>
-
       </CardActionArea>
 
-      {/* ↓↓↓ YENİ: her daim en altta duran footer */}
+      {/* footer */}
       <Box
         component="footer"
         sx={{
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center',
           gap: 1,
-          px: { xs: 1, sm: 1.5, md: 0.5 },
+          px: { xs: 1, sm: 1.5, md: 1.5 },
           py: { xs: 0.5, sm: 0.75 },
           borderTop: '1px solid',
           borderColor: 'divider',
-          bgcolor: t => alpha(t.palette.background.paper, 0.8),
+          bgcolor: t => alpha(t.palette.background.paper, 0.9),
         }}
       >
+        <Button
+          LinkComponent={Link}
+          href={`/products/${product.id}`}
+          size="small"
+          variant="text"
+          startIcon={<InfoOutlineIcon />}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Detaylar
+        </Button>
+
         <Checkbox
           aria-label="Ürünü seç"
           size="small"
           checked={selected}
-          // Link CardActionArea’nın dışında kaldığı için onClick stopPropagation şart değil,
-          // yine de alışkanlıktan koyuyorum; zarar gelmez.
           onClick={(e) => e.stopPropagation()}
           onChange={() => toggle(product.id)}
           icon={<RadioButtonUncheckedIcon />}
@@ -346,17 +289,18 @@ export default function ProductCard({ product, labels }: Props) {
         />
       </Box>
 
+      {/* HOVER PREVIEW: PDF sağda A4 tek sayfa, görsel 1.5x */}
+    {!downSm && (
       <HoverPreview
-        anchorEl={hoverAnchor}
-        open={hoverOpen}
-        src={isPdf && product.image ? String(product.image) : finalImgSrc} // ← PDF ise gerçek dosya URL’si
-        alt={product.name || 'Ürün'}
-        isPdf={isPdf}
-        onMouseEnter={handlePreviewEnter}
-        onMouseLeave={handlePreviewLeave}
-        maxWidth={460}
+        kind={isPdf ? 'pdf' : isImage ? 'image' : 'other'}
+        open={hoverOpen && hasPreview}
+        anchorEl={mediaBoxRef.current}
+        src={isPdf ? String(versionedImage ?? '') : isImage ? finalImgSrc : undefined}
+        baseSize={mediaRect}
+        scale={2.15} // görsel preview daha da büyük
+        pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460  }} // PDF preview daha da iri
       />
-
+    )}
     </Card>
   );
 }

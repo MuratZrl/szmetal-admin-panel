@@ -104,6 +104,7 @@ export type Database = {
           file_name: string | null
           file_path: string | null
           file_size: number | null
+          has_customer_mold: boolean
           id: number
           image: string | null
           manufacturer_code: string | null
@@ -116,6 +117,7 @@ export type Database = {
           subcategory_id: string | null
           temp_code: string | null
           unit_weight_g_pm: number
+          updated_at: string
           variant: string
         }
         Insert: {
@@ -132,6 +134,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           file_size?: number | null
+          has_customer_mold?: boolean
           id?: number
           image?: string | null
           manufacturer_code?: string | null
@@ -144,6 +147,7 @@ export type Database = {
           subcategory_id?: string | null
           temp_code?: string | null
           unit_weight_g_pm?: number
+          updated_at?: string
           variant: string
         }
         Update: {
@@ -160,6 +164,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           file_size?: number | null
+          has_customer_mold?: boolean
           id?: number
           image?: string | null
           manufacturer_code?: string | null
@@ -172,6 +177,7 @@ export type Database = {
           subcategory_id?: string | null
           temp_code?: string | null
           unit_weight_g_pm?: number
+          updated_at?: string
           variant?: string
         }
         Relationships: [
@@ -459,6 +465,9 @@ export type Database = {
           company: string | null
           country: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deleted_reason: string | null
           email: string
           id: string
           image: string | null
@@ -471,6 +480,9 @@ export type Database = {
           company?: string | null
           country?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deleted_reason?: string | null
           email: string
           id: string
           image?: string | null
@@ -483,6 +495,9 @@ export type Database = {
           company?: string | null
           country?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deleted_reason?: string | null
           email?: string
           id?: string
           image?: string | null
@@ -652,6 +667,9 @@ export type Database = {
           company: string | null
           country: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deleted_reason: string | null
           email: string
           id: string
           image: string | null

@@ -1,3 +1,5 @@
+// features/products/forms/helpers.ts
+
 /** Kategori ağacı tipini ProductDicts’e bağımlı olmadan tanımlayalım */
 export type CategoryTree = Record<
   string,
@@ -11,16 +13,22 @@ export type CategoryOption = { slug: string; name: string };
 export type SubCategoryOption = { slug: string; name: string };
 
 export type CategoryHelpers = {
+
   /** Tüm parent kategoriler (slug, name) */
   categoryOptions: CategoryOption[];
+
   /** Seçili parent’a göre alt kategoriler */
   getSubCatsFor: (categorySlug: string | null | undefined) => SubCategoryOption[];
+
   /** Alt kategori slug → görünen ad */
   subLabelMap: Map<string, string>;
+
   /** Kategori slug → görünen ad */
   categoryLabelMap: Map<string, string>;
+
   /** Alt kategorinin sahibi parent’ı bulur */
   findOwnerCategory: (subSlug: string) => string | null;
+  
   /** Tüm alt kategoriler (unique) */
   allSubCats: SubCategoryOption[];
 };

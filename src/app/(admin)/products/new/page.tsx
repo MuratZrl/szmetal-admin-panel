@@ -1,41 +1,35 @@
 // app/(admin)/products/new/page.tsx
 import { getSessionRole } from '@/lib/supabase/auth/getSessionRole.server';
-
 import { redirect } from 'next/navigation';
 
-import { Box, Divider, Typography, Grid } from '@mui/material';
+import { Box, Grid, Divider, Typography } from '@mui/material';
+
 
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
-
-import ProductForm from '@/features/products/components/ProductForm.client';
+import ProductCreateForm from '@/features/products/components/ProductCreateForm.client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProductCreatePage() {
-  const dicts = await fetchProductDicts();
-
+  // yetkiyi önce kontrol et, boşuna sözlük çekme
   const role = await getSessionRole();
   if (role !== 'Admin') redirect('/unauthorized');
 
+  const dicts = await fetchProductDicts();
+
   return (
     <Box px={2} py={2}>
-
       <Typography variant="h5" sx={{ mb: 1 }}>
         Yeni Ürün Oluştur
       </Typography>
 
       <Divider sx={{ mb: 2 }} />
 
-      <Grid container >
-
+      <Grid container>
         <Grid size={{ xs: 12, md: 8 }}>
-
-          <ProductForm dicts={dicts} />
-
+          <ProductCreateForm dicts={dicts} />
         </Grid>
-
       </Grid>
-      
     </Box>
   );
 }

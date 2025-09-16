@@ -1,4 +1,7 @@
+// features/products/forms/mapper.ts
+
 import type { Database } from '@/types/supabase';
+import type { CustomerMoldSelect } from './schema'; // <-- select tipi ('' | 'Evet' | 'Hayır')
 
 type ProductsInsert = Database['public']['Tables']['products']['Insert'];
 type ProductsUpdate = Database['public']['Tables']['products']['Update'];
@@ -16,6 +19,7 @@ export type ProductFormValuesCore = {
   date: string;         // yyyy-mm-dd
 
   unitWeightG: number | null; // gr/m
+  customerMold: CustomerMoldSelect; // '' | 'Evet' | 'Hayır'
 
   // şemada .defined() olan düz string alanlar
   drawer: string;
@@ -56,6 +60,13 @@ export function trimToNull(v: string | null | undefined): string | null {
   return s.length ? s : null;
 }
 
+/** Select değeri → boolean|null */
+function moldSelectToBool(v: CustomerMoldSelect): boolean | undefined {
+  if (v === 'Evet') return true;
+  if (v === 'Hayır') return false;
+  return undefined; // '' → null
+}
+
 /** create için DB payload (camelCase → snake_case) */
 export function toInsertPayload(
   v: ProductFormValuesWithRelations,
@@ -76,9 +87,12 @@ export function toInsertPayload(
 
     date: v.date,
 
-    // gr/m → DB’de aynen integer tutuyorsan yuvarlayalım
+    // gr/m → DB’de integer ise yuvarlayalım
     unit_weight_g_pm:
       v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG)),
+
+    // Müşteri kalıbı
+    has_customer_mold: moldSelectToBool(v.customerMold),
 
     drawer: trimToNull(v.drawer),
     control: trimToNull(v.control),
@@ -130,6 +144,11 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
       : Math.round(Number(v.unitWeightG));
   }
 
+  // Müşteri kalıbı: '' geldiyse null yap; undefined ise dokunma
+  if (v.customerMold !== undefined) {
+    p.has_customer_mold = moldSelectToBool(v.customerMold);
+  }
+
   if (v.drawer !== undefined)             p.drawer = trimToNull(v.drawer);
   if (v.control !== undefined)            p.control = trimToNull(v.control);
   if (v.scale !== undefined)              p.scale = trimToNull(v.scale);
@@ -156,7 +175,7 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
   return p;
 }
 
-/** DB satırını form varsayılanlarına çevirir (edit initial) */
+/** DB Row → form varsayılanları (edit initial) */
 export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
   return {
     name: row.name ?? '',
@@ -169,6 +188,12 @@ export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
     date: row.date ?? new Date().toISOString().slice(0, 10),
 
     unitWeightG: row.unit_weight_g_pm ?? null,
+
+    // DB → Select
+    customerMold:
+      row.has_customer_mold == null
+        ? 'Hayır'                      // null/undefined ise Hayır göster
+        : row.has_customer_mold ? 'Evet' : 'Hayır',
 
     drawer: row.drawer ?? '',
     control: row.control ?? '',

@@ -14,15 +14,16 @@ import {
   Stack,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import TimeTicker from './TimeTicker.client';
+
 import RatesTicker from './RatesTicker.client';
+import TimeTicker from './TimeTicker.client';
 
 type Props = { username: string; role: string; image: string | null };
 
 function roleChipColor(role: string | null):
   'default' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' {
   const r = (role ?? '').toLowerCase();
-  if (r === 'admin') return 'secondary';
+  if (r === 'admin') return 'warning';
   if (r === 'manager') return 'info';
   if (r === 'user') return 'default';
   if (r === 'banned') return 'error';
@@ -33,13 +34,17 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
   const theme = useTheme();
   const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
   const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
+  const isDark = theme.palette.mode === 'dark';
 
   const borderColor = alpha(theme.palette.divider, 0.5);
-  const gradient = `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.10)}, ${alpha(
-    theme.palette.info.main,
-    0.10
-  )})`;
-  const avatarBg = alpha(theme.palette.primary.main, 0.2);
+  const gradientAlpha = isDark ? 0.04 : 0.025;
+  const gradient = `linear-gradient(135deg, ${alpha(theme.palette.primary.main, gradientAlpha)}, ${alpha(theme.palette.info.main, gradientAlpha)})`;
+  const avatarBg = alpha(theme.palette.primary.main, 0.22);
+
+  const roleKey = roleChipColor(role);
+
+  // Koyu temada: arka plan role renginin %16 opaklığı, yazı aynı rengin "light" tonu.
+  // 'default' için nötr, okunur bir şema.
 
   return (
     <Paper
@@ -61,7 +66,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
           background: gradient,
           zIndex: 0,
         },
-        backdropFilter: 'blur(6px)',
+        backdropFilter: 'blur(0px)',
       }}
     >
       <Grid
@@ -80,6 +85,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
                 width: { xs: 36, sm: 44 },
                 height: { xs: 36, sm: 44 },
                 bgcolor: avatarBg,
+                color: theme.palette.primary.contrastText,
                 flex: '0 0 auto',
               }}
             >
@@ -89,13 +95,22 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
             <Box sx={{ minWidth: 0 }}>
               <Typography
                 variant="h6"
-                fontWeight={600}
+                fontWeight={700}
                 lineHeight={1.15}
                 noWrap
-                sx={{ fontSize: { xs: 16, sm: 18 } }}
+                color="text.primary"
+                sx={{
+                  fontSize: { xs: 16, sm: 18 },
+                  textShadow: isDark ? '0 1px 0 rgba(0,0,0,0.45)' : 'none',
+                }}
               >
-                Merhaba,{' '}
-                <Box component="span" sx={{ color: 'primary.main' }}>
+                Merhaba,{` `}
+                <Box
+                  component="span"
+                  sx={{
+                    color: isDark ? 'primary.light' : 'secondary.main',
+                  }}
+                >
                   {username}
                 </Box>
               </Typography>
@@ -104,12 +119,18 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
               <Chip
                 size="small"
                 label={role}
-                color={roleChipColor(role)}
-                variant="outlined"
+                color={roleKey}
+                variant="outlined"              // zemin transparan kalır
                 sx={{
                   mt: 0.5,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   display: { xs: 'none', sm: 'inline-flex' },
+                  // SADECE YAZI RENGİNİ değiştir: border ve arka plan aynen kalsın
+                  ...(isDark
+                    ? (roleKey === 'default'
+                        ? { '& .MuiChip-label': { color: alpha(theme.palette.text.primary, 0.85) } }
+                        : { '& .MuiChip-label': { color: theme.palette[roleKey].light } })
+                    : {}),
                 }}
               />
             </Box>
@@ -117,7 +138,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
         </Grid>
 
         {/* Sağ: canlı saat + kurlar */}
-        <Grid size={{ xs: 12, md: 4, sm: 4 }} >
+        <Grid size={{ xs: 12, md: 4, sm: 4 }}>
           <Stack
             direction="row"
             spacing={{ xs: 1, sm: 1.25, md: 2 }}
@@ -131,11 +152,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
               density={isMdDown ? 'ultra' : 'compact'}
               showMeta={!isMdDown}
             />
-            <TimeTicker
-              timeZone="Europe/Istanbul"
-              dense
-              showSeconds={!isSmDown}
-            />
+            <TimeTicker timeZone="Europe/Istanbul" dense showSeconds={!isSmDown} />
           </Stack>
         </Grid>
       </Grid>

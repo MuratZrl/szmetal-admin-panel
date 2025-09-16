@@ -1,147 +1,112 @@
-// features/products/components/HoverPreview.client.tsx
 'use client';
 
 import * as React from 'react';
-import { Popper, Paper, Box, alpha, useTheme, CircularProgress } from '@mui/material';
-import PdfPreview from '@/features/products/components/PDFpreview.client';
-import Image from 'next/image';
+import { Popper, Paper, Box } from '@mui/material';
+
+type Kind = 'pdf' | 'image' | 'other';
+
+type BreakWidths = Partial<Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', number>>;
 
 type HoverPreviewProps = {
-  anchorEl: HTMLElement | null;
+  kind: Kind;
   open: boolean;
-  src: string;
-  alt: string;
-  isPdf?: boolean;
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
-  maxWidth?: number; // px
+  anchorEl: HTMLElement | null;
+  src?: string | null;
+  baseSize?: { width: number; height: number } | null;
+  // YENİ: büyütme faktörü (görseller için)
+  scale?: number;
+  // YENİ: PDF genişlikleri (breakpoint bazlı)
+  pdfWidths?: BreakWidths;
 };
 
 export default function HoverPreview({
-  anchorEl,
+  kind,
   open,
+  anchorEl,
   src,
-  alt,
-  isPdf = false,
-  onMouseEnter,
-  onMouseLeave,
-  maxWidth = 360,
+  baseSize,
+  scale = 2, // eskiden 1.5 idi; default'u zaten daha büyük yaptık
+  pdfWidths,
 }: HoverPreviewProps) {
-  const theme = useTheme();
+  if (!open || !anchorEl || !src) return null;
 
-  // İç kutunun gerçek px genişliğini ölç (PdfPreview için lazım)
-  const boxRef = React.useRef<HTMLDivElement | null>(null);
-  const [dims, setDims] = React.useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  const isPdf = kind === 'pdf';
+  const isImage = kind === 'image';
 
-  // Yüklenme durumu
-  const [loading, setLoading] = React.useState<boolean>(false);
+  // Görsel için hedef boyut (daha büyük)
+  const imgWidth  = baseSize ? Math.round(baseSize.width  * scale) : 540; // 360 -> 540
+  const imgHeight = baseSize ? Math.round(baseSize.height * scale) : 405; // 270 -> 405
 
-  React.useLayoutEffect(() => {
-    if (!boxRef.current) return;
-    const el = boxRef.current;
-    const compute = () => {
-      const w = Math.max(1, Math.floor(el.getBoundingClientRect().width));
-      const h = Math.max(1, Math.floor((w * 3) / 4));
-      setDims({ w, h });
-    };
-    compute();
-    const ro = new ResizeObserver(compute);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // Popper açıldığında ve kaynak değiştiğinde spinner'ı başlat
-  React.useEffect(() => {
-    if (open) setLoading(true);
-  }, [open, src, isPdf]);
+  // PDF için genişlikleri özelleştirilebilir yap
+  const pdfW = {
+    xs: pdfWidths?.xs ?? 360,   // 240 -> 360
+    sm: pdfWidths?.sm ?? 480,   // 300 -> 480
+    md: pdfWidths?.md ?? 600,   // 360 -> 600
+    lg: pdfWidths?.lg ?? 720,
+    xl: pdfWidths?.xl ?? 820,
+  };
 
   return (
     <Popper
       open={open}
       anchorEl={anchorEl}
-      placement="right-start"
+      placement={isPdf ? 'right-start' : 'left-start'}
       modifiers={[
-        { name: 'offset', options: { offset: [0, 16] } },
-        { name: 'preventOverflow', options: { padding: 8 } },
-        { name: 'flip', options: { fallbackPlacements: ['left-start', 'right-start'] } },
+        { name: 'offset', options: { offset: isPdf ? [16, 16] : [0, 12] } },
+        { name: 'preventOverflow', options: { padding: 8, boundary: 'viewport' } },
+        { name: 'flip', options: { padding: 8 } },
       ]}
-      style={{ zIndex: theme.zIndex.modal + 1 }}
+      // Büyük pencerelerde ebeveyn overflow’una takılmayalım
+      style={{ zIndex: 1300, pointerEvents: 'none' }}
     >
-
-      <Paper
-        variant="outlined"
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        sx={{
-          p: 0.5,
-          borderRadius: 0,
-          bgcolor: alpha(theme.palette.background.paper, 0.98),
-          boxShadow: 6,
-        }}
-      >
-        <Box
-          ref={boxRef}
-          sx={{
-            width: { xs: Math.min(280, maxWidth), sm: maxWidth },
-            height: { xs: 250, sm: 285, md: 425 }, // istediğin kadar büyüt
-            
-            borderRadius: 0,
-            overflow: 'hidden',
-            position: 'relative',
-            bgcolor: 'background.default',
-          }}
-        >
-          {isPdf ? (
-            dims.w > 0 ? (
-              <PdfPreview
-                key={`${src}:${dims.w}`}
-                file={src}
-                width={dims.w}
-                height={dims.h}
-              />
-            ) : null
-          ) : (
+      <Paper elevation={8} sx={{ p: 0, overflow: 'hidden', borderRadius: 0.75 }}>
+        {isPdf ? (
+          <Box
+            sx={{
+              width: pdfW,
+              aspectRatio: '210 / 297', // A4
+              bgcolor: 'background.paper',
+              position: 'relative',
+              maxHeight: '90vh', // taşmasın
+            }}
+          >
             <Box
-              sx={{
-                position: 'relative',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              <Image
-                src={src}
-                alt={alt}
-                fill
-                loading='eager'
-                unoptimized
-                sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 33vw"
-                style={{ objectFit: 'cover' }}
-                priority={false}
-                onLoad={() => setLoading(false)}
-                onError={() => setLoading(false)}
-              />
-            </Box>
-          )}
-
-          {/* Spinner overlay */}
-          {loading && (
-            <Box
+              component="iframe"
+              src={`${src}#page=1&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=0`}
+              title="PDF Önizleme"
+              loading="lazy"
               sx={{
                 position: 'absolute',
                 inset: 0,
-                display: 'grid',
-                placeItems: 'center',
-                bgcolor: alpha(theme.palette.background.default, 0.08),
+                width: 1,
+                height: 1,
+                border: 0,
                 pointerEvents: 'none',
               }}
-            >
-              <CircularProgress size={24} />
-            </Box>
-          )}
-        </Box>
+            />
+          </Box>
+        ) : isImage ? (
+          <Box
+            sx={{
+              width: imgWidth,
+              height: imgHeight,
+              position: 'relative',
+              bgcolor: 'background.default',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+            }}
+          >
+            <Box
+              component="img"
+              src={src}
+              alt="Önizleme"
+              loading="lazy"
+              draggable={false}
+              sx={{ position: 'absolute', inset: 0, width: 1, height: 1, objectFit: 'cover' }}
+            />
+          </Box>
+        ) : null}
       </Paper>
-    
     </Popper>
   );
 }

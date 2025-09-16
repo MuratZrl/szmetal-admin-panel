@@ -1,11 +1,11 @@
 // src/lib/auth/routeGuards.ts
-export type Role = 'Admin' | 'User';
+export type Role = 'Admin' | 'Manager' | 'User' ;
 
 export const ADMIN_ONLY_PATTERNS: ReadonlyArray<string | RegExp> = [
   '/dashboard',
   '/requests',
   '/clients',
-  '/categories',
+  '/products',
   '/admin',
   /^\/products\/new\/?$/i,
   /^\/products\/[^/]+\/edit\/?$/i,

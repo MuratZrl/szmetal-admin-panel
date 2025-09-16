@@ -1,9 +1,10 @@
+// features/products/services/products.server.ts
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Database } from '@/types/supabase';
-import type { ProductFilters } from '../types/filter';
-import { mapRowToProduct, mapProductPatchToRow } from '../types/product';
+import type { ProductFilters } from '@/features/products/types';
+import { mapRowToProduct, mapProductPatchToRow } from '@/features/products/types';
 
 // Tek gerçek DB tipi
 type ProductsRow = Database['public']['Tables']['products']['Row'];
@@ -91,9 +92,15 @@ export async function fetchFilteredProducts(
     q = q.in('variant', filters.variants as ProductsRow['variant'][]);
   }
 
-  // UI kg veriyor → DB gr/m
-  if (typeof filters.wMin === 'number') q = q.gte('unit_weight_g_pm', Math.round(filters.wMin * 1000));
-  if (typeof filters.wMax === 'number') q = q.lte('unit_weight_g_pm', Math.round(filters.wMax * 1000));
+  // Müşteri kalıbı filtresi (tek checkbox)
+  // UI tarafında ya boolean (true) ya da string 'var' gelebilir; ikisini de destekle.
+   const cm = (filters as unknown as { customerMold?: unknown }).customerMold;
+   const moldOn =
+     cm === true || cm === 'Evet' ||
+     (Array.isArray(cm) && cm.length === 1 && cm[0] === 'Evet');
+   if (moldOn) {
+     q = q.eq('has_customer_mold', true);
+   }
 
   if (filters.from) q = q.gte('date', filters.from);
   if (filters.to) q = q.lte('date', filters.to);

@@ -6,13 +6,13 @@ import { useTheme, alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const texts = [
-  'Kullanıcı dostu arayüz',
-  'Verilerinizi güvenle yönetin',
-  'SZ Metal ile güçlü alt yapı',
-  'Gerçek zamanlı analiz ve raporlama',
-  'Her cihazda erişilebilir kontrol paneli',
-  'Hızlı, güvenilir ve esnek sistem mimarisi',
-  'İhtiyaçlarınıza özel çözümler',
+  'KULLANICI DOSTU ARAYÜZ',
+  'VERİLERİNİZİ GÜVENLE YÖNETİN',
+  'SZ METAL İLE GÜÇLÜ ALT YAPI',
+  'GERÇEK ZAMANLI ANALİZ VE RAPORLAMA',
+  'HER CİHAZDA ERİŞİLEBİLİR KONTROLÜ',
+  'HIZLI VE GÜVENİLİR SİSTEM MİMARİSİ',
+  'İHTİYAÇLARINIZA ÖZEL ÇÖZÜMLER',
 ];
 
 const MotionTypography = motion(Typography);
@@ -32,8 +32,9 @@ export default function AuthLeftPanel() {
   if (!mounted) return null;
 
   // Overlay'i sabitle (tema değişse de aynı kalsın)
-  const overlayStart = 'rgba(41, 39, 36, 0.70)';
-  const overlayEnd   = 'rgba(63, 58, 49, 0.50)';
+  const overlayStart = 'rgba(0, 0, 0, 0.85)';
+  const overlayMedium = 'rgba(0, 0, 0, 0.5)';
+  const overlayEnd   = 'rgba(255, 255, 255, 0)';
 
   // Yazı rengini sadece temadan al (sadece yazılar değişsin)
   const textColor =
@@ -45,10 +46,10 @@ export default function AuthLeftPanel() {
     <Box
       sx={{
         position: 'relative',
-        backgroundImage: `linear-gradient(135deg, ${overlayStart}, ${overlayEnd}), url('/left-panel-background.jpg')`,
+        backgroundImage: `linear-gradient(0deg, ${overlayStart}, ${overlayMedium}, ${overlayEnd}), url('/left-panel-background.jpg')`,
         backgroundRepeat: 'no-repeat, no-repeat',
         backgroundSize: '100% 100%, cover',
-        backgroundPosition: { xs: 'center, 80% 50%', md: 'center, 100% 50%' },
+        backgroundPosition: { xs: 'center, 80% 50%', md: 'center, 65% 50%' },
         width: '100%',
         height: '100%',
         display: 'flex',
@@ -66,6 +67,7 @@ export default function AuthLeftPanel() {
           variant="h3"
           textAlign="center"
           fontWeight={700}
+          fontSize={20}
           sx={{
             color: textColor,
             textShadow,
