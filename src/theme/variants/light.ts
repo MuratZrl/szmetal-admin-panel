@@ -10,7 +10,7 @@ export const lightPalette = {
   mode: 'light',
 
   // Daha koyu kırmızı ana palet
-  primary:   { main: '#7F1115', light: '#B41F26', dark: '#4C0A0D', contrastText: '#FFFFFF' },
+  primary:   { main: '#7F1115', light: '#b69092ff', dark: '#4C0A0D', contrastText: '#FFFFFF' },
   secondary: { main: '#7A1C0E', light: '#A33A21', dark: '#4B1009', contrastText: '#FFFFFF' },
 
   warning: { main: '#B4690E', light: '#D78A0D', dark: '#7A4708', contrastText: '#111111' },
@@ -27,7 +27,7 @@ export const lightPalette = {
 
   text: {
     primary: TEXT,
-    secondary: alpha(TEXT, 0.72),
+    secondary: alpha(TEXT, 0.92),
     disabled: alpha(TEXT, 0.38),
   },
 

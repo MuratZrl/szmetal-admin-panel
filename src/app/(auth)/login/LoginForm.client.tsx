@@ -6,12 +6,15 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { TextField, Box, Button, IconButton, InputAdornment, Grid, Typography} from '@mui/material';
+import { TextField, Box, Button, IconButton, InputAdornment, Grid, Typography, Divider } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 
 import { glassTextFieldProps } from '../constants/formstyles';
+
+
+import { handleGoogleOAuth } from '@/features/auth/google-oauth.client';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -47,22 +50,17 @@ export default function LoginForm() {
       });
 
       if (res.status === 403) {
-        // Banned
         router.replace('/unauthorized');
         return;
       }
-      
       if (res.status === 409) {
-        // E-posta doğrulanmamış
         show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
         return;
       }
-
       if (res.status === 401) {
         show('E-posta veya şifre hatalı.', 'error');
         return;
       }
-      
       if (!res.ok) {
         let reason = '';
         try { reason = (await res.json()).error ?? ''; } catch {}
@@ -151,7 +149,7 @@ export default function LoginForm() {
               <Typography
                 component="span"
                 sx={{
-                  color: 'primary.main',
+                  color: 'text.primary',
                   fontStyle: 'italic',
                   fontWeight: 500,
                   cursor: 'pointer',
@@ -165,13 +163,13 @@ export default function LoginForm() {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6 }} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-          <Typography color="text.secondary">
+          <Typography color="text.primary">
             Hesabınız yoksa{' '}
             <Link href="/register" style={{ textDecoration: 'none' }}>
               <Typography
                 component="span"
                 sx={{
-                  color: 'primary.main',
+                  color: 'text.primary',
                   fontStyle: 'italic',
                   fontWeight: 500,
                   cursor: 'pointer',
@@ -183,6 +181,57 @@ export default function LoginForm() {
             </Link>
           </Typography>
         </Grid>
+
+
+        {/* --- BURADAN İTİBAREN EK --- */}
+        <Grid size={{ xs: 12 }}>
+          <Divider sx={{ my: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', letterSpacing: 1 }}
+            >
+              YA DA
+            </Typography>
+          </Divider>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Button
+            type="button"
+            variant="outlined"
+            fullWidth
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              // İstersen şimdilik backend route’una da yönlendirebilirsin:
+              // window.location.href = '/api/auth/oauth?provider=google';
+              await handleGoogleOAuth(msg => show(msg, 'error'));
+              setLoading(false);
+            }}
+            startIcon={
+              // public/google.svg dosyan olsun: /public/google.svg
+              <Box
+                component="img"
+                src="/google.svg"
+                alt="Google"
+                sx={{ width: 20, height: 20 }}
+              />
+            }
+            sx={(t) => ({
+              py: 1.25,
+              textTransform: 'none',
+              borderRadius: 7,
+              borderColor: t.palette.divider,
+              color: t.palette.text.primary,
+              bgcolor: 'transparent',
+              '&:hover': { bgcolor: 'action.hover' },
+            })}
+          >
+            Google ile devam et
+          </Button>
+        </Grid>
+        {/* --- EK BİTİŞ --- */}
+
       </Grid>
     </Box>
   );

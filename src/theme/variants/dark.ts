@@ -10,7 +10,7 @@ export const darkPalette = {
   mode: 'dark',
 
   // Kırmızıları bir tık açtım (≈ +8–10% luminance)
-  primary:   { main: '#C21F25', light: '#D63B42', dark: '#7A1216', contrastText: '#FFFFFF' },
+  primary:   { main: '#C21F25', light: '#ddbabcff', dark: '#7A1216', contrastText: '#FFFFFF' },
   secondary: { main: '#8C2213', light: '#B03B25', dark: '#58160D', contrastText: '#FFFFFF' },
 
   warning: { main: '#D78A0D', light: '#F2B746', dark: '#8A5A08', contrastText: '#0B0B0B' },
