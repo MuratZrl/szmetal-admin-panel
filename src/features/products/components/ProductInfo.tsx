@@ -1,4 +1,9 @@
-import { Paper, Stack, Typography, Chip, Box, Divider } from '@mui/material';
+// src/features/products/components/ProductInfo.tsx
+import Link from 'next/link';
+import { Paper, Stack, Typography, Chip, Box, Divider, IconButton } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { detectMediaKind } from '@/features/products/utils/media';
 
 type Maybe<T> = T | null | undefined;
 
@@ -9,7 +14,6 @@ export type LabelMaps = {
 };
 
 export type ProductInfoProps = {
-  // Temel alanlar (slug olabilir)
   variant: string;
   category: string;
   subCategory?: string;
@@ -19,10 +23,9 @@ export type ProductInfoProps = {
   hasCustomerMold?: boolean | null;
   has_customer_mold?: boolean | null;
 
-  // Opsiyonel teknik alanlar
   drawer?: Maybe<string>;
   control?: Maybe<string>;
-  unit_weight_g_pm?: number;       // gr/m
+  unit_weight_g_pm?: number;
   scale?: Maybe<string>;
   outerSizeMm?: Maybe<number>;
   sectionMm2?: Maybe<number>;
@@ -30,10 +33,14 @@ export type ProductInfoProps = {
   profileCode?: Maybe<string>;
   manufacturerCode?: Maybe<string>;
 
-  // Label map'leri (slug → görünen ad)
   labels?: LabelMaps;
+  footerSlot?: React.ReactNode;
 
-  footerSlot?: React.ReactNode;    // buton vb.
+  /** Medya eylemleri için URL’ler */
+  mediaSrc?: string | null;
+  mediaFileUrl?: string | null;
+  mediaExt?: 'pdf' | 'png' | 'webp' | 'jpg' | 'jpeg' | null;
+  mediaMime?: string | null;
 };
 
 function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
@@ -45,13 +52,17 @@ function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export default function ProductInfo({
-  variant, category, subCategory, unit_weight_g_pm, date, id,
-  drawer, control, scale, outerSizeMm, sectionMm2,
-  tempCode, profileCode, manufacturerCode,
-  labels, footerSlot,
-  hasCustomerMold, has_customer_mold,
-}: ProductInfoProps) {
+export default function ProductInfo(props: ProductInfoProps) {
+  const {
+    variant, category, subCategory, unit_weight_g_pm, date, id,
+    drawer, control, scale, outerSizeMm, sectionMm2,
+    tempCode, profileCode, manufacturerCode,
+    labels, footerSlot,
+    hasCustomerMold, has_customer_mold,
+
+    // medya
+    mediaSrc, mediaFileUrl, mediaExt, mediaMime,
+  } = props;
 
   const fmt0 = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const nf = (n?: number | null) => (typeof n === 'number' ? fmt0.format(n) : undefined);
@@ -61,12 +72,9 @@ export default function ProductInfo({
     : typeof has_customer_mold === 'boolean' ? has_customer_mold
     : null;
 
-  // Slug → label çöz
   const variantText = labels?.variant?.[variant] ?? variant;
   const catText     = category ? (labels?.category?.[category] ?? category) : '';
   const subText     = subCategory ? (labels?.subCategory?.[subCategory] ?? subCategory) : '';
-
-  // "Kategori: X / Y" ama Y yoksa "X" olarak yaz, hiçbir şey yoksa "-"
   const categoryLine = [catText, subText].filter(Boolean).join(' / ') || '-';
 
   const hasTech =
@@ -75,10 +83,50 @@ export default function ProductInfo({
     !!(tempCode || profileCode || manufacturerCode || drawer || control || scale ||
        typeof outerSizeMm === 'number' || typeof sectionMm2 === 'number');
 
+  // Medya aksiyonları için "en mantıklı URL" seç
+  const srcUrl = (mediaSrc ?? '').trim();
+  const fbUrl  = (mediaFileUrl ?? '').trim();
+  const srcKind = srcUrl ? detectMediaKind({ url: srcUrl, mime: mediaMime ?? undefined, extHint: mediaExt ?? undefined }) : 'unknown';
+  const fbKind  = fbUrl  ? detectMediaKind({ url: fbUrl,  mime: mediaMime ?? undefined, extHint: mediaExt ?? undefined })  : 'unknown';
+
+  const chosen =
+    (srcUrl && srcKind !== 'unknown' && { url: srcUrl, kind: srcKind }) ||
+    (fbUrl  && fbKind  !== 'unknown' && { url: fbUrl,  kind: fbKind  }) ||
+    ({ url: '', kind: 'unknown' as const });
+
+  const anyUrl = srcUrl || fbUrl;
+
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
       <Stack spacing={1.5}>
-        <Typography variant="subtitle2" color="text.secondary">Genel Bilgi</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary">Genel Bilgi</Typography>
+
+          {/* Medya eylemleri buraya taşındı */}
+          {anyUrl ? (
+            <Stack direction="row" spacing={0.5}>
+              <IconButton
+                LinkComponent={Link}
+                href={(chosen.url || anyUrl) as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Yeni sekmede aç"
+                size="small"
+              >
+                <OpenInNewIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                component="a"
+                href={(chosen.url || anyUrl) as string}
+                download
+                aria-label="İndir"
+                size="small"
+              >
+                <DownloadIcon fontSize="small" />
+              </IconButton>
+            </Stack>
+          ) : null}
+        </Box>
 
         <Stack spacing={0.5}>
           <InfoItem label="Varyant:" value={variantText} />
@@ -97,7 +145,6 @@ export default function ProductInfo({
               {typeof mold === 'boolean' && (
                 <InfoItem label="Müşteri Kalıbı:" value={mold ? 'Evet' : 'Hayır'} />
               )}
-              
               {typeof unit_weight_g_pm === 'number' && (
                 <InfoItem label="Birim Ağırlık (gr/m):" value={nf(unit_weight_g_pm)} />
               )}
@@ -113,13 +160,9 @@ export default function ProductInfo({
           </Stack>
         ) : null}
 
-        <Chip
-          label={`ID: ${id}`}
-          size="small"
-          variant="outlined"
-          sx={{ mt: 0.5, width: 'fit-content', pointerEvents: 'none' }}
-        />
+        <Chip label={`ID: ${id}`} size="small" variant="outlined" sx={{ mt: 0.5, width: 'fit-content', pointerEvents: 'none' }} />
         {footerSlot ? <Box sx={{ pt: 1 }}>{footerSlot}</Box> : null}
+
       </Stack>
     </Paper>
   );

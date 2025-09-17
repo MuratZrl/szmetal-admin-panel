@@ -104,6 +104,16 @@ export default async function ProductDetailPage({ params }: Props) {
     },
   ].filter(Boolean) as { label: string; value: React.ReactNode }[];
 
+  const versionedImage = withVersion(product.image ?? null, product.updatedAt ?? null);
+  const versionedFile  = withVersion(product.filePublicUrl ?? null, product.updatedAt ?? null);
+
+  const extLower = (product.fileExt ?? '').toLowerCase();
+  const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
+  type AllowedExt = typeof allowed[number];
+  const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
+    ? (extLower as AllowedExt)
+    : null;
+
   return (
     <Box px={2} py={2}>
       <ProductHeader code={product.code} name={product.name} />
@@ -111,10 +121,12 @@ export default async function ProductDetailPage({ params }: Props) {
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
           <ProductMedia
-            src={withVersion(product.image ?? null, product.updatedAt ?? null)}
-            fileUrl={withVersion(product.filePublicUrl ?? null, product.updatedAt ?? null)}
-            fileExt={product.fileExt ?? null}
+            src={versionedImage}
+            fileUrl={versionedFile}
+            fileExt={mediaExt}
             fileMime={product.fileMime ?? null}
+            aspectRatio={1 / Math.sqrt(2)}   // A4 oranı (≈0.7071)
+            objectFit="contain"
           />
         </Grid>
 
@@ -132,8 +144,10 @@ export default async function ProductDetailPage({ params }: Props) {
             scale={product.scale}
             outerSizeMm={product.outerSizeMm}
             sectionMm2={product.sectionMm2}
-            unit_weight_g_pm={typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined}
-            has_customer_mold={row.has_customer_mold}   // DB’den snake
+            unit_weight_g_pm={
+              typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined
+            }
+            has_customer_mold={row.has_customer_mold}
             hasCustomerMold={product.hasCustomerMold}
             tempCode={product.tempCode}
             profileCode={product.profileCode}
@@ -145,6 +159,12 @@ export default async function ProductDetailPage({ params }: Props) {
               subCategory: Object.fromEntries(subLabelMap),
               variant: variantLabelMap,
             }}
+
+            // medya eylemleri artık burada
+            mediaSrc={versionedImage}
+            mediaFileUrl={versionedFile}
+            mediaExt={mediaExt}
+            mediaMime={product.fileMime ?? null}
 
             footerSlot={<ProductDetailActions id={String(product.id)} canEdit={canEdit} />}
           />

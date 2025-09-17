@@ -82,7 +82,7 @@ export default function ProductCard({ product, labels }: Props) {
   const [hoverOpen, setHoverOpen] = React.useState(false);
   const hoverTimers = React.useRef<{ close?: number }>({});
 
-  // Medya alanı ölçüsü (görsel 1.5x için)
+  // Medya alanı ölçüsü (görsel 1.45x için)
   const [mediaRect, setMediaRect] = React.useState<{ width: number; height: number } | null>(null);
   const mediaBoxRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -117,7 +117,7 @@ export default function ProductCard({ product, labels }: Props) {
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        borderRadius: 2,
+        borderRadius: 1.5,
         height: { xs: 'auto', md: '100%' },
       }}
     >
@@ -136,22 +136,22 @@ export default function ProductCard({ product, labels }: Props) {
         }}
       >
       {/* Media area */}
-      <Box
-        ref={mediaBoxRef}
-        onMouseEnter={handleEnter}
-        onMouseLeave={handleLeave}
-        sx={{
-          position: 'relative',
-          width: '100%',
-          aspectRatio: '5 / 4',
-          overflow: 'hidden',
-          flex: '0 0 auto',
-        }}
-      >
+        <Box
+          ref={mediaBoxRef}
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
+          sx={{
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '4 / 3.25', // ≈ 0.707106...
+            overflow: 'hidden',
+            flex: '0 0 auto',
+          }}
+        >
         {isPdf && versionedImage ? (
           <Box sx={{ position: 'absolute', inset: 0, '& > iframe': { width: '100%', height: '100%', border: 0, display: 'block' } }}>
             <iframe
-              src={`${versionedImage}#page=1&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=0`}
+              src={`${versionedImage}#page=1&zoom=page-width&toolbar=0&navpanes=0&scrollbar=0`}
               title={`${product.name} PDF`}
               loading="lazy"
               style={{ pointerEvents: 'none' }}
@@ -290,17 +290,17 @@ export default function ProductCard({ product, labels }: Props) {
       </Box>
 
       {/* HOVER PREVIEW: PDF sağda A4 tek sayfa, görsel 1.5x */}
-    {!downSm && (
-      <HoverPreview
-        kind={isPdf ? 'pdf' : isImage ? 'image' : 'other'}
-        open={hoverOpen && hasPreview}
-        anchorEl={mediaBoxRef.current}
-        src={isPdf ? String(versionedImage ?? '') : isImage ? finalImgSrc : undefined}
-        baseSize={mediaRect}
-        scale={2.15} // görsel preview daha da büyük
-        pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460  }} // PDF preview daha da iri
-      />
-    )}
+      {!downSm && (
+        <HoverPreview
+          kind={isPdf ? 'pdf' : isImage ? 'image' : 'other'}
+          open={hoverOpen && hasPreview}
+          anchorEl={mediaBoxRef.current}
+          src={isPdf ? String(versionedImage ?? '') : isImage ? finalImgSrc : undefined}
+          baseSize={mediaRect}
+          scale={1.8} // görsel preview daha da büyük
+          pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460  }} // PDF preview daha da iri
+        />
+      )}
     </Card>
   );
 }

@@ -2,8 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Paper, Box, Stack, Typography, Button, IconButton } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
+import { Paper, Box, Stack, Typography, Button } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 import { detectMediaKind } from '@/features/products/utils/media';
@@ -30,7 +29,7 @@ export default function ProductMedia({
   fileExt,
   fileMime,
   alt = 'Dosya',
-  aspectRatio = '4 / 3.3',
+  aspectRatio = 1.25 / Math.sqrt(2),
   objectFit = 'contain',
 }: Props) {
 
@@ -48,7 +47,6 @@ export default function ProductMedia({
 
   // Unknown olsa bile bir URL varsa en azından “bağlantıyı aç” butonu gösterebiliriz
   const anyUrl = srcUrl || fallbackUrl;
-  const showToolbar = !!chosen.url || !!anyUrl;
 
   // PDF’yi sayfaya sığdırmak için viewer query parametreleri
   const pdfViewUrl = chosen.kind === 'pdf' && chosen.url
@@ -72,34 +70,6 @@ export default function ProductMedia({
       }}
       aria-label={alt}
     >
-      {/* Sağ üst araç çubuğu */}
-      {showToolbar ? (
-        <Stack
-          direction="row"
-          spacing={0.5}
-          sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
-        >
-          <IconButton
-            LinkComponent={Link}
-            href={(chosen.url || anyUrl) as string}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Yeni sekmede aç"
-            size="small"
-          >
-            <OpenInNewIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            component="a"
-            href={(chosen.url || anyUrl) as string}
-            download
-            aria-label="İndir"
-            size="small"
-          >
-            <DownloadIcon fontSize="small" />
-          </IconButton>
-        </Stack>
-      ) : null}
 
       {/* İçerik */}
       {chosen.kind === 'pdf' && chosen.url ? (

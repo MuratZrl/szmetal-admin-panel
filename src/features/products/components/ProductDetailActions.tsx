@@ -29,6 +29,7 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
           href={`/products/${id}`}
           variant="outlined"
           startIcon={<ArrowBackIcon />}
+          draggable={false}
           onClick={(e) => {
             e.preventDefault();
             if (typeof window !== 'undefined' && window.history.length > 1) window.history.back();
@@ -45,6 +46,7 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
             href={`/products/${id}/edit`}
             variant="contained"
             startIcon={<EditIcon />}
+            draggable={false}
             sx={{ textTransform: 'capitalize', borderRadius: 2 }}
           >
             Düzenle
@@ -59,6 +61,7 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
         onClick={() => typeof window !== 'undefined' && window.print()}
         sx={{ textTransform: 'capitalize', borderRadius: 2 }}
         aria-label="Sayfayı yazdır"
+        draggable={false}
       >
         Yazdır
       </Button>

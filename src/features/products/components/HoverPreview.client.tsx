@@ -50,10 +50,11 @@ export default function HoverPreview({
     <Popper
       open={open}
       anchorEl={anchorEl}
-      placement={isPdf ? 'right-start' : 'left-start'}
+      placement={isPdf ? 'left-start' : 'right-start'}
       modifiers={[
-        { name: 'offset', options: { offset: isPdf ? [16, 16] : [0, 12] } },
+        { name: 'offset', options: { offset: isPdf ? [0, 16] : [0, 12] } },
         { name: 'preventOverflow', options: { padding: 8, boundary: 'viewport' } },
+        { name: 'computeStyles', options: { gpuAcceleration: false } },
         { name: 'flip', options: { padding: 8 } },
       ]}
       // Büyük pencerelerde ebeveyn overflow’una takılmayalım
