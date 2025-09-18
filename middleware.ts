@@ -9,7 +9,7 @@ const PUBLIC_ROUTES = new Set<string>([
   '/register',
   '/reset-password',
   '/forget-password',
-  '/banned',
+  '/unauthorized',
 ]);
 
 type Role = 'Admin' | 'Manager' | 'User';

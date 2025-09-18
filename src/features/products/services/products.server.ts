@@ -102,6 +102,10 @@ export async function fetchFilteredProducts(
      q = q.eq('has_customer_mold', true);
    }
 
+   if (typeof filters.availability === 'boolean') {
+      q = q.eq('availability', filters.availability);
+    }
+
   if (filters.from) q = q.gte('date', filters.from);
   if (filters.to) q = q.lte('date', filters.to);
 

@@ -2,18 +2,16 @@
 'use client';
 
 import * as React from 'react';
-
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { TextField, Box, Button, IconButton, InputAdornment, Grid, Typography, Divider } from '@mui/material';
+import {
+  TextField, Box, Button, IconButton, InputAdornment, Grid, Typography, Divider
+} from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
-
 import { glassTextFieldProps } from '../constants/formstyles';
-
-
 import { handleGoogleOAuth } from '@/features/auth/google-oauth.client';
 
 export default function LoginForm() {
@@ -21,7 +19,9 @@ export default function LoginForm() {
   const { show } = useSnackbar();
 
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loadingEmail, setLoadingEmail] = React.useState<boolean>(false);
+  const [loadingOAuth, setLoadingOAuth] = React.useState<boolean>(false);
+
   const [form, setForm] = React.useState<{ email: string; password: string }>({
     email: '',
     password: '',
@@ -38,7 +38,7 @@ export default function LoginForm() {
       return;
     }
 
-    setLoading(true);
+    setLoadingEmail(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -49,18 +49,9 @@ export default function LoginForm() {
         }),
       });
 
-      if (res.status === 403) {
-        router.replace('/unauthorized');
-        return;
-      }
-      if (res.status === 409) {
-        show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
-        return;
-      }
-      if (res.status === 401) {
-        show('E-posta veya şifre hatalı.', 'error');
-        return;
-      }
+      if (res.status === 403) { router.replace('/unauthorized'); return; }
+      if (res.status === 409) { show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error'); return; }
+      if (res.status === 401) { show('E-posta veya şifre hatalı.', 'error'); return; }
       if (!res.ok) {
         let reason = '';
         try { reason = (await res.json()).error ?? ''; } catch {}
@@ -74,14 +65,14 @@ export default function LoginForm() {
       console.error('Girişte beklenmeyen hata:', err);
       show('Beklenmeyen bir hata oluştu.', 'error');
     } finally {
-      setLoading(false);
+      setLoadingEmail(false);
     }
   };
 
   return (
-    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit} >
-      <Grid container spacing={2} >
-        <Grid size={{ xs: 12, sm: 12, md: 12 }} >
+    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <TextField
             label="E-posta"
             name="email"
@@ -110,6 +101,7 @@ export default function LoginForm() {
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => setShowPassword((s) => !s)}
                     edge="end"
+                    aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -124,13 +116,15 @@ export default function LoginForm() {
           />
         </Grid>
 
+        {/* E-posta/şifre butonu */}
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <Button
             type="submit"
             variant="outlined"
             color="primary"
             fullWidth
-            disabled={loading}
+            loading={loadingEmail}
+            loadingIndicator="Giriş yapılıyor..."
             sx={(t) => ({
               py: 1.25,
               textTransform: 'capitalize',
@@ -139,7 +133,7 @@ export default function LoginForm() {
               color: t.palette.text.primary,
             })}
           >
-            {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+            Giriş Yap
           </Button>
         </Grid>
 
@@ -182,41 +176,30 @@ export default function LoginForm() {
           </Typography>
         </Grid>
 
-
-        {/* --- BURADAN İTİBAREN EK --- */}
         <Grid size={{ xs: 12 }}>
           <Divider sx={{ my: 1.5 }}>
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', letterSpacing: 1 }}
-            >
+            <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
               YA DA
             </Typography>
           </Divider>
         </Grid>
 
+        {/* Google OAuth butonu */}
         <Grid size={{ xs: 12 }}>
           <Button
             type="button"
             variant="outlined"
             fullWidth
-            disabled={loading}
-            onClick={async () => {
-              setLoading(true);
-              // İstersen şimdilik backend route’una da yönlendirebilirsin:
-              // window.location.href = '/api/auth/oauth?provider=google';
-              await handleGoogleOAuth(msg => show(msg, 'error'));
-              setLoading(false);
-            }}
+            loading={loadingOAuth}
+            loadingPosition="start"
             startIcon={
-              // public/google.svg dosyan olsun: /public/google.svg
-              <Box
-                component="img"
-                src="/google.svg"
-                alt="Google"
-                sx={{ width: 20, height: 20 }}
-              />
+              <Box component="img" src="/google.svg" alt="Google" sx={{ width: 20, height: 20 }} />
             }
+            onClick={async () => {
+              setLoadingOAuth(true);
+              await handleGoogleOAuth(msg => show(msg, 'error'));
+              setLoadingOAuth(false);
+            }}
             sx={(t) => ({
               py: 1.25,
               textTransform: 'none',
@@ -230,8 +213,6 @@ export default function LoginForm() {
             Google ile devam et
           </Button>
         </Grid>
-        {/* --- EK BİTİŞ --- */}
-
       </Grid>
     </Box>
   );

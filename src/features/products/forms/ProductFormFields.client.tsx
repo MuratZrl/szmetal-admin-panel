@@ -279,6 +279,32 @@ export default function ProductFormFields({
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Controller
+            name="availability"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Kullanılabilirlik Durumu"
+                size="small"
+                fullWidth
+                value={String(field.value ?? true)}                 // 'true' | 'false'
+                onChange={(e) => field.onChange(e.target.value === 'true')} // string → boolean
+                InputLabelProps={{ shrink: true }}
+                SelectProps={{
+                  renderValue: (v) => (v === 'true' ? 'Kullanılabilir' : 'Kullanılamaz'),
+                }}
+                error={!!errors.availability}
+                helperText={errors.availability?.toString()}
+              >
+                <MenuItem value="true">Kullanılabilir</MenuItem>
+                <MenuItem value="false">Kullanılamaz</MenuItem>
+              </TextField>
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Controller
             name="customerMold"
             control={control}
             render={({ field }) => (

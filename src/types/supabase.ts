@@ -91,6 +91,7 @@ export type Database = {
       }
       products: {
         Row: {
+          availability: boolean
           category: string
           category_id: string | null
           code: string
@@ -121,6 +122,7 @@ export type Database = {
           variant: string
         }
         Insert: {
+          availability?: boolean
           category: string
           category_id?: string | null
           code: string
@@ -151,6 +153,7 @@ export type Database = {
           variant: string
         }
         Update: {
+          availability?: boolean
           category?: string
           category_id?: string | null
           code?: string
@@ -585,6 +588,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      generate_username: {
+        Args: { base: string }
+        Returns: string
+      }
       get_dashboard_counts: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -660,6 +667,14 @@ export type Database = {
       is_not_banned: {
         Args: { uid: string }
         Returns: boolean
+      }
+      unaccent: {
+        Args: { "": string }
+        Returns: string
+      }
+      unaccent_init: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       update_user_role: {
         Args: { new_role: string; target_user_id: string }

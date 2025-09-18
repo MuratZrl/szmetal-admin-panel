@@ -5,13 +5,7 @@ import type { Database } from '@/types/supabase';
  * 1) Ortak sözlük tipleri
  * ---------------------------------------------------------------------------*/
 
-export type CategoryTree = Record<
-  string, // category slug
-  {
-    name: string;
-    subs: { slug: string; name: string }[];
-  }
->;
+export type CategoryTree = Record<string, { name: string; subs: { slug: string; name: string }[] }>;
 
 export type VariantOption = { key: string; name: string };
 
@@ -47,6 +41,8 @@ export type ProductFilters = {
 
   /** Çoklu seçim kalsın (UI tek seçenek kullansa bile ileride esner) */
   customerMold?: CustomerMoldValue[];
+
+  availability?: boolean; // true=Kullanılabilir, false=Kullanılamaz
 };
 
 export type Pagination = {
@@ -79,6 +75,8 @@ export type Product = {
 
   /** Müşteri kalıbı bilgisi */
   hasCustomerMold: boolean;
+
+  availability: boolean;
 
   // Teknik alanlar
   drawer: string | null;
@@ -125,6 +123,7 @@ export function mapRowToProduct(r: ProductRow): Product {
     image: r.image ?? null,
 
     hasCustomerMold: r.has_customer_mold,
+    availability: r.availability === true,
 
     drawer: r.drawer ?? null,
     control: r.control ?? null,
@@ -162,6 +161,8 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   if (patch.image !== undefined) out.image = patch.image;
 
   if (patch.hasCustomerMold !== undefined) out.has_customer_mold = patch.hasCustomerMold;
+
+  if (patch.availability !== undefined) out.availability = patch.availability;
 
   if (patch.drawer !== undefined) out.drawer = patch.drawer;
   if (patch.control !== undefined) out.control = patch.control;

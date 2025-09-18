@@ -8,8 +8,9 @@ export default function LoginPage() {
   return (
     <Box
       sx={{
-        display: 'flex',
         minHeight: '100dvh',
+        
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}

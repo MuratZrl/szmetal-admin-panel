@@ -25,6 +25,8 @@ export type CreateProductInput = {
 
   hasCustomerMold?: boolean;
 
+  availability?: boolean;
+
   drawer?: string | null;
   control?: string | null;
   scale?: string | null;
@@ -122,6 +124,8 @@ export async function createProduct(v: CreateProductInput) {
       ...(v.hasCustomerMold !== undefined
         ? { has_customer_mold: v.hasCustomerMold }
         : {}),
+
+      availability: v.availability,
 
       file_path: fileMeta.path ?? null,
       file_name: fileMeta.name ?? null,
@@ -248,6 +252,8 @@ export async function updateProduct(id: number, v: UpdateProductInput): Promise<
   if (v.hasCustomerMold !== undefined) {
     payload.has_customer_mold = v.hasCustomerMold;
   }
+
+  if (v.availability !== undefined) payload.availability = v.availability;
 
   if (fileMeta) {
     payload.file_path = fileMeta.path;

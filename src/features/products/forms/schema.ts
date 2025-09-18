@@ -49,6 +49,8 @@ export const productSchema = yup
     // Çekirdek: Customer Mold
     customerMold: customerMoldSelect,
 
+    availability: yup.boolean().default(true),
+
     // gr/m — integer normalize, min 1 ve zorunlu
     unitWeightG: toNullNumber()
       .transform(v => (typeof v === 'number' ? Math.round(v) : v))
@@ -97,6 +99,8 @@ export const newProductDefaults: ProductFormValues = {
 
   // Çekirdek: Customer Mold default
   customerMold: 'Hayır',
+
+  availability: true,
 
   unitWeightG: 0, // gr/m (min 1 validasyonda yakalanır)
   date: today(),

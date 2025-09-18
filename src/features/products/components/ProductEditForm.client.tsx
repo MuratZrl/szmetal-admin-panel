@@ -43,6 +43,8 @@ type Props = {
     hasCustomerMold?: boolean | null;
     customerMold?: CustomerMoldSelect;
 
+    availability: boolean | null;
+
     drawer?: string | null;
     control?: string | null;
     scale?: string | null;
@@ -79,6 +81,8 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     customerMold:
       (initial.customerMold as CustomerMoldSelect | undefined) ??
       fromBoolToSelect(initial.hasCustomerMold ?? null),
+
+    availability: initial.availability ?? true,
     
     date: initial.date ?? new Date().toISOString().slice(0, 10),
     drawer: initial.drawer ?? '',
@@ -132,6 +136,7 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         manufacturerCode: v.manufacturerCode ?? null,
         image: v.image || null,
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
+        availability: v.availability,
       };
 
       // id artık formda değil, props.initial.id’den al

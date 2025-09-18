@@ -38,7 +38,7 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
       >
         {/* Sol: Başlık */}
         <Grid size={{ xs: 12, sm: 6, md: 6 }} >
-          <Typography variant="h5">Ürünleri Listele</Typography>
+          <Typography variant="h5">Profilleri Listele</Typography>
         </Grid>
 
         {/* Sağ: Aksiyonlar */}
@@ -96,7 +96,7 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
                 startIcon={<AddIcon />}
                 draggable={false}
               >
-                Ürün Ekle
+                Profil Ekle
               </Button>
               </>
               )}

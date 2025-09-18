@@ -21,6 +21,8 @@ export type ProductFormValuesCore = {
   unitWeightG: number | null; // gr/m
   customerMold: CustomerMoldSelect; // '' | 'Evet' | 'Hayır'
 
+  availability: boolean;
+
   // şemada .defined() olan düz string alanlar
   drawer: string;
   control: string;
@@ -93,6 +95,8 @@ export function toInsertPayload(
 
     // Müşteri kalıbı
     has_customer_mold: moldSelectToBool(v.customerMold),
+      
+    availability: v.availability ?? true,
 
     drawer: trimToNull(v.drawer),
     control: trimToNull(v.control),
@@ -149,6 +153,8 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
     p.has_customer_mold = moldSelectToBool(v.customerMold);
   }
 
+  if (v.availability !== undefined) p.availability = v.availability;
+
   if (v.drawer !== undefined)             p.drawer = trimToNull(v.drawer);
   if (v.control !== undefined)            p.control = trimToNull(v.control);
   if (v.scale !== undefined)              p.scale = trimToNull(v.scale);
@@ -188,12 +194,14 @@ export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
     date: row.date ?? new Date().toISOString().slice(0, 10),
 
     unitWeightG: row.unit_weight_g_pm ?? null,
-
+    
     // DB → Select
     customerMold:
-      row.has_customer_mold == null
-        ? 'Hayır'                      // null/undefined ise Hayır göster
-        : row.has_customer_mold ? 'Evet' : 'Hayır',
+    row.has_customer_mold == null
+    ? 'Hayır'                      // null/undefined ise Hayır göster
+    : row.has_customer_mold ? 'Evet' : 'Hayır',
+    
+    availability: row.availability ?? true,
 
     drawer: row.drawer ?? '',
     control: row.control ?? '',

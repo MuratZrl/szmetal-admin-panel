@@ -1,19 +1,27 @@
 // src/features/auth/google-oauth.client.ts
 'use client';
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/supabaseClient";
+import { supabase } from '@/lib/supabase/supabaseClient';
 
-export async function handleGoogleOAuth(onError?: (msg: string) => void): Promise<void> {
-  const supabase = createSupabaseBrowserClient();
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-      queryParams: { prompt: 'select_account' },
-    },
-  });
-  if (error) {
-    onError?.('Google ile oturum açılamadı.');
-    throw error;
+export async function handleGoogleOAuth(
+  onError: (msg: string) => void,
+  nextPath: string = '/account'
+): Promise<void> {
+  try {
+    const origin = window.location.origin;
+    const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+
+    if (error) {
+      onError(`Google ile giriş başlatılamadı: ${error.message}`);
+    }
+    // Not: Başarılıysa tarayıcı Google’a gider; burada bekleyecek bir şey yok.
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Bilinmeyen hata';
+    onError(`Google OAuth sırasında hata: ${message}`);
   }
 }

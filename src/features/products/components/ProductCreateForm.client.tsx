@@ -64,6 +64,7 @@ export default function ProductCreateForm({ dicts }: Props) {
         manufacturerCode: v.manufacturerCode ?? null,
         image: v.image || null,
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
+        availability: v.availability ?? true,
         file: v.file ?? null,
       });
 

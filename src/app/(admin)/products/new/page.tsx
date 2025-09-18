@@ -18,9 +18,9 @@ export default async function ProductCreatePage() {
   const dicts = await fetchProductDicts();
 
   return (
-    <Box px={2} py={2}>
+    <Box px={2} >
       <Typography variant="h5" sx={{ mb: 1 }}>
-        Yeni Ürün Oluştur
+        Yeni Profil Ekle
       </Typography>
 
       <Divider sx={{ mb: 2 }} />

@@ -10,11 +10,10 @@ import { Box, Grid } from '@mui/material';
 import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 
-import ProductInfo from '@/features/products/components/ProductInfo';
-import ProductPrintBlock from '@/features/products/print/ProductPDF';
 import ProductMedia from '@/features/products/components/ProductMedia';
-import ProductHeader from '@/features/products/components/ProductHeader';
+import ProductInfo from '@/features/products/components/ProductInfo';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions';
+import ProductPrintBlock from '@/features/products/print/ProductPDF';
 
 import { withVersion } from '@/features/products/utils/url';
 import { mapRowToProduct } from '@/features/products/types';
@@ -31,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${p.code} — ${p.name}` };
 }
 
-async function getRole(): Promise<'Admin' | 'User' | null> {
+async function getRole(): Promise<'Admin' | 'Manager' | 'User' | null> {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -94,10 +93,12 @@ export default async function ProductDetailPage({ params }: Props) {
       label: 'Dış Çevre (mm)',
       value: product.outerSizeMm.toLocaleString('tr-TR'),
     },
+    
     typeof product.sectionMm2 === 'number' && {
       label: 'Kesit (mm²)',
       value: product.sectionMm2.toLocaleString('tr-TR'),
     },
+
     typeof product.unit_weight_g_pm === 'number' && {
       label: 'Birim Ağırlığı (gr/m)',
       value: product.unit_weight_g_pm.toLocaleString('tr-TR'),
@@ -109,14 +110,15 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const extLower = (product.fileExt ?? '').toLowerCase();
   const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
+
   type AllowedExt = typeof allowed[number];
+  
   const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
     ? (extLower as AllowedExt)
     : null;
 
   return (
     <Box px={2} py={2}>
-      <ProductHeader code={product.code} name={product.name} />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -132,6 +134,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
         <Grid size={{ xs: 12, md: 6 }}>
           <ProductInfo
+            title={`${product.code} — ${product.name}`}
             variant={product.variant}
             category={product.category}
             subCategory={product.subCategory ?? undefined}
@@ -148,6 +151,7 @@ export default async function ProductDetailPage({ params }: Props) {
               typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined
             }
             has_customer_mold={row.has_customer_mold}
+            availability={product.availability}
             hasCustomerMold={product.hasCustomerMold}
             tempCode={product.tempCode}
             profileCode={product.profileCode}

@@ -273,7 +273,9 @@ export default function ProductCard({ product, labels }: Props) {
           size="small"
           variant="text"
           startIcon={<InfoOutlineIcon />}
+          draggable={false}
           onClick={(e) => e.stopPropagation()}
+          sx={{ px: 2 }}
         >
           Detaylar
         </Button>

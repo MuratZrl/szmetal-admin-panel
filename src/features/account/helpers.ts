@@ -1,11 +1,11 @@
 // src/features/account/helpers.ts
 import type { SxProps, Theme } from "@mui/system";
 
-export type RoleKey = "Admin" | "Moderator" | "User" | string;
+export type RoleKey = "Admin" | "Manager" | "User" | string;
 
 export const ROLE_LABEL_MAP: Record<string, string> = {
   Admin: "Admin",
-  Moderator: "Moderatör",
+  Manager: "Yönetici",
   User: "Kullanıcı",
 };
 
@@ -24,7 +24,7 @@ export function getRoleSx(role?: RoleKey): SxProps<Theme> {
   switch (role) {
     case "Admin":
       return { ...base, background: "linear-gradient(90deg, purple, orangered)" };
-    case "Moderator":
+    case "Manager":
       return { ...base, backgroundColor: "darkred" };
     case "User":
     default:
