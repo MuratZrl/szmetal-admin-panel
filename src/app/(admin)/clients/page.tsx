@@ -15,26 +15,38 @@ import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
 // 2. Grafik client bileşeni
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 
-// Dashboard’daki ile aynı zaman etiketi
 import { get6RollingMonthRange } from '@/features/dashboard/utils/rollingMonths';
 
 import { STATUS_OPTIONS, type AppStatus, STATUS_LABELS_TR } from '@/features/clients/constants/users';
 
+// EK: server guard + self id
+import { requirePageAccess } from '@/lib/supabase/auth/server';
+import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+import AccessAutoRedirect from '@/features/auth/AccessAuthRedirect.client';
+
 export const revalidate = 60;
 
 export default async function Page() {
+  // Bu sayfaya kimler girebilir? (Admin, Manager)
+  await requirePageAccess('clients');
+
   const [cards, line6m, rows] = await Promise.all([
     fetchClientsCards(),
     fetchClientsLine6M(),
-    fetchUsersAll(), // yarın 50k kayıt olduğunda ağın ağlamasın, sonra pagination’a geçeceğiz
+    fetchUsersAll(),
   ]);
+
+  // Oturum sahibinin id'si
+  const sb = await createSupabaseServerClient();
+  const { data: auth } = await sb.auth.getUser();
+  const selfUserId = auth?.user?.id ?? null;
 
   const { labelTR: labelTR6 } = get6RollingMonthRange();
 
   const STATUS_COLOR: Record<AppStatus, string> = {
-    Active:   '#2e7d32', // success
-    Inactive: '#ed6c02', // warning
-    Banned:   '#d32f2f', // error
+    Active:   '#2e7d32',
+    Inactive: '#ed6c02',
+    Banned:   '#d32f2f',
   };
 
   const barSeries: Parameters<typeof GroupBarChart>[0]['series'] =
@@ -46,11 +58,13 @@ export default async function Page() {
 
   return (
     <Box px={1} py={2}>
-      
-      {/* 1) Üst stat kartları */}  
+      {/* Oturum sahibini canlı izle; yetki düşerse anında yönlendir */}
+      <AccessAutoRedirect selfUserId={selfUserId} />
+
+      {/* 1) Üst stat kartları */}
       <CardsGrid data={cards} />
 
-      {/* 2) Grafikler (yan yana, doğrudan sayfada) */}
+      {/* 2) Grafikler */}
       <Grid container spacing={2} sx={{ mt: 2 }} alignItems="stretch">
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Toplam Kullanıcılar" timeLabel={labelTR6}>
@@ -86,7 +100,6 @@ export default async function Page() {
       <Box sx={{ mt: 2 }}>
         <TableGrid rows={rows} />
       </Box>
-      
     </Box>
   );
 }

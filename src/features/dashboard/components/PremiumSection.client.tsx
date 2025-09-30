@@ -69,7 +69,7 @@ export default function PremiumSection({
           position: 'absolute',
           inset: '-30% -10% auto -10%',
           height: '70%',
-          background: `radial-gradient(60% 60% at 50% 50%, ${alpha(accent, 0.18)} 0%, transparent 70%)`,
+          background: `radial-gradient(60% 60% at 50% 50%, ${alpha(accent, 0.17)} 0%, transparent 70%)`,
           pointerEvents: 'none',
         },
 
@@ -120,7 +120,7 @@ export default function PremiumSection({
         <Typography
           variant="h6"
           fontWeight={800}
-          sx={{ letterSpacing: 0.2 }}
+          sx={{ letterSpacing: 0.25 }}
         >
           {title}
         </Typography>

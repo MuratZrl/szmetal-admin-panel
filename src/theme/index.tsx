@@ -12,6 +12,7 @@ import {
 import { darkPalette } from './variants/dark';
 import { lightPalette } from './variants/light';
 import { componentsOverrides } from './components';
+import { ThemeModeProvider, useThemeMode } from '@/theme/ThemeModeProvider.client';
 
 // ---- Next.js Link adapter ----
 type NextLinkLikeProps = React.ComponentProps<typeof NextLink> & { children?: React.ReactNode };
