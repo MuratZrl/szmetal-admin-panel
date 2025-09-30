@@ -26,7 +26,7 @@ function istHour(): number {
 
 function greetingTR(h: number): string {
   if (h >= 6 && h < 12) return 'Günaydın';
-  if (h >= 12 && h < 15) return 'Hoş geldiniz';
+  if (h >= 12 && h < 15) return 'İyi günler';
   if (h >= 15 && h < 24) return 'İyi akşamlar';
   return 'İyi geceler';
 }
