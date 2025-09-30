@@ -28,7 +28,7 @@ export default function TableGrid({ rows }: Props) {
         throw new Error('Geçersiz rol');
       }
 
-      const res = await fetch('/api/users/role', {
+      const res = await fetch('/api/clients/users/role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: newRow.id, role: nextRole }),
