@@ -1,24 +1,16 @@
 // src/features/dashboard/services/cards.server.ts
-import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
-import { unstable_noStore as noStore } from 'next/cache'; // ← ekle
+import { unstable_noStore as noStore } from 'next/cache';
+import { createSupabaseAdminClient } from '@/lib/supabase/supabaseAdmin'; // ← değişti
 
 type TrendDir = 'up' | 'down';
-type Trend = { change: number | null; trend: TrendDir }; // ← null izin ver
-type CountMonthlyRow = { this_month: number; prev_month: number };
-
-type CountsRow = {
-  total_users: number;
-  total_systems: number;
-  active_requests: number;
-};
+type Trend = { change: number | null; trend: TrendDir };
 
 export type CardsTotals = {
   totalUsers: number;
-  totalPendingRequests: number; // status = pending toplam
+  totalPendingRequests: number;
   totalSystems: number;
 };
 
-// CardsTrends tipini da buna uydur:
 export type CardsTrends = {
   user: { change: number | null; trend: TrendDir };
   request: { change: number | null; trend: TrendDir };
@@ -37,113 +29,98 @@ export type CardsData = {
   deltas: CardsDeltas; // adet
 };
 
-// ————— Helpers —————
+// --------------- Helpers ---------------
 function calcTrend(curr: number, prev: number): Trend {
-  if (prev === 0) {
-    // 0 → X: yüzde hesaplama yok, UI "Yeni" gösterecek
-    return { change: null, trend: 'up' };
-  }
+  if (prev === 0) return { change: null, trend: 'up' };
   const deltaPct = ((curr - prev) / prev) * 100;
   return { change: Math.abs(deltaPct), trend: deltaPct >= 0 ? 'up' : 'down' };
 }
 
-function isCMArray(x: unknown): x is CountMonthlyRow[] {
-  return Array.isArray(x) &&
-    x.every(r => typeof (r as CountMonthlyRow)?.this_month === 'number' &&
-                 typeof (r as CountMonthlyRow)?.prev_month === 'number');
+function monthRange(offset: number): { startIso: string; endIso: string } {
+  const base = new Date();
+  const start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset, 1, 0, 0, 0));
+  const end = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset + 1, 1, 0, 0, 0));
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
 }
 
-function pickPendingTotal(arr: unknown): number {
-  const list = Array.isArray(arr) ? arr as Array<{ label?: unknown; value?: unknown }> : [];
-  const hit = list.find(i => String(i?.label ?? '').toLowerCase().includes('pending'));
-  return Number(hit?.value ?? 0);
-}
+type Client = Awaited<ReturnType<typeof createSupabaseAdminClient>>;
 
-// ————— RPC köprüleri —————
-async function getDashboardCounts(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
-): Promise<CountsRow | null> {
-  const { data, error } = await supabase.rpc('get_dashboard_counts');
-  if (error) { console.error('get_dashboard_counts error', error); return null; }
-  return Array.isArray(data) && data.length ? (data[0] as unknown as CountsRow) : null;
-}
-
-async function countMonthly(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+// Güvenli sayım: '*', head:true + detaylı log
+async function countExact(
+  sb: Client,
   table: 'users' | 'systems' | 'requests',
-  createdCol: string = 'created_at'
-): Promise<CountMonthlyRow> {
-  const { data, error } = await supabase.rpc('count_monthly', {
-    p_schema: 'public',
-    p_table: table,
-    p_col: createdCol,
-  });
+  where?: { column: string; value: string | number | boolean },
+): Promise<number> {
+  let q = sb.from(table).select('*', { count: 'exact', head: true });
+  if (where) q = q.eq(where.column, where.value);
+  const { count, error } = await q;
   if (error) {
-    console.error(`count_monthly error for ${table}.${createdCol}`, error);
-    return { this_month: 0, prev_month: 0 };
+    console.error('countExact error', { table, where, message: error.message, details: (error).details, hint: (error).hint });
+    return 0;
   }
-  if (!isCMArray(data) || data.length === 0) return { this_month: 0, prev_month: 0 };
-  const row = data[0];
-  return {
-    this_month: Number(row.this_month ?? 0),
-    prev_month: Number(row.prev_month ?? 0),
-  };
+  return typeof count === 'number' ? count : 0;
 }
 
-async function countMonthlyPendingRequests(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
-): Promise<CountMonthlyRow> {
-  const { data, error } = await supabase.rpc('count_monthly_pending_requests');
+async function countBetween(
+  sb: Client,
+  table: 'users' | 'systems' | 'requests',
+  createdCol: string,
+  startIso: string,
+  endIso: string,
+  where?: { column: string; value: string | number | boolean },
+): Promise<number> {
+  let q = sb
+    .from(table)
+    .select('*', { count: 'exact', head: true })
+    .gte(createdCol, startIso)
+    .lt(createdCol, endIso);
+  if (where) q = q.eq(where.column, where.value);
+  const { count, error } = await q;
   if (error) {
-    console.error('count_monthly_pending_requests error', error);
-    return { this_month: 0, prev_month: 0 };
+    console.error('countBetween error', { table, createdCol, startIso, endIso, where, message: error.message, details: (error).details, hint: (error).hint });
+    return 0;
   }
-  if (!isCMArray(data) || data.length === 0) return { this_month: 0, prev_month: 0 };
-  const row = data[0];
-  return {
-    this_month: Number(row.this_month ?? 0),
-    prev_month: Number(row.prev_month ?? 0),
-  };
+  return typeof count === 'number' ? count : 0;
 }
 
-// ————— Ana servis —————
+// --------------- Ana servis ---------------
 export async function fetchDashboardCards(): Promise<CardsData> {
   noStore();
-  
-  const supabase = await createSupabaseServerClient();
+  const sb = createSupabaseAdminClient();
 
-  // 1) Toplamlar
-  const counts = await getDashboardCounts(supabase);
-  const totalUsers = Number(counts?.total_users ?? 0);
-  const totalSystems = Number(counts?.total_systems ?? 0);
+  // 1) Toplamlar (RPC YOK, direkt sayıyoruz)
+  const [totalUsers, totalSystems, totalPendingRequests] = await Promise.all([
+    countExact(sb, 'users'),
+    countExact(sb, 'systems'),                 // 'systems' tablon yoksa bunu 'products' veya uygun tabloya çevir
+    countExact(sb, 'requests', { column: 'status', value: 'pending' }),
+  ]);
 
-  const byStatus = await supabase.rpc('get_requests_by_status');
-  if (byStatus.error) console.error('get_requests_by_status error', byStatus.error);
-  const totalPendingRequests = pickPendingTotal(byStatus.data);
+  const totals: CardsTotals = { totalUsers, totalPendingRequests, totalSystems };
 
-  const totals: CardsTotals = {
-    totalUsers,
-    totalPendingRequests,
-    totalSystems,
-  };
+  // 2) Aylık karşılaştırmalar
+  const { startIso: curS, endIso: curE } = monthRange(0);
+  const { startIso: prevS, endIso: prevE } = monthRange(-1);
 
-  // 2) Aylık kıyaslar
-  const [uCM, sCM, pCM] = await Promise.all([
-    countMonthly(supabase, 'users', 'created_at'),
-    countMonthly(supabase, 'systems', 'created_at'),
-    countMonthlyPendingRequests(supabase),
+  const [uCurr, uPrev, sCurr, sPrev, pCurr, pPrev] = await Promise.all([
+    countBetween(sb, 'users', 'created_at', curS,  curE),
+    countBetween(sb, 'users', 'created_at', prevS, prevE),
+    countBetween(sb, 'systems', 'created_at', curS,  curE),
+    countBetween(sb, 'systems', 'created_at', prevS, prevE),
+    countBetween(sb, 'requests', 'created_at', curS,  curE,  { column: 'status', value: 'pending' }),
+    countBetween(sb, 'requests', 'created_at', prevS, prevE, { column: 'status', value: 'pending' }),
   ]);
 
   const trends: CardsTrends = {
-    user:    calcTrend(uCM.this_month, uCM.prev_month),
-    request: calcTrend(pCM.this_month, pCM.prev_month),
-    system:  calcTrend(sCM.this_month, sCM.prev_month),
+    user:    calcTrend(uCurr, uPrev),
+    system:  calcTrend(sCurr, sPrev),
+    request: calcTrend(pCurr, pPrev),
   };
 
+  // Sen “bu ayki adet” göstermek istiyorum demişsin; önce fark alıyordun.
   const deltas: CardsDeltas = {
-    user:    uCM.this_month,   // ÖNCE: uCM.this_month - uCM.prev_month
-    request: pCM.this_month,   // ÖNCE: pCM.this_month - pCM.prev_month
-    system:  sCM.this_month,   // ÖNCE: sCM.this_month - sCM.prev_month
+    user: uCurr,
+    system: sCurr,
+    request: pCurr,
   };
 
   return { totals, trends, deltas };

@@ -13,17 +13,16 @@ import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import ProductMedia from '@/features/products/components/ProductMedia';
 import ProductInfo from '@/features/products/components/ProductInfo';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions';
-import ProductPrintBlock from '@/features/products/print/ProductPDF';
 
 import { withVersion } from '@/features/products/utils/url';
+import { resolveStorageUrl } from '@/features/products/services/resolveStorageUrl.server';
 import { mapRowToProduct } from '@/features/products/types';
-
 import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params; // ← Next 15 "sync dynamic APIs" dramını keser
+  const { id } = await params;
   const row = await fetchProductById(id);
   if (!row) return { title: 'Ürün bulunamadı' };
   const p = mapRowToProduct(row);
@@ -31,22 +30,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 async function getRole(): Promise<'Admin' | 'Manager' | 'User' | null> {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
+  const jar = await cookies();
+  const sb = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) { return cookieStore.get(name)?.value; },
+        get(name: string) { return jar.get(name)?.value; },
         set() {}, remove() {},
-      }
-    }
+      },
+    },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await sb.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
+  const { data } = await sb.from('users').select('role').eq('id', user.id).single();
   return data?.role ?? null;
 }
 
@@ -63,71 +62,47 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!row) notFound();
 
-  // DB → domain (camelCase + türetilmiş alanlar)
+  // DB → UI
   const product = mapRowToProduct(row);
 
-  // Label map’leri (slug → görünen ad)
+  // Etiket sözlükleri
   const { categoryLabelMap, subLabelMap } = buildCategoryHelpers(dicts.categoryTree);
   const variantLabelMap = Object.fromEntries(dicts.variants.map(v => [v.key, v.name] as const));
 
-  // Print bloğu için satırlar
-  const rows = [
-    { label: 'Varyant', value: variantLabelMap[product.variant] ?? product.variant },
-    {
-      label: 'Kategori',
-      value: [categoryLabelMap.get(product.category), subLabelMap.get(product.subCategory ?? '')]
-        .filter(Boolean)
-        .join(' / ') || '-',
-    },
-    { label: 'Tarih', value: product.date },
-    { label: 'ID', value: String(product.id) },
+  // ---------- MEDYA SEÇİMİ + İMZALI URL ----------
+  // Tercih: PDF varsa onu göster; yoksa image.
+  const preferPdf = (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
+  const rawPrimary   = preferPdf ? product.filePath : product.image;   // path veya mutlak URL veya null
+  const rawSecondary = preferPdf ? product.image   : product.filePath; // fallback
 
-    product.drawer && { label: 'Çizen', value: product.drawer },
-    product.control && { label: 'Kontrol', value: product.control },
-    product.tempCode && { label: 'Geçici Kod', value: product.tempCode },
-    product.profileCode && { label: 'Profil Kodu', value: product.profileCode },
-    product.manufacturerCode && { label: 'Üretici Kodu', value: product.manufacturerCode },
-    product.scale && { label: 'Ölçek', value: product.scale },
+  // path → imzalı URL, public eski URL ise private bucket için yine imzalıyoruz
+  const primaryUrlSigned   = await resolveStorageUrl(rawPrimary);
+  const secondaryUrlSigned = await resolveStorageUrl(rawSecondary);
 
-    typeof product.outerSizeMm === 'number' && {
-      label: 'Dış Çevre (mm)',
-      value: product.outerSizeMm.toLocaleString('tr-TR'),
-    },
-    
-    typeof product.sectionMm2 === 'number' && {
-      label: 'Kesit (mm²)',
-      value: product.sectionMm2.toLocaleString('tr-TR'),
-    },
+  // cache-busting (updatedAt yoksa createdAt)
+  const verBase = product.updatedAt ?? product.createdAt ?? null;
+  const primaryUrl   = withVersion(primaryUrlSigned, verBase);
+  const secondaryUrl = withVersion(secondaryUrlSigned, verBase);
 
-    typeof product.unit_weight_g_pm === 'number' && {
-      label: 'Birim Ağırlığı (gr/m)',
-      value: product.unit_weight_g_pm.toLocaleString('tr-TR'),
-    },
-  ].filter(Boolean) as { label: string; value: React.ReactNode }[];
-
-  const versionedImage = withVersion(product.image ?? null, product.updatedAt ?? null);
-  const versionedFile  = withVersion(product.filePublicUrl ?? null, product.updatedAt ?? null);
-
+  // Tip ipucu (PDF mi, image mı?) – ProductMedia zaten kendisi de tespit ediyor;
+  // biz yine de ext'i iletelim.
   const extLower = (product.fileExt ?? '').toLowerCase();
   const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
-
   type AllowedExt = typeof allowed[number];
-  
   const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
     ? (extLower as AllowedExt)
     : null;
 
   return (
-    <Box px={2} py={2}>
-
+    <Box px={1} py={1}>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
           <ProductMedia
-            src={versionedImage}
-            fileUrl={versionedFile}
+            src={primaryUrl}              // Öncelikli (PDF ya da görsel)
+            fileUrl={secondaryUrl}        // Yedek
             fileExt={mediaExt}
             fileMime={product.fileMime ?? null}
-            aspectRatio={1 / Math.sqrt(2)}   // A4 oranı (≈0.7071)
+            aspectRatio={1 / Math.sqrt(2)}  // A4 oranı
             objectFit="contain"
           />
         </Grid>
@@ -164,21 +139,18 @@ export default async function ProductDetailPage({ params }: Props) {
               variant: variantLabelMap,
             }}
 
-            // medya eylemleri artık burada
-            mediaSrc={versionedImage}
-            mediaFileUrl={versionedFile}
+            // medya action butonları aynı URL'leri kullansın
+            mediaSrc={primaryUrl}
+            mediaFileUrl={secondaryUrl}
             mediaExt={mediaExt}
             mediaMime={product.fileMime ?? null}
 
-            footerSlot={<ProductDetailActions id={String(product.id)} canEdit={canEdit} />}
-          />
+            description={product.description}
+          >
+            <ProductDetailActions id={String(product.id)} canEdit={canEdit} />
+          </ProductInfo>
         </Grid>
       </Grid>
-
-      <ProductPrintBlock
-        rows={rows}
-        title={`${product.code} — ${product.name}`}
-      />
     </Box>
   );
 }

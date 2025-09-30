@@ -1,30 +1,21 @@
 // src/lib/auth/getSessionRole.server.ts
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import 'server-only';
+import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+import type { Tables } from '@/types/supabase';
 
-export type Role = 'Admin' | 'User';
+export type Role = Tables<'users'>['role'];
 
 export async function getSessionRole(): Promise<Role | null> {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        // SSR client için minimum yeterli
-        get(name: string) { return cookieStore.get(name)?.value; },
-        set() {}, remove() {},
-      }
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const sb = await createSupabaseServerClient();
+  const { data: { user } } = await sb.auth.getUser();
   if (!user) return null;
 
-  // önce metadata, yoksa DB
-  const metaRole = (user.app_metadata?.role ?? user.user_metadata?.role) as Role | undefined;
-  if (metaRole) return metaRole;
+  const { data, error } = await sb
+    .from('users')
+    .select('role')
+    .eq('id', user.id as Tables<'users'>['id'])
+    .maybeSingle<{ role: Role }>();   // ← burası kritik
 
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return (data?.role as Role | undefined) ?? null;
+  if (error) return null;
+  return data?.role ?? null;
 }

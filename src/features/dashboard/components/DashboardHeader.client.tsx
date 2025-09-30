@@ -3,22 +3,14 @@
 
 import * as React from 'react';
 import {
-  Box,
-  Chip,
-  Paper,
-  Typography,
-  Avatar,
-  useTheme,
-  useMediaQuery,
-  Grid,
-  Stack,
+  Box, Chip, Paper, Typography, Avatar, useTheme, useMediaQuery, Grid, Stack,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import RatesTicker from './RatesTicker.client';
 import TimeTicker from './TimeTicker.client';
 
-type Props = { username: string; role: string; image: string | null };
+type Props = { username: string; role: string; image: string | null; greetPrefix?: string };
 
 function roleChipColor(role: string | null):
   'default' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' {
@@ -30,7 +22,7 @@ function roleChipColor(role: string | null):
   return 'default';
 }
 
-export default function DashboardHeaderClient({ username, role, image }: Props) {
+export default function DashboardHeaderClient({ username, role, image, greetPrefix }: Props) {
   const theme = useTheme();
   const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
   const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
@@ -42,9 +34,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
   const avatarBg = alpha(theme.palette.primary.main, 0.22);
 
   const roleKey = roleChipColor(role);
-
-  // Koyu temada: arka plan role renginin %16 opaklığı, yazı aynı rengin "light" tonu.
-  // 'default' için nötr, okunur bir şema.
+  const greet = greetPrefix ?? 'Merhaba';
 
   return (
     <Paper
@@ -66,16 +56,10 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
           background: gradient,
           zIndex: 0,
         },
-        backdropFilter: 'blur(0px)',
       }}
     >
-      <Grid
-        container
-        spacing={{ xs: 1.25, sm: 2 }}
-        alignItems="center"
-        sx={{ position: 'relative', zIndex: 1 }}
-      >
-        {/* Sol: avatar + selamlama */}
+      <Grid container spacing={{ xs: 1.25, sm: 2 }} alignItems="center" sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Sol */}
         <Grid size={{ xs: 12, md: 8, sm: 8 }} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }} alignItems="center" sx={{ minWidth: 0 }}>
             <Avatar
@@ -99,33 +83,23 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
                 lineHeight={1.15}
                 noWrap
                 color="text.primary"
-                sx={{
-                  fontSize: { xs: 16, sm: 18 },
-                  textShadow: isDark ? '0 1px 0 rgba(0,0,0,0.45)' : 'none',
-                }}
+                sx={{ fontSize: { xs: 16, sm: 18 }, textShadow: isDark ? '0 1px 0 rgba(0,0,0,0.45)' : 'none' }}
               >
-                Merhaba,{` `}
-                <Box
-                  component="span"
-                  sx={{
-                    color: isDark ? 'primary.light' : 'secondary.main',
-                  }}
-                >
+                {greet},{' '}
+                <Box component="span" sx={{ color: isDark ? 'primary.light' : 'secondary.main' }}>
                   {username}
                 </Box>
               </Typography>
 
-              {/* Küçük ekranda yer kazancı için role Chip’i gizle */}
               <Chip
                 size="small"
                 label={role}
                 color={roleKey}
-                variant="outlined"              // zemin transparan kalır
+                variant="outlined"
                 sx={{
                   mt: 0.5,
                   fontWeight: 700,
                   display: { xs: 'none', sm: 'inline-flex' },
-                  // SADECE YAZI RENGİNİ değiştir: border ve arka plan aynen kalsın
                   ...(isDark
                     ? (roleKey === 'default'
                         ? { '& .MuiChip-label': { color: alpha(theme.palette.text.primary, 0.85) } }
@@ -137,7 +111,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
           </Stack>
         </Grid>
 
-        {/* Sağ: canlı saat + kurlar */}
+        {/* Sağ */}
         <Grid size={{ xs: 12, md: 4, sm: 4 }}>
           <Stack
             direction="row"
@@ -146,12 +120,7 @@ export default function DashboardHeaderClient({ username, role, image }: Props) 
             justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
             sx={{ width: '100%', flexWrap: 'wrap', rowGap: 1 }}
           >
-            <RatesTicker
-              provider="tcmb"
-              layout={isMdDown ? 'dual' : 'two'}
-              density={isMdDown ? 'ultra' : 'compact'}
-              showMeta={!isMdDown}
-            />
+            <RatesTicker provider="tcmb" layout={isMdDown ? 'dual' : 'two'} density={isMdDown ? 'ultra' : 'compact'} showMeta={!isMdDown} />
             <TimeTicker timeZone="Europe/Istanbul" dense showSeconds={!isSmDown} />
           </Stack>
         </Grid>

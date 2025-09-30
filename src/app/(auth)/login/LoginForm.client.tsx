@@ -2,95 +2,140 @@
 'use client';
 
 import * as React from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import {
-  TextField, Box, Button, IconButton, InputAdornment, Grid, Typography, Divider
+  TextField,
+  Box,
+  Button,
+  IconButton,
+  InputAdornment,
+  Grid,
+  Typography,
+  CircularProgress,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import {
+  object as yupObject,
+  string as yupString,
+  type InferType as YupInferType,
+} from 'yup';
+
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 import { glassTextFieldProps } from '../constants/formstyles';
-import { handleGoogleOAuth } from '@/features/auth/google-oauth.client';
+
+/* ---------------------------------- Schema --------------------------------- */
+
+const schema = yupObject({
+  email: yupString()
+    .trim()
+    .required('E-posta gerekli')
+    .email('Geçerli bir e-posta girin'),
+  password: yupString()
+    .required('Şifre gerekli')
+    .min(6, 'En az 6 karakter olmalı'),
+});
+
+type LoginValues = YupInferType<typeof schema>;
+
+/* ---------------------------------- View ----------------------------------- */
 
 export default function LoginForm() {
   const router = useRouter();
   const { show } = useSnackbar();
 
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [loadingEmail, setLoadingEmail] = React.useState<boolean>(false);
-  const [loadingOAuth, setLoadingOAuth] = React.useState<boolean>(false);
 
-  const [form, setForm] = React.useState<{ email: string; password: string }>({
-    email: '',
-    password: '',
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid, isDirty },
+  } = useForm<LoginValues>({
+    mode: 'onTouched',
+    resolver: yupResolver(schema),
+    defaultValues: { email: '', password: '' },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.email || !form.password) {
-      show('E-posta ve şifre gerekli.', 'error');
-      return;
-    }
-
-    setLoadingEmail(true);
+  const onSubmit = async (values: LoginValues) => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
+          email: values.email.toLowerCase(),
+          password: values.password,
         }),
       });
 
-      if (res.status === 403) { router.replace('/unauthorized'); return; }
-      if (res.status === 409) { show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error'); return; }
-      if (res.status === 401) { show('E-posta veya şifre hatalı.', 'error'); return; }
+      if (res.status === 403) {
+        router.replace('/unauthorized');
+        return;
+      }
+      if (res.status === 409) {
+        show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
+        return;
+      }
+      if (res.status === 401) {
+        show('E-posta veya şifre hatalı.', 'error');
+        return;
+      }
       if (!res.ok) {
         let reason = '';
-        try { reason = (await res.json()).error ?? ''; } catch {}
+        try {
+          const data: { error?: string } = await res.json();
+          reason = data?.error ?? '';
+        } catch {
+          /* swallow */
+        }
         show(`Giriş başarısız (${res.status})${reason ? `: ${reason}` : ''}`, 'error');
         return;
       }
 
       show('Giriş başarılı, yönlendiriliyorsunuz...', 'success');
       router.replace('/account');
+      router.refresh();
     } catch (err) {
       console.error('Girişte beklenmeyen hata:', err);
       show('Beklenmeyen bir hata oluştu.', 'error');
-    } finally {
-      setLoadingEmail(false);
     }
   };
 
+  const emailFieldError = errors.email?.message ?? '';
+  const passwordFieldError = errors.password?.message ?? '';
+  const disabled = isSubmitting || !isDirty || !isValid;
+
   return (
-    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={2}>
+
+        {/* E-posta */}
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <TextField
+            {...register('email')}
             label="E-posta"
             name="email"
             type="email"
-            value={form.email}
-            onChange={handleChange}
+            autoComplete="email"
+            helperText={emailFieldError}
             required
             {...glassTextFieldProps}
           />
         </Grid>
 
+        {/* Şifre */}
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <TextField
+            {...register('password')}
             label="Şifre"
             name="password"
             type={showPassword ? 'text' : 'password'}
-            value={form.password}
-            onChange={handleChange}
+            autoComplete="current-password"
+            helperText={passwordFieldError}
             required
             {...glassTextFieldProps}
             InputProps={{
@@ -102,29 +147,25 @@ export default function LoginForm() {
                     onClick={() => setShowPassword((s) => !s)}
                     edge="end"
                     aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                    tabIndex={0}
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
-              sx: (theme) => ({
-                ...(typeof glassTextFieldProps.InputProps?.sx === 'function'
-                  ? glassTextFieldProps.InputProps.sx(theme)
-                  : (glassTextFieldProps.InputProps?.sx ?? {})),
-              }),
             }}
           />
         </Grid>
 
-        {/* E-posta/şifre butonu */}
+        {/* Giriş butonu */}
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <Button
             type="submit"
             variant="outlined"
             color="primary"
             fullWidth
-            loading={loadingEmail}
-            loadingIndicator="Giriş yapılıyor..."
+            disabled={disabled}
+            startIcon={isSubmitting ? <CircularProgress size={18} /> : undefined}
             sx={(t) => ({
               py: 1.25,
               textTransform: 'capitalize',
@@ -133,10 +174,11 @@ export default function LoginForm() {
               color: t.palette.text.primary,
             })}
           >
-            Giriş Yap
+            {isSubmitting ? 'Giriş yapılıyor…' : 'Giriş Yap'}
           </Button>
         </Grid>
 
+        {/* Alt bağlantılar */}
         <Grid size={{ xs: 12, sm: 6 }}>
           <Typography color="text.secondary">
             <Link href="/forgot-password" style={{ textDecoration: 'none' }}>
@@ -174,44 +216,6 @@ export default function LoginForm() {
               </Typography>
             </Link>
           </Typography>
-        </Grid>
-
-        <Grid size={{ xs: 12 }}>
-          <Divider sx={{ my: 1.5 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: 1 }}>
-              YA DA
-            </Typography>
-          </Divider>
-        </Grid>
-
-        {/* Google OAuth butonu */}
-        <Grid size={{ xs: 12 }}>
-          <Button
-            type="button"
-            variant="outlined"
-            fullWidth
-            loading={loadingOAuth}
-            loadingPosition="start"
-            startIcon={
-              <Box component="img" src="/google.svg" alt="Google" sx={{ width: 20, height: 20 }} />
-            }
-            onClick={async () => {
-              setLoadingOAuth(true);
-              await handleGoogleOAuth(msg => show(msg, 'error'));
-              setLoadingOAuth(false);
-            }}
-            sx={(t) => ({
-              py: 1.25,
-              textTransform: 'none',
-              borderRadius: 7,
-              borderColor: t.palette.divider,
-              color: t.palette.text.primary,
-              bgcolor: 'transparent',
-              '&:hover': { bgcolor: 'action.hover' },
-            })}
-          >
-            Google ile devam et
-          </Button>
         </Grid>
       </Grid>
     </Box>

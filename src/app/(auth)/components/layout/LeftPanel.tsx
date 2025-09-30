@@ -15,7 +15,7 @@ const texts = [
   'İHTİYAÇLARINIZA ÖZEL ÇÖZÜMLER',
 ];
 
-const MotionTypography = motion(Typography);
+const MotionTypography = motion.create(Typography);
 
 export default function AuthLeftPanel() {
   

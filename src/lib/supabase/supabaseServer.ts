@@ -1,69 +1,48 @@
 // src/lib/supabase/supabaseServer.ts
-'use server';
-
+import 'server-only';
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
 
-type DB = Database;
-export type TypedSupabaseClient = SupabaseClient<DB>;
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-function ensureEnv() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error('[supabase] env yok.');
-  }
+/** RSC: sadece OKU. Cookie yazmak YASAK. */
+export async function createSupabaseRSCClient() {
+  const jar = await cookies();
+  return createServerClient<Database, 'public'>(URL, ANON, {
+    cookies: {
+      get: (name: string) => jar.get(name)?.value,
+      set: () => {},     // no-op
+      remove: () => {},  // no-op
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
 }
 
-/**
- * write = true  → Server Action / Route Handler gibi response’a cookie yazabildiğin yerler
- * write = false → RSC gibi read-only ortamlar
- */
-export async function createSupabaseServerClient(opts: { write?: boolean } = {}): Promise<TypedSupabaseClient> {
-  ensureEnv();
-  const { write = false } = opts;
-
-  const store = await cookies();
-
-  return createServerClient<DB>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        // YENİ API: getAll + setAll
-        getAll() {
-          return store.getAll();
-        },
-        setAll(cookiesToSet) {
-          if (!write) return; // RSC’de yazma yok
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              store.set(name, value, options);
-            });
-          } catch {
-            // bazı ortamlarda read-only olabilir, sessiz geç
-          }
-        },
+/** Route Handler / Server Action: OKU + YAZ. */
+export async function createSupabaseRouteClient() {
+  const jar = await cookies();
+  return createServerClient<Database, 'public'>(URL, ANON, {
+    cookies: {
+      get: (name: string) => jar.get(name)?.value,
+      set: (name: string, value: string, options: CookieOptions) => {
+        jar.set({ name, value, ...options });
       },
-    }
-  );
+      remove: (name: string, options: CookieOptions) => {
+        jar.delete({ name, ...options });
+      },
+    },
+  });
 }
 
-export async function getServerSession() {
-  const sb = await createSupabaseServerClient();
-  return sb.auth.getSession();
-}
+/** Tip aliases (inference’tan türet, elde yazma) */
+export type SupabaseRSCClient   = Awaited<ReturnType<typeof createSupabaseRSCClient>>;
+export type SupabaseRouteClient = Awaited<ReturnType<typeof createSupabaseRouteClient>>;
 
-export async function getServerUser() {
-  const sb = await createSupabaseServerClient();
-  return sb.auth.getUser();
-}
-
-export async function getWritableServerClient(): Promise<TypedSupabaseClient> {
-  return createSupabaseServerClient({ write: true });
-}
-
-export async function signOutServer() {
-  const sb = await getWritableServerClient();
-  return sb.auth.signOut();
-}
+/** Eski isimle de ihtiyaç varsa: */
+export { createSupabaseRSCClient as createSupabaseServerClient };

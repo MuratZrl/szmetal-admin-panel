@@ -1,41 +1,50 @@
 // src/components/ui/snackbar/useSnackbar.client.tsx
-"use client";
-import React, { createContext, useContext, useState } from "react";
-import { Snackbar, Alert } from "@mui/material";
+'use client';
 
+import React, { createContext, useContext, useState } from 'react';
+import { Snackbar, Alert } from '@mui/material';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
+
+type Severity = 'success' | 'error' | 'info';
 type SnackbarState = {
   open: boolean;
   message?: string;
-  severity?: "success" | "error" | "info";
+  severity?: Severity;
 };
 
-const SnackbarContext = createContext<{ show: (msg: string, severity?: SnackbarState["severity"]) => void; }>({ show: () => {} });
+type Ctx = { show: (msg: string, severity?: Severity) => void };
+
+const SnackbarContext = createContext<Ctx>({ show: () => {} });
+
+// Tek ve sabit tema (uygulama temasından bağımsız)
+const snackbarTheme = createTheme({
+  palette: { mode: 'light' },
+});
 
 export const SnackbarProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState<SnackbarState>({ open: false });
 
-  const show = (message: string, severity: SnackbarState["severity"] = "info") => {
+  const show = (message: string, severity: Severity = 'info') => {
     setState({ open: true, message, severity });
   };
+
+  const close = () => setState(s => ({ ...s, open: false }));
 
   return (
     <SnackbarContext.Provider value={{ show }}>
       {children}
-      <Snackbar
-        open={state.open}
-        autoHideDuration={4000}
-        onClose={() => setState(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setState(s => ({ ...s, open: false }))}
-          severity={state.severity}
-          variant="filled"
-          sx={{ width: '100%' }}
+      <MuiThemeProvider theme={snackbarTheme}>
+        <Snackbar
+          open={state.open}
+          autoHideDuration={4000}
+          onClose={close}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-          {state.message}
-        </Alert>
-      </Snackbar>
+          <Alert onClose={close} severity={state.severity ?? 'info'} variant="filled" sx={{ width: '100%' }}>
+            {state.message}
+          </Alert>
+        </Snackbar>
+      </MuiThemeProvider>
     </SnackbarContext.Provider>
   );
 };

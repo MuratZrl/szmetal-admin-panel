@@ -1,38 +1,64 @@
-// src/theme/ThemeToggle.client.tsx
 'use client';
+
 import * as React from 'react';
-import { IconButton, Tooltip } from '@mui/material';
+import { ListItemButton, Tooltip, Box } from '@mui/material';
+import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
-import { useTheme as useNextTheme } from 'next-themes';
 
-export default function ThemeToggle() {
-  const { theme, resolvedTheme, setTheme } = useNextTheme();
+import { useThemeMode } from './ThemeModeProvider.client';
+
+const buttonSx: SxProps<Theme> = (theme) => {
+  const base = theme.palette.accent?.main ?? theme.palette.primary.main;
+
+  return {
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    px: 0,
+    borderRadius: '50%',
+
+    // Durum arka planları
+    '&:hover': {
+      backgroundColor: alpha(base, 0.10),
+    },
+    '&.Mui-selected': {
+      backgroundColor: alpha(base, 0.18),
+    },
+    '&.Mui-selected:hover': {
+      backgroundColor: alpha(base, 0.22),
+    },
+    '&.Mui-focusVisible': {
+      backgroundColor: alpha(base, 0.14),
+    },
+  };
+};
+
+export default function ThemeToggleSidebar(): React.JSX.Element {
+  const { mode, toggle } = useThemeMode();
+
+  // İlk render jitter’ını kes, layout kırılmasın diye boş kutu dön
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  if (!mounted) return <Box sx={{ width: 44, height: 44 }} />;
 
-  // Etkin mod (system ise resolvedTheme)
-  const effective = (theme === 'system' ? resolvedTheme : theme) as 'light' | 'dark';
-
-  // Bir sonraki mod (kullanıcının tıklayınca gideceği yer)
-  const nextTheme: 'light' | 'dark' = effective === 'dark' ? 'light' : 'dark';
-
-  const label = nextTheme === 'dark' ? 'Açık moda geç' : 'Koyu moda geç';
-
-  const handleClick = () => {
-    setTheme(nextTheme);
-  };
+  const nextText = mode === 'dark' ? 'Açık temaya geç' : 'Karanlık temaya geç';
+  const Icon = mode === 'dark' ? LightModeIcon : DarkModeIcon;
 
   return (
-    <Tooltip title={label} placement="right">
-      <IconButton onClick={handleClick} aria-label={label} size="medium">
-        {nextTheme === 'dark' ? (
-          <DarkModeIcon fontSize="medium" />
-        ) : (
-          <LightModeIcon fontSize="medium" />
-        )}
-      </IconButton>
+    <Tooltip title={nextText} placement="right" arrow disableInteractive enterTouchDelay={0}>
+      <ListItemButton
+        component="button"
+        type="button"
+        aria-label={nextText}
+        onClick={toggle}
+        sx={buttonSx}
+      >
+        <Box component="span" sx={{ display: 'inline-flex', pointerEvents: 'none' }}>
+          <Icon fontSize="small" />
+        </Box>
+      </ListItemButton>
     </Tooltip>
   );
 }

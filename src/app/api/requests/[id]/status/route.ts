@@ -1,15 +1,32 @@
 // app/api/requests/[id]/status/route.ts
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
-import type { RequestStatus } from '@/features/requests/types';
+import type { Database } from '@/types/supabase';
 
-type Body = { status: Extract<RequestStatus, 'approved' | 'rejected' | 'pending'> };
+/* -------------------------------- Types ---------------------------------- */
+type Users       = Database['public']['Tables']['users'];
+type UsersRow    = Users['Row'];
+type Requests    = Database['public']['Tables']['requests'];
+type RequestRow  = Requests['Row'];
+type RequestUpd  = Requests['Update'];
+type RequestId   = RequestRow['id'];
+type ReqStatus   = RequestRow['status']; // 'approved' | 'rejected' | 'pending'
 
+type Body = { status: ReqStatus };
+
+/* --------------------------- Narrow helpers ------------------------------ */
 function parseStatus(v: unknown): Body['status'] | null {
   const s = typeof v === 'string' ? v.toLowerCase().trim() : '';
   return s === 'approved' || s === 'rejected' || s === 'pending' ? s : null;
 }
 
+// TS inference bazen Postgrest zincirinde update() parametresini `never` yapıyor.
+// Patch’i önce tablo tipine göre doğrulayıp sonra bilinçli `never` veriyoruz.
+function asUpdateParam<T>(u: T) {
+  return u as unknown as never;
+}
+
+/* --------------------------------- Route --------------------------------- */
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -26,16 +43,19 @@ export async function POST(
   // 2) supabase ve kullanıcı
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
 
-  // 3) rol kontrolü (örnek: public.users(role) tablosu varsayımı)
+  // 3) rol kontrolü
+  type UserRoleOnly = Pick<UsersRow, 'role'>;
   const { data: me, error: meErr } = await supabase
     .from('users')
     .select('role')
-    .eq('id', user.id)
-    .single();
+    .eq('id', user.id as UsersRow['id'])
+    .single<UserRoleOnly>();
 
-  if (meErr || !me || !['Admin','Manager'].includes(String(me.role))) {
+  if (meErr || !me || !['Admin', 'Manager'].includes(String(me.role))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -45,13 +65,15 @@ export async function POST(
   }
 
   // 5) Atomik update: hem id hem de mevcut status = 'pending' koşuluyla
+  const patch = { status, updated_at: new Date().toISOString() } satisfies RequestUpd;
+
   const { data, error } = await supabase
     .from('requests')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('status', 'pending')
+    .update(asUpdateParam<RequestUpd>(patch))
+    .eq('id', id as RequestId)
+    .eq('status', 'pending' satisfies ReqStatus)
     .select('id, status')
-    .maybeSingle(); // 0 satır güncellenirse error yerine null dönebilir
+    .maybeSingle<Pick<RequestRow, 'id' | 'status'>>(); // null => kilit/uyuşmazlık
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -61,5 +83,5 @@ export async function POST(
     return NextResponse.json({ error: 'status_locked' }, { status: 409 });
   }
 
-  return NextResponse.json({ id: data.id, status: data.status as RequestStatus });
+  return NextResponse.json({ id: data.id, status: data.status });
 }

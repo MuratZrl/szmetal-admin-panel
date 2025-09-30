@@ -18,7 +18,8 @@ export default async function ProductCreatePage() {
   const dicts = await fetchProductDicts();
 
   return (
-    <Box px={2} >
+    <Box px={1} py={1} >
+      
       <Typography variant="h5" sx={{ mb: 1 }}>
         Yeni Profil Ekle
       </Typography>
@@ -26,10 +27,11 @@ export default async function ProductCreatePage() {
       <Divider sx={{ mb: 2 }} />
 
       <Grid container>
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid size={{ xs: 12 }}>
           <ProductCreateForm dicts={dicts} />
         </Grid>
       </Grid>
+
     </Box>
   );
 }

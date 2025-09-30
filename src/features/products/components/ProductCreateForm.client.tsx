@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Paper, Box, Stack, Button } from '@mui/material';
+import { Paper, Box, Stack, Button, Grid } from '@mui/material'; // ← Grid eklendi
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -20,12 +20,12 @@ import {
   customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
-// DİKKAT: doğru yol components/form
+// DİKKAT: doğru yol products/forms
 import ProductFormFields from '@/features/products/forms/ProductFormFields.client';
+import NotesField from '@/features/products/forms/NotesField';
 
 type Props = { dicts: ProductDicts };
 
-// file alanını forma ekliyoruz; upload’u ProductFormFields setValue ile dolduruyor
 type CreateValues = ProductFormValues & { file: File | null };
 
 export default function ProductCreateForm({ dicts }: Props) {
@@ -66,6 +66,9 @@ export default function ProductCreateForm({ dicts }: Props) {
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability ?? true,
         file: v.file ?? null,
+
+        // ↓↓↓ Yeni alan
+        description: v.description || null, // products.client.ts'te tipini eklemeyi unutma
       });
 
       show('Ürün oluşturuldu.', 'success');
@@ -79,13 +82,22 @@ export default function ProductCreateForm({ dicts }: Props) {
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-      <FormProvider {...methods}>
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          {/* Tüm form alanları + dosya yükleme bölümü burada */}
-          <ProductFormFields methods={methods} dicts={dicts} showFileSection />
 
-          {/* Aksiyonlar */}
-          <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 2 }}>
+      <FormProvider {...methods}>
+
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+
+          <Grid container spacing={2} alignItems="stretch">
+            <Grid size={{ xs: 12, md: 9 }}>
+              <ProductFormFields methods={methods} dicts={dicts} showFileSection />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
+              <NotesField />
+            </Grid>
+          </Grid>
+
+          <Stack direction="row" spacing={1} justifyContent="start" sx={{ mt: 2 }}>
             <Button variant="outlined" onClick={() => router.back()} disabled={isSubmitting}>
               İptal
             </Button>
@@ -93,8 +105,11 @@ export default function ProductCreateForm({ dicts }: Props) {
               Kaydet
             </Button>
           </Stack>
+
         </Box>
+
       </FormProvider>
+
     </Paper>
   );
 }

@@ -1,10 +1,7 @@
 @import "tailwindcss";
 
 /* Tüm kökleri uzat */
-:root, html, body, #__next {
-  height: 100%;
-  width: 100%;
-}
+:root, html, body, #__next { height: 100%; width: 100%; }
 
 html, body {
   box-sizing: border-box;
@@ -16,32 +13,42 @@ html, body {
 html { box-sizing: border-box; }
 *, *::before, *::after { box-sizing: inherit; }
 
-/* Yalnızca yazdırma davranışı */
+/* --- EKRANDA print alanını gizle --- */
+@media screen {
+  #print-area { display: none; }
+}
+
+/* --- YAZDIRMA --- */
 @media print {
   @page {
-    size: A4 portrait;         /* A4 dikey */
-    margin: 10mm;              /* yazıcı kenarları */
+    size: A4 portrait;
+    margin: 12mm;
   }
 
-  /* Yalnızca #print-area kalsın */
+  /* Ekran içeriğini gizle */
   body * { visibility: hidden !important; }
-  /* Gereksiz boşlukların ekstra sayfa açmasını engelle */
-  #print-area section:last-child { margin-bottom: 0 !important; }
-  #print-area .avoid-break { break-inside: avoid; page-break-inside: avoid; }
-  #print-area table { page-break-inside: auto; }
-  #print-area tr { break-inside: avoid; page-break-inside: avoid; }
 
-  /* Renklerin solmaması */
-  * {
+  /* Sadece print alanını göster ve yerleştir */
+  #print-area,
+  #print-area * { visibility: visible !important; }
+
+  #print-area {
+    display: block !important;
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    color: #000 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Çizim kutuları sayfa ortasında bölünmesin */
-  .avoid-break { break-inside: avoid; page-break-inside: avoid; }
-}
+  /* Satır kırılmalarını önle */
+  .avoid-break,
+  #print-area .avoid-break { break-inside: avoid; page-break-inside: avoid; }
 
-/* Ekranda print alanını saklamak istersen opsiyonel */
-@media screen {
-  #print-area { display: none; }
+  /* “Excel gibi” görünüm için çizgiler zaten MUI Table sx ile var,
+     ama garanti olsun istersen: */
+  #print-area table { border-collapse: collapse !important; }
+  #print-area th, #print-area td { border: 1px solid #000 !important; }
+  #print-area tr:nth-of-type(even) td { background: #f3f3f3 !important; }
 }

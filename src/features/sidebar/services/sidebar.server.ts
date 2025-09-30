@@ -1,4 +1,6 @@
 // src/features/sidebar/services/sidebar.server.ts
+// 'use server';  // Bu bir Server Action değil; istersen kaldır. Zararı yok.
+
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Role } from '../types';
 
@@ -9,23 +11,26 @@ export type SidebarInitialData = {
 };
 
 export async function getSidebarInitialData(): Promise<SidebarInitialData> {
-  const sb = await createSupabaseServerClient();
+  const sb = await createSupabaseServerClient(); // ← isim düzeltildi
 
-  const { data: userData } = await sb.auth.getUser();
-  const user = userData?.user ?? null;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) {
+    return { role: null, unreadCount: 0, userId: null };
+  }
 
-  if (!user) return { role: null, unreadCount: 0, userId: null };
-
-  const [{ data: roleRow }, { count }] = await Promise.all([
-    sb.from('users').select('role').eq('id', user.id).single(),
-    sb.from('orders').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false),
+  const [roleRes, unreadRes] = await Promise.all([
+    sb.from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single<{ role: Role }>(),
+    sb.from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false),
   ]);
 
-  const role = (roleRow?.role ?? null) as Role | null;
+  const role: Role | null = roleRes.data?.role ?? null;
+  const unreadCount: number = typeof unreadRes.count === 'number' ? unreadRes.count : 0;
 
-  return {
-    role,
-    unreadCount: typeof count === 'number' ? count : 0,
-    userId: user.id,
-  };
+  return { role, unreadCount, userId: user.id };
 }

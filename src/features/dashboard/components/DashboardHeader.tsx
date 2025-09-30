@@ -1,7 +1,7 @@
 // src/features/dashboard/components/DashboardHeader.tsx
 import * as React from 'react';
-import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import DashboardHeaderClient from './DashboardHeader.client';
+import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 
 type ProfileRow = { username: string | null; role: string | null; image?: string | null };
 
@@ -10,8 +10,25 @@ function roleLabelTR(role: string | null): string {
   if (r === 'admin') return 'Admin';
   if (r === 'manager') return 'Yönetici';
   if (r === 'user') return 'Kullanıcı';
-  if (r === 'banned') return 'Engelli';
   return 'Kullanıcı';
+}
+
+function istHour(): number {
+  // Node tarafında Intl ile TR saatini h23 olarak al
+  const hourStr = new Intl.DateTimeFormat('tr-TR', {
+    hour: 'numeric',
+    hourCycle: 'h23',
+    timeZone: 'Europe/Istanbul',
+  }).format(new Date());
+  const h = parseInt(hourStr, 10);
+  return Number.isFinite(h) ? h : 12;
+}
+
+function greetingTR(h: number): string {
+  if (h >= 6 && h < 12) return 'Günaydın';
+  if (h >= 12 && h < 15) return 'Hoş geldiniz';
+  if (h >= 15 && h < 24) return 'İyi akşamlar';
+  return 'İyi geceler';
 }
 
 async function fetchProfile(): Promise<{ username: string; role: string; image: string | null }> {
@@ -40,5 +57,6 @@ async function fetchProfile(): Promise<{ username: string; role: string; image: 
 
 export default async function DashboardHeader() {
   const { username, role, image } = await fetchProfile();
-  return <DashboardHeaderClient username={username} role={role} image={image} />;
+  const greetPrefix = greetingTR(istHour()); // Türkiye saatine göre
+  return <DashboardHeaderClient username={username} role={role} image={image} greetPrefix={greetPrefix} />;
 }

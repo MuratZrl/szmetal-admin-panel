@@ -21,6 +21,7 @@ import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 import { glassTextFieldProps } from '../constants/formstyles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { mergeSx } from '@/utils/mergeSx';
+
 import { supabase } from '@/lib/supabase/supabaseClient';
 
 type FormState = { password: string; confirmPassword: string };

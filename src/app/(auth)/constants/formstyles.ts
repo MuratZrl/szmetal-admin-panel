@@ -1,4 +1,5 @@
-// src/_constants_/glassTextFieldProps.ts
+// app/(auth)/constants/formstyles.ts
+
 import { TextFieldProps } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
@@ -24,18 +25,18 @@ export const glassTextFieldProps: Partial<TextFieldProps> = {
   InputProps: {
     sx: (theme) => {
       const isDark = theme.palette.mode === 'dark';
-      const baseBg = isDark ? alpha('#ffffff', 0.06) : alpha('#000000', 0.06);
+      const baseBg = isDark ? alpha('#ffffff', 0.06)  : alpha('#000000', 0.06);
       const hoverBg = isDark ? alpha('#ffffff', 0.09) : alpha('#000000', 0.09);
       const focusBg = isDark ? alpha('#ffffff', 0.12) : alpha('#000000', 0.12);
       const outline = isDark ? alpha('#ffffff', 0.24) : alpha('#000000', 0.24);
 
       return {
         // cam efekti
+        borderRadius: 12,
         backgroundColor: baseBg,
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         color: isDark ? theme.palette.common.white : theme.palette.text.primary,
-        borderRadius: 12,
         transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow']),
 
         // kenarlıklar

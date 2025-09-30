@@ -1,14 +1,28 @@
+// app/api/systems/draft/route.ts
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import { setFlowCookieOnResponse } from '@/features/create_request/services/flowToken.server';
 import { fetchSystemFormConfig } from '@/features/create_request/services/step2RequestForm.server';
-import type { Json } from '@/types/supabase';
+import type { Json, Database } from '@/types/supabase';
 import * as yup from 'yup';
 
 type Body = { slug: string; form: { [key: string]: Json } };
 type Step = 1 | 2 | 3;
 
-// Same-origin: origin/referrer sunucunun host’u ile eşleşmeli
+/* ------------------------------- Table types ------------------------------ */
+type Drafts     = Database['public']['Tables']['system_drafts'];
+type DraftRow   = Drafts['Row'];
+type DraftIns   = Drafts['Insert'];
+type DraftSlim  = Pick<DraftRow, 'step'>;
+
+/* ----------------------------- TS helpers --------------------------------- */
+// Postgrest zincirinde insert/upsert/update bazen `never` ister.
+// Önce tablo tipine karşı doğrulayıp, sonra bilinçli `never` veriyoruz.
+function asWriteParam<T>(v: T) {
+  return v as unknown as never;
+}
+
+/* ------------------------------ CSRF check -------------------------------- */
 function isSameOrigin(req: Request): boolean {
   const origin = req.headers.get('origin');
   const referer = req.headers.get('referer');
@@ -19,7 +33,7 @@ function isSameOrigin(req: Request): boolean {
   return originHost === host || refererHost === host;
 }
 
-// Config’ten yup şeması üret
+/* --------------------------- Yup schema builder --------------------------- */
 function schemaFromConfig(cfg: { fields: Array<{
   name: string; label: string; type?: 'text' | 'textarea' | 'number' | 'date';
   required?: boolean; min?: number; max?: number;
@@ -43,12 +57,11 @@ function schemaFromConfig(cfg: { fields: Array<{
   return yup.object().shape(shape).noUnknown(true).strict(false);
 }
 
-// app/api/systems/draft/route.ts (POST)
+/* --------------------------------- POST ----------------------------------- */
 export async function POST(req: Request) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
-
   if (!isSameOrigin(req)) return NextResponse.json({ error: 'CSRF_BLOCKED' }, { status: 403 });
 
   const ctype = req.headers.get('content-type') ?? '';
@@ -62,7 +75,6 @@ export async function POST(req: Request) {
   }
 
   const cfg = await fetchSystemFormConfig(slug);
-  
   if (!cfg?.fields?.length) {
     return NextResponse.json({ error: 'UNKNOWN_SYSTEM' }, { status: 404 });
   }
@@ -72,20 +84,19 @@ export async function POST(req: Request) {
   try {
     const parsed = await schema.validate(form, { abortEarly: false, stripUnknown: true });
 
-    // TEK ATIŞTA OLUŞTUR/GÜNCELLE + STEP=3
+    // Tek atışta upsert + step=3
+    const payload = {
+      user_id: user.id,
+      slug,
+      form_data: parsed as Record<string, Json>,
+      step: 3 as Step,
+    } satisfies DraftIns;
+
     const { data: row, error: upsertErr } = await supabase
       .from('system_drafts')
-      .upsert(
-        {
-          user_id: user.id,
-          slug,
-          form_data: parsed as Record<string, Json>,
-          step: 3 as Step,
-        },
-        { onConflict: 'user_id,slug' } // composite key’in buysa
-      )
+      .upsert(asWriteParam<DraftIns>(payload), { onConflict: 'user_id,slug' })
       .select('step')
-      .single();
+      .single<DraftSlim>();
 
     if (upsertErr || !row) {
       return NextResponse.json({ error: upsertErr?.message ?? 'UPSERT_FAILED' }, { status: 500 });
@@ -105,7 +116,9 @@ export async function POST(req: Request) {
   }
 }
 
+/* -------------------------------- DELETE ---------------------------------- */
 type DeleteBody = { slug: string };
+
 export async function DELETE(req: Request) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -127,7 +140,10 @@ export async function DELETE(req: Request) {
     .delete()
     .eq('user_id', user.id)
     .eq('slug', slug);
-  if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+
+  if (delErr) {
+    return NextResponse.json({ error: delErr.message }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

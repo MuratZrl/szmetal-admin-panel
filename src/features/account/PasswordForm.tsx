@@ -16,7 +16,7 @@ import type { Asserts } from 'yup';
 
 import { passwordSchema } from '@/constants/account/form-validations/passwordSchemas';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
-import { supabase } from '@/lib/supabase/supabaseClient';
+import { changePasswordAction } from '@/features/account/actions';
 
 type PasswordFormValues = Asserts<typeof passwordSchema>;
 
@@ -44,42 +44,22 @@ export default function PasswordForm() {
 
   const onSubmit = async (data: PasswordFormValues) => {
     const { currentPassword, newPassword } = data;
-    try {
-      const { data: me } = await supabase.auth.getUser();
-      if (!me?.user?.email) {
-        show('Oturum bulunamadı. Lütfen tekrar giriş yapın.', 'error');
-        return;
-      }
+    const res = await changePasswordAction({
+      currentPassword: currentPassword ?? '',
+      newPassword: newPassword ?? '',
+    });
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: me.user.email,
-        password: currentPassword ?? '',
-      });
-      if (signInError) {
-        show('Mevcut şifreniz hatalı. Lütfen kontrol edip tekrar deneyin.', 'error');
-        return;
-      }
-
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword ?? '' });
-      if (updateError) {
-        const msg = updateError.message ?? '';
-        if (msg.includes('Password') || msg.includes('minimum')) {
-          show('Yeni şifre gereksinimlerini karşılamıyor.', 'error');
-        } else {
-          show('Şifre güncellenemedi. Lütfen tekrar deneyin.', 'error');
-        }
-        return;
-      }
-
-      show('Şifreniz başarıyla güncellendi.', 'success');
-      reset();
-    } catch (err) {
-      console.error('Şifre değiştirme hatası:', err);
-      show('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+    if (!res.ok) {
+      // Sunucu mesajı ayrıntılı gelir
+      show(res.message ?? 'Şifre güncellenemedi. Lütfen tekrar deneyin.', 'error');
+      return;
     }
+
+    show(res.message ?? 'Şifreniz başarıyla güncellendi.', 'success');
+    reset();
   };
 
-  // Kalıcı silme çağrısı
+  // Kalıcı silme çağrısı (API’n zaten server’da)
   const handleCloseAccount = async () => {
     setCloseLoading(true);
     try {
@@ -91,9 +71,8 @@ export default function PasswordForm() {
 
       if (res.ok) {
         show('Hesabınız kalıcı olarak kapatıldı.', 'success');
-        // Oturumu kesin kapat ve login’e gönder
-        await supabase.auth.signOut();
-        window.location.href = '/login';
+        // Cookie’yi server’da temizleyip login’e yönlendir
+        window.location.assign('/api/logout?redirect=/login');
         return;
       }
 
@@ -176,7 +155,6 @@ export default function PasswordForm() {
         </Grid>
 
         <Box mt={3} display="flex" justifyContent="space-between" gap={2}>
-          {/* HESABI KAPAT */}
           <Button
             type="button"
             variant="outlined"
@@ -187,7 +165,6 @@ export default function PasswordForm() {
             Hesabı Kapat
           </Button>
 
-          {/* ŞİFREYİ GÜNCELLE */}
           <Button
             type="submit"
             variant="contained"
@@ -201,7 +178,6 @@ export default function PasswordForm() {
         </Box>
       </form>
 
-      {/* Onay Diyaloğu */}
       <Dialog open={closeOpen} onClose={() => !closeLoading && setCloseOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle>Hesabı Kapat</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>

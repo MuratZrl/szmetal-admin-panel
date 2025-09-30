@@ -10,7 +10,7 @@ import { getRoleInfo } from "@/features/account/helpers";
 import AccountSkeleton from "@/features/account/components/AccountCard.client";
 
 type Props = {
-  initialUserData: UserData | null; // ← SADECE BU
+  initialUserData: UserData | null;
 };
 
 export default function AccountClientSection({ initialUserData }: Props) {
@@ -22,13 +22,17 @@ export default function AccountClientSection({ initialUserData }: Props) {
 }
 
 function Inner({ initialUserData }: Props) {
-  // Hook’a options değil, { initialUserData } geçiriyoruz
   const { userData, uploading, uploadAvatar, removeAvatar, changeEmail, setUserData } =
     useAccount({ initialUserData });
 
   if (!userData) return <AccountSkeleton />;
 
   const { label: roleLabel, sx: roleStyle } = getRoleInfo(userData.role);
+
+  // ← Tipi Promise<void> olan köprü
+  const handleEmailChange = async (email: string): Promise<void> => {
+    await changeEmail(email); // HookResult’ı yok sayıyoruz; snackbar zaten hook içinde çıkıyor
+  };
 
   return (
     <>
@@ -40,7 +44,11 @@ function Inner({ initialUserData }: Props) {
         roleLabel={roleLabel}
         roleStyle={roleStyle}
       />
-      <AccountForm userData={userData} setUserData={setUserData} onEmailChange={changeEmail} />
+      <AccountForm
+        userData={userData}
+        setUserData={setUserData}
+        onEmailChange={handleEmailChange}  // ← burada wrapper’ı veriyoruz
+      />
       <PasswordForm />
     </>
   );

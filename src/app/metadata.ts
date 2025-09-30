@@ -1,7 +1,7 @@
 // app/metadata.ts
 import type { Metadata } from 'next';
 
-const baseUrl = 'https://szmetal-admin-panel.vercel.app'; // kendi domain'inle değiştir
+const baseUrl = 'https://szmetal.com.tr'; // kendi domain'inle değiştir
 
 export const metadata: Metadata = {
   title: {

@@ -1,89 +1,101 @@
+// src/app/(auth)/components/layout/RightPanel.tsx
 'use client';
 
-import { ReactNode, useEffect } from 'react';
-
+import * as React from 'react';
 import { Box, Paper } from '@mui/material';
-
-import { motion, useAnimation } from 'framer-motion';
+import { motion, useAnimationControls, useReducedMotion } from 'framer-motion';
 
 import ParticlesBackground from '@/app/(auth)/components/ui/ParticlesBackground';
-
 import Header from '@/app/(auth)/components/layout/Header';
 import Footer from '@/app/(auth)/components/layout/Footer';
 
 type Props = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
-// Sabit gradient renkler (düz renk gibi ele alınacak)
+// Durağan gradient renkleri
 const gradients = [
   '#9f0000ff',
   '#ad0000ff',
   '#aa0000ff',
-  '#910000ff', 
-  '#940000ff', 
-  '#7d0000ff', 
-  '#790000ff', 
-  '#630000ff', 
-  '#550000ff', 
-  '#5e0000ff', 
-  '#550000ff', 
-  '#380000ff', 
+  '#910000ff',
+  '#940000ff',
+  '#7d0000ff',
+  '#790000ff',
+  '#630000ff',
+  '#550000ff',
+  '#5e0000ff',
+  '#550000ff',
+  '#380000ff',
 ];
 
-const AuthRightPanel = ({ children }: Props) => {
-  const controls = useAnimation();
+export default function AuthRightPanel({ children }: Props) {
+  const controls = useAnimationControls();
+  const prefersReducedMotion = useReducedMotion();
 
-  useEffect(() => {
-    const loopGradient = async () => {
-      while (true) {
-        for (let i = 0; i < gradients.length; i++) {
-          const next = gradients[(i + 1) % gradients.length];
-          
-          await controls.start({
-            background: `linear-gradient(145deg, ${gradients[i]}, ${next})`, // ✅ backtick kullanıldı
-            transition: { duration: 7, ease: 'easeInOut' },
-          });
-        }
+  // StrictMode/SSR hydrasyonunda framer'ın "start after mount" uyarısını önlemek için
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  React.useEffect(() => {
+    if (!mounted || prefersReducedMotion) return;
+
+    let isActive = true;
+
+    const run = async () => {
+      // Bir sonraki frame'i bekle; consumer motion.div kesinlikle mount olsun
+      await new Promise(requestAnimationFrame);
+
+      let i = 0;
+      while (isActive) {
+        const next = gradients[(i + 1) % gradients.length];
+        await controls.start({
+          background: `linear-gradient(145deg, ${gradients[i]}, ${next})`,
+          transition: { duration: 7, ease: 'easeInOut' },
+        });
+        i = (i + 1) % gradients.length;
       }
     };
 
-    loopGradient(); // ✅ animasyonu başlat
-  }, [controls]);
+    run();
+
+    return () => {
+      isActive = false;
+      controls.stop();
+    };
+  }, [controls, mounted, prefersReducedMotion]);
 
   return (
     <Box sx={{ position: 'relative', width: 1, height: 1, overflow: 'hidden' }}>
-      
-      {/* Arka plan - framer motion ile */}
-      <motion.div
-        animate={controls}
-        style={{
-          position: 'absolute', inset: 0,
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: `linear-gradient(135deg, ${gradients[0]}, ${gradients[1]})`,
-          backgroundSize: '400% 400%',
-          zIndex: 0,
-        }}
-      />
+      {mounted && (
+        <motion.div
+          animate={controls}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            background: `linear-gradient(135deg, ${gradients[0]}, ${gradients[1]})`,
+            backgroundSize: '400% 400%',
+            willChange: 'background',
+            zIndex: 0,
+          }}
+        />
+      )}
 
-      {/* Header en üstte */}
       <Header
         logo={{
-          href: 'https://www.alutem.com.tr', // dış link olduğu için <a> ile açılır
+          href: 'https://www.alutem.com.tr',
           alt: 'Alutem',
-          srcLight: '/logo_black.png',   // açık tema
-          srcDark:  '/logo_white.png',   // koyu tema
+          srcLight: '/logo_black.png',
+          srcDark: '/logo_white.png',
           width: 120,
-          height: 65, 
+          height: 65,
         }}
         maxContentWidth={700}
         height={100}
       />
 
-      {/* Saydam blur layer */}
       <Paper
         square
         sx={{
@@ -99,13 +111,10 @@ const AuthRightPanel = ({ children }: Props) => {
           px: 2,
         }}
       >
-
         <ParticlesBackground />
-
         <Box sx={{ width: '100%', maxWidth: 700 }}>{children}</Box>
       </Paper>
 
-      {/* Footer */}
       <Box
         sx={{
           position: 'absolute',
@@ -119,6 +128,4 @@ const AuthRightPanel = ({ children }: Props) => {
       </Box>
     </Box>
   );
-};
-
-export default AuthRightPanel;
+}

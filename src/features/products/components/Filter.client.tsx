@@ -70,6 +70,11 @@ export default function Filters({
   const [to, setTo] = React.useState(sp.get('to') ?? '');
   const [sort, setSort] = React.useState(sp.get('sort') ?? 'date-desc');
 
+  // YENİ: Kullanılabilir (true) filtresi
+  const rawAvail = sp.get('availability');
+  const initialAvail = !!rawAvail && ['1','true','on','yes','evet'].includes(rawAvail.toLowerCase());
+  const [availableOnly, setAvailableOnly] = React.useState<boolean>(initialAvail);
+
   function toggleExpand(cat: string) {
     setExpanded(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
   }
@@ -120,6 +125,9 @@ export default function Filters({
 
     if (moldOnly) params.append('customerMold', 'Evet');
 
+    // YENİ: sadece true olduğunda gönder
+    if (availableOnly) params.set('availability', '1');
+
     router.replace(`?${params.toString()}`);
   }
 
@@ -136,6 +144,9 @@ export default function Filters({
     // YENİ
     setMoldOnly(false);
 
+    // YENİ
+    setAvailableOnly(false);
+
     router.replace(`?`);
   }
 
@@ -143,7 +154,7 @@ export default function Filters({
   return (
     <Box className="space-y-4" sx={{ position: 'sticky', top: 16 }}>
 
-      <TextField label="Ara (code veya ad)" size="small" value={q} onChange={e => setQ(e.target.value)} fullWidth />
+      <TextField label="Ara (ad veya kod)" size="small" value={q} onChange={e => setQ(e.target.value)} fullWidth />
       
       <Box mt={2} >
         <FormControlLabel
@@ -154,6 +165,19 @@ export default function Filters({
             />
           }
           label="Müşteri Kalıbı"
+        />
+      </Box>
+
+      {/* Basit tek checkbox: true filtresi */}
+      <Box mt={2}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={availableOnly}
+              onChange={() => setAvailableOnly(p => !p)}
+            />
+          }
+          label="Kullanılabilir"
         />
       </Box>
 
