@@ -1,42 +1,37 @@
 // app/(admin)/layout.tsx
 import * as React from 'react';
-import Providers from '@/providers';
 
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
+import { redirect } from 'next/navigation';
+
+import { Box, Paper } from '@mui/material';
 
 import Breadcrumb from '@/components/layout/Breadcrumb';
+
 import { SIDEBAR_WIDTH } from '@/constants/layout';
 
-// 🔁 yeni importlar
-import Sidebar from '@/features/sidebar'; // barrel export
+import Sidebar from '@/features/sidebar';
+
 import { getSidebarInitialData } from '@/features/sidebar/services/sidebar.server';
+
 import { mainLinks } from '@/constants/mainlinks';
 
-// Supabase auth cookie'lerine güveniyorsan bu iyi fikir.
-// İstemiyorsan kaldır; ama "cached user" saçmalıkları görürsen geri ekle.
+import AuthRefresh from './AuthRefresh.client';
+
+export const revalidate = 0;
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  
-  // 🔁 SSR: rol + unread + userId
   const initialData = await getSidebarInitialData();
+  
+  if (!initialData.userId) redirect('/login');
 
   return (
-    <Providers>
+    <>
+      <AuthRefresh />
 
-      <Box
-        sx={{
-          display: 'flex',
-          minHeight: '100vh',
-          bgcolor: 'background.default',
-          color: 'text.primary',
-        }}
-      >
-
-        {/* 🔁 Artık Sidebar'a veri geçiyoruz */}
+      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
         <Sidebar initialData={initialData} mainLinks={mainLinks} />
-
         <Box
           component="main"
           sx={{
@@ -47,8 +42,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             py: { xs: 1, md: 2 },
           }}
         >
-          
-          {/* Dış çerçeve: surface[1] */}
           <Paper
             variant="outlined"
             sx={{
@@ -57,10 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               bgcolor: 'var(--rs-surface-1)',
             }}
           >
-
             <Breadcrumb />
-
-            {/* İçerik kutusu: surface[2] */}
             <Paper
               variant="outlined"
               sx={{
@@ -72,17 +62,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 bgcolor: 'var(--rs-surface-2)',
               }}
             >
-
-              <Box>{children}</Box>
-
+              {children}
             </Paper>
-
           </Paper>
-
         </Box>
-
       </Box>
-
-    </Providers>
+    </>
   );
 }

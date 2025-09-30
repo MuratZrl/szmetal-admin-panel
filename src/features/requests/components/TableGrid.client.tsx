@@ -30,9 +30,12 @@ export default function TableGrid({ rows: serverRows }: Props) {
 
   // 3) Eşzamanlı işlem kilidi için basit map
   const [pendingMap, setPendingMap] = React.useState<Record<string, boolean>>({});
-  const isPending = (id: string) => !!pendingMap[id];
-  const setPending = (id: string, v: boolean) =>
+
+  const isPending = React.useCallback((id: string) => !!pendingMap[id], [pendingMap]);
+
+  const setPending = React.useCallback((id: string, v: boolean) => {
     setPendingMap(prev => ({ ...prev, [id]: v }));
+  }, []);
 
   // 4) Handler: API'ye yaz, optimistic güncelle, hata olursa geri al
   const onChangeStatus = React.useCallback(
@@ -72,13 +75,13 @@ export default function TableGrid({ rows: serverRows }: Props) {
         setPending(id, false);
       }
     },
-    [rows, show]
+    [rows, setPending, show]
   );
 
   // 5) Kolonları handler ve pending ile üret
   const columns = React.useMemo(
     () => buildColumns({ onChangeStatus, isPending }),
-    [onChangeStatus, pendingMap] // pending değişince butonların disabled hali tazelensin
+    [onChangeStatus, isPending]
   );
 
   return (

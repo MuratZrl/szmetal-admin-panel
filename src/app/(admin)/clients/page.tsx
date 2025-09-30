@@ -12,6 +12,8 @@ import TableGrid from '@/features/clients/components/TableGrid.client';
 import ChartCard from '@/components/ui/cards/ChartCard.client';
 // Grafik client bileşeni
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
+// 2. Grafik client bileşeni
+import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 
 // Dashboard’daki ile aynı zaman etiketi
 import { get6RollingMonthRange } from '@/features/dashboard/utils/rollingMonths';
@@ -29,22 +31,23 @@ export default async function Page() {
 
   const { labelTR: labelTR6 } = get6RollingMonthRange();
 
-  // Sağ kart için çoklu seri
-  const series = (STATUS_OPTIONS as readonly AppStatus[]).map((s): Parameters<
-    typeof LineAreaChart
-  >[0]['series'][number] => ({
-    label: STATUS_LABELS_TR[s],       // 👈 TR etiket
-    data: line6m.byStatus[s] ?? [],
-    area: true,
-    showMark: true,
-    valueSuffix: ' kullanıcı',
-    colorKey: s === 'Active' ? 'success' : s === 'Inactive' ? 'warning' : 'error',
-  }));
+  const STATUS_COLOR: Record<AppStatus, string> = {
+    Active:   '#2e7d32', // success
+    Inactive: '#ed6c02', // warning
+    Banned:   '#d32f2f', // error
+  };
+
+  const barSeries: Parameters<typeof GroupBarChart>[0]['series'] =
+    (STATUS_OPTIONS as readonly AppStatus[]).map(s => ({
+      label: STATUS_LABELS_TR[s],
+      data:  line6m.byStatus[s] ?? [],
+      color: STATUS_COLOR[s],
+    }));
 
   return (
     <Box px={1} py={2}>
       
-      {/* 1) Üst stat kartları */}
+      {/* 1) Üst stat kartları */}  
       <CardsGrid data={cards} />
 
       {/* 2) Grafikler (yan yana, doğrudan sayfada) */}
@@ -70,11 +73,10 @@ export default async function Page() {
 
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Duruma Göre Toplam Kullanıcılar" timeLabel={labelTR6}>
-             <LineAreaChart
+            <GroupBarChart
               labels={line6m.labels}
-              series={series}
+              series={barSeries}
               height={320}
-              grid={{ horizontal: true, vertical: false }}
             />
           </ChartCard>
         </Grid>

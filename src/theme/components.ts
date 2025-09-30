@@ -1,6 +1,7 @@
 // src/theme/components.ts
 import { alpha, darken } from '@mui/material/styles';
 import type { Components, Theme } from '@mui/material/styles';
+
 // DataGrid theme augmentasyonu (tipler için şart)
 import '@mui/x-data-grid/themeAugmentation';
 
@@ -8,9 +9,7 @@ import '@mui/x-data-grid/themeAugmentation';
  * Uygulama genelindeki MUI component overrides.
  * Not: palette.surface ve palette.accent için src/theme/types.d.ts ile Palette genişletmesi yapılmış olmalı.
  */
-export const componentsOverrides = (
-  theme: Theme
-): Components<Omit<Theme, 'components'>> => {
+export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'components'>> => {
   const { palette, shape, breakpoints } = theme;
 
   return {

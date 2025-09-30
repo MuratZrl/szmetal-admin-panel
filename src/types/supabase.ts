@@ -98,6 +98,7 @@ export type Database = {
           control: string | null
           created_at: string
           date: string
+          description: string | null
           drawer: string | null
           file_bucket: string | null
           file_ext: string | null
@@ -129,6 +130,7 @@ export type Database = {
           control?: string | null
           created_at?: string
           date: string
+          description?: string | null
           drawer?: string | null
           file_bucket?: string | null
           file_ext?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           control?: string | null
           created_at?: string
           date?: string
+          description?: string | null
           drawer?: string | null
           file_bucket?: string | null
           file_ext?: string | null
@@ -477,6 +480,7 @@ export type Database = {
           phone: string | null
           role: string
           status: string
+          updated_at: string
           username: string
         }
         Insert: {
@@ -492,6 +496,7 @@ export type Database = {
           phone?: string | null
           role?: string
           status?: string
+          updated_at?: string
           username: string
         }
         Update: {
@@ -507,6 +512,7 @@ export type Database = {
           phone?: string | null
           role?: string
           status?: string
+          updated_at?: string
           username?: string
         }
         Relationships: []
@@ -568,106 +574,6 @@ export type Database = {
       }
     }
     Functions: {
-      count_monthly: {
-        Args:
-          | { p_col: string; p_table: string }
-          | { p_col: unknown; p_schema: string; p_table: string }
-        Returns: {
-          prev_month: number
-          this_month: number
-        }[]
-      }
-      count_monthly_pending_requests: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          prev_month: number
-          this_month: number
-        }[]
-      }
-      current_user_is_banned: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      generate_username: {
-        Args: { base: string }
-        Returns: string
-      }
-      get_dashboard_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          active_requests: number
-          total_systems: number
-          total_users: number
-        }[]
-      }
-      get_dashboard_timeseries: {
-        Args: { months?: number }
-        Returns: {
-          label: string
-          month_start: string
-          requests: number
-          users: number
-        }[]
-      }
-      get_monthly_user_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          count: number
-          month: string
-        }[]
-      }
-      get_monthly_user_counts_with_zeros: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          count: number
-          month: string
-        }[]
-      }
-      get_monthly_user_status_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          count: number
-          month: string
-          status: string
-        }[]
-      }
-      get_monthly_user_status_counts_with_zeros: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          count: number
-          month: string
-          status: string
-        }[]
-      }
-      get_pending_requests_by_country: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          label: string
-          value: number
-        }[]
-      }
-      get_pending_requests_by_system: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          label: string
-          value: number
-        }[]
-      }
-      get_requests_by_status: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          label: string
-          value: number
-        }[]
-      }
-      is_admin: {
-        Args: { uid: string }
-        Returns: boolean
-      }
-      is_not_banned: {
-        Args: { uid: string }
-        Returns: boolean
-      }
       unaccent: {
         Args: { "": string }
         Returns: string
@@ -676,28 +582,12 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
-      update_user_role: {
-        Args: { new_role: string; target_user_id: string }
-        Returns: {
-          company: string | null
-          country: string | null
-          created_at: string
-          deleted_at: string | null
-          deleted_by: string | null
-          deleted_reason: string | null
-          email: string
-          id: string
-          image: string | null
-          phone: string | null
-          role: string
-          status: string
-          username: string
-        }
-      }
     }
     Enums: {
       product_category: "Profil" | "Kapı" | "Pencere" | "Aksesuar"
       product_variant: "Kasa" | "Kanat" | "Ray" | "Fitil" | "Kilit"
+      role_t: "Admin" | "Manager" | "User"
+      status_t: "Active" | "Inactive" | "Banned"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -827,6 +717,8 @@ export const Constants = {
     Enums: {
       product_category: ["Profil", "Kapı", "Pencere", "Aksesuar"],
       product_variant: ["Kasa", "Kanat", "Ray", "Fitil", "Kilit"],
+      role_t: ["Admin", "Manager", "User"],
+      status_t: ["Active", "Inactive", "Banned"],
     },
   },
 } as const

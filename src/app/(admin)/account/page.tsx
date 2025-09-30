@@ -1,27 +1,29 @@
 // app/(admin)/account/page.tsx
-import { Box, Paper } from "@mui/material";
-import AccountClientSection from "@/features/account/components/AccountClientSection.client";
-import { getAccountData } from "@/features/account/services/getAccountData.server";
+import { redirect } from 'next/navigation';
+import { Box, Paper } from '@mui/material';
+import AccountClientSection from '@/features/account/components/AccountClientSection.client';
+import { getAccountData } from '@/features/account/services/getAccountData.server';
 
-// redirect istersen:
-import { redirect } from "next/navigation";
-
-export const dynamic = "force-dynamic"; // Profil sayfası için genelde güvenli
+export const dynamic = 'force-dynamic'; // veya: export const revalidate = 0;
 
 export default async function AccountPage() {
   const { user, profile } = await getAccountData();
 
+  // Oturum yoksa login'e
   if (!user) {
-    // Login’e postalamak istersen
-    redirect("/login?redirectedFrom=%2Faccount");
+    redirect('/login?redirectedFrom=%2Faccount');
+  }
+
+  // Kullanıcı var ama profil satırı yoksa: cookie'leri route'ta temizleyip login'e
+  if (!profile) {
+    redirect('/api/logout?redirect=/login');
   }
 
   return (
-    <Box px={1} py={2} >
-      <Paper sx={{ maxWidth: 1200, mx: "left", borderRadius: 7 }} >
-        {/* Client sınırı burada başlıyor */}
+    <Box px={1} py={2}>
+      <Paper sx={{ maxWidth: 1200, mx: 'auto', borderRadius: 7, p: 2 }}>
         <AccountClientSection initialUserData={profile} />
-      </Paper>  
+      </Paper>
     </Box>
   );
 }

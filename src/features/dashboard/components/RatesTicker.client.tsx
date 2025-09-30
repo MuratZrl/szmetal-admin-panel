@@ -120,7 +120,7 @@ export default function RatesTicker({
         meta={showMeta ? metaText : ''}
       />
     ) : (
-      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexWrap: 'wrap' }}>
+      <Stack direction="column" spacing={0.75} alignItems="center" sx={{ flexWrap: 'wrap' }}>
         <RateChip label="USD" value={usd} delta={dUsd} density={resolvedDensity} meta={metaText} />
         <RateChip label="EUR" value={eur} delta={dEur} density={resolvedDensity} meta={metaText} />
       </Stack>

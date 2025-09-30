@@ -24,7 +24,6 @@ export type CreateProductInput = {
   unitWeightG: number | null;
 
   hasCustomerMold?: boolean;
-
   availability?: boolean;
 
   drawer?: string | null;
@@ -38,122 +37,90 @@ export type CreateProductInput = {
   profileCode?: string | null;
   manufacturerCode?: string | null;
 
+  /** Eski kodu kırmamak için duruyor; servis bunu artık kullanmaz. */
   file?: File | null;
-  image?: string | null;
-};
 
-const BUCKET = 'product-media' as const;
+  /** useProductUpload’tan gelen public URL */
+  image?: string | null;
+
+  /** useProductUpload’tan opsiyonel metadata (istersen DB’de sakla) */
+  fileBucket?: string | null;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileMime?: string | null;
+  fileSize?: number | null;
+
+  description?: string | null;
+};
 
 function toNull(v?: string | null) {
   const s = typeof v === 'string' ? v.trim() : v ?? '';
   return s ? s : null;
 }
 
-async function removeSafe(bucket?: string | null, path?: string | null): Promise<void> {
-  if (!bucket || !path) return;
-  try {
-    await supabase.storage.from(bucket).remove([path]);
-  } catch {
-    // Sessizce yut. Rollback yardımcı çağrı başarısız olabilir; kritik değil.
-  }
-}
-
-// -------------------------------------------------------
-// CREATE: dosya varsa yükle → insert; insert fail ise dosyayı geri al
-// -------------------------------------------------------
+/* -------------------------------------------------------
+ * CREATE: sadece DB insert — upload işi dışarıda (signed upload)
+ * ----------------------------------------------------- */
 export async function createProduct(v: CreateProductInput) {
-  let fileMeta: {
-    path?: string; name?: string; mime?: string; size?: number; ext?: string;
-  } = {};
-  let uploadedPath: string | null = null;
+  const payload: ProductsInsert = {
+    name: v.name,
+    code: v.code,
+    variant: v.variant,
 
-  try {
-    if (v.file && v.file.size > 0) {
-      const MAX = 10 * 1024 * 1024;
-      if (v.file.size > MAX) throw new Error('Dosya 10MB sınırını aşıyor.');
+    category: v.category ?? null,
+    sub_category: v.subCategory,
+    category_id: v.categoryId ?? null,
+    subcategory_id: v.subCategoryId ?? null,
 
-      const ext = v.file.name.split('.').pop()?.toLowerCase() ?? 'bin';
-      const key = `products/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    date: v.date,
 
-      const { error: upErr } = await supabase.storage.from(BUCKET).upload(key, v.file, {
-        cacheControl: '3600',
-        contentType: v.file.type || 'application/octet-stream',
-        upsert: false,
-      });
-      if (upErr) throw new Error(upErr.message);
+    ...(v.unitWeightG != null
+      ? { unit_weight_g_pm: Math.round(Number(v.unitWeightG)) }
+      : {}),
 
-      uploadedPath = key;
-      fileMeta = {
-        path: key,
-        name: v.file.name,
-        mime: v.file.type || 'application/octet-stream',
-        size: v.file.size,
-        ext,
-      };
-    }
+    drawer: toNull(v.drawer),
+    control: toNull(v.control),
+    scale: toNull(v.scale),
 
-    const payload = {
-      name: v.name,
-      code: v.code,
-      variant: v.variant,
+    outer_size_mm: v.outerSizeMm ?? null,
+    section_mm2: v.sectionMm2 ?? null,
 
-      category: v.category ?? null,
-      sub_category: v.subCategory,
-      category_id: v.categoryId ?? null,
-      subcategory_id: v.subCategoryId ?? null,
+    temp_code: toNull(v.tempCode),
+    profile_code: toNull(v.profileCode),
+    manufacturer_code: toNull(v.manufacturerCode),
 
-      date: v.date,
+    image: v.image ?? null,
 
-      ...(v.unitWeightG != null
-        ? { unit_weight_g_pm: Math.round(Number(v.unitWeightG)) }
-        : {}),
+    ...(v.hasCustomerMold !== undefined
+      ? { has_customer_mold: v.hasCustomerMold }
+      : {}),
 
-      drawer: toNull(v.drawer),
-      control: toNull(v.control),
-      scale: toNull(v.scale),
+    availability: v.availability,
 
-      outer_size_mm: v.outerSizeMm ?? null,
-      section_mm2: v.sectionMm2 ?? null,
+    // Signed upload metadata (opsiyonel)
+    file_bucket: v.fileBucket ?? null,
+    file_path:   v.filePath   ?? null,
+    file_name:   v.fileName   ?? null,
+    file_ext:    v.fileName?.split('.').pop()?.toLowerCase() ?? null,
+    file_mime:   v.fileMime   ?? null,
+    file_size:   v.fileSize   ?? null,
 
-      temp_code: toNull(v.tempCode),
-      profile_code: toNull(v.profileCode),
-      manufacturer_code: toNull(v.manufacturerCode),
+    description: toNull(v.description ?? null),
+  } satisfies ProductsInsert;
 
-      image: v.image ?? null,
+  const { data, error } = await supabase
+    .from('products')
+    .insert(payload)
+    .select('id')
+    .single();
 
-      ...(v.hasCustomerMold !== undefined
-        ? { has_customer_mold: v.hasCustomerMold }
-        : {}),
-
-      availability: v.availability,
-
-      file_path: fileMeta.path ?? null,
-      file_name: fileMeta.name ?? null,
-      file_ext:  fileMeta.ext  ?? null,
-      file_mime: fileMeta.mime ?? null,
-      file_size: fileMeta.size ?? null,
-      file_bucket: fileMeta.path ? BUCKET : null,
-
-    } satisfies ProductsInsert;
-
-    const { data, error } = await supabase
-      .from('products')
-      .insert(payload)
-      .select('id')
-      .single();
-
-    if (error) throw new Error(error.message);
-    return data?.id as number | undefined;
-  } catch (e) {
-    // Insert olmazsa yüklenen dosyayı geri al
-    await removeSafe(BUCKET, uploadedPath);
-    throw e;
-  }
+  if (error) throw new Error(error.message);
+  return data?.id as number | undefined;
 }
 
-// -------------------------------------------------------
-// DELETE helpers
-// -------------------------------------------------------
+/* -------------------------------------------------------
+ * DELETE helpers
+ * ----------------------------------------------------- */
 export async function deleteAllProducts(): Promise<void> {
   const { error } = await supabase
     .from('products')
@@ -173,52 +140,13 @@ export async function deleteProductsByIds(ids: number[]) {
   if (error) throw new Error(error.message);
 }
 
-// -------------------------------------------------------
-// UPDATE: sadece gelen alanları güncelle
-// - Yeni dosya gelirse önce yükle
-// - Update başarısız olursa yeni dosyayı geri al
-// - Update başarılı olursa önceki dosyayı sil
-// -------------------------------------------------------
+/* -------------------------------------------------------
+ * UPDATE: yalnızca gelen alanları güncelle — upload yok
+ * ----------------------------------------------------- */
 export type UpdateProductInput =
   Partial<Omit<CreateProductInput, 'file'>> & { file?: File | null };
 
 export async function updateProduct(id: number, v: UpdateProductInput): Promise<ProductsRow> {
-  // 0) Eski dosya meta (gerekirse temizlemek için)
-  const { data: before } = await supabase
-    .from('products')
-    .select('file_bucket, file_path')
-    .eq('id', id)
-    .maybeSingle();
-
-  // 1) Yeni dosya varsa yükle
-  let fileMeta:
-    | { path: string; name: string; mime: string; size: number; ext: string }
-    | null = null;
-
-  if (v.file && v.file.size > 0) {
-    const MAX = 10 * 1024 * 1024;
-    if (v.file.size > MAX) throw new Error('Dosya 10MB sınırını aşıyor.');
-
-    const ext = v.file.name.split('.').pop()?.toLowerCase() ?? 'bin';
-    const key = `products/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-
-    const { error: upErr } = await supabase.storage.from(BUCKET).upload(key, v.file, {
-      cacheControl: '3600',
-      contentType: v.file.type || 'application/octet-stream',
-      upsert: false,
-    });
-    if (upErr) throw new Error(upErr.message);
-
-    fileMeta = {
-      path: key,
-      name: v.file.name,
-      mime: v.file.type || 'application/octet-stream',
-      size: v.file.size,
-      ext,
-    };
-  }
-
-  // 2) Patch payload: sadece gelen alanları doldur
   const payload: ProductsUpdate = {};
 
   if (v.name !== undefined) payload.name = v.name;
@@ -255,36 +183,22 @@ export async function updateProduct(id: number, v: UpdateProductInput): Promise<
 
   if (v.availability !== undefined) payload.availability = v.availability;
 
-  if (fileMeta) {
-    payload.file_path = fileMeta.path;
-    payload.file_name = fileMeta.name;
-    payload.file_ext  = fileMeta.ext;
-    payload.file_mime = fileMeta.mime;
-    payload.file_size = fileMeta.size;
-    payload.file_bucket = BUCKET;
-  }
+  // Signed upload metadata geldiyse güncelle
+  if (v.fileBucket !== undefined) payload.file_bucket = v.fileBucket;
+  if (v.filePath !== undefined)   payload.file_path   = v.filePath;
+  if (v.fileName !== undefined)   payload.file_name   = v.fileName;
+  if (v.fileMime !== undefined)   payload.file_mime   = v.fileMime;
+  if (v.fileSize !== undefined)   payload.file_size   = v.fileSize;
 
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .update(payload)
-      .eq('id', id)
-      .select()
-      .single();
+  if (v.description !== undefined) payload.description = toNull(v.description);
 
-    if (error) throw new Error(error.message);
+  const { data, error } = await supabase
+    .from('products')
+    .update(payload as ProductsUpdate)
+    .eq('id', id)
+    .select()
+    .single();
 
-    // Yeni dosya yüklendiyse eskiyi temizle
-    if (fileMeta) {
-      await removeSafe(before?.file_bucket ?? null, before?.file_path ?? null);
-    }
-
-    return data as ProductsRow;
-  } catch (e) {
-    // Update fail olursa yeni dosyayı geri al
-    if (fileMeta) {
-      await removeSafe(BUCKET, fileMeta.path);
-    }
-    throw e;
-  }
+  if (error) throw new Error(error.message);
+  return data as ProductsRow;
 }

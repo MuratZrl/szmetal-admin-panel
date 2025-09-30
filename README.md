@@ -14,30 +14,8 @@ Bu proje, **Next.js 15 (App Router)**, **Supabase**, **Tailwind CSS**, **MUI (Ma
 | [MUI](https://mui.com) | React için Material tasarım bileşenleri |
 | [TypeScript](https://www.typescriptlang.org) | Güçlü tip kontrolü |
 | [DataGrid](https://mui.com/x/react-data-grid/) | Gelişmiş tablo ve listeleme yetenekleri |
-| [Zod/Yup](https://zod.dev / https://github.com/jquense/yup) | Form doğrulama |
+| [Yup](https://zod.dev / https://github.com/jquense/yup) | Form doğrulama |
 | [React Hook Form](https://react-hook-form.com) | Form state yönetimi |
 
 ---
 
-## 📁 Proje Yapısı
-
-```bash
-app/
-├── (admin)/
-│   ├── account/
-│   ├── dashboard/
-│   ├── clients/
-│   ├── requests/
-│   │   └── [id]/
-│   ├── systems/
-│   │   └── [slug]/step2, step3
-│   ├── types/
-│   ├── _components_/layout, ui, charts, dialogs...
-│   ├── _constants_/requests, systems, validations...
-│   ├── _hooks_/
-│   └── _utils_/
-├── (auth)/login, register, reset-password, forgot-password
-├── unauthorized/
-lib/
-types/
-middleware.ts

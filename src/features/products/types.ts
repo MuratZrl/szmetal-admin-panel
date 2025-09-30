@@ -103,6 +103,8 @@ export type Product = {
   // cache-busting için
   updatedAt?: string | null;
   createdAt?: string | null; // istersen fallback için
+
+  description?: string | null;
 };
 
 /* -----------------------------------------------------------------------------
@@ -144,6 +146,8 @@ export function mapRowToProduct(r: ProductRow): Product {
 
     updatedAt: r.updated_at ?? null,
     createdAt: r.created_at ?? null,
+
+    description: r.description ?? null,
   };
 }
 
@@ -180,6 +184,8 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   if (patch.fileExt !== undefined) out.file_ext = patch.fileExt;
   if (patch.fileMime !== undefined) out.file_mime = patch.fileMime;
   if (patch.fileSize !== undefined) out.file_size = patch.fileSize;
+
+  if (patch.description !== undefined) out.description = patch.description;
 
   return out;
 }

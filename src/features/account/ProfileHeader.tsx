@@ -2,48 +2,26 @@
 'use client';
 
 import * as React from 'react';
-
 import { Avatar, Box, Typography, Chip, Button } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 
-import type { UserData } from './hooks/useAccount';
+// Yolun projendeki konuma göre: 
+// import type { UserData } from './useAccount';
+// veya
+// import type { UserData } from './hooks/useAccount';
+import type { UserData } from '@/features/account/hooks/useAccount';
+
+import { getRoleInfo } from '@/features/account/helpers';
 
 export type ProfileHeaderProps = {
   userData: UserData;
   onUploadClick: (file?: File) => void;
   onRemove: () => void;
   uploading: boolean;
-  roleLabel: string;
+  roleLabel?: string;            // ← opsiyonel
   roleStyle?: SxProps<Theme>;
 };
-
-// Rol etiketine göre Chip rengini/variantını paletten seç
-function getRoleChipProps(t: Theme, roleLabel: string) {
-  const r = roleLabel?.toLowerCase();
-  let color: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' =
-    'default';
-
-  switch (r) {
-    case 'admin':
-      color = 'error';
-      break;
-    case 'manager':
-    case 'moderator':
-      color = 'info';
-      break;
-    case 'user':
-    case 'customer':
-    case 'kullanıcı':
-      color = 'success';
-      break;
-    default:
-      color = 'default';
-  }
-
-  const variant: 'filled' | 'outlined' = color === 'default' ? 'outlined' : 'filled';
-  return { color, variant } as const;
-}
 
 export default function ProfileHeader({
   userData,
@@ -53,29 +31,23 @@ export default function ProfileHeader({
   roleLabel,
   roleStyle,
 }: ProfileHeaderProps) {
-
-  const t = useTheme();
-  const chipProps = getRoleChipProps(t, roleLabel);
-  const chipSx: SxProps<Theme> = roleStyle ?? { mt: 1 };
-
   const hasAvatar = typeof userData?.image === 'string' && userData.image.trim().length > 0;
+  const chip = getRoleInfo(userData.role);
 
   return (
     <Box
-      sx={({
+      sx={{
         p: { xs: 1, sm: 1.5 },
         mb: 3,
         gap: 2,
-
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.paper',
-      })}
+      }}
     >
       <Box display="flex" alignItems="center" gap={2}>
         <Avatar
@@ -84,29 +56,31 @@ export default function ProfileHeader({
           sx={(t) => ({
             width: 72,
             height: 72,
-            bgcolor: t.palette.mode === 'dark'
-              ? alpha(t.palette.primary.main, 0.2)
-              : alpha(t.palette.primary.main, 0.08),
+            bgcolor:
+              t.palette.mode === 'dark'
+                ? alpha(t.palette.primary.main, 0.2)
+                : alpha(t.palette.primary.main, 0.08),
             color: t.palette.primary.main,
             border: '1px solid',
             borderColor: 'divider',
             flex: '0 0 auto',
           })}
           imgProps={{
-            onError: (e) => { (e.currentTarget as HTMLImageElement).src = '/avatar.jpg'; },
+            onError: (e) => {
+              (e.currentTarget as HTMLImageElement).src = '/avatar.jpg';
+            },
             draggable: false,
           }}
         />
 
-        {/* Sağ blok: YÜKSEKLİK = avatar kadar, dikeyde dağıt */}
         <Box
           sx={{
-            height: 72,                  // avatar ile birebir
+            height: 72,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            minWidth: 0,                 // ellipsis için şart
-            py: 0.25,                    // çok hafif iç boşluk
+            minWidth: 0,
+            py: 0.25,
             flex: '1 1 auto',
           }}
         >
@@ -132,15 +106,15 @@ export default function ProfileHeader({
           </Typography>
 
           <Chip
-            label={roleLabel}
+            label={roleLabel || chip.label}
             size="small"
-            color={chipProps.color}
-            variant={chipProps.variant}
+            color={chip.color}
+            variant={chip.variant}
             sx={{
-              alignSelf: 'flex-start',   // genişlemeye çalışma
+              alignSelf: 'flex-start',
               maxWidth: '100%',
-              '& .MuiChip-label': { px: 1 }, // minik sıkılaştırma, opsiyonel
-              ...(chipSx || {}),
+              '& .MuiChip-label': { px: 1 },
+              ...(roleStyle || chip.sx || {}),
             }}
           />
         </Box>
@@ -172,8 +146,8 @@ export default function ProfileHeader({
           color="error"
           size="small"
           onClick={onRemove}
-           disabled={uploading || !hasAvatar}   // ← burası kritik
-          sx={({ textTransform: 'capitalize' })}
+          disabled={uploading || !hasAvatar}
+          sx={{ textTransform: 'capitalize' }}
         >
           Kaldır
         </Button>

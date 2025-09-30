@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "node scripts/copy-pdf-worker.mjs",
-    "types:supabase": "npx supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",
-    "predev": "npm run types:supabase",
+    "types:supabase": "npx supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",    "predev": "npm run types:supabase && npm outdated supabase || exit 0",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
@@ -22,8 +20,8 @@
     "@mui/material-nextjs": "^7.3.0",
     "@mui/x-charts": "^8.9.0",
     "@mui/x-data-grid": "^8.10.2",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.57.4",
     "@tanstack/react-query": "^5.87.1",
     "@tsparticles/engine": "^3.9.0",
     "@tsparticles/react": "^3.0.0",
@@ -39,8 +37,7 @@
     "react-hook-form": "^7.60.0",
     "react-pdf": "^9.2.1",
     "use-deep-compare": "^1.3.0",
-    "yup": "^1.6.1",
-    "zustand": "^5.0.7"
+    "yup": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -52,7 +49,7 @@
     "eslint-config-next": "15.3.5",
     "pdfjs-dist": "^4.10.38",
     "shx": "^0.4.0",
-    "supabase": "^2.40.7",
+    "supabase": "^2.45.5",
     "tailwindcss": "^4",
     "ts-prune": "^0.10.3",
     "typescript": "^5.9.2"

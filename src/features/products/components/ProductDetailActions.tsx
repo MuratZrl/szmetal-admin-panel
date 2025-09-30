@@ -1,18 +1,17 @@
 // src/features/products/components/ProductDetailActions.client.tsx
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
+
 import { Stack, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PrintIcon from '@mui/icons-material/Print';
 
-type Props = {
-  id: string;
-  canEdit: boolean; // <- dışarıdan gelecek
-};
+type Props = { id: string; canEdit: boolean };
 
 export default function ProductDetailActions({ id, canEdit }: Props) {
+
   return (
     <Stack
       direction="row"
@@ -54,17 +53,6 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
         )}
 
       </Stack>
-
-      <Button
-        variant="outlined"
-        startIcon={<PrintIcon />}
-        onClick={() => typeof window !== 'undefined' && window.print()}
-        sx={{ textTransform: 'capitalize', borderRadius: 2 }}
-        aria-label="Sayfayı yazdır"
-        draggable={false}
-      >
-        Yazdır
-      </Button>
     
     </Stack>
   );

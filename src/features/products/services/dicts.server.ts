@@ -1,5 +1,7 @@
 // src/features/products/dicts.server.ts
-import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+'use server';
+
+import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer'; // ← değiştir
 import type { Database } from '@/types/supabase';
 
 // UI'nin beklediği ağaç

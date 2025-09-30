@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Paper, Box, Stack, Button } from '@mui/material';
+import { Paper, Box, Stack, Button, Grid } from '@mui/material';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -18,14 +18,15 @@ import {
   customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
-// DİKKAT: Doğru yol components/form
+// Doğru yol
 import ProductFormFields from '@/features/products/forms/ProductFormFields.client';
+import NotesField from '@/features/products/forms/NotesField';
 
 // -----------------------------------------------------------------------------
 // Tipler
 // -----------------------------------------------------------------------------
 
-// id’yi formdan çıkar. Form sadece düzenlenen alanları tutsun.
+// id formda değil; file var.
 type EditValues = ProductFormValues & { file: File | null };
 
 type Props = {
@@ -54,6 +55,9 @@ type Props = {
     profileCode?: string | null;
     manufacturerCode?: string | null;
     image?: string | null;
+
+    /** ← EKLENDİ: açıklama alanı */
+    description?: string | null;
   };
 };
 
@@ -74,16 +78,16 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     variant: initial.variant ?? '',
     category: initial.category ?? '',
     subCategory: initial.subCategory ?? '',
-    
+
     unitWeightG:
       typeof initial.unitWeightG === 'number' ? Math.round(initial.unitWeightG) : 0,
-    
+
     customerMold:
       (initial.customerMold as CustomerMoldSelect | undefined) ??
       fromBoolToSelect(initial.hasCustomerMold ?? null),
 
     availability: initial.availability ?? true,
-    
+
     date: initial.date ?? new Date().toISOString().slice(0, 10),
     drawer: initial.drawer ?? '',
     control: initial.control ?? '',
@@ -94,6 +98,11 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     profileCode: initial.profileCode ?? null,
     manufacturerCode: initial.manufacturerCode ?? null,
     image: initial.image ?? '',
+
+    /** ← EKLENDİ: form default’u */
+    // productSchema 'description' alanını bekliyor; boşsa '' ver.
+    description: initial.description ?? '',
+
     file: null,
   };
 
@@ -111,7 +120,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
   } = methods;
 
   React.useEffect(() => {
-    // initial değişmiyorsa dependency ile uğraşma
     reset(defaultValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reset]);
@@ -137,9 +145,11 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         image: v.image || null,
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability,
+
+        /** ← EKLENDİ: update payload */
+        description: v.description || null,
       };
 
-      // id artık formda değil, props.initial.id’den al
       await updateProduct(Number(initial.id), payload);
 
       show('Ürün güncellendi.', 'success');
@@ -153,26 +163,35 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+
       <FormProvider {...methods}>
+
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-          {/* Tüm alanlar + dosya yükleme */}
-          <ProductFormFields methods={methods} dicts={dicts} showFileSection />
+
+          {/* Sol: form alanları / Sağ: açıklama paneli */}
+          <Grid container spacing={2} alignItems="stretch">
+            <Grid size={{ xs: 12, md: 9 }}>
+              <ProductFormFields methods={methods} dicts={dicts} showFileSection />
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
+              <NotesField disabled={methods.formState.isSubmitting} />
+            </Grid>
+          </Grid>
 
           {/* Aksiyonlar */}
-          <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} justifyContent="flex-start" sx={{ mt: 2 }}>
             <Button variant="outlined" onClick={() => router.back()} disabled={isSubmitting}>
               İptal
             </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={!isDirty || !isValid || isSubmitting}
-            >
+            <Button type="submit" variant="contained" disabled={!isDirty || !isValid || isSubmitting}>
               Kaydet
             </Button>
           </Stack>
+
         </Box>
+
       </FormProvider>
+
     </Paper>
   );
 }

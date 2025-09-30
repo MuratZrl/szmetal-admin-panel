@@ -1,79 +1,121 @@
 // src/features/products/services/storage.client.ts
 'use client';
 
-import { supabase } from '@/lib/supabase/supabaseClient';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 
-export const STORAGE_BUCKET = 'product-media' as const;
+/** Bucket adı: .env.local → NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET=product-media */
+const BUCKET: string = process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET ?? 'product-media';
+
+// Tekil browser client
+let __sb__: SupabaseClient<Database> | null = null;
+function getSB(): SupabaseClient<Database> {
+  if (!__sb__) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anon) throw new Error('[supabase] URL/ANON env eksik');
+    __sb__ = createClient<Database>(url, anon, {
+      auth: {
+        detectSessionInUrl: false,
+        persistSession: true,   // ← JWT taşı, RLS görsün
+        autoRefreshToken: true,
+      },
+    });
+  }
+  return __sb__;
+}
 
 type ImageMime = 'image/png' | 'image/webp' | 'image/jpeg';
 export type UploadKind = 'pdf' | 'image';
 
 export type UploadResult = {
-  publicUrl: string;
-  path: string;                   // bucket içi dosya yolu
+  path: string;        // bucket içi yol (örn: <uid>/1234-uuid.png)
   kind: UploadKind;
-  bucket: typeof STORAGE_BUCKET;  // → literal type
+  bucket: string;
+  publicUrl?: string | null; // private bucket’ta kullanılmaz
 };
 
-export type UploadRef = Pick<UploadResult, 'bucket' | 'path'>;
+export type UploadRef = { bucket: string; path: string };
 
-function throwMsg(msg?: string): never {
+function boom(msg?: string): never {
   throw new Error(msg || 'Bilinmeyen upload hatası');
 }
 
-function normalizeExt(mime: ImageMime): 'png' | 'webp' | 'jpg' {
-  return mime === 'image/jpeg' ? 'jpg' : (mime.split('/')[1] as 'png' | 'webp');
+function isImage(m: string): m is ImageMime {
+  return m === 'image/png' || m === 'image/webp' || m === 'image/jpeg';
 }
 
-/** Görsel upload: PNG, WEBP, JPEG */
-export async function uploadProductImageAndGetUrl(code: string, file: File): Promise<UploadResult> {
-  const allowed: ReadonlySet<string> = new Set(['image/png', 'image/webp', 'image/jpeg']);
-  if (!allowed.has(file.type)) throwMsg('Yalnızca PNG, WEBP, JPEG yükleyin.');
+/* -------------------------------------------------------------------------- */
+/* İmzalı upload endpoint’in varsa (opsiyonel)                                */
+/* -------------------------------------------------------------------------- */
+// async function getSignedUpload(filename: string): Promise<{ path: string; token: string }> {
+//   const res = await fetch('/api/storage/products/signed-upload', {
+//     method: 'POST',
+//     headers: { 'content-type': 'application/json' },
+//     cache: 'no-store',
+//     body: JSON.stringify({ filename }),
+//   });
+//   if (res.status === 401) boom('Oturum Bulunamadı, Giriş Yapın');
+//   if (!res.ok) {
+//     let msg = `Upload URL alınamadı (${res.status})`;
+//     try {
+//       const j = (await res.json()) as { error?: string };
+//       if (j?.error) msg = j.error;
+//     } catch {}
+//     boom(msg);
+//   }
+//   return (await res.json()) as { path: string; token: string };
+// }
 
-  const ext = normalizeExt(file.type as ImageMime);
-  // Not: main.ext ile overwrite; benzersiz isterse random ekle.
-  const path = `images/${code}/main.${ext}`;
+/* -------------------------------------------------------------------------- */
+/* Önerilen: JWT ile doğrudan upload (RLS: name like '<uid>/%')               */
+/* -------------------------------------------------------------------------- */
+export async function directUpload(file: File): Promise<UploadResult> {
+  const sb = getSB();
 
-  const { error } = await supabase
-    .storage
-    .from(STORAGE_BUCKET)
-    .upload(path, file, {
-      contentType: file.type,
-      cacheControl: '3600',
-      upsert: true,
-    });
+  const { data: { user }, error: uerr } = await sb.auth.getUser();
+  if (uerr || !user) boom('Oturum bulunamadı.');
 
-  if (error) throwMsg(error.message);
+  const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : 'bin';
+  const key = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return { publicUrl: data.publicUrl, path, kind: 'image', bucket: STORAGE_BUCKET };
+  const { error } = await sb.storage.from(BUCKET).upload(key, file, {
+    cacheControl: '3600',
+    contentType: file.type || 'application/octet-stream',
+    upsert: false,
+  });
+  if (error) boom(error.message);
+
+  const kind: UploadKind = file.type === 'application/pdf' ? 'pdf' : 'image';
+  return { path: key, kind, bucket: BUCKET, publicUrl: null };
 }
 
-/** PDF upload */
-export async function uploadProductPdfAndGetUrl(codeOrFallback: string, file: File): Promise<UploadResult> {
-  if (file.type !== 'application/pdf') throwMsg('Sadece PDF yükleyin.');
-
-  const base = codeOrFallback || `product-${Date.now()}`;
-  const fileName = `${Date.now()}-${crypto.randomUUID()}.pdf`;
-  const path = `pdf/${base}/${fileName}`;
-
-  const { error } = await supabase
-    .storage
-    .from(STORAGE_BUCKET)
-    .upload(path, file, {
-      contentType: 'application/pdf',
-      cacheControl: '3600',
-      upsert: true,
-    });
-
-  if (error) throwMsg(error.message);
-
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return { publicUrl: data.publicUrl, path, kind: 'pdf', bucket: STORAGE_BUCKET };
+/* -------------------------------------------------------------------------- */
+/* Private bucket okuma: imzalı URL üretme                                    */
+/* -------------------------------------------------------------------------- */
+export async function getSignedUrl(path: string, expires = 300): Promise<string> {
+  const sb = getSB();
+  const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, expires);
+  if (error) boom(error.message);
+  return data.signedUrl;
 }
 
-/** Storage'tan silme (tek dosya) */
+/* -------------------------------------------------------------------------- */
+/* Dışa açık helper’lar                                                       */
+/* -------------------------------------------------------------------------- */
+export async function uploadProductImageAndGetUrl(_code: string, file: File): Promise<UploadResult> {
+  if (!isImage(file.type)) boom('Yalnızca PNG, WEBP, JPEG yükleyin.');
+  // İstersen signedUpload kullan; öneri: directUpload
+  return await directUpload(file);
+}
+
+export async function uploadProductPdfAndGetUrl(_code: string, file: File): Promise<UploadResult> {
+  if (file.type !== 'application/pdf') boom('Sadece PDF yükleyin.');
+  return await directUpload(file);
+}
+
 export async function removeUploaded(ref: UploadRef): Promise<void> {
-  const { error } = await supabase.storage.from(ref.bucket).remove([ref.path]);
-  if (error) throwMsg(error.message);
+  const sb = getSB();
+  const { error } = await sb.storage.from(ref.bucket).remove([ref.path]);
+  if (error) boom(error.message);
 }

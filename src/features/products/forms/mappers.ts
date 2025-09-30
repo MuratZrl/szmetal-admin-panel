@@ -23,6 +23,8 @@ export type ProductFormValuesCore = {
 
   availability: boolean;
 
+  description: string;
+
   // şemada .defined() olan düz string alanlar
   drawer: string;
   control: string;
@@ -98,6 +100,8 @@ export function toInsertPayload(
       
     availability: v.availability ?? true,
 
+    description: trimToNull(v.description),
+
     drawer: trimToNull(v.drawer),
     control: trimToNull(v.control),
     scale: trimToNull(v.scale),
@@ -155,6 +159,8 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
 
   if (v.availability !== undefined) p.availability = v.availability;
 
+  if (v.description !== undefined) p.description = trimToNull(v.description); // ← yeni
+
   if (v.drawer !== undefined)             p.drawer = trimToNull(v.drawer);
   if (v.control !== undefined)            p.control = trimToNull(v.control);
   if (v.scale !== undefined)              p.scale = trimToNull(v.scale);
@@ -197,11 +203,13 @@ export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
     
     // DB → Select
     customerMold:
-    row.has_customer_mold == null
-    ? 'Hayır'                      // null/undefined ise Hayır göster
-    : row.has_customer_mold ? 'Evet' : 'Hayır',
+      row.has_customer_mold == null
+      ? 'Hayır'                      // null/undefined ise Hayır göster
+      : row.has_customer_mold ? 'Evet' : 'Hayır',
     
     availability: row.availability ?? true,
+
+    description: row.description ?? '',
 
     drawer: row.drawer ?? '',
     control: row.control ?? '',

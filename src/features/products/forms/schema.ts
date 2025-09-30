@@ -51,6 +51,8 @@ export const productSchema = yup
 
     availability: yup.boolean().default(true),
 
+    description: yup.string().default('').defined(),
+
     // gr/m — integer normalize, min 1 ve zorunlu
     unitWeightG: toNullNumber()
       .transform(v => (typeof v === 'number' ? Math.round(v) : v))
@@ -74,11 +76,16 @@ export const productSchema = yup
     tempCode: emptyToNull(),
     manufacturerCode: emptyToNull(),
 
-    // Asset public URL: boş olabilir ya da geçerli URL olmalı
+    // ← KRİTİK: URL **veya** storage path kabul et
     image: yup
       .string()
       .trim()
-      .test('url-or-empty', 'Geçersiz URL', v => !v || /^https?:\/\/.+/i.test(v))
+      // boş | http(s) URL | storage path (images/... veya pdf/..., products/...)
+      .test('url-or-path', 'Geçersiz URL', (v) => {
+        if (!v) return true;
+        if (/^https?:\/\//i.test(v)) return true;
+        return /^[a-z0-9/_.-]+$/i.test(v); // basit path doğrulama
+      })
       .default('')
       .defined(),
   })
@@ -101,6 +108,8 @@ export const newProductDefaults: ProductFormValues = {
   customerMold: 'Hayır',
 
   availability: true,
+
+  description: '',
 
   unitWeightG: 0, // gr/m (min 1 validasyonda yakalanır)
   date: today(),

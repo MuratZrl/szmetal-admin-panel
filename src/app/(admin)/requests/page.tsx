@@ -6,6 +6,8 @@ import { getRequestsCardsData } from '@/features/requests/services/card.server';
 
 import ChartCard from '@/components/ui/cards/ChartCard.client';
 import LineAreaChart, { type LineSeries } from '@/components/ui/charts/LineAreaChart.client';
+import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
+
 import { getRequestsLineCharts } from '@/features/requests/services/chart.server';
 
 import TableGrid from '@/features/requests/components/TableGrid.client';
@@ -15,6 +17,12 @@ const STATUS_TR: Record<string, string> = {
   pending: 'Bekleyen',
   approved: 'Kabul',
   rejected: 'Reddedilen',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  pending: '#ed6c02',  // warning
+  approved: '#2e7d32', // success
+  rejected: '#d32f2f', // error
 };
 
 // En azından günde bir yenilensin; etiketteki gün değişiyor
@@ -35,7 +43,7 @@ export default async function RequestsPage() {
 
   // Etiket: "Nis 14 - Eyl 14"
   const firstLabel = charts.totals.labels[0] ?? '';
-  const lastLabel  = charts.totals.labels[charts.totals.labels.length - 1] ?? '';
+  const lastLabel = charts.totals.labels[charts.totals.labels.length - 1] ?? '';
   const rangeLabel = firstLabel && lastLabel ? `${firstLabel} - ${lastLabel}` : undefined;
 
   const totalsSeries: LineSeries[] = charts.totals.series.map(s => ({
@@ -47,18 +55,15 @@ export default async function RequestsPage() {
     curve: 'monotoneX',
   }));
 
-  const byStatusSeries: LineSeries[] = charts.byStatus.series.map(s => ({
-    label: STATUS_TR[s.label] ?? s.label,
-    data: s.data,
-    area: true,
-    showMark: true,
-    valueSuffix: ' adet',
-    curve: 'monotoneX',
-  }));
+  const barSeries: Parameters<typeof GroupBarChart>[0]['series'] =
+    charts.byStatus.series.map(s => ({
+      label: STATUS_TR[s.label] ?? s.label,
+      data: (s.data ?? []).slice(0, charts.byStatus.labels.length),
+      color: STATUS_COLOR[s.label],
+    }));
 
   return (
     <Box px={1} py={2}>
-
       {/* 1) kart */}
       <CardsGrid data={cardsData} />
 
@@ -76,11 +81,10 @@ export default async function RequestsPage() {
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Duruma Göre Toplam Talepler" timeLabel={rangeLabel}>
-            <LineAreaChart
+            <GroupBarChart
               labels={charts.byStatus.labels}
-              series={byStatusSeries}
+              series={barSeries}
               height={320}
-              grid={{ horizontal: true, vertical: false }}
             />
           </ChartCard>
         </Grid>
@@ -90,7 +94,6 @@ export default async function RequestsPage() {
       <Grid sx={{ mt: 2 }}>
         <TableGrid rows={tablePage.rows} />
       </Grid>
-
     </Box>
   );
 }

@@ -13,6 +13,20 @@ type Body = {
 
 type Step = 1 | 2 | 3;
 
+/* ------------------------ Tablo tipleri ------------------------ */
+type Drafts     = Database['public']['Tables']['system_drafts'];
+type DraftRow   = Drafts['Row'];
+type DraftSlim  = Pick<DraftRow, 'id' | 'step'>;
+
+type Requests      = Database['public']['Tables']['requests'];
+type RequestsRow   = Requests['Row'];
+type RequestsInsert= Requests['Insert'];
+
+/* ------- TS'nin Postgrest zincirinde 'never' tripini susturucu ------- */
+function asWriteParam<T>(v: T) {
+  return v as unknown as never;
+}
+
 // Same-origin: origin/referrer, sunucunun gerçek host’u ile eşleşmeli
 function isSameOrigin(req: Request): boolean {
   const origin = req.headers.get('origin');
@@ -30,7 +44,6 @@ function isSameOrigin(req: Request): boolean {
 }
 
 export async function POST(req: Request) {
-
   // 0) CSRF + içerik türü
   if (!isSameOrigin(req)) {
     return NextResponse.json({ error: 'CSRF_BLOCKED' }, { status: 403 });
@@ -50,6 +63,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'INVALID_BODY' }, { status: 400 });
   }
 
+  // Narrow’ları netleştir
+  const formData = form as Record<string, Json>;
+  const summaryData = (summary ?? []) as unknown as Json;
+  const materialData = (materials ?? []) as unknown as Json;
+
   // 2) Auth
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -61,33 +79,32 @@ export async function POST(req: Request) {
     .select('id, step')
     .eq('user_id', user.id)
     .eq('slug', slug)
-    .maybeSingle();
+    .maybeSingle<DraftSlim>();   // <- dönüş tipini sabitle
 
   if (dErr) return NextResponse.json({ error: dErr.message }, { status: 500 });
-  
-  if (!draft || (draft.step as Step) < 3) {
+
+  const draftStep = draft?.step as Step | undefined;
+  if (!draft || !draftStep || draftStep < 3) {
     return NextResponse.json({ error: 'INSUFFICIENT_STEP' }, { status: 400 });
   }
 
-  // 4) Talebi oluştur (kolon adlarını senin şemana uydurdum)
-  type RequestsInsert = Database['public']['Tables']['requests']['Insert'];
-
+  // 4) Talebi oluştur
   const payload: RequestsInsert = {
     user_id: user.id,
     system_slug: slug,
-    form_data: form,
-    summary_data: summary ?? [],
-    material_data: materials ?? [],
+    form_data: formData as unknown as Json,
+    summary_data: summaryData,
+    material_data: materialData,
     status: 'pending' as RequestsInsert['status'],
     description:
-      typeof form.description === 'string' ? (form.description as string) : null,
+      typeof formData.description === 'string' ? (formData.description as string) : null,
   };
 
   const { data: inserted, error: insErr } = await supabase
     .from('requests')
-    .insert(payload)
+    .insert(asWriteParam<RequestsInsert>(payload)) // <- never kaprisi bitti
     .select('id')
-    .single();
+    .single<Pick<RequestsRow, 'id'>>();            // <- dönüş tipini sabitle
 
   if (insErr || !inserted) {
     return NextResponse.json(
@@ -102,6 +119,7 @@ export async function POST(req: Request) {
     .delete()
     .eq('user_id', user.id)
     .eq('slug', slug);
+
   if (delErr) {
     return NextResponse.json({ error: delErr.message }, { status: 500 });
   }

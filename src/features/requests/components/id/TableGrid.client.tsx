@@ -13,7 +13,6 @@ export default function MaterialTable({ rows }: { rows: MaterialRow[] }) {
     // sanity log: ilk satır ne?
     // 2.485 ve 'number' görmelisin
     if (rows.length > 0) {
-      // eslint-disable-next-line no-console
       console.log('material sample:', {
         birim_agirlik: rows[0]?.birim_agirlik,
         type: typeof rows[0]?.birim_agirlik,

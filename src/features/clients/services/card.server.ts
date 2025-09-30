@@ -1,3 +1,7 @@
+// src/features/clients/services/card.server.ts
+import 'server-only';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 
 export type TrendDir = 'up' | 'down';
@@ -28,6 +32,9 @@ export type ClientsCardsData = {
   deltas: ClientsCardsDeltas;
 };
 
+/** Tek tip: public şemalı Supabase client */
+type PublicClient = SupabaseClient<Database, 'public'>;
+
 /** Supabase count null dönerse 0’a sabitle */
 function safeCount(n: number | null): number {
   return Number.isFinite(n as number) ? (n as number) : 0;
@@ -41,34 +48,50 @@ function monthStartUTC(year: number, month: number): Date {
 function computeChange(prev: number, curr: number): { pct: number | null; trend: TrendDir; delta: number } {
   const delta = curr - prev;
   const trend: TrendDir = delta >= 0 ? 'up' : 'down';
-  if (prev <= 0) {
-    // prev=0 ise yüzde anlamsız. UI 'Yeni' gösterebilir.
-    return { pct: null, trend, delta };
-  }
-  const pct = Math.round(Math.abs(delta) / prev * 100);
+  if (prev <= 0) return { pct: null, trend, delta };
+  const pct = Math.round((Math.abs(delta) / prev) * 100);
   return { pct, trend, delta };
 }
 
+/** Yalnızca bu dosyada kullanılan admin client (RLS bypass). Client’a sızmaz. */
+function createSupabaseServiceClientOrNull(): PublicClient | null {
+  const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY; // .env.local zorunlu
+  if (!SRV) return null;
+  // İkinci generic parametreyi 'public' vererek tipi sabitliyoruz
+  return createClient<Database, 'public'>(URL, SRV, { auth: { persistSession: false } });
+}
+
 /**
- * Admin/Clients üstündeki 3 kart için:
- * - Toplamlar
- * - Bu ay eklenen vs geçen ay eklenen
+ * Admin/Clients kartları: toplamlar ve aylık değişimler
+ * Bu dosyada service role varsa onu kullanır, yoksa normal server client’a düşer
+ * (RLS açık kalır, sayılar eksik olabilir).
  */
 export async function fetchClientsCards(): Promise<ClientsCardsData> {
-  const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseServiceClientOrNull();
 
-  // Ay sınırlarını UTC üzerinden belirle
+  // Tipi tekilleştir: PublicClient
+  let supabase: PublicClient;
+  if (admin) {
+    supabase = admin;
+  } else {
+    // Bazı kurulumlarda ssr client tipi farklı generic imzası taşıyabilir.
+    // unknown üzerinden PublicClient'e sabitlemek, TS2352'yi güvenle çözer.
+    supabase = (await createSupabaseServerClient()) as unknown as PublicClient;
+  }
+
+  // Ay sınırları
   const now = new Date();
   const startThis = monthStartUTC(now.getUTCFullYear(), now.getUTCMonth());
   const startNext = monthStartUTC(now.getUTCFullYear(), now.getUTCMonth() + 1);
   const startPrev = monthStartUTC(now.getUTCFullYear(), now.getUTCMonth() - 1);
 
   // Toplamlar
-  const totalQ = supabase.from('users').select('id', { count: 'exact', head: true });
+  const totalQ       = supabase.from('users').select('id', { count: 'exact', head: true });
   const activeTotalQ = supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'Active');
   const bannedTotalQ = supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'Banned');
 
-  // Bu ay eklenenler (created_at’e göre)
+  // Bu ay eklenenler
   const newUsersThisQ = supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
@@ -131,7 +154,7 @@ export async function fetchClientsCards(): Promise<ClientsCardsData> {
     newBannedPrevQ,
   ]);
 
-  // Basit loglama
+  // Log (hata varsa gör)
   for (const [label, r] of [
     ['total', totalRes],
     ['activeTotal', activeTotalRes],
@@ -152,15 +175,14 @@ export async function fetchClientsCards(): Promise<ClientsCardsData> {
     totalBannedUsers: safeCount(bannedTotalRes.count),
   };
 
-  // Aylık karşılaştırmalar
-  const usersPrev = safeCount(newUsersPrevRes.count);
-  const usersThis = safeCount(newUsersThisRes.count);
+  const usersPrev  = safeCount(newUsersPrevRes.count);
+  const usersThis  = safeCount(newUsersThisRes.count);
   const activePrev = safeCount(newActivePrevRes.count);
   const activeThis = safeCount(newActiveThisRes.count);
   const bannedPrev = safeCount(newBannedPrevRes.count);
   const bannedThis = safeCount(newBannedThisRes.count);
 
-  const usersCh = computeChange(usersPrev, usersThis);
+  const usersCh  = computeChange(usersPrev, usersThis);
   const activeCh = computeChange(activePrev, activeThis);
   const bannedCh = computeChange(bannedPrev, bannedThis);
 
@@ -170,11 +192,10 @@ export async function fetchClientsCards(): Promise<ClientsCardsData> {
     banned: bannedCh.pct === null ? null : { change: bannedCh.pct, trend: bannedCh.trend },
   };
 
-  // >>> SADECE BURAYI DEĞİŞTİR <<<
   const deltas: ClientsCardsDeltas = {
-    users: usersThis,   // önceden: usersCh.delta
-    active: activeThis, // önceden: activeCh.delta
-    banned: bannedThis, // önceden: bannedCh.delta
+    users: usersThis,
+    active: activeThis,
+    banned: bannedThis,
   };
 
   return { totals, trends, deltas };
