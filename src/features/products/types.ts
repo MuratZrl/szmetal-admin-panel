@@ -1,4 +1,3 @@
-// src/features/products/types.ts
 import type { Database } from '@/types/supabase';
 
 /* -----------------------------------------------------------------------------
@@ -70,6 +69,9 @@ export type Product = {
   /** DB'de null olabilir; UI'da '' ile normalize ediyoruz */
   date: string;
 
+  /** EKLENDİ: Revizyon tarihi (DB null ise UI tarafında '') */
+  revisionDate: string;
+
   /** Kartta görsel/PDF thumbnail vb. için: public URL veya null */
   image: string | null;
 
@@ -113,6 +115,9 @@ export type Product = {
 
 /** Supabase Row -> UI Product */
 export function mapRowToProduct(r: ProductRow): Product {
+  // DB tipleri henüz 'revision_date' içermeyebilir; güvenli okuma:
+  const rdx = (r as unknown as { revision_date?: string | null }).revision_date ?? '';
+
   return {
     id: r.id,
     code: r.code,
@@ -122,6 +127,8 @@ export function mapRowToProduct(r: ProductRow): Product {
     subCategory: r.sub_category,
 
     date: r.date ?? '',
+    revisionDate: rdx,
+
     image: r.image ?? null,
 
     hasCustomerMold: r.has_customer_mold,
@@ -162,6 +169,12 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   if (patch.subCategory !== undefined) out.sub_category = patch.subCategory;
 
   if (patch.date !== undefined) out.date = patch.date;
+
+  // DB tipleri henüz 'revision_date' içermese bile sorunsuz set edelim:
+  if (patch.revisionDate !== undefined) {
+    (out as unknown as { revision_date?: string | null }).revision_date = patch.revisionDate;
+  }
+
   if (patch.image !== undefined) out.image = patch.image;
 
   if (patch.hasCustomerMold !== undefined) out.has_customer_mold = patch.hasCustomerMold;

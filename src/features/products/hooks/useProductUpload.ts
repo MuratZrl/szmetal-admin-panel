@@ -1,4 +1,4 @@
-// features/products/components/form/useProductUpload.ts
+// src/features/products/hooks/useUploadProduct.ts
 'use client';
 
 import * as React from 'react';
@@ -10,13 +10,30 @@ import {
 } from 'react-hook-form';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
-import {
-  removeUploaded,
-  type UploadRef,
-} from '@/features/products/services/storage.client';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+import { removeUploaded, type UploadRef } from '@/features/products/services/storage.client';
+
+/* ----------------------------------------------------------------------------
+ * Tipler
+ * --------------------------------------------------------------------------*/
 
 type FileKind = 'pdf' | 'image';
+
+type WithFileFields = {
+  code: string;         // formunda varsa
+  image: string;        // DB’ye yazacağın storage path
+  file: File | null;    // seçilen dosya
+};
+
+type SignedUploadRes = {
+  bucket: string;
+  path: string;
+  token: string;
+};
+
+/* ----------------------------------------------------------------------------
+ * Sabitler
+ * --------------------------------------------------------------------------*/
 
 const ACCEPTED_MIME = new Set([
   'application/pdf',
@@ -24,35 +41,34 @@ const ACCEPTED_MIME = new Set([
   'image/webp',
   'image/jpeg',
 ]);
+
 const MAX_BYTES: Record<FileKind, number> = {
-  pdf: 10 * 1024 * 1024,
-  image: 8 * 1024 * 1024,
+  pdf: 10 * 1024 * 1024,  // 10MB
+  image: 8 * 1024 * 1024, // 8MB
 };
 
-type WithFileFields = {
-  code: string;
-  image: string;
-  file: File | null;
-};
+/* ----------------------------------------------------------------------------
+ * Supabase browser client (anon)
+ * --------------------------------------------------------------------------*/
 
-function env() {
+let __sb__: SupabaseClient<Database> | null = null;
+
+function getEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) {
     throw new Error('[supabase] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY eksik.');
   }
-  const bucket = process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET || 'product-media';
-  return { url, anon, bucket };
+  return { url, anon };
 }
 
-let __sb__: SupabaseClient<Database> | null = null;
 function getSB(): SupabaseClient<Database> {
   if (!__sb__) {
-    const { url, anon } = env();
+    const { url, anon } = getEnv();
     __sb__ = createClient<Database>(url, anon, {
       auth: {
         detectSessionInUrl: false,
-        persistSession: false,
+        persistSession: true,    // JWT sakla, gerekirse RLS görsün
         autoRefreshToken: true,
       },
     });
@@ -60,15 +76,20 @@ function getSB(): SupabaseClient<Database> {
   return __sb__;
 }
 
-async function getSignedUpload(filename: string): Promise<{ path: string; token: string }> {
-  const res = await fetch('/api/storage/products/signed-upload', {
+/* ----------------------------------------------------------------------------
+ * Server: signed upload URL iste
+ * --------------------------------------------------------------------------*/
+
+async function getSignedUpload(filename: string, dir: string): Promise<SignedUploadRes> {
+  const res = await fetch('/api/products/signed-upload', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     cache: 'no-store',
-    body: JSON.stringify({ filename }),
+    body: JSON.stringify({ filename, dir }),
   });
 
-  if (res.status === 401) throw new Error('Oturum Bulunamadı, Giriş Yapın');
+  if (res.status === 401) throw new Error('Oturum bulunamadı. Lütfen giriş yapın.');
+  if (res.status === 403) throw new Error('Bu işlemi yapmaya yetkiniz yok.');
   if (!res.ok) {
     let msg = `Upload URL alınamadı (${res.status})`;
     try {
@@ -78,32 +99,41 @@ async function getSignedUpload(filename: string): Promise<{ path: string; token:
     throw new Error(msg);
   }
 
-  const j = (await res.json()) as { path: string; token: string };
-  return j;
+  return (await res.json()) as SignedUploadRes;
 }
 
-async function uploadWithSignedUrl(file: File): Promise<{
-  bucket: string; path: string; publicUrl: string; kind: FileKind;
+/* ----------------------------------------------------------------------------
+ * İmzalı URL ile yükleme
+ * --------------------------------------------------------------------------*/
+
+async function uploadWithSignedUrl(file: File, dir: string): Promise<{
+  bucket: string;
+  path: string;
+  kind: FileKind;
 }> {
-  const { bucket } = env();
-  const { path, token } = await getSignedUpload(file.name);
+  const { bucket, path, token } = await getSignedUpload(file.name, dir);
 
   const sb = getSB();
-  const { error } = await sb.storage.from(bucket).uploadToSignedUrl(path, token, file);
+  const { error } = await sb.storage.from(bucket).uploadToSignedUrl(path, token, file, {
+    contentType: file.type || 'application/octet-stream',
+    upsert: true,
+  });
   if (error) throw new Error(error.message);
 
-  // Bucket private ise burada publicUrl yerine path sakla, görüntülemede server’dan signed URL üret.
-  const pub = sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-
   const kind: FileKind = file.type === 'application/pdf' ? 'pdf' : 'image';
-  return { bucket, path, publicUrl: pub, kind };
+  return { bucket, path, kind };
 }
 
+/* ----------------------------------------------------------------------------
+ * Hook
+ * --------------------------------------------------------------------------*/
+
 export function useProductUpload<T extends WithFileFields & FieldValues>(
-  methods: UseFormReturn<T>
+  methods: UseFormReturn<T>,
+  dir: string // ← ürün klasörü (örn: ürün id)
 ) {
-  const { setValue } = methods;
   const { show } = useSnackbar();
+  const { setValue } = methods;
 
   const [uploading, setUploading] = React.useState(false);
   const [fileMeta, setFileMeta] = React.useState<{ name: string; kind: FileKind } | null>(null);
@@ -118,22 +148,19 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
 
   const setImage = React.useCallback(
     (val: string, validate = true) => {
-      setValue(
-        'image' as FieldPath<T>,
-        val as unknown as PathValue<T, FieldPath<T>>,
-        { shouldDirty: true, shouldValidate: validate }
-      );
+      setValue('image' as FieldPath<T>, val as unknown as PathValue<T, FieldPath<T>>, {
+        shouldDirty: true,
+        shouldValidate: validate,
+      });
     },
     [setValue]
   );
 
   const setFile = React.useCallback(
     (val: File | null) => {
-      setValue(
-        'file' as FieldPath<T>,
-        val as unknown as PathValue<T, FieldPath<T>>,
-        { shouldDirty: true }
-      );
+      setValue('file' as FieldPath<T>, val as unknown as PathValue<T, FieldPath<T>>, {
+        shouldDirty: true,
+      });
     },
     [setValue]
   );
@@ -157,16 +184,20 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
 
       setUploading(true);
       try {
+        // Önce önceki yükleme varsa temizle
         if (uploadedRef) {
           try { await removeUploaded(uploadedRef); } catch {}
           setUploadedRef(null);
         }
 
-        const { bucket, path, kind: resolvedKind } = await uploadWithSignedUrl(file);
+        // Server’dan token al ve yükle
+        const { bucket, path, kind: resolvedKind } = await uploadWithSignedUrl(file, dir);
 
-        setImage(path, true);
+        // Form alanlarını güncelle
+        setImage(path, true); // DB’ye yazılacak değer
         setFile(file);
 
+        // UI state
         setFileMeta({ name: file.name, kind: resolvedKind });
         setUploadedRef({ bucket, path });
 
@@ -178,8 +209,11 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
         setUploading(false);
       }
     },
-    [classify, uploadedRef, setImage, setFile, show]
+    [classify, uploadedRef, setImage, setFile, show, dir]
   );
+
+  const openDelete = React.useCallback(() => setConfirmOpen(true), []);
+  const closeDelete = React.useCallback(() => setConfirmOpen(false), []);
 
   const confirmDelete = React.useCallback(async () => {
     try {
@@ -203,8 +237,11 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
     uploadedRef,
     confirmOpen,
     pick,
-    openDelete: () => setConfirmOpen(true),
-    closeDelete: () => setConfirmOpen(false),
+    openDelete,
+    closeDelete,
     confirmDelete,
   };
 }
+
+/* Default export: isim esnekliği için */
+export default useProductUpload;

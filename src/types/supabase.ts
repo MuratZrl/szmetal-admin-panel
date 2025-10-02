@@ -89,6 +89,112 @@ export type Database = {
         }
         Relationships: []
       }
+      product_comment_pins: {
+        Row: {
+          comment_id: number
+          pinned_at: string
+          pinned_by: string | null
+          product_id: number
+        }
+        Insert: {
+          comment_id: number
+          pinned_at?: string
+          pinned_by?: string | null
+          product_id: number
+        }
+        Update: {
+          comment_id?: number
+          pinned_at?: string
+          pinned_by?: string | null
+          product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_comment_pins_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "product_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_comment_pins_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_comment_votes: {
+        Row: {
+          comment_id: number
+          created_at: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          comment_id: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          comment_id?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_comment_votes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "product_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_comments: {
+        Row: {
+          author_id: string
+          author_name: string
+          content: string
+          created_at: string
+          id: number
+          product_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          author_name?: string
+          content: string
+          created_at?: string
+          id?: number
+          product_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: number
+          product_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_comments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           availability: boolean
@@ -113,6 +219,7 @@ export type Database = {
           name: string
           outer_size_mm: number | null
           profile_code: string | null
+          revision_date: string | null
           scale: string | null
           section_mm2: number | null
           sub_category: string
@@ -145,6 +252,7 @@ export type Database = {
           name: string
           outer_size_mm?: number | null
           profile_code?: string | null
+          revision_date?: string | null
           scale?: string | null
           section_mm2?: number | null
           sub_category: string
@@ -177,6 +285,7 @@ export type Database = {
           name?: string
           outer_size_mm?: number | null
           profile_code?: string | null
+          revision_date?: string | null
           scale?: string | null
           section_mm2?: number | null
           sub_category?: string
@@ -565,6 +674,22 @@ export type Database = {
           },
         ]
       }
+      product_comment_vote_stats: {
+        Row: {
+          comment_id: number | null
+          dislikes: number | null
+          likes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_comment_votes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "product_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requests_status_counts: {
         Row: {
           cnt: number | null
@@ -574,6 +699,10 @@ export type Database = {
       }
     }
     Functions: {
+      email_available: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       unaccent: {
         Args: { "": string }
         Returns: string
@@ -582,8 +711,14 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      username_available: {
+        Args: { p_username: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "Admin" | "Manager" | "User"
+      app_status: "Active" | "Inactive" | "Banned"
       product_category: "Profil" | "Kapı" | "Pencere" | "Aksesuar"
       product_variant: "Kasa" | "Kanat" | "Ray" | "Fitil" | "Kilit"
       role_t: "Admin" | "Manager" | "User"
@@ -715,6 +850,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["Admin", "Manager", "User"],
+      app_status: ["Active", "Inactive", "Banned"],
       product_category: ["Profil", "Kapı", "Pencere", "Aksesuar"],
       product_variant: ["Kasa", "Kanat", "Ray", "Fitil", "Kilit"],
       role_t: ["Admin", "Manager", "User"],

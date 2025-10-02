@@ -17,6 +17,7 @@ export type ProductFormValuesCore = {
   subCategory: string;  // slug veya text
 
   date: string;         // yyyy-mm-dd
+  revisionDate: string; // yyyy-mm-dd veya '' (opsiyonel alan için '' serbest)
 
   unitWeightG: number | null; // gr/m
   customerMold: CustomerMoldSelect; // '' | 'Evet' | 'Hayır'
@@ -97,7 +98,7 @@ export function toInsertPayload(
 
     // Müşteri kalıbı
     has_customer_mold: moldSelectToBool(v.customerMold),
-      
+
     availability: v.availability ?? true,
 
     description: trimToNull(v.description),
@@ -121,7 +122,10 @@ export function toInsertPayload(
     file_mime: fileMeta?.mime ?? null,
     file_size: fileMeta?.size ?? null,
     file_bucket: fileMeta?.bucket ?? null,
-  };
+  } as ProductsInsert;
+
+  // Revizyon tarihi (DB tipleri henüz kolon içermeyebilir, güvenli yazalım)
+  (payload as unknown as { revision_date?: string | null }).revision_date = trimToNull(v.revisionDate);
 
   return payload;
 }
@@ -146,6 +150,11 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
 
   if (v.date !== undefined) p.date = v.date;
 
+  // Revizyon tarihi: '' geldiyse null; undefined ise dokunma
+  if (v.revisionDate !== undefined) {
+    (p as unknown as { revision_date?: string | null }).revision_date = trimToNull(v.revisionDate);
+  }
+
   if (v.unitWeightG !== undefined) {
     p.unit_weight_g_pm = v.unitWeightG == null
       ? 0
@@ -159,7 +168,7 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
 
   if (v.availability !== undefined) p.availability = v.availability;
 
-  if (v.description !== undefined) p.description = trimToNull(v.description); // ← yeni
+  if (v.description !== undefined) p.description = trimToNull(v.description);
 
   if (v.drawer !== undefined)             p.drawer = trimToNull(v.drawer);
   if (v.control !== undefined)            p.control = trimToNull(v.control);
@@ -189,6 +198,8 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
 
 /** DB Row → form varsayılanları (edit initial) */
 export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
+  const revision = (row as unknown as { revision_date?: string | null }).revision_date ?? '';
+
   return {
     name: row.name ?? '',
     code: row.code ?? '',
@@ -198,15 +209,16 @@ export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
     subCategory: row.sub_category ?? '',
 
     date: row.date ?? new Date().toISOString().slice(0, 10),
+    revisionDate: revision || '',
 
     unitWeightG: row.unit_weight_g_pm ?? null,
-    
+
     // DB → Select
     customerMold:
       row.has_customer_mold == null
-      ? 'Hayır'                      // null/undefined ise Hayır göster
-      : row.has_customer_mold ? 'Evet' : 'Hayır',
-    
+        ? 'Hayır'                      // null/undefined ise Hayır göster
+        : row.has_customer_mold ? 'Evet' : 'Hayır',
+
     availability: row.availability ?? true,
 
     description: row.description ?? '',

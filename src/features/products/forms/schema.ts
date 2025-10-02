@@ -34,6 +34,21 @@ const emptyToNull = () =>
     .nullable()
     .transform((v, orig) => (orig === '' ? null : v?.trim() ?? null));
 
+/** Opsiyonel ISO tarih (yyyy-mm-dd) — boş string serbest */
+const optionalIsoDateString = () =>
+  yup
+    .string()
+    .test('iso-or-empty', 'Geçersiz tarih', (v) => {
+      if (!v) return true; // '' veya undefined → serbest
+      if (typeof v !== 'string') return false;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+      // Basit geçerlilik kontrolü
+      const d = new Date(v);
+      return !Number.isNaN(d.getTime());
+    })
+    .default('')
+    .defined();
+
 /** ---- ÇEKİRDEK ÜRÜN FORM ŞEMASI ---- */
 export const productSchema = yup
   .object({
@@ -59,8 +74,11 @@ export const productSchema = yup
       .required('Zorunlu')
       .min(1, 'En az 1 gr'),
 
-    // Tarih
+    // Ana tarih (zorunlu)
     date: yup.string().required('Zorunlu'),
+
+    // EKLENDİ: Revizyon tarihi (opsiyonel, '' serbest)
+    revisionDate: optionalIsoDateString(),
 
     // Düz string alanlar (boş string serbest)
     drawer: yup.string().default('').defined(),
@@ -84,7 +102,7 @@ export const productSchema = yup
       .test('url-or-path', 'Geçersiz URL', (v) => {
         if (!v) return true;
         if (/^https?:\/\//i.test(v)) return true;
-        return /^[a-z0-9/_.-]+$/i.test(v); // basit path doğrulama
+        return /^[a-z0-9/_.-]+$/i.test(v);
       })
       .default('')
       .defined(),
@@ -113,6 +131,9 @@ export const newProductDefaults: ProductFormValues = {
 
   unitWeightG: 0, // gr/m (min 1 validasyonda yakalanır)
   date: today(),
+
+  // EKLENDİ: Revizyon tarihi (opsiyonel)
+  revisionDate: '',
 
   drawer: '',
   control: '',

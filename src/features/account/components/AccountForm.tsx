@@ -8,8 +8,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import type { Asserts } from 'yup';
 import { accountSchema } from '@/constants/account/form-validations/accountSchemas';
 import { countries } from '@/constants/data/countries';
-import type { UserData } from './hooks/useAccount';
-import { useAccount } from './hooks/useAccount';
+import type { UserData } from '../hooks/useAccount';
+import { useAccount } from '../hooks/useAccount';
 
 type FormValues = Asserts<typeof accountSchema>;
 

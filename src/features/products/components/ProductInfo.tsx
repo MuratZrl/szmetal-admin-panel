@@ -35,6 +35,8 @@ export type ProductInfoProps = {
   category: string;
   subCategory?: string;
   date: string;
+  /** EKLENDİ: Revizyon tarihi */
+  revisionDate?: string | null;
   id: string;
 
   hasCustomerMold?: boolean | null;
@@ -69,7 +71,7 @@ export type ProductInfoProps = {
 // Basit label-value türü
 type DetailItem = { label: string; value: React.ReactNode };
 
-// 1) 2 sütunlu tablo (her satırda 2 label-değer çifti, PAİR sabit)
+// 1) 2 sütunlu tablo (her satırda 2 label-değer çifti)
 function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }) {
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
@@ -102,7 +104,7 @@ function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }
 
         <TableBody>
           {rows.map(([a, b], idx) => {
-            const boldLeftValue  = typeof a.label === 'string' && a.label.startsWith('Birim Ağırlık');
+            const boldLeftValue = typeof a.label === 'string' && a.label.startsWith('Birim Ağırlık');
             const boldRightValue = !!b && typeof b.label === 'string' && b.label.startsWith('Birim Ağırlık');
 
             return (
@@ -116,7 +118,7 @@ function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }
                   {a.label}
                 </TableCell>
 
-                {/* Sol değer (gerekirse sadece bu hücre bold) */}
+                {/* Sol değer (gerekirse bold) */}
                 <TableCell sx={{ pr: { sm: 2 }, fontWeight: boldLeftValue ? 700 : undefined }}>
                   {a.value}
                 </TableCell>
@@ -132,7 +134,7 @@ function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }
                       {b.label}
                     </TableCell>
 
-                    {/* Sağ değer (gerekirse sadece bu hücre bold) */}
+                    {/* Sağ değer (gerekirse bold) */}
                     <TableCell sx={{ fontWeight: boldRightValue ? 700 : undefined }}>
                       {b.value}
                     </TableCell>
@@ -223,6 +225,7 @@ export default function ProductInfo(props: ProductInfoProps) {
     subCategory,
     unit_weight_g_pm,
     date,
+    revisionDate,
     drawer,
     control,
     scale,
@@ -275,53 +278,59 @@ export default function ProductInfo(props: ProductInfoProps) {
   const catText = category ? labels?.category?.[category] ?? category : '';
   const subText = subCategory ? labels?.subCategory?.[subCategory] ?? subCategory : '';
 
-  // Medya url seçimi
+  // --- Medya URL seçimi ve güvenli linkler ---
   const srcUrl = (mediaSrc ?? '').trim();
   const fbUrl = (mediaFileUrl ?? '').trim();
+
   const srcKind = srcUrl
     ? detectMediaKind({ url: srcUrl, mime: mediaMime ?? undefined, extHint: mediaExt ?? undefined })
     : 'unknown';
   const fbKind = fbUrl
     ? detectMediaKind({ url: fbUrl, mime: mediaMime ?? undefined, extHint: mediaExt ?? undefined })
     : 'unknown';
-  const chosen =
+
+  const chosen:
+    | { url: string; kind: string }
+    | { url: ''; kind: 'unknown' } =
     (srcUrl && srcKind !== 'unknown' && { url: srcUrl, kind: srcKind }) ||
     (fbUrl && fbKind !== 'unknown' && { url: fbUrl, kind: fbKind }) || { url: '', kind: 'unknown' as const };
+
   const anyUrl = srcUrl || fbUrl;
 
-  // Yardımcılar
-  const safe = (v: React.ReactNode): React.ReactNode =>
-    v === undefined || v === null || v === '' ? '—' : v;
+  function withQuery(u: string, q: Record<string, string>): string {
+    const url = new URL(u, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+    Object.entries(q).forEach(([k, v]) => url.searchParams.set(k, v));
+    const rel = url.pathname + (url.search ? url.search : '');
+    return u.startsWith('/') ? rel : url.toString();
+  }
 
+  const isSecureRoute = (u: string) => u.startsWith('/api/products/storage');
+
+  const base = (chosen.url || anyUrl) as string;
+  const openHref = base && isSecureRoute(base) ? withQuery(base, { disposition: 'inline' }) : base;
+
+  const safeExt = mediaExt ?? 'pdf';
+  const filename = `${title.replace(/\s+/g, '-').replace(/[^\w.-]/g, '')}.${safeExt}`;
+  const downloadHref =
+    base && isSecureRoute(base) ? withQuery(base, { disposition: 'attachment', filename }) : base;
+
+  // Yardımcılar
+  const safe = (v: React.ReactNode): React.ReactNode => (v === undefined || v === null || v === '' ? '—' : v);
   const make = (label: string, value: React.ReactNode): DetailItem => ({ label, value });
 
   const rows: Array<[DetailItem, DetailItem | null]> = [];
 
   // İSTENEN SIRALAMA
-  // 1) Kategori - Alt Kategori
   rows.push([make('Kategori:', safe(catText)), make('Alt Kategori:', safe(subText))]);
+  rows.push([make('Varyant:', safe(variantText)), make('Birim Ağırlık (gr/m):', safe(nf(unit_weight_g_pm)))]);
+  rows.push([make('Kullanım Durumu:', safe(usageNode)), make('Müşteri Kalıbı:', safe(moldChip))]);
+  rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
 
-  // 2) Varyant - Birim Ağırlık
-  rows.push([
-    make('Varyant:', safe(variantText)),
-    make('Birim Ağırlık (gr/m):', safe(nf(unit_weight_g_pm))),
-  ]);
+  // Tam burada: Tarih ve Revizyon Tarihi aynı satırda
+  rows.push([make('Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
 
-  // 3) Kullanım Durumu - Müşteri Kalıbı
-  rows.push([
-    make('Kullanım Durumu:', safe(usageNode)),
-    make('Müşteri Kalıbı:', safe(moldChip)),
-  ]);
-
-  // 4) Çizen - Kontrol (ÖZEL SATIR, HER ZAMAN YAN YANA)
-  rows.push([
-    make('Çizen:', safe(drawer)),
-    make('Kontrol:', safe(control)),
-  ]);
-
-  // GERİSİ: mantıklı çiftler halinde (Çizen/Kontrol artık eklenmiyor)
   const tail: DetailItem[] = [];
-  tail.push(make('Tarih:', safe(date)));
+  // Dikkat: 'Tarih' artık yukarıda eklendi, burada eklemiyoruz.
   if (tempCode) tail.push(make('Geçici Kod:', tempCode));
   if (profileCode) tail.push(make('Profil Kodu:', profileCode));
   if (manufacturerCode) tail.push(make('Üretici Kodu:', manufacturerCode));
@@ -334,6 +343,8 @@ export default function ProductInfo(props: ProductInfoProps) {
     const right = tail[i + 1] ?? null;
     rows.push([left, right]);
   }
+
+  const showMediaActions = Boolean(base);
 
   return (
     <Paper variant="outlined" sx={{ p: 1, borderRadius: 2, bgcolor: 'background.default' }}>
@@ -348,11 +359,11 @@ export default function ProductInfo(props: ProductInfoProps) {
             ) : null}
 
             {/* Medya aksiyonları */}
-            {anyUrl ? (
+            {showMediaActions ? (
               <Stack direction="row" spacing={0.5}>
                 <IconButton
                   LinkComponent={Link}
-                  href={(chosen.url || anyUrl) as string}
+                  href={openHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Yeni sekmede aç"
@@ -363,8 +374,7 @@ export default function ProductInfo(props: ProductInfoProps) {
 
                 <IconButton
                   LinkComponent={Link}
-                  href={(chosen.url || anyUrl) as string}
-                  download
+                  href={downloadHref}
                   aria-label="İndir"
                   size="small"
                 >

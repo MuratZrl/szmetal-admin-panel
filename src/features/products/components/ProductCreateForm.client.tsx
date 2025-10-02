@@ -28,9 +28,26 @@ type Props = { dicts: ProductDicts };
 
 type CreateValues = ProductFormValues & { file: File | null };
 
+// Güvenli, tekrar kullanılabilir geçici klasör ismi
+function makeDraftDir(): string {
+  try {
+    // Tarayıcı destekli ise
+    return `draft-${crypto.randomUUID()}`;
+  } catch {
+    // Geriye uyumlu fallback
+    const ts = Date.now().toString(36);
+    const rnd = Math.random().toString(36).slice(2, 10);
+    return `draft-${ts}-${rnd}`;
+  }
+}
+
 export default function ProductCreateForm({ dicts }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
+
+  // 1) Create aşamasında ürün ID yok. Yüklemeler bu geçici klasöre gidecek.
+  // useRef ile değer sabit kalır, yeniden render’da değişmez.
+  const draftDirRef = React.useRef<string>(makeDraftDir());
 
   const methods = useForm<CreateValues>({
     resolver: yupResolver(productSchema) as unknown as Resolver<CreateValues>,
@@ -89,7 +106,14 @@ export default function ProductCreateForm({ dicts }: Props) {
 
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
-              <ProductFormFields methods={methods} dicts={dicts} showFileSection />
+
+              <ProductFormFields
+                methods={methods}
+                dicts={dicts}
+                showFileSection
+                dir={draftDirRef.current}
+              />
+
             </Grid>
 
             <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>

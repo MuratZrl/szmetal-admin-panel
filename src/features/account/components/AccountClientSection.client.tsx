@@ -3,9 +3,9 @@
 
 import { SnackbarProvider } from "@/components/ui/snackbar/useSnackbar.client";
 import { useAccount, type UserData } from "@/features/account/hooks/useAccount";
-import ProfileHeader from "@/features/account/ProfileHeader";
-import AccountForm from "@/features/account/AccountForm";
-import PasswordForm from "@/features/account/PasswordForm";
+import ProfileHeader from "@/features/account/components/ProfileHeader";
+import AccountForm from "@/features/account/components/AccountForm";
+import PasswordForm from "@/features/account/components/PasswordForm";
 import { getRoleInfo } from "@/features/account/helpers";
 import AccountSkeleton from "@/features/account/components/AccountCard.client";
 

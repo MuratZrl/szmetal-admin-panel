@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Paper, Box, Stack, Button, Grid } from '@mui/material';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 import type { ProductDicts } from '@/features/products/services/dicts.server';
@@ -18,13 +19,14 @@ import {
   customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
-// Doğru yol
 import ProductFormFields from '@/features/products/forms/ProductFormFields.client';
 import NotesField from '@/features/products/forms/NotesField';
 
-// -----------------------------------------------------------------------------
-// Tipler
-// -----------------------------------------------------------------------------
+import type { Database } from '@/types/supabase';
+
+/* -------------------------------------------------------------------------- */
+/* Tipler                                                                      */
+/* -------------------------------------------------------------------------- */
 
 // id formda değil; file var.
 type EditValues = ProductFormValues & { file: File | null };
@@ -56,7 +58,6 @@ type Props = {
     manufacturerCode?: string | null;
     image?: string | null;
 
-    /** ← EKLENDİ: açıklama alanı */
     description?: string | null;
   };
 };
@@ -68,9 +69,55 @@ function fromBoolToSelect(v: boolean | null | undefined): CustomerMoldSelect {
   return '';
 }
 
+/* -------------------------------------------------------------------------- */
+/* Upload helper: server'dan signed upload URL al ve yükle                     */
+/* -------------------------------------------------------------------------- */
+
+async function uploadProductFile(
+  productId: string,
+  file: File,
+  supabase: SupabaseClient<Database>
+): Promise<string> {
+  // 1) Server'dan imzalı upload URL iste
+  const extHint = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const res = await fetch('/api/products/upload-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dir: productId, originalName: file.name, extHint }),
+  });
+
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => null))?.error ?? 'Upload URL alınamadı';
+    throw new Error(msg);
+  }
+
+  const { bucket, path, token } = (await res.json()) as { bucket: string; path: string; token: string };
+
+  // 2) İmzalı URL ile Storage'a yükle (RLS umrumuzda değil)
+  const { error } = await supabase.storage
+    .from(bucket)
+    .uploadToSignedUrl(path, token, file, { contentType: file.type, upsert: true });
+
+  if (error) throw new Error(error.message);
+
+  // 3) DB'ye yazacağın şey sadece path (bucket adı yok)
+  return path; // ör: "6580.../1759...pdf"
+}
+
+/* -------------------------------------------------------------------------- */
+
 export default function ProductEditForm({ dicts, initial }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
+
+  // Client Supabase (anon) — sadece uploadToSignedUrl için
+  const supabase = React.useMemo(
+    () => createClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    ),
+    []
+  );
 
   const defaultValues: EditValues = {
     name: initial.name ?? '',
@@ -78,17 +125,16 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     variant: initial.variant ?? '',
     category: initial.category ?? '',
     subCategory: initial.subCategory ?? '',
-
-    unitWeightG:
-      typeof initial.unitWeightG === 'number' ? Math.round(initial.unitWeightG) : 0,
-
+    unitWeightG: typeof initial.unitWeightG === 'number' ? Math.round(initial.unitWeightG) : 0,
     customerMold:
       (initial.customerMold as CustomerMoldSelect | undefined) ??
       fromBoolToSelect(initial.hasCustomerMold ?? null),
-
     availability: initial.availability ?? true,
 
     date: initial.date ?? new Date().toISOString().slice(0, 10),
+    // ← EKLENDİ: tip güvenli okuma (Props.initial'da alan tanımlı değilse '')
+    revisionDate: (initial as unknown as { revisionDate?: string | null }).revisionDate ?? '',
+
     drawer: initial.drawer ?? '',
     control: initial.control ?? '',
     scale: initial.scale ?? '',
@@ -98,11 +144,7 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     profileCode: initial.profileCode ?? null,
     manufacturerCode: initial.manufacturerCode ?? null,
     image: initial.image ?? '',
-
-    /** ← EKLENDİ: form default’u */
-    // productSchema 'description' alanını bekliyor; boşsa '' ver.
     description: initial.description ?? '',
-
     file: null,
   };
 
@@ -126,6 +168,15 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   async function onSubmit(v: EditValues): Promise<void> {
     try {
+      // 1) Dosya seçilmiş ise önce yükle, path'i al
+      let nextImagePath: string | null =
+        typeof v.image === 'string' && v.image.trim().length > 0 ? v.image.trim() : null;
+
+      if (v.file instanceof File) {
+        nextImagePath = await uploadProductFile(initial.id, v.file, supabase);
+      }
+
+      // 2) Update payload
       const payload: UpdateProductInput = {
         name: v.name,
         code: v.code,
@@ -142,14 +193,13 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         tempCode: v.tempCode ?? null,
         profileCode: v.profileCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
-        image: v.image || null,
+        image: nextImagePath, // ← DB'ye sadece path
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability,
-
-        /** ← EKLENDİ: update payload */
         description: v.description || null,
       };
 
+      // 3) Ürünü güncelle
       await updateProduct(Number(initial.id), payload);
 
       show('Ürün güncellendi.', 'success');
@@ -163,22 +213,19 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-
       <FormProvider {...methods}>
-
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-
-          {/* Sol: form alanları / Sağ: açıklama paneli */}
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
-              <ProductFormFields methods={methods} dicts={dicts} showFileSection />
+              {/* ProductFormFields içinde "file" alanını set eden bölüm olduğundan emin ol. showFileSection bunu görünür yapıyor. */}
+              {/* Dosya seçildiğinde useProductUpload hemen yükler ve image path'ini yazar */}
+              <ProductFormFields methods={methods} dicts={dicts} showFileSection dir={initial.id} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
               <NotesField disabled={methods.formState.isSubmitting} />
             </Grid>
           </Grid>
 
-          {/* Aksiyonlar */}
           <Stack direction="row" spacing={1} justifyContent="flex-start" sx={{ mt: 2 }}>
             <Button variant="outlined" onClick={() => router.back()} disabled={isSubmitting}>
               İptal
@@ -187,11 +234,8 @@ export default function ProductEditForm({ dicts, initial }: Props) {
               Kaydet
             </Button>
           </Stack>
-
         </Box>
-
       </FormProvider>
-
     </Paper>
   );
 }

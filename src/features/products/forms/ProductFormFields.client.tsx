@@ -27,6 +27,8 @@ import {
 } from '@/features/products/forms/schema';
 
 import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
+
+// DİKKAT: Projendeki gerçek path neyse onu kullan.
 import { useProductUpload } from '@/features/products/hooks/useProductUpload';
 
 type WithFileFields = { file: File | null };
@@ -35,11 +37,10 @@ type FormType = ProductFormValues & WithFileFields;
 type Props = {
   methods: UseFormReturn<FormType>;
   dicts: ProductDicts;
-  /**
-   * Dosya seç/yükle bölümünü göster.
-   * Create formunda genelde true, edit’te stratejine göre kapatabilirsin.
-   */
+  /** Dosya alanını göster */
   showFileSection?: boolean;
+  /** YÜKLENECEK KLASÖR: örn ürün id → "65800a9c-2153-4f55-a952-3f6d66b297c7" */
+  dir: string;
 };
 
 // RHF FieldError.message → MUI helperText (ReactNode) güvenli dönüştürücü
@@ -47,8 +48,7 @@ function toHelper(m: unknown): string | undefined {
   return typeof m === 'string' ? m : undefined;
 }
 
-export default function ProductFormFields({ methods, dicts, showFileSection = true }: Props) {
-
+export default function ProductFormFields({ methods, dicts, showFileSection = true, dir }: Props) {
   const {
     control,
     register,
@@ -69,15 +69,41 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
   const variants = dicts?.variants ?? [];
   const watchedCategory = watch('category');
 
-  // Upload hook
-  const up = useProductUpload(methods);
+  // Upload hook: BURASI ÖNEMLİ — dir veriyoruz ki server imzalı URL'i bu klasör için üretsin
+  const up = useProductUpload(methods, dir);
+
+    /* ------------------------------ DOSYA PICKER FIX ------------------------------ */
+
+  // 1) Native <input type="file">’ı ref ile kontrol edeceğiz
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // 2) Bazı tarayıcılar aynı dosya seçilince onChange’i çalıştırmıyor.
+  // Her açmadan önce value='' ile sıfırla.
+  const openPicker = React.useCallback(() => {
+    const el = fileInputRef.current;
+    if (!el) return;
+    el.value = ''; // aynı dosyayı tekrar seçebilelim
+    el.click();
+  }, []);
+
+  // 3) Silme sonrası da güvenli tarafta kalmak için input’u yeniden mount et
+  const [pickerKey, bumpPickerKey] = React.useReducer((n: number) => (n + 1) % 1_000_000, 0);
+
+  const handleConfirmDelete = React.useCallback(async () => {
+    await up.confirmDelete();
+    // native input değerini temizle
+    if (fileInputRef.current) {
+      try { fileInputRef.current.value = ''; } catch {}
+    }
+    // Hala sorun yaşayan tarayıcılar için yeniden mount et
+    bumpPickerKey();
+  }, [up]);
 
   return (
     <>
-
-      {/* GENEL BİLGİLER (başlıksız) */}
       <Box sx={{ mt: 0 }}>
         <Grid container spacing={2}>
+          {/* 1. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Tam Ad"
@@ -87,7 +113,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               helperText={toHelper(errors.name?.message)}
             />
           </Grid>
-
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Kod"
@@ -98,44 +123,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="variant"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Varyant"
-                  size="small"
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value as string)}
-                  error={!!errors.variant}
-                  helperText={toHelper(errors.variant?.message)}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    renderValue: (v) => {
-                      const val = String(v ?? '');
-                      if (!val) return 'Seçiniz';
-                      return variants.find((x) => x.key === val)?.name ?? val;
-                    },
-                  }}
-                >
-                  <MenuItem value="">
-                    <em>Seçiniz</em>
-                  </MenuItem>
-                  {variants.map((v) => (
-                    <MenuItem key={v.key} value={v.key}>
-                      {v.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          </Grid>
-
+          {/* 2. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="category"
@@ -178,6 +166,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* 3. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="subCategory"
@@ -226,6 +215,53 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="variant"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Varyant"
+                  size="small"
+                  fullWidth
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value as string)}
+                  error={!!errors.variant}
+                  helperText={toHelper(errors.variant?.message)}
+                  InputLabelProps={{ shrink: true }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (v) => {
+                      const val = String(v ?? '');
+                      if (!val) return 'Seçiniz';
+                      return variants.find((x) => x.key === val)?.name ?? val;
+                    },
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>Seçiniz</em>
+                  </MenuItem>
+                  {variants.map((v) => (
+                    <MenuItem key={v.key} value={v.key}>
+                      {v.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <NumberField<FormType, 'unitWeightG'>
+              name="unitWeightG"
+              label="Birim Ağırlık"
+              integer
+              endAdornmentText="gr/m"
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Tarih"
               type="date"
@@ -236,32 +272,21 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-        </Grid>
-      </Box>
 
-      {/* TEKNİK ÖZELLİKLER (başlıksız) */}
-      <Box sx={{ mt: 2 }}>
-        <Grid container spacing={2}>
+          {/* 4. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
-              label="Çizen"
+              label="Revizyon Tarihi"
+              type="date"
               fullWidth
-              {...register('drawer')}
-              helperText={toHelper(errors.drawer?.message)}
-              error={!!errors.drawer}
+              {...register('revisionDate')}
+              error={!!errors.revisionDate}
+              helperText={toHelper(errors.revisionDate?.message)}
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="Kontrol"
-              fullWidth
-              {...register('control')}
-              helperText={toHelper(errors.control?.message)}
-              error={!!errors.control}
-            />
-          </Grid>
-
+          
+          {/* 6. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="customerMold"
@@ -314,6 +339,27 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
+              label="Çizen"
+              fullWidth
+              {...register('drawer')}
+              helperText={toHelper(errors.drawer?.message)}
+              error={!!errors.drawer}
+            />
+          </Grid>
+
+          {/* 5. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              label="Kontrol"
+              fullWidth
+              {...register('control')}
+              helperText={toHelper(errors.control?.message)}
+              error={!!errors.control}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
               label="Ölçek"
               fullWidth
               {...register('scale')}
@@ -322,49 +368,71 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* 7. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'unitWeightG'> name="unitWeightG" label="Birim Ağırlık" integer endAdornmentText="gr/m" />
+            <NumberField<FormType, 'outerSizeMm'>
+              name="outerSizeMm"
+              label="Dış Çevre"
+              endAdornmentText="mm"
+            />
           </Grid>
 
+          {/* 8. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'outerSizeMm'> name="outerSizeMm" label="Dış Çevre" endAdornmentText="mm" />
+            <NumberField<FormType, 'sectionMm2'>
+              name="sectionMm2"
+              label="Kesit"
+              endAdornmentText="mm²"
+            />
           </Grid>
-
           <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'sectionMm2'> name="sectionMm2" label="Kesit" endAdornmentText="mm²" />
+            <TextField
+              label="Üretici Kodu"
+              fullWidth
+              {...register('manufacturerCode')}
+              helperText={toHelper(errors.manufacturerCode?.message)}
+              error={!!errors.manufacturerCode}
+            />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField label="Geçici Kod" fullWidth {...register('tempCode')} helperText={toHelper(errors.tempCode?.message)} error={!!errors.tempCode} />
+          {/* 9. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              label="Profil Kodu"
+              fullWidth
+              {...register('profileCode')}
+              helperText={toHelper(errors.profileCode?.message)}
+              error={!!errors.profileCode}
+            />
           </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField label="Profil Kodu" fullWidth {...register('profileCode')} helperText={toHelper(errors.profileCode?.message)} error={!!errors.profileCode} />
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              label="Geçici Kod"
+              fullWidth
+              {...register('tempCode')}
+              helperText={toHelper(errors.tempCode?.message)}
+              error={!!errors.tempCode}
+            />
           </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField label="Üretici Kodu" fullWidth {...register('manufacturerCode')} helperText={toHelper(errors.manufacturerCode?.message)} error={!!errors.manufacturerCode} />
-          </Grid>
-        </Grid>
-      </Box>
 
-      {/* DOSYA (başlıksız) */}
-      {showFileSection && (
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
+          {/* 10. Satır: Dosya Alanı (tek satır tam genişlik) */}
+          {showFileSection && (
             <Grid size={{ xs: 12 }}>
               <Box>
                 <input
-                  id="file-input"
+                  key={pickerKey}
+                  ref={fileInputRef}
                   type="file"
                   accept="application/pdf, image/png, image/webp, image/jpeg"
-                  hidden
-                  onChange={(e) => up.pick(e.target.files?.[0] ?? null)}
+                  style={{ display: 'none' }}
+                  onChange={(e) => up.pick(e.currentTarget.files?.[0] ?? null)}
                 />
+
                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
                   <Button
                     variant="outlined"
                     startIcon={up.fileMeta?.kind === 'pdf' ? <PictureAsPdfIcon /> : <ImageIcon />}
-                    component="label"
-                    htmlFor="file-input"
+                    onClick={openPicker}
                     disabled={up.uploading || isSubmitting}
                     sx={{ textTransform: 'capitalize' }}
                   >
@@ -394,7 +462,10 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                 {errors.image && <FormHelperText error>{toHelper(errors.image.message)}</FormHelperText>}
               </Box>
             </Grid>
+          )}
 
+          {/* Silme onayı */}
+          <Grid size={{ xs: 12 }}>
             <ConfirmDialog
               open={up.confirmOpen}
               title="Dosyayı sil"
@@ -402,11 +473,11 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               confirmText="Evet, sil"
               cancelText="Vazgeç"
               onClose={up.closeDelete}
-              onConfirm={up.confirmDelete}
+              onConfirm={handleConfirmDelete}
             />
           </Grid>
-        </Box>
-      )}
+        </Grid>
+      </Box>
     </>
   );
 }

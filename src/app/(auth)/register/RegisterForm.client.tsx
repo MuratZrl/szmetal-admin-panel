@@ -2,21 +2,13 @@
 'use client';
 
 /**
- * Kayıt formu (profesyonel sürüm)
- *
- * Neler var:
- * - Yup ile güçlü doğrulama (e-posta, şifre kuralları, eşleşme)
- * - Şifre görünür/gizli toggles (erişilebilirlik etiketleri ile)
- * - Şifre gücü göstergesi (basit ama işe yarar skor)
- * - Stabil env/siteURL çözümü ve e-posta yönlendirme
- * - Supabase hatalarını kullanıcı dostu mesajlara çevirme
- * - Trim/normalize (email, kullanıcı adı)
- * - Gereksiz yeniden-render azaltımı, temiz TypeScript tipleri (any yok)
- * - MUI Grid size={{ xs, sm, md }} kullanımına tam uyum
+ * Kayıt formu
+ * - Username: boşluk ve Türkçe karakter destekli, case-insensitive benzersiz
+ * - E-posta: signup öncesi benzersizlik kontrolü
+ * - Şifre gücü göstergesi
  */
 
 import * as React from 'react';
-
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -31,10 +23,10 @@ import {
   LinearProgress,
   Stack,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { useForm } from 'react-hook-form';
-
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -42,19 +34,24 @@ import { glassTextFieldProps } from '../constants/formstyles';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 import { supabase } from '@/lib/supabase/supabaseClient';
 
-/** Şifre kuralı: 8+ karakter, 1 büyük, 1 küçük, 1 rakam, 1 sembol */
-const PASSWORD_RULES =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+/* -------------------------------------------------------------------------- */
+/* Doğrulama şeması                                                            */
+/* -------------------------------------------------------------------------- */
 
-/** Yup şema: form seviyesinde güçlü doğrulama */
+const PASSWORD_RULES = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+const USERNAME_REGEX = /^[\p{L}\p{N}._\- ]+$/u;
+
 const schema = yup
   .object({
     username: yup
       .string()
-      .trim()
+      .transform(v => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : v))
       .min(3, 'En az 3 karakter')
       .max(40, 'En fazla 40 karakter')
-      .matches(/^[A-Za-z0-9._-]+$/, 'Sadece harf, rakam ve . _ - kullanılabilir')
+      .matches(
+        USERNAME_REGEX,
+        'Harf, rakam, boşluk, ., _ ve - kullanılabilir'
+      )
       .required('Kullanıcı adı zorunludur'),
     email: yup
       .string()
@@ -76,10 +73,12 @@ const schema = yup
   })
   .required();
 
-/** Yup şemasından tip çıkarımı (any yok) */
 type FormValues = yup.InferType<typeof schema>;
 
-/** Güç skoru: basit heuristik (UI için yeterli) */
+/* -------------------------------------------------------------------------- */
+/* Yardımcılar                                                                 */
+/* -------------------------------------------------------------------------- */
+
 function scorePassword(pw: string): number {
   let score = 0;
   if (pw.length >= 8) score += 1;
@@ -88,31 +87,25 @@ function scorePassword(pw: string): number {
   if (/\d/.test(pw) && /[^\w\s]/.test(pw)) score += 1;
   return Math.min(score, 4);
 }
-
-/** Skoru yüzdeye çevir (LinearProgress için) */
 function toPercent(score: number): number {
   return (score / 4) * 100;
 }
-
-/** Kullanıcıya dost metin */
 function strengthLabel(score: number): 'Zayıf' | 'Orta' | 'İyi' | 'Güçlü' | '' {
   switch (score) {
-    case 0:
-      return '';
-    case 1:
-      return 'Zayıf';
-    case 2:
-      return 'Orta';
-    case 3:
-      return 'İyi';
-    case 4:
-      return 'Güçlü';
-    default:
-      return '';
+    case 1: return 'Zayıf';
+    case 2: return 'Orta';
+    case 3: return 'İyi';
+    case 4: return 'Güçlü';
+    default: return '';
   }
 }
-
-/** Site URL çözümü: env > window.origin > localhost */
+function strengthBarColor(theme: import('@mui/material/styles').Theme, score: number): string {
+  if (score <= 0) return theme.palette.divider;
+  if (score === 1) return theme.palette.error.main;
+  if (score === 2) return theme.palette.warning.light;
+  if (score === 3) return theme.palette.warning.main;
+  return theme.palette.success.main;
+}
 function resolveSiteUrl(): string {
   if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL;
@@ -138,19 +131,57 @@ function mapSupabaseErrorMessage(message: string): string {
   return message;
 }
 
+/* -------------------------------------------------------------------------- */
+/* RPC tipleri                                                                 */
+/* -------------------------------------------------------------------------- */
+
+type BoolRpcResponse = {
+  data: boolean | null;
+  error: { message: string } | null;
+};
+
+async function isUsernameFree(username: string): Promise<boolean> {
+  const normalized = username.replace(/\s+/g, ' ').trim();
+  const { data, error } = (await supabase.rpc('username_available', {
+    p_username: normalized,
+  })) as BoolRpcResponse;
+  if (error) {
+    // Güvenli tarafta kal: hata olursa kullanılabilir sayma
+    // Konsola düşür ki gerçek sebep görülsün
+    console.error('username_available RPC error:', error);
+    return false;
+  }
+  return Boolean(data);
+}
+
+async function isEmailFree(email: string): Promise<boolean> {
+  const e = email.trim().toLowerCase();
+  const { data, error } = (await supabase.rpc('email_available', {
+    p_email: e,
+  })) as BoolRpcResponse;
+  if (error) {
+    console.error('email_available RPC error:', error);
+    return false;
+  }
+  return Boolean(data);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Component                                                                   */
+/* -------------------------------------------------------------------------- */
+
 export default function RegisterForm(): React.JSX.Element {
   const router = useRouter();
   const { show } = useSnackbar();
 
-  /** Şifre alanları için görünür/gizli durumları */
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState<boolean>(false);
 
-  /** RHF: onChange modunda anlık doğrulama + yupResolver */
   const {
     register,
     handleSubmit,
     watch,
+    setError,
     formState: { errors, isSubmitting, isValid, isDirty },
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
@@ -166,12 +197,27 @@ export default function RegisterForm(): React.JSX.Element {
   const passwordValue = watch('password');
   const pwdScore = scorePassword(passwordValue ?? '');
 
-  /** Submit: Supabase signUp + e-posta doğrulama yönlendirmesi */
   const onSubmit = async (values: FormValues): Promise<void> => {
-    // Normalizasyon
-    const username = values.username.trim();
+    const username = values.username.replace(/\s+/g, ' ').trim();
     const email = values.email.trim().toLowerCase();
     const password = values.password;
+
+    // 1) Ön kontrol: username & email benzersiz mi?
+    const [userOk, emailOk] = await Promise.all([
+      isUsernameFree(username),
+      isEmailFree(email),
+    ]);
+
+    if (!userOk) {
+      setError('username', { type: 'manual', message: 'Bu kullanıcı adı zaten kullanılıyor.' });
+      show('Bu kullanıcı adı zaten kullanılıyor.', 'error');
+      return;
+    }
+    if (!emailOk) {
+      setError('email', { type: 'manual', message: 'Bu e-posta adresi zaten kayıtlı.' });
+      show('Bu e-posta adresi zaten kayıtlı.', 'error');
+      return;
+    }
 
     try {
       const siteUrl = resolveSiteUrl();
@@ -180,38 +226,40 @@ export default function RegisterForm(): React.JSX.Element {
         email,
         password,
         options: {
-          // auth.users -> user_metadata
-          data: {
-            username,
-            role: 'User', // Varsayılan kayıt rolü
-            // İsterseniz profil oluşturma tetikleyici/cron ile public.users doldurulabilir
-          },
+          data: { username, role: 'User' },
           emailRedirectTo: `${siteUrl}/login`,
         },
       });
 
       if (error) {
-        show(mapSupabaseErrorMessage(error.message), 'error');
+        // Daha anlamlı geri bildirim
+        const raw = error.message ?? '';
+        const pretty = raw.toLowerCase().includes('database error saving new user')
+          ? 'Kayıt başarısız: kullanıcı adı veya e-posta kullanımda.'
+          : mapSupabaseErrorMessage(raw);
+
+        // Hangi alan hatalı olabilir, ikisine de not düşelim
+        if (pretty.includes('kullanıcı adı')) {
+          setError('username', { type: 'manual', message: pretty });
+        }
+        if (pretty.includes('e-posta')) {
+          setError('email', { type: 'manual', message: pretty });
+        }
+
+        show(pretty, 'error');
         return;
       }
 
-      // Başarı: e-posta onayı gerekli
       show('Kayıt başarılı! Lütfen e-posta adresinizi onaylayın.', 'success');
       router.push('/login');
     } catch (e) {
-      console.log(e)
+      console.error(e);
       show('Beklenmeyen bir hata oluştu.', 'error');
     }
   };
 
   return (
-    <Box
-      component="form"
-      noValidate
-      autoComplete="off"
-      onSubmit={handleSubmit(onSubmit)}
-      aria-live="polite"
-    >
+    <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)} aria-live="polite">
       <Grid container spacing={2}>
         {/* Kullanıcı adı */}
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
@@ -225,6 +273,7 @@ export default function RegisterForm(): React.JSX.Element {
             {...glassTextFieldProps}
             {...register('username')}
             helperText={errors.username?.message}
+            error={Boolean(errors.username)}
           />
         </Grid>
 
@@ -241,6 +290,7 @@ export default function RegisterForm(): React.JSX.Element {
             {...glassTextFieldProps}
             {...register('email')}
             helperText={errors.email?.message}
+            error={Boolean(errors.email)}
           />
         </Grid>
 
@@ -255,6 +305,7 @@ export default function RegisterForm(): React.JSX.Element {
             {...glassTextFieldProps}
             {...register('password')}
             helperText={errors.password?.message ?? 'En az 8 karakter, büyük/küçük harf, rakam, sembol'}
+            error={Boolean(errors.password)}
             InputProps={{
               ...(glassTextFieldProps.InputProps ?? {}),
               endAdornment: (
@@ -262,7 +313,7 @@ export default function RegisterForm(): React.JSX.Element {
                   <IconButton
                     aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setShowPassword((s) => !s)}
+                    onClick={() => setShowPassword(s => !s)}
                     edge="end"
                     color="inherit"
                   >
@@ -282,18 +333,28 @@ export default function RegisterForm(): React.JSX.Element {
               onCut: (e) => e.preventDefault(),
             }}
           />
-          {/* Şifre gücü göstergesi */}
+
+          {/* Şifre gücü */}
           <Stack spacing={0.5} sx={{ mt: 1 }}>
             <LinearProgress
               variant="determinate"
               value={toPercent(pwdScore)}
               aria-label="Şifre gücü"
-              sx={{
+              sx={(theme) => ({
                 height: 6,
                 borderRadius: 1,
-              }}
+                backgroundColor: alpha(theme.palette.text.primary, 0.08),
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: strengthBarColor(theme, pwdScore),
+                },
+              })}
             />
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={(theme) => ({
+                color: pwdScore === 0 ? theme.palette.text.secondary : strengthBarColor(theme, pwdScore),
+              })}
+            >
               {strengthLabel(pwdScore)}
             </Typography>
           </Stack>
@@ -310,6 +371,7 @@ export default function RegisterForm(): React.JSX.Element {
             {...glassTextFieldProps}
             {...register('confirmPassword')}
             helperText={errors.confirmPassword?.message}
+            error={Boolean(errors.confirmPassword)}
             InputProps={{
               ...(glassTextFieldProps.InputProps ?? {}),
               endAdornment: (
@@ -317,7 +379,7 @@ export default function RegisterForm(): React.JSX.Element {
                   <IconButton
                     aria-label={showConfirmPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setShowConfirmPassword((s) => !s)}
+                    onClick={() => setShowConfirmPassword(s => !s)}
                     edge="end"
                     color="inherit"
                   >

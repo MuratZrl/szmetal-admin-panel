@@ -43,6 +43,19 @@ function fallbackText(value: string | null | undefined): string {
   return s.length > 0 ? s : '---';
 }
 
+/** Readonly görünüm için Select'e uygulanacak stil:
+ * - Disabled grileşmesini kaldır
+ * - Pointer etkileşimini kapat
+ * - Çerçeveyi normal tut
+ */
+const READONLY_SELECT_SX = {
+  '& .MuiSelect-select.Mui-disabled': { WebkitTextFillColor: 'inherit' },
+  '&.Mui-disabled .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+  '&.Mui-disabled': { opacity: 1 },
+  pointerEvents: 'none' as const,
+  cursor: 'default',
+};
+
 /* -------------------------------------------------------------------------- */
 /* Role Select Cell                                                            */
 /* -------------------------------------------------------------------------- */
@@ -82,6 +95,8 @@ function RoleSelectCell(props: RoleSelectCellProps) {
     })();
   };
 
+  const readOnly = !editable;
+
   return (
     <Select
       value={value}
@@ -89,10 +104,12 @@ function RoleSelectCell(props: RoleSelectCellProps) {
       onClick={(e) => e.stopPropagation()}
       size="small"
       fullWidth
+      variant="outlined"
       displayEmpty
-      disabled={!editable}
-      aria-readonly={!editable}
+      disabled={readOnly}
+      aria-readonly={readOnly}
       renderValue={(v) => (v ? ROLE_LABELS_TR[v as AppRole] : '---')}
+      sx={readOnly ? READONLY_SELECT_SX : undefined}
     >
       {ROLE_OPTIONS.map((opt) => (
         <MenuItem key={opt} value={opt}>
@@ -142,6 +159,8 @@ function StatusSelectCell(props: StatusSelectCellProps) {
     })();
   };
 
+  const readOnly = !editable;
+
   return (
     <Select
       value={value}
@@ -149,10 +168,12 @@ function StatusSelectCell(props: StatusSelectCellProps) {
       onClick={(e) => e.stopPropagation()}
       size="small"
       fullWidth
+      variant="outlined"
       displayEmpty
-      disabled={!editable}
-      aria-readonly={!editable}
+      disabled={readOnly}
+      aria-readonly={readOnly}
       renderValue={(v) => (v ? STATUS_LABELS_TR[v as AppStatus] : '---')}
+      sx={readOnly ? READONLY_SELECT_SX : undefined}
     >
       {STATUS_OPTIONS.map((opt) => (
         <MenuItem key={opt} value={opt}>
@@ -168,7 +189,13 @@ function StatusSelectCell(props: StatusSelectCellProps) {
 /* -------------------------------------------------------------------------- */
 
 export function buildColumns(
-  { editableRole, editableStatus }: { editableRole?: boolean; editableStatus?: boolean } = {}
+  {
+    canEditRole,
+    canEditStatus,
+  }: {
+    canEditRole?: (row: UserRow) => boolean;
+    canEditStatus?: (row: UserRow) => boolean;
+  } = {}
 ): GridColDef<UserRow>[] {
   const cols: GridColDef<UserRow>[] = [
     {
@@ -182,7 +209,7 @@ export function buildColumns(
         const name = params.row.username ?? params.row.email;
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', height: 1 }}>
-            <Avatar src={src} alt={name ?? 'user'} />
+            <Avatar src={src ?? undefined} alt={name ?? 'user'} />
           </Box>
         );
       },
@@ -216,11 +243,15 @@ export function buildColumns(
       editable: false,
       type: 'singleSelect',
       valueOptions: ROLE_OPTIONS.map((v) => ({ value: v, label: ROLE_LABELS_TR[v] })),
-      renderCell: (params) => <RoleSelectCell {...params} editable={!!editableRole} />,
+      renderCell: (params) => (
+        <RoleSelectCell
+          {...params}
+          editable={canEditRole ? canEditRole(params.row) : false}
+        />
+      ),
       sortComparator: (a, b) =>
         ROLE_OPTIONS.indexOf((a ?? 'User') as AppRole) -
         ROLE_OPTIONS.indexOf((b ?? 'User') as AppRole),
-      // DataGrid v7: formatter yalnızca value alır
       valueFormatter: (value) => (value ? ROLE_LABELS_TR[value as AppRole] : '---'),
     },
 
@@ -246,7 +277,10 @@ export function buildColumns(
       type: 'singleSelect',
       valueOptions: STATUS_OPTIONS.map((v) => ({ value: v, label: STATUS_LABELS_TR[v] })),
       renderCell: (params: GridRenderCellParams<UserRow, AppStatus | null>) => (
-        <StatusSelectCell {...params} editable={!!editableStatus} />
+        <StatusSelectCell
+          {...params}
+          editable={canEditStatus ? canEditStatus(params.row) : false}
+        />
       ),
       sortComparator: (a, b) =>
         STATUS_OPTIONS.indexOf((a ?? 'Active') as AppStatus) -

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": "src",
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext", "DOM", "ESNext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -26,14 +26,17 @@
       "@/constants/*": ["constants/*"],
       "@/types/*": ["types/*"],
       "@/hooks/*": ["hooks/*"]
-    }
+    },
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "next-env.d.ts", 
     "**/*.ts", "**/*.tsx", 
     ".next/types/**/*.ts", 
     "types/**/*.d.ts", 
-    "src/theme/types.d.ts"
-, "src/components/ui/charts/RequestsByStatusDonut.client.tsx"  ],
+    "src/theme/types.d.ts",
+    "src/components/ui/charts/RequestsByStatusDonut.client.tsx",
+    "test/**/*"  
+  ],
   "exclude": ["node_modules"]
 }

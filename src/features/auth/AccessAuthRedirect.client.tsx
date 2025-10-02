@@ -6,48 +6,42 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
-// Projedeki kurallar:
-// Admin: her yer
-// Manager: dashboard hariç admin sayfaları
-// User: yalnız account, create_request, orders
-type Role = Database['public']['Tables']['users']['Row']['role'];
-type Status = Database['public']['Tables']['users']['Row']['status'];
+// DB tipleri
+type Row = Database['public']['Tables']['users']['Row'];
+type Role = Row['role'] | null | undefined;
+type Status = Row['status'] | null | undefined;
 
-type Props = { selfUserId: string | null };
+type Props = {
+  selfUserId: string | null;
+  initialRole?: Row['role'] | null;
+  initialStatus?: Row['status'] | null;
+};
 
-function canAccess(pathname: string, role: Role | null | undefined, status: Status | null | undefined): boolean {
+function canAccess(pathname: string, role: Role, status: Status): boolean {
   if (!role) return false;
-
-  // Banned: hiçbir yere değil (login de engelli, sen yine de sakıncalı durum)
   if (status === 'Banned') return false;
 
-  // Admin: özgür
   if (role === 'Admin') return true;
 
-  // Manager: sadece dashboard yasak
   if (role === 'Manager') {
+    // Manager sadece dashboard’a giremez
     return !pathname.startsWith('/dashboard');
   }
 
-  // User: sadece account, create_request (Inactive ise create_request yasak), orders
   if (role === 'User') {
     if (pathname.startsWith('/account')) return true;
     if (pathname.startsWith('/orders')) return true;
-    if (pathname.startsWith('/create_request')) {
-      // Inactive create_request'a giremez (senaryon dikkate)
-      return status !== 'Inactive';
-    }
+    if (pathname.startsWith('/create_request')) return status !== 'Inactive';
     return false;
   }
 
   return false;
 }
 
-export default function AccessAutoRedirect({ selfUserId }: Props) {
+export default function AccessAutoRedirect({ selfUserId, initialRole = null, initialStatus = null }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Env zorunlu
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabase = React.useMemo<SupabaseClient<Database>>(
@@ -55,7 +49,24 @@ export default function AccessAutoRedirect({ selfUserId }: Props) {
     [url, anon]
   );
 
-  // İlk yüklemede mevcut durumu kontrol et
+  // Tek gerçek: rol/status
+  const [role, setRole] = React.useState<Role>(initialRole);
+  const [status, setStatus] = React.useState<Status>(initialStatus);
+
+  // 1) Sunucudan gelen ilk değerlerle ani yönlendirmeyi yap (varsa)
+  React.useEffect(() => {
+    if (role) {
+      if (!canAccess(pathname, role, status)) {
+        if (status === 'Banned') router.replace('/unauthorized');
+        else router.replace('/account');
+      }
+    }
+    // sadece ilk mount + pathname değişiminde kontrol yeterli
+    // role/status'ı buraya koymuyoruz; aksi halde loop olabilir
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // 2) Kesin durumu DB’den çek (RLS uygunsa döner)
   React.useEffect(() => {
     let canceled = false;
     if (!selfUserId) return;
@@ -67,16 +78,19 @@ export default function AccessAutoRedirect({ selfUserId }: Props) {
         .eq('id', selfUserId)
         .maybeSingle();
 
-      if (canceled || error) return;
+      if (canceled) return;
 
-      if (!canAccess(pathname, data?.role, data?.status)) {
-        // Nereye?
-        if (data?.status === 'Banned') {
-          router.replace('/unauthorized');
-          return;
-        }
-        // Kullanıcının erişebileceği en mantıklı yer
-        router.replace('/account');
+      if (error) {
+        // Sessiz geç; server guard zaten koruyor
+        return;
+      }
+
+      setRole(data?.role ?? null);
+      setStatus(data?.status ?? null);
+
+      if (data?.role && !canAccess(pathname, data.role, data.status)) {
+        if (data.status === 'Banned') router.replace('/unauthorized');
+        else router.replace('/account');
       }
     })();
 
@@ -85,7 +99,7 @@ export default function AccessAutoRedirect({ selfUserId }: Props) {
     };
   }, [supabase, selfUserId, pathname, router]);
 
-  // Realtime: kendi satırını dinle
+  // 3) Realtime ile anlık değişimleri yakala
   React.useEffect(() => {
     if (!selfUserId) return;
 
@@ -95,19 +109,16 @@ export default function AccessAutoRedirect({ selfUserId }: Props) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'users', filter: `id=eq.${selfUserId}` },
         (payload) => {
-          const next = (payload.new ?? payload.old) as Partial<Database['public']['Tables']['users']['Row']> | null;
-          const role = next?.role;
-          const status = next?.status;
+          const next = (payload.new ?? payload.old) as Partial<Row> | null;
+          const nextRole: Role = next?.role ?? null;
+          const nextStatus: Status = next?.status ?? null;
 
-          if (!canAccess(pathname, role, status)) {
-            if (status === 'Banned') {
-              router.replace('/unauthorized');
-            } else {
-              router.replace('/account');
-            }
-          } else {
-            // Yetki hala var; veri farklılaştıysa sayfayı tazelemek isteyebilirsin
-            // router.refresh();
+          setRole(nextRole);
+          setStatus(nextStatus);
+
+          if (!canAccess(pathname, nextRole, nextStatus)) {
+            if (nextStatus === 'Banned') router.replace('/unauthorized');
+            else router.replace('/account');
           }
         }
       )
@@ -118,6 +129,5 @@ export default function AccessAutoRedirect({ selfUserId }: Props) {
     };
   }, [supabase, selfUserId, pathname, router]);
 
-  // Görsel bir şey üretmiyoruz
   return null;
 }

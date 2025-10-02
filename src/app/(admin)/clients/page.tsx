@@ -8,23 +8,32 @@ import { fetchClientsLine6M } from '@/features/clients/services/chart.server';
 import CardsGrid from '@/features/clients/components/CardsGrid.client';
 import TableGrid from '@/features/clients/components/TableGrid.client';
 
-// DOĞRUDAN kart kabuğu (server-safe)
 import ChartCard from '@/components/ui/cards/ChartCard.client';
-// Grafik client bileşeni
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
-// 2. Grafik client bileşeni
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 
 import { get6RollingMonthRange } from '@/features/dashboard/utils/rollingMonths';
 
-import { STATUS_OPTIONS, type AppStatus, STATUS_LABELS_TR } from '@/features/clients/constants/users';
+import {
+  STATUS_OPTIONS,
+  type AppStatus,
+  STATUS_LABELS_TR,
+} from '@/features/clients/constants/users';
 
-// EK: server guard + self id
 import { requirePageAccess } from '@/lib/supabase/auth/server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+
+// DİKKAT: doğru import yolu
 import AccessAutoRedirect from '@/features/auth/AccessAuthRedirect.client';
 
+// TableGrid’in beklediği rol tipi
+import type { AppRole } from '@/features/clients/constants/columns';
+
 export const revalidate = 60;
+
+function isAppRole(v: unknown): v is AppRole {
+  return v === 'Admin' || v === 'Manager' || v === 'User';
+}
 
 export default async function Page() {
   // Bu sayfaya kimler girebilir? (Admin, Manager)
@@ -36,23 +45,38 @@ export default async function Page() {
     fetchUsersAll(),
   ]);
 
-  // Oturum sahibinin id'si
+  // Oturum sahibi
   const sb = await createSupabaseServerClient();
   const { data: auth } = await sb.auth.getUser();
   const selfUserId = auth?.user?.id ?? null;
 
+  // Kendi rolünü DB'den oku (public.users)
+  let myRole: AppRole = 'User';
+  if (selfUserId) {
+    const { data } = await sb
+      .from('users')
+      .select('role')
+      .eq('id', selfUserId)
+      .returns<{ role: string }[]>();
+
+    const r = data?.[0]?.role ?? null;
+    if (isAppRole(r)) {
+      myRole = r;
+    }
+  }
+
   const { labelTR: labelTR6 } = get6RollingMonthRange();
 
   const STATUS_COLOR: Record<AppStatus, string> = {
-    Active:   '#2e7d32',
+    Active: '#2e7d32',
     Inactive: '#ed6c02',
-    Banned:   '#d32f2f',
+    Banned: '#d32f2f',
   };
 
   const barSeries: Parameters<typeof GroupBarChart>[0]['series'] =
-    (STATUS_OPTIONS as readonly AppStatus[]).map(s => ({
+    (STATUS_OPTIONS as readonly AppStatus[]).map((s) => ({
       label: STATUS_LABELS_TR[s],
-      data:  line6m.byStatus[s] ?? [],
+      data: line6m.byStatus[s] ?? [],
       color: STATUS_COLOR[s],
     }));
 
@@ -87,18 +111,14 @@ export default async function Page() {
 
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Duruma Göre Toplam Kullanıcılar" timeLabel={labelTR6}>
-            <GroupBarChart
-              labels={line6m.labels}
-              series={barSeries}
-              height={320}
-            />
+            <GroupBarChart labels={line6m.labels} series={barSeries} height={320} />
           </ChartCard>
         </Grid>
       </Grid>
 
       {/* 3) Tablo */}
       <Box sx={{ mt: 2 }}>
-        <TableGrid rows={rows} />
+        <TableGrid rows={rows} selfUserId={selfUserId} myRole={myRole} />
       </Box>
     </Box>
   );

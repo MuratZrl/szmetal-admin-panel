@@ -21,6 +21,9 @@ export type CreateProductInput = {
 
   date: string;
 
+  /** EKLENDİ: Revizyon tarihi (opsiyonel, boşsa null) */
+  revisionDate?: string | null;
+
   unitWeightG: number | null;
 
   hasCustomerMold?: boolean;
@@ -73,6 +76,9 @@ export async function createProduct(v: CreateProductInput) {
     subcategory_id: v.subCategoryId ?? null,
 
     date: v.date,
+
+    // EKLENDİ: Revizyon tarihi
+    revision_date: toNull(v.revisionDate ?? null),
 
     ...(v.unitWeightG != null
       ? { unit_weight_g_pm: Math.round(Number(v.unitWeightG)) }
@@ -159,6 +165,11 @@ export async function updateProduct(id: number, v: UpdateProductInput): Promise<
   if (v.subCategoryId !== undefined) payload.subcategory_id = v.subCategoryId ?? null;
 
   if (v.date !== undefined) payload.date = v.date;
+
+  // EKLENDİ: Revizyon tarihi (tipler henüz kolon içermiyorsa güvenli cast ile yaz)
+  if (v.revisionDate !== undefined) {
+    (payload as unknown as { revision_date?: string | null }).revision_date = toNull(v.revisionDate);
+  }
 
   if (v.unitWeightG !== undefined) {
     payload.unit_weight_g_pm = v.unitWeightG == null

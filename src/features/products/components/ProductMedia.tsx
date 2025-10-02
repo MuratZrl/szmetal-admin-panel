@@ -8,20 +8,29 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { detectMediaKind } from '@/features/products/utils/media';
 
 type Props = {
-  /** Ana URL (image veya pdf) */
   src?: string | null;
-  /** Yedek URL (ana URL çözülemezse) */
   fileUrl?: string | null;
-  /** Uzantı ipucu: 'pdf' | 'png' | 'webp' | 'jpg' | 'jpeg' */
   fileExt?: string | null;
-  fileMime?: string | null;    // ← yeni
-  /** Erişilebilirlik için alt metin */
+  fileMime?: string | null;
   alt?: string;
-  /** Kutu oranı (varsayılan 4:3) */
   aspectRatio?: `${number} / ${number}` | number;
-  /** Görselde kırpma modu (PDF’yi etkilemez) */
   objectFit?: 'contain' | 'cover';
 };
+
+function withQuery(u: string, q: Record<string, string>): string {
+  // SSR'da absolute'e dönmesin diye base veriyoruz
+  const url = new URL(u, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  Object.entries(q).forEach(([k, v]) => url.searchParams.set(k, v));
+  // Eğer orijinal path relative ise relative döndür
+  return u.startsWith('/') ? (url.pathname + (url.search || '') + (url.hash || '')) : url.toString();
+}
+
+function ensureInline(u: string): string {
+  // Sadece kendi secure route’umuzsa inline zorla
+  return u.startsWith('/api/products/storage')
+    ? withQuery(u, { disposition: 'inline' })
+    : u;
+}
 
 export default function ProductMedia({
   src,
@@ -32,25 +41,26 @@ export default function ProductMedia({
   aspectRatio = 1.25 / Math.sqrt(2),
   objectFit = 'contain',
 }: Props) {
-
   const srcUrl = (src ?? '').trim();
   const fallbackUrl = (fileUrl ?? '').trim();
 
   const srcKind = detectMediaKind({ url: srcUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
   const fbKind  = detectMediaKind({ url: fallbackUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
 
-  // Tercih sırası: src (biliniyorsa) → fileUrl (biliniyorsa) → unknown
+  // Tercih sırası
   const chosen =
     (srcUrl && srcKind !== 'unknown' && { url: srcUrl, kind: srcKind }) ||
     (fallbackUrl && fbKind !== 'unknown' && { url: fallbackUrl, kind: fbKind }) ||
     ({ url: '', kind: 'unknown' as const });
 
-  // Unknown olsa bile bir URL varsa en azından “bağlantıyı aç” butonu gösterebiliriz
-  const anyUrl = srcUrl || fallbackUrl;
+  // Görüntüleme için URL (inline zorunlu)
+  const viewUrl = chosen.url ? ensureInline(chosen.url) : '';
+  // Butonda kullanılacak “aç” linki (o da inline olsun)
+  const openHref = viewUrl || (fallbackUrl ? ensureInline(fallbackUrl) : '');
 
-  // PDF’yi sayfaya sığdırmak için viewer query parametreleri
-  const pdfViewUrl = chosen.kind === 'pdf' && chosen.url
-    ? `${chosen.url}#zoom=page-fit&view=FitH&toolbar=0&navpanes=0`
+  // PDF viewer için hash paramları
+  const pdfViewUrl = chosen.kind === 'pdf' && viewUrl
+    ? `${viewUrl}#zoom=page-fit&view=FitH&toolbar=0&navpanes=0`
     : '';
 
   return (
@@ -70,43 +80,39 @@ export default function ProductMedia({
       }}
       aria-label={alt}
     >
-
-      {/* İçerik */}
-      {chosen.kind === 'pdf' && chosen.url ? (
-        // PDF: tarayıcının yerleşik PDF görüntüleyicisi
+      {chosen.kind === 'pdf' && viewUrl ? (
         <Box
           component="object"
           data={pdfViewUrl}
           type="application/pdf"
           sx={{ width: '100%', height: '100%', border: 0 }}
         >
-          {/* PDF embed desteklemeyen tarayıcılar için fallback */}
           <Stack spacing={1} alignItems="center">
             <Typography variant="body2">PDF önizlenemedi.</Typography>
-            <Button
-              component={Link}
-              href={chosen.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              startIcon={<OpenInNewIcon />}
-              size="small"
-              sx={{ textTransform: 'none' }}
-            >
-              PDF’i aç
-            </Button>
+            {openHref && (
+              <Button
+                component={Link}
+                href={openHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                startIcon={<OpenInNewIcon />}
+                size="small"
+                sx={{ textTransform: 'none' }}
+              >
+                PDF’i aç
+              </Button>
+            )}
           </Stack>
         </Box>
-      ) : chosen.kind === 'image' && chosen.url ? (
-        // Görsel
+      ) : chosen.kind === 'image' && viewUrl ? (
         <Box
           component="img"
-          src={chosen.url}
+          src={viewUrl}
           alt={alt}
           draggable={false}
-          loading='lazy'
+          loading="lazy"
           referrerPolicy="no-referrer"
           onError={(e) => {
-            // basit metin fallback
             const img = e.currentTarget as HTMLImageElement;
             img.style.display = 'none';
             const parent = img.parentElement;
@@ -121,15 +127,14 @@ export default function ProductMedia({
           }}
         />
       ) : (
-        // Bilinmeyen/boş
         <Stack spacing={1} alignItems="center">
           <Typography variant="body2" color="text.secondary">
             Önizleme yok
           </Typography>
-          {anyUrl ? (
+          {openHref ? (
             <Button
               component={Link}
-              href={anyUrl}
+              href={openHref}
               target="_blank"
               rel="noopener noreferrer"
               startIcon={<OpenInNewIcon />}

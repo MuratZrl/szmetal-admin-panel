@@ -5,7 +5,6 @@ import * as React from 'react';
 import { Box, Paper } from '@mui/material';
 import { motion, useAnimationControls, useReducedMotion } from 'framer-motion';
 
-import ParticlesBackground from '@/app/(auth)/components/ui/ParticlesBackground';
 import Header from '@/app/(auth)/components/layout/Header';
 import Footer from '@/app/(auth)/components/layout/Footer';
 
@@ -13,71 +12,70 @@ type Props = {
   children: React.ReactNode;
 };
 
-// Durağan gradient renkleri
-const gradients = [
-  '#9f0000ff',
-  '#ad0000ff',
-  '#aa0000ff',
-  '#910000ff',
-  '#940000ff',
-  '#7d0000ff',
-  '#790000ff',
-  '#630000ff',
-  '#550000ff',
-  '#5e0000ff',
-  '#550000ff',
-  '#380000ff',
-];
+// Durağan gradient renkleri (keyframe sırası)
+const GRADIENTS = [
+  '#370000ff',
+  '#860000ff',
+] as const;
+
+type CSSVars = {
+  '--c1': string;
+  '--c2': string;
+};
 
 export default function AuthRightPanel({ children }: Props) {
   const controls = useAnimationControls();
   const prefersReducedMotion = useReducedMotion();
 
-  // StrictMode/SSR hydrasyonunda framer'ın "start after mount" uyarısını önlemek için
+  // Hydration ve StrictMode’da “start-after-mount” uyarısı yememek için
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
   React.useEffect(() => {
     if (!mounted || prefersReducedMotion) return;
 
-    let isActive = true;
+    // İlk boyada varsayılan değerleri koy
+    controls.set({ '--c1': GRADIENTS[0], '--c2': GRADIENTS[1] });
 
-    const run = async () => {
-      // Bir sonraki frame'i bekle; consumer motion.div kesinlikle mount olsun
-      await new Promise(requestAnimationFrame);
+    // c1 ve c2’yi farklı fazda döndür (yumuşak akan degrade)
+    const c1Seq = GRADIENTS.slice(); // 0..n
+    const c2Seq = GRADIENTS.slice(1).concat(GRADIENTS[0]); // 1..n,0
 
-      let i = 0;
-      while (isActive) {
-        const next = gradients[(i + 1) % gradients.length];
-        await controls.start({
-          background: `linear-gradient(145deg, ${gradients[i]}, ${next})`,
-          transition: { duration: 7, ease: 'easeInOut' },
-        });
-        i = (i + 1) % gradients.length;
-      }
-    };
-
-    run();
+    // Her adım ~7s; toplam süre adım sayısıyla çarpılır
+    controls.start({
+      '--c1': c1Seq as unknown as string | string[],
+      '--c2': c2Seq as unknown as string | string[],
+      transition: {
+        duration: 7 * GRADIENTS.length,
+        ease: 'easeInOut',
+        repeat: Infinity,
+      },
+    });
 
     return () => {
-      isActive = false;
       controls.stop();
     };
   }, [controls, mounted, prefersReducedMotion]);
+
+  // İlk frame’de gradient görünsün diye başlangıç değişkenleri
+  const initialVars: CSSVars = { '--c1': GRADIENTS[0], '--c2': GRADIENTS[1] };
 
   return (
     <Box sx={{ position: 'relative', width: 1, height: 1, overflow: 'hidden' }}>
       {mounted && (
         <motion.div
-          animate={controls}
+          animate={prefersReducedMotion ? undefined : controls}
           style={{
             position: 'absolute',
             inset: 0,
             width: '100%',
             height: '100%',
-            background: `linear-gradient(135deg, ${gradients[0]}, ${gradients[1]})`,
-            backgroundSize: '400% 400%',
-            willChange: 'background',
+            // Not: Burada renkleri CSS değişkenlerinden alıyoruz.
+            background: 'linear-gradient(145deg, var(--c1), var(--c2))',
+            // İlk render’da boş kalmasın
+            ...initialVars,
+            // Performans için
+            willChange: 'transform, opacity',
             zIndex: 0,
           }}
         />
@@ -111,7 +109,6 @@ export default function AuthRightPanel({ children }: Props) {
           px: 2,
         }}
       >
-        <ParticlesBackground />
         <Box sx={{ width: '100%', maxWidth: 700 }}>{children}</Box>
       </Paper>
 

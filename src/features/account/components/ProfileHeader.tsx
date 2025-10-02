@@ -5,13 +5,7 @@ import * as React from 'react';
 import { Avatar, Box, Typography, Chip, Button } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
-
-// Yolun projendeki konuma göre: 
-// import type { UserData } from './useAccount';
-// veya
-// import type { UserData } from './hooks/useAccount';
 import type { UserData } from '@/features/account/hooks/useAccount';
-
 import { getRoleInfo } from '@/features/account/helpers';
 
 export type ProfileHeaderProps = {
@@ -19,7 +13,7 @@ export type ProfileHeaderProps = {
   onUploadClick: (file?: File) => void;
   onRemove: () => void;
   uploading: boolean;
-  roleLabel?: string;            // ← opsiyonel
+  roleLabel?: string;
   roleStyle?: SxProps<Theme>;
 };
 
@@ -39,9 +33,10 @@ export default function ProfileHeader({
       sx={{
         p: { xs: 1, sm: 1.5 },
         mb: 3,
-        gap: 2,
+        gap: { xs: 1.5, sm: 2 },
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: { xs: 'column', sm: 'row' },          // ← küçükte dikey
+        alignItems: { xs: 'stretch', sm: 'center' },
         justifyContent: 'space-between',
         borderRadius: 2,
         border: '1px solid',
@@ -49,13 +44,22 @@ export default function ProfileHeader({
         bgcolor: 'background.paper',
       }}
     >
-      <Box display="flex" alignItems="center" gap={2}>
+      {/* Sol: Avatar + Kullanıcı bilgileri */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1.5, sm: 2 },
+          minWidth: 0,
+          flex: '1 1 auto',
+        }}
+      >
         <Avatar
           src={userData?.image || undefined}
           alt={userData?.username ?? 'Avatar'}
           sx={(t) => ({
-            width: 72,
-            height: 72,
+            width: { xs: 56, sm: 64, md: 72 },               // ← responsive avatar
+            height: { xs: 56, sm: 64, md: 72 },
             bgcolor:
               t.palette.mode === 'dark'
                 ? alpha(t.palette.primary.main, 0.2)
@@ -70,15 +74,17 @@ export default function ProfileHeader({
               (e.currentTarget as HTMLImageElement).src = '/avatar.jpg';
             },
             draggable: false,
+            loading: 'lazy',
           }}
         />
 
         <Box
           sx={{
-            height: 72,
+            height: { xs: 'auto', sm: 72 },
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
+            justifyContent: { xs: 'flex-start', sm: 'space-between' },
+            gap: { xs: 0.5, sm: 0 },
             minWidth: 0,
             py: 0.25,
             flex: '1 1 auto',
@@ -120,13 +126,27 @@ export default function ProfileHeader({
         </Box>
       </Box>
 
-      <Box display="flex" gap={1}>
+      {/* Sağ: Butonlar */}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          flexWrap: 'wrap',                                    // ← taşma yok
+          width: { xs: '100%', sm: 'auto' },                  // ← xs’te tam genişlik
+          justifyContent: { xs: 'stretch', sm: 'flex-end' },
+        }}
+      >
         <Button
           component="label"
           variant="outlined"
           size="small"
           disabled={uploading}
-          sx={{ px: 2, whiteSpace: 'nowrap', textTransform: 'capitalize' }}
+          sx={{
+            px: { xs: 1.25, sm: 2 },
+            textTransform: 'capitalize',
+            whiteSpace: 'nowrap',
+            width: { xs: '100%', sm: 'auto' },               // ← xs’te full width
+          }}
         >
           {uploading ? 'Yükleniyor...' : hasAvatar ? 'Resmi Değiştir' : 'Resim Yükle'}
           <input
@@ -147,7 +167,13 @@ export default function ProfileHeader({
           size="small"
           onClick={onRemove}
           disabled={uploading || !hasAvatar}
-          sx={{ textTransform: 'capitalize' }}
+          sx={{
+            px: { xs: 1, sm: 1.5 },
+            textTransform: 'capitalize',
+            whiteSpace: 'nowrap',
+            minWidth: { xs: 0, sm: 80 },
+            width: { xs: 'auto', sm: 'auto' },
+          }}
         >
           Kaldır
         </Button>
