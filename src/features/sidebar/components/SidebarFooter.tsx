@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Box } from '@mui/material';
 
-import ThemeToggleSidebar from '@/theme/ThemeToggle.client';
+import ThemeToggle from '@/theme/ThemeToggle.client';
 import SidebarNavItem from './SidebarNavItem';
 import type { SidebarLink } from '../types';
 
@@ -22,7 +22,7 @@ export default function SidebarFooter({ logoutLink, unreadCount, onLogout }: Pro
       flexDirection="column"
       sx={{ gap: 0.5 }}
     >
-      <ThemeToggleSidebar />
+      <ThemeToggle placement="right" />
 
       {logoutLink ? (
         <SidebarNavItem
