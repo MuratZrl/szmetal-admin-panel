@@ -703,6 +703,21 @@ export type Database = {
         Args: { p_email: string }
         Returns: boolean
       }
+      is_current_owner: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      is_current_staff: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      request_approve_or_reject: {
+        Args: { p_id: string; p_status: string }
+        Returns: {
+          id: string
+          status: string
+        }[]
+      }
       unaccent: {
         Args: { "": string }
         Returns: string

@@ -1,8 +1,6 @@
-// src/features/sidebar/services/sidebar.server.ts
-// 'use server';  // Bu bir Server Action değil; istersen kaldır. Zararı yok.
-
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Role } from '../types';
+import type { Database } from '@/types/supabase';
 
 export type SidebarInitialData = {
   role: Role | null;
@@ -10,12 +8,35 @@ export type SidebarInitialData = {
   userId: string | null;
 };
 
-export async function getSidebarInitialData(): Promise<SidebarInitialData> {
-  const sb = await createSupabaseServerClient(); // ← isim düzeltildi
+// Postgrest never susturucu (projede kullandığın ile aynı mantık)
+function asUpdateParam<T>(u: T) {
+  return u as unknown as never;
+}
+
+// orders tablo tipleri
+type OrdersTbl    = Database['public']['Tables']['orders'];
+type OrdersUpdate = OrdersTbl['Update'];
+
+export async function getSidebarInitialData(
+  opts?: { eagerMarkOrdersRead?: boolean }
+): Promise<SidebarInitialData> {
+  const sb = await createSupabaseServerClient();
 
   const { data: { user } } = await sb.auth.getUser();
   if (!user) {
     return { role: null, unreadCount: 0, userId: null };
+  }
+
+  if (opts?.eagerMarkOrdersRead) {
+    // 1) as const KULLANMA → readonly olmaz
+    // 2) tipi OrdersUpdate ile sabitle → never meltdown yok
+    const patch: OrdersUpdate = { is_read: true };
+
+    await sb
+      .from('orders')
+      .update(asUpdateParam<OrdersUpdate>(patch))
+      .eq('user_id', user.id)
+      .eq('is_read', false);
   }
 
   const [roleRes, unreadRes] = await Promise.all([

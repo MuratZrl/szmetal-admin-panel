@@ -19,11 +19,8 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
   const isLogout = label === 'Logout';
   const title = labelTr ?? label;
 
-  // Tek merkezden durum renkleri: hover / selected / focus-visible
-  // Burada accent üzerinden gidiyorum. İstersen theme.palette.primary.main’e çevir.
   const buttonSx: SxProps<Theme> = (theme) => {
     const base = theme.palette.accent?.main ?? theme.palette.primary.main;
-
     return {
       justifyContent: compact ? 'center' : undefined,
       width: compact ? 44 : undefined,
@@ -31,38 +28,17 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
       minWidth: compact ? 44 : undefined,
       px: compact ? 0 : undefined,
       borderRadius: compact ? '50%' : theme.shape.borderRadius,
-      // İkon rozeti tıklamayı yutmasın
       '& .MuiBadge-root': { pointerEvents: 'none' },
-
-      // HOVER
-      '&:hover': {
-        backgroundColor: alpha(base, 0.10), // hover yoğunluğu
-      },
-
-      // SELECTED
-      '&.Mui-selected': {
-        backgroundColor: alpha(base, 0.18),
-      },
-      '&.Mui-selected:hover': {
-        backgroundColor: alpha(base, 0.22),
-      },
-
-      // KEYBOARD FOCUS (focus-visible)
-      '&.Mui-focusVisible': {
-        backgroundColor: alpha(base, 0.14),
-        // istersen minik bir halka da ekleyebilirsin:
-        // boxShadow: `0 0 0 2px ${alpha(base, 0.32)} inset`,
-      },
-
-      // Disabled durumda arka planı sakinleştir
-      '&.Mui-disabled': {
-        backgroundColor: theme.palette.action.disabledBackground,
-      },
+      '&:hover': { backgroundColor: alpha(base, 0.10) },
+      '&.Mui-selected': { backgroundColor: alpha(base, 0.18) },
+      '&.Mui-selected:hover': { backgroundColor: alpha(base, 0.22) },
+      '&.Mui-focusVisible': { backgroundColor: alpha(base, 0.14) },
+      '&.Mui-disabled': { backgroundColor: theme.palette.action.disabledBackground },
     };
   };
 
   const iconEl = (
-    <Box component="span" sx={{ display: 'inline-flex', pointerEvents: 'none' }}>
+    <Box component="span" sx={{ display: 'inline-flex' }}>
       {label === 'Orders' ? (
         <Badge badgeContent={unreadCount} color="error">
           <Icon fontSize="medium" />
@@ -73,48 +49,53 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
     </Box>
   );
 
+  // MUI v6 kullanıyorsan Popper ayarları slotProps ile verilir.
+  // v5’te PopperProps çalışır. İkisi de güvenli olsun diye her ikisini de ekliyorum.
+  const tooltipCommon = {
+    title,
+    placement: 'right' as const,
+    arrow: true,
+    disableInteractive: true,
+    enterTouchDelay: 0,
+    PopperProps: {
+      modifiers: [
+        { name: 'offset', options: { offset: [0, 8] } },
+        { name: 'flip', options: { fallbackPlacements: [] } },
+      ],
+    },
+    slotProps: {
+      popper: {
+        modifiers: [
+          { name: 'offset', options: { offset: [0, 8] } },
+          { name: 'flip', options: { fallbackPlacements: [] } },
+        ],
+      },
+    },
+  };
+
+  const Button = (
+    <ListItemButton
+      component={isLogout ? 'button' : 'a'}
+      type={isLogout ? 'button' : undefined}
+      href={isLogout ? undefined : href!}
+      onClick={isLogout ? onLogout : undefined}
+      aria-label={isLogout ? 'Logout' : title}
+      aria-current={active ? 'page' : undefined}
+      selected={active}
+      disabled={disabled}
+      draggable={false}
+      sx={buttonSx}
+    >
+      {iconEl}
+    </ListItemButton>
+  );
+
   return (
     <ListItem disablePadding sx={{ justifyContent: 'center', width: compact ? 'auto' : '100%' }}>
-      {isLogout ? (
-        <ListItemButton
-          component="button"
-          type="button"
-          onClick={onLogout}
-          aria-label="Logout"
-          aria-current={active ? 'page' : undefined}
-          selected={active}
-          disabled={disabled}
-          draggable={false}
-          title={compact ? title : undefined}
-          sx={buttonSx}
-        >
-          {compact ? (
-            <Tooltip title={title} placement="right" arrow disableInteractive enterTouchDelay={0}>
-              {iconEl}
-            </Tooltip>
-          ) : (
-            iconEl
-          )}
-        </ListItemButton>
+      {compact ? (
+        <Tooltip {...tooltipCommon}>{Button}</Tooltip>
       ) : (
-        <ListItemButton
-          href={href!}
-          aria-label={title}
-          aria-current={active ? 'page' : undefined}
-          selected={active}
-          disabled={disabled}
-          draggable={false}
-          title={compact ? title : undefined}
-          sx={buttonSx}
-        >
-          {compact ? (
-            <Tooltip title={title} placement="right" arrow disableInteractive enterTouchDelay={0}>
-              {iconEl}
-            </Tooltip>
-          ) : (
-            iconEl
-          )}
-        </ListItemButton>
+        Button
       )}
     </ListItem>
   );

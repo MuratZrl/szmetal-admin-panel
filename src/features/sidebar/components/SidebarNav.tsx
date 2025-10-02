@@ -1,3 +1,4 @@
+// src/features/sidebar/components/SidebarNav.tsx
 'use client';
 
 import * as React from 'react';
@@ -10,9 +11,10 @@ type Props = {
   links: SidebarLink[];
   unreadCount: number;
   loading: boolean;
+  compact?: boolean; // ← eklendi
 };
 
-export default function SidebarNav({ links, unreadCount, loading }: Props) {
+export default function SidebarNav({ links, unreadCount, loading, compact }: Props) {
   const pathname = usePathname();
 
   if (loading) {
@@ -37,6 +39,7 @@ export default function SidebarNav({ links, unreadCount, loading }: Props) {
           link={link}
           unreadCount={unreadCount}
           active={Boolean(link.href && pathname?.startsWith(link.href))}
+          compact={compact} // ← geçir
         />
       ))}
     </List>

@@ -46,6 +46,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
       <RequestDetailHeader id={row.id} systemSlug={row.system_slug} />
 
       <Grid container spacing={2}>
+
         {/* Sol kolon: Form + Kullanıcı kartı */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={2}>
@@ -58,6 +59,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={2}>
             <SummarySection summary={s} />
+            
             {/* Yeni durum kartı */}
             <StatusCard
               requestId={row.id}
@@ -70,6 +72,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
         <Grid size={{ xs: 12 }}>
           <MaterialListCard rows={materialRows} />
         </Grid>
+
       </Grid>
     </Box>
   );

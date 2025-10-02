@@ -471,7 +471,18 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
     },
 
     MuiTooltip: {
-      defaultProps: { arrow: true },
+      defaultProps: {
+        arrow: true,
+        placement: 'right',
+        slotProps: {
+          popper: {
+            modifiers: [
+              { name: 'offset', options: { offset: [0, 8] } },
+              { name: 'flip', options: { fallbackPlacements: [] } },
+            ],
+          },
+        },
+      },
       styleOverrides: {
         tooltip: {
           backgroundColor: palette.grey[900],
