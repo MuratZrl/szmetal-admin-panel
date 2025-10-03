@@ -6,7 +6,6 @@ import {
   Avatar,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -86,7 +85,7 @@ function clamp(val: number, min: number, max: number): number {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Avatar                                                                     */
+/* Avatar                                                                      */
 /* -------------------------------------------------------------------------- */
 
 function UserAvatar({ src, alt }: { src?: string | null; alt?: string }) {
@@ -271,7 +270,7 @@ export default function CommentList({
         elevation={0}
         sx={theme => ({
           p: 2,
-          borderRadius: 2,
+          borderRadius: 1,
           bgcolor: alpha(theme.palette.background.default, 0.6),
         })}
       >
@@ -288,8 +287,8 @@ export default function CommentList({
         disablePadding
         sx={{
           display: 'grid',
-          gap: 1.5, // Daha az dikey boşluk
-          gridTemplateColumns: '1fr',
+          gap: 1, // Daha az dikey boşluk
+          gridTemplateColumns: 'minmax(0, 1fr)', // ← önemli
         }}
       >
         {comments.map(c => {
@@ -313,7 +312,6 @@ export default function CommentList({
                 gap: 1.25,
                 px: 1.25,
                 py: 1.25,
-                borderRadius: 2,
                 // Hover'da parlaklık artmasın: hover stili yok
                 // Kenarlık yok
                 bgcolor: isPinned ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
@@ -324,7 +322,7 @@ export default function CommentList({
                   position: 'absolute',
                   inset: 0,
                   left: 0,
-                  width: isPinned ? 4 : 0,
+                  width: isPinned ? 2 : 0,
                   borderTopLeftRadius: 'inherit',
                   borderBottomLeftRadius: 'inherit',
                   background: isPinned
@@ -347,14 +345,36 @@ export default function CommentList({
                   </Typography>
 
                   {isPinned ? (
-                    <Chip
-                      size="small"
-                      icon={<PushPinIcon sx={{ fontSize: 14 }} />}
-                      label="Sabitlendi"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ height: 22, '& .MuiChip-icon': { mr: 0.25 } }}
-                    />
+                    // Chip yerine sade metin etiketi
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        fontSize: 12,
+                        lineHeight: 1,
+                        color: "text.secondary",
+                      }}
+                      aria-label="Sabitlendi"
+                      title="Sabitlendi"
+                    >
+                      <PushPinIcon sx={{ fontSize: 14 }} />
+                      <Box component="span">Sabitlendi</Box>
+                    </Box>
+                  ) : null}
+
+                  {/* Sadece "/" ayırıcı */}
+                  {isPinned ? (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="text.disabled"
+                      aria-hidden
+                      sx={{ mx: 0.75 }}
+                    >
+                      /
+                    </Typography>
                   ) : null}
 
                   <Tooltip title={formatFullDate(c.created_at)} placement="top" arrow>
@@ -420,8 +440,9 @@ export default function CommentList({
                       variant="body2"
                       sx={theme => ({
                         whiteSpace: 'pre-wrap',
-                        mt: 0.5,
-                        lineHeight: 1.6,
+                        overflowWrap: 'anywhere',
+                        wordBreak: 'break-word',
+                        maxWidth: '100%',
                         ...(isPinned
                           ? { color: theme.palette.text.primary, fontWeight: 500 }
                           : { color: theme.palette.text.primary }),
@@ -430,82 +451,89 @@ export default function CommentList({
                       {c.content}
                     </Typography>
 
-                    {/* Oy satırı */}
+                    {/* Oy satırı (compact) */}
                     <Box
                       sx={theme => ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
-                        mt: 0.75,
+                        mt: 1,
                         pt: 0.5,
-                        borderTop: `1px dashed ${alpha(theme.palette.divider, 0.6)}`,
+                        borderTop: `1px dotted ${alpha(theme.palette.divider, 0.75)}`,
                       })}
                     >
-                      <Tooltip title={canVote ? 'Beğen' : 'Oy vermek için giriş yap'} arrow>
+                      <Tooltip placement='bottom' title={canVote ? 'Beğen' : 'Oy vermek için giriş yap'} arrow>
                         <span>
                           <IconButton
                             size="small"
                             aria-label="Beğen"
                             onClick={() => void toggleVote(c.id, 1)}
                             disabled={!canVote || votingId === c.id}
-                            color={v.mine === 1 ? 'primary' : 'default'}
+                            color="default"
+                            sx={theme => ({
+                              px: 0.5,
+                              transition: 'background-color 120ms, color 120ms',
+                              ...(v.mine === 1 && {
+                                color: theme.palette.common.white,              // ikon beyaz
+                              }),
+                            })}
                           >
                             {v.mine === 1 ? <ThumbUpIcon fontSize="small" /> : <ThumbUpOffAltIcon fontSize="small" />}
+                            <Box
+                              component="span"
+                              sx={({
+                                ml: 0.25,
+                                minWidth: 18,
+                                height: 18,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 11,
+                                lineHeight: 1,
+                              })}
+                            >
+                              {clamp(v.likes, 0, Number.MAX_SAFE_INTEGER)}
+                            </Box>
                           </IconButton>
                         </span>
                       </Tooltip>
-                      <Box
-                        role="status"
-                        aria-label="Beğeni sayısı"
-                        sx={theme => ({
-                          px: 0.75,
-                          py: 0.25,
-                          borderRadius: 1,
-                          fontSize: 12,
-                          lineHeight: 1,
-                          bgcolor: alpha(theme.palette.success.main, 0.08),
-                          color: alpha(theme.palette.success.main, 0.9),
-                          minWidth: 22,
-                          textAlign: 'center',
-                        })}
-                      >
-                        {clamp(v.likes, 0, Number.MAX_SAFE_INTEGER)}
-                      </Box>
 
-                      <Tooltip title={canVote ? 'Beğenme' : 'Oy vermek için giriş yap'} arrow>
+                      <Tooltip placement='bottom' title={canVote ? 'Beğenme' : 'Oy vermek için giriş yap'} arrow>
                         <span>
                           <IconButton
                             size="small"
                             aria-label="Beğenme"
                             onClick={() => void toggleVote(c.id, -1)}
                             disabled={!canVote || votingId === c.id}
-                            color={v.mine === -1 ? 'primary' : 'default'}
+                            color="default"
+                            sx={theme => ({
+                              px: 0.5,
+                              transition: 'background-color 120ms, color 120ms',
+                              ...(v.mine === -1 && {
+                                color: theme.palette.common.white,              // ikon beyaz
+                              }),
+                            })}
                           >
-                            {v.mine === -1 ? (
-                              <ThumbDownIcon fontSize="small" />
-                            ) : (
-                              <ThumbDownOffAltIcon fontSize="small" />
-                            )}
+                            {v.mine === -1 ? <ThumbDownIcon fontSize="small" /> : <ThumbDownOffAltIcon fontSize="small" />}
+                            <Box
+                              component="span"
+                              sx={({
+                                ml: 0.25,
+                                px: 0.5,
+                                minWidth: 18,
+                                height: 18,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 11,
+                                lineHeight: 1,
+                              })}
+                            >
+                              {clamp(v.dislikes, 0, Number.MAX_SAFE_INTEGER)}
+                            </Box>
                           </IconButton>
                         </span>
                       </Tooltip>
-                      <Box
-                        role="status"
-                        aria-label="Beğenmeme sayısı"
-                        sx={theme => ({
-                          px: 0.75,
-                          py: 0.25,
-                          borderRadius: 1,
-                          fontSize: 12,
-                          lineHeight: 1,
-                          bgcolor: alpha(theme.palette.error.main, 0.08),
-                          color: alpha(theme.palette.error.main, 0.9),
-                          minWidth: 22,
-                          textAlign: 'center',
-                        })}
-                      >
-                        {clamp(v.dislikes, 0, Number.MAX_SAFE_INTEGER)}
-                      </Box>
                     </Box>
                   </>
                 ) : (

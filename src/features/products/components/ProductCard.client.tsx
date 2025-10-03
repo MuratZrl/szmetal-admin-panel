@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { alpha, useTheme } from '@mui/material/styles';
 
 import HoverPreview from '@/features/products/components/HoverPreview.client';
@@ -19,18 +19,22 @@ import { useProductsSelection } from '@/features/products/selection/ProductsSele
 import type { LabelMaps } from '@/features/products/services/labelMaps.server';
 import { prettyTr } from '@/features/products/utils/tr-text';
 
+type Role = 'Admin' | 'Manager' | 'User';
+
 type Props = {
   product: Product;
   labels?: LabelMaps;
   /** Server’da üretilmiş imzalı URL veya public URL */
   resolvedImageUrl?: string | null;
+  /** Kullanıcının rolü. Manager ise seçim gizlenir. */
+  role?: Role | string | null;
 };
 
 /* ---------------- helpers ---------------- */
 function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): string {
   const { bg, fg, text } = opts;
   const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 4 3" preserveAspectRatio="xMidYMid slice">
+  <svg xmlns="http://www.w3.org/2000/svg" width="800" height="650" viewBox="0 0 4 3" preserveAspectRatio="xMidYMid slice">
     <rect width="4" height="3" fill="${bg}"/>
     <g fill="${fg}">
       <rect x="0.25" y="0.25" width="3.5" height="2.5" fill="none" stroke="${fg}" stroke-width="0.03" stroke-dasharray="0.12 0.12"/>
@@ -40,20 +44,35 @@ function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): stri
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-export default function ProductCard({ product, labels, resolvedImageUrl }: Props) {
+/** Rol değerini güvenli biçimde normalize eder. */
+function normalizeRole(r: Props['role']): Role {
+  const v = typeof r === 'string' ? r.trim().toLowerCase() : 'user';
+  if (v === 'admin') return 'Admin';
+  if (v === 'manager' || v === 'yönetici') return 'Manager';
+  if (v === 'user' || v === 'kullanıcı') return 'User';
+  return 'User';
+}
+
+export default function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
   const theme = useTheme();
   const downSm = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { isSelected, toggle } = useProductsSelection();
   const selected = isSelected(product.id);
 
+  const normalizedRole = normalizeRole(role);
+  // HATA DÜZELTİLDİ: Burada yalnızca Manager ise seçim kapalı.
+  const canSelect = normalizedRole !== 'Manager';
+
   const variantLabel  = prettyTr(product.variant,     labels?.variant);
   const categoryLabel = prettyTr(product.category,    labels?.category);
-  const subLabel      = prettyTr(product.subCategory, labels?.subcategory); // ← küçük düzeltme
+  const subLabel      = prettyTr(product.subCategory, labels?.subcategory);
 
   // 1) Eğer server'dan çözümlenmiş URL geldiyse onu kullan.
   // 2) Gelmediyse eski alanı deneriz ama path ise yine placeholder olur.
-  const displayUrl = resolvedImageUrl ?? (typeof product.image === 'string' && /^https?:\/\//i.test(product.image) ? product.image : null);
+  const displayUrl =
+    resolvedImageUrl ??
+    (typeof product.image === 'string' && /^https?:\/\//i.test(product.image) ? product.image : null);
 
   const kind = detectMediaKind({
     url: displayUrl ?? undefined,
@@ -107,30 +126,68 @@ export default function ProductCard({ product, labels, resolvedImageUrl }: Props
   };
 
   return (
-    <Card variant="elevation" sx={{ display: 'flex', flexDirection: 'column', position: 'relative', borderRadius: 1.5, height: { xs: 'auto', md: '100%' } }}>
+    <Card
+      variant="elevation"
+      data-role={normalizedRole}
+      data-can-select={canSelect ? 'true' : 'false'}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        borderRadius: 1.5,
+        height: { xs: 'auto', md: '100%' },
+      }}
+    >
       <CardActionArea
         LinkComponent={Link}
         href={`/products/${product.id}`}
         draggable={false}
-        sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', alignItems: 'stretch', minHeight: 0, borderRadius: 0 }}
+        sx={{
+          flex: '1 1 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          minHeight: 0,
+          borderRadius: 0,
+        }}
       >
         {/* Media area */}
         <Box
           ref={mediaBoxRef}
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
-          sx={{ position: 'relative', width: '100%', aspectRatio: '4 / 3.25', overflow: 'hidden', flex: '0 0 auto' }}
+          sx={{
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '4 / 3.25',
+            overflow: 'hidden',
+            flex: '0 0 auto',
+            bgcolor: 'background.default',
+          }}
         >
           {isPdf && displayUrl ? (
-            <Box sx={{ position: 'absolute', inset: 0, '& > iframe': { width: '100%', height: '100%', border: 0, display: 'block' } }}>
+            // PDF: tüm sayfayı çerçeve içine "sığdır" (zoom/view parametreleri)
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                '& > iframe': {
+                  width: '100%',
+                  height: '100%',
+                  border: 0,
+                  display: 'block',
+                },
+              }}
+            >
               <iframe
-                src={`${displayUrl}#page=1&zoom=page-width&toolbar=0&navpanes=0&scrollbar=0`}
+                src={`${displayUrl}#page=1&view=fit&toolbar=0&navpanes=0`}
                 title={`${product.name} PDF`}
                 loading="lazy"
                 style={{ pointerEvents: 'none' }}
               />
             </Box>
           ) : (
+            // Görsel: kırpma yok, contain ile letterbox/pillarbox
             <CardMedia
               component="img"
               image={finalImgSrc}
@@ -138,34 +195,136 @@ export default function ProductCard({ product, labels, resolvedImageUrl }: Props
               draggable={false}
               loading="lazy"
               onError={() => setImgError(true)}
-              sx={{ position: 'absolute', inset: 0, width: 1, height: 1, objectFit: 'cover', bgcolor: 'background.default' }}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                width: 1,
+                height: 1,
+                objectFit: 'contain',
+                objectPosition: 'center',
+                bgcolor: 'background.default',
+                imageRendering: 'auto',
+              }}
             />
           )}
         </Box>
 
-        <CardContent sx={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', gap: 0.75, px: { xs: 1.5, sm: 2 }, py: { xs: 1.25, sm: 1.5 }, width: 1 }}>
-          <Typography variant="subtitle1" title={`${product.code} • ${product.name}`} sx={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', lineHeight: 1.25, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+        <CardContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: '1 1 auto',
+            gap: 0.75,
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 1.25, sm: 1.5 },
+            width: 1,
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            title={`${product.code} • ${product.name}`}
+            sx={{
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              overflow: 'hidden',
+              lineHeight: 1.25,
+              fontSize: { xs: '0.95rem', sm: '1rem' },
+            }}
+          >
             {product.code} — {product.name}
           </Typography>
 
           <Stack direction="column" spacing={0.25} my={0.5}>
-            <Typography variant="caption" color="text.secondary">Birim Ağırlık: {product.unit_weight_g_pm} gr</Typography>
-            <Typography variant="caption" color="text.secondary">Tarih: {product.date}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Birim Ağırlık: {product.unit_weight_g_pm} gr
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Tarih: {product.date}
+            </Typography>
           </Stack>
 
           <Stack direction="row" alignItems="center" sx={{ flexWrap: 'wrap', gap: 1, maxWidth: 1 }}>
-            <Chip size="small" label={`${variantLabel} Profilleri`} sx={{ textTransform: 'none', maxWidth: 1, height: 'auto', alignItems: 'flex-start', '& .MuiChip-label': { display: 'block', whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: 1.2, py: 0.25 } }} />
-            <Chip size="small" label={`${categoryLabel} / ${subLabel}`} variant="filled" sx={{ textTransform: 'none', maxWidth: 1, height: 'auto', alignItems: 'flex-start', '& .MuiChip-label': { display: 'block', whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: 1.2, py: 0.25 } }} />
+            <Chip
+              variant="outlined"
+              size="small"
+              label={`${variantLabel} Profilleri`}
+              sx={{
+                textTransform: 'none',
+                maxWidth: 1,
+                height: 'auto',
+                alignItems: 'flex-start',
+                '& .MuiChip-label': {
+                  display: 'block',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.2,
+                  py: 0.25,
+                },
+              }}
+            />
+            <Chip
+              variant="outlined"
+              size="small"
+              label={`${categoryLabel} / ${subLabel}`}
+              sx={{
+                textTransform: 'none',
+                maxWidth: 1,
+                height: 'auto',
+                alignItems: 'flex-start',
+                '& .MuiChip-label': {
+                  display: 'block',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.2,
+                  py: 0.25,
+                },
+              }}
+            />
           </Stack>
         </CardContent>
       </CardActionArea>
 
-      <Box component="footer" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, px: { xs: 1, sm: 1.5, md: 1.5 }, py: { xs: 0.5, sm: 0.75 }, borderTop: '1px solid', borderColor: 'divider', bgcolor: t => alpha(t.palette.background.paper, 0.9) }}>
-        <Button LinkComponent={Link} href={`/products/${product.id}`} size="small" variant="text" startIcon={<InfoOutlineIcon />} draggable={false} onClick={(e) => e.stopPropagation()} sx={{ px: 2 }}>
+      <Box
+        component="footer"
+        sx={{
+          display: 'flex',
+          justifyContent: canSelect ? 'space-between' : 'flex-end',
+          alignItems: 'center',
+          gap: 1,
+          px: { xs: 1, sm: 1.5, md: 1.5 },
+          py: { xs: 0.5, sm: 0.75 },
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: t => alpha(t.palette.background.paper, 0.9),
+        }}
+      >
+        <Button
+          LinkComponent={Link}
+          href={`/products/${product.id}`}
+          size="small"
+          variant="text"
+          startIcon={<InfoOutlinedIcon />}
+          draggable={false}
+          onClick={(e) => e.stopPropagation()}
+          sx={{ px: 2 }}
+        >
           Detaylar
         </Button>
 
-        <Checkbox aria-label="Ürünü seç" size="small" checked={selected} onClick={(e) => e.stopPropagation()} onChange={() => toggle(product.id)} icon={<RadioButtonUncheckedIcon />} checkedIcon={<RadioButtonCheckedIcon />} />
+        {canSelect && (
+          <Checkbox
+            aria-label="Ürünü seç"
+            size="small"
+            checked={selected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => toggle(product.id)}
+            icon={<RadioButtonUncheckedIcon />}
+            checkedIcon={<RadioButtonCheckedIcon />}
+          />
+        )}
       </Box>
 
       {!downSm && (

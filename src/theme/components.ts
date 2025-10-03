@@ -48,9 +48,9 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
         '*::-webkit-scrollbar': { width: 10, height: 10 },
         
         '*::-webkit-scrollbar-thumb': {
-          backgroundColor: alpha(palette.text.primary, 0.24),
-          borderRadius: 999,
-          border: `2px solid ${palette.background.default}`,
+          borderRadius: 1,
+          backgroundColor: alpha(palette.text.primary, 0.5),
+          border: `3px solid ${palette.background.default}`,
         },
         
         '*::-webkit-scrollbar-thumb:hover': {

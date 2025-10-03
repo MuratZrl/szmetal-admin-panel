@@ -136,14 +136,14 @@ export default function CommentSection({
   }, [productId, pinnedId]);
 
   return (
-    <Paper variant="outlined" sx={{ p: 1, borderRadius: 2, bgcolor: 'background.default' }}>
-      <Paper variant="outlined" elevation={0} sx={{ p: 2, borderRadius: 1.75, bgcolor: 'background.paper' }}>
-        <Stack spacing={2}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+    <Paper variant="outlined" sx={{ p: 1, borderRadius: 0.5, bgcolor: 'background.default' }}>
+      <Paper variant="outlined" elevation={0} sx={{ p: 1.5, borderRadius: 0, bgcolor: 'background.paper' }}>
+        <Stack spacing={1.5}>
+          <Box sx={{ display: 'flex', alignItems: 'end', justifyContent: 'flex-start', gap: 1.5 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.1 }}>
               Yorumlar
             </Typography>
-            <Chip size="small" variant="outlined" label={`${comments.length}`} sx={{ fontWeight: 600 }} aria-label="Yorum sayısı" />
+            <Chip size="small" variant="filled" label={`${comments.length}`} sx={{ fontWeight: 600, background: 'transparent' }} aria-label="Yorum sayısı" />
           </Box>
 
           <CommentForm

@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Badge, ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import type { SidebarLink } from '../types';
+import { LinkAdapter } from '@/theme'; // <- theme/index.tsx içinde export’lu
 
 type Props = {
   link: SidebarLink;
@@ -49,8 +50,7 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
     </Box>
   );
 
-  // MUI v6 kullanıyorsan Popper ayarları slotProps ile verilir.
-  // v5’te PopperProps çalışır. İkisi de güvenli olsun diye her ikisini de ekliyorum.
+  // Tooltip Popper ayarları SSR/CSR deterministik kalsın diye sabit objeler
   const tooltipCommon = {
     title,
     placement: 'right' as const,
@@ -73,12 +73,21 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
     },
   };
 
+  const buttonProps = isLogout
+    ? ({
+        component: 'button',
+        type: 'button' as const,
+        onClick: onLogout,
+      })
+    : ({
+        component: LinkAdapter,
+        href,            // NextLink’e forward edilir
+        prefetch: false, // deterministik olsun
+      });
+
   const Button = (
     <ListItemButton
-      component={isLogout ? 'button' : 'a'}
-      type={isLogout ? 'button' : undefined}
-      href={isLogout ? undefined : href!}
-      onClick={isLogout ? onLogout : undefined}
+      {...buttonProps}
       aria-label={isLogout ? 'Logout' : title}
       aria-current={active ? 'page' : undefined}
       selected={active}
@@ -92,11 +101,7 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
 
   return (
     <ListItem disablePadding sx={{ justifyContent: 'center', width: compact ? 'auto' : '100%' }}>
-      {compact ? (
-        <Tooltip {...tooltipCommon}>{Button}</Tooltip>
-      ) : (
-        Button
-      )}
+      {compact ? <Tooltip {...tooltipCommon}>{Button}</Tooltip> : Button}
     </ListItem>
   );
 }

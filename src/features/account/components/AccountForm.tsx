@@ -2,7 +2,15 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Box, Grid, TextField, Button, FormControl, MenuItem, Typography } from '@mui/material';
+import {
+  Box,
+  Grid,
+  TextField,
+  Button,
+  FormControl,
+  MenuItem,
+  Typography,
+} from '@mui/material';
 import { useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import type { Asserts } from 'yup';
@@ -22,7 +30,8 @@ export default function AccountForm({
   setUserData: (u: UserData) => void;
   onEmailChange?: (email: string) => Promise<void>;
 }) {
-  const { updateProfile, changeEmail } = useAccount(); // ← hook API
+  const { updateProfile, changeEmail } = useAccount();
+
   const {
     register,
     handleSubmit,
@@ -56,7 +65,7 @@ export default function AccountForm({
       company: data.company ?? null,
       country: data.country ?? null,
     });
-    // local state senkronizasyonuna devam etmek istiyorsan:
+
     if (res.ok) {
       setUserData({
         ...userData,
@@ -69,17 +78,24 @@ export default function AccountForm({
   };
 
   return (
-    <Box 
-      component="form" 
-      onSubmit={handleSubmit(onSubmit)} 
-      sx={(t) => ({ 
-        mt: 2, 
-        p: 2, 
-        borderRadius: 2, 
-        border: `1px solid ${t.palette.divider}`, 
-        bgcolor: 'background.paper' })}
+    <Box
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+      sx={(t) => ({
+        mt: 2,
+        p: 2,
+        borderRadius: 2,
+        border: `1px solid ${t.palette.divider}`,
+        bgcolor: 'background.paper',
+      })}
+    >
+      <Typography
+        fontSize={14}
+        fontWeight={600}
+        mb={3}
+        gutterBottom
+        color="text.secondary"
       >
-      <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom color="text.secondary">
         Kişisel Bilgiler
       </Typography>
 
@@ -111,13 +127,17 @@ export default function AccountForm({
             <Button
               variant="outlined"
               size="small"
-              onClick={() => (onEmailChange ? onEmailChange(userData.email ?? '') : changeEmail(userData.email ?? ''))}
-              sx={{ 
+              onClick={() =>
+                onEmailChange
+                  ? onEmailChange(userData.email ?? '')
+                  : changeEmail(userData.email ?? '')
+              }
+              sx={{
                 px: 2,
-                borderRadius: 1, 
-                whiteSpace: 'nowrap', 
-                alignSelf: 'stretch', 
-                textTransform: 'capitalize' 
+                borderRadius: 1,
+                whiteSpace: 'nowrap',
+                alignSelf: 'stretch',
+                textTransform: 'capitalize',
               }}
             >
               Email Değiştir
@@ -159,6 +179,24 @@ export default function AccountForm({
               value={watch('country') || ''}
               {...register('country')}
               InputLabelProps={{ shrink: true }}
+              // ↓↓↓ Menü her zaman alta açılsın:
+              SelectProps={{
+                MenuProps: {
+                  // menüyü select'in altına bağla
+                  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+                  transformOrigin: { vertical: 'top', horizontal: 'left' },
+                  // bazen Grow geçişi merkezden başlatır; köşeden başlatmaya zorla
+                  TransitionProps: {
+                    onEnter: (elem: HTMLElement) => {
+                      elem.style.transformOrigin = 'top left';
+                    },
+                  },
+                  // küçük bir aşağı boşluk, kesişmesin
+                  PaperProps: { sx: { mt: 0.5 } },
+                  // pencere yeniden konumlandırmalarında titremeyi azaltır
+                  marginThreshold: 0,
+                },
+              }}
             >
               <MenuItem value="">
                 <em>Ülke Seçimi</em>
@@ -174,7 +212,14 @@ export default function AccountForm({
       </Grid>
 
       <Box mt={3} display="flex" justifyContent="flex-end">
-        <Button type="submit" variant="contained" color="primary" disabled={!isDirty || !isValid} disableElevation sx={(t) => ({ py: 1, px: 3.25, borderRadius: t.shape.borderRadius })}>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={!isDirty || !isValid}
+          disableElevation
+          sx={(t) => ({ py: 1, px: 3.25, borderRadius: t.shape.borderRadius })}
+        >
           Kaydet
         </Button>
       </Box>

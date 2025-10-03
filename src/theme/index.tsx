@@ -14,11 +14,16 @@ import { lightPalette } from './variants/light';
 import { componentsOverrides } from './components';
 
 // ---- Next.js Link adapter ----
-type NextLinkLikeProps = React.ComponentProps<typeof NextLink> & { children?: React.ReactNode };
+type NextLinkProps = React.ComponentProps<typeof NextLink>;
+type LinkAdapterProps = Omit<NextLinkProps, 'href'> & {
+  href: NonNullable<NextLinkProps['href']>;
+};
 
-export const LinkAdapter = React.forwardRef<HTMLAnchorElement, NextLinkLikeProps>(
+export const LinkAdapter = React.forwardRef<HTMLAnchorElement, LinkAdapterProps>(
   function LinkAdapterImpl(props, ref) {
-    return <NextLink ref={ref} {...props} />;
+    const { href, prefetch = false, ...other } = props;
+    // Next 13–15 yeni Link direkt <a> döner, ref anchor’a gider
+    return <NextLink ref={ref} href={href} prefetch={prefetch} {...other} />;
   }
 );
 
@@ -30,7 +35,6 @@ export function createAppTheme(mode: PaletteMode): Theme {
     palette: { mode, ...tokens },
     shape: { borderRadius: 10 },
     typography: {
-      // Google font (Inter) CSS variable -> system fallback
       fontFamily: [
         'var(--font-sans)',
         '-apple-system',
@@ -43,8 +47,6 @@ export function createAppTheme(mode: PaletteMode): Theme {
         '"Apple Color Emoji"',
         '"Segoe UI Emoji"',
       ].join(','),
-
-      // Başlık ve buton ağırlıkları korunuyor
       h1: { fontWeight: 700, letterSpacing: -0.5 },
       h2: { fontWeight: 700, letterSpacing: -0.4 },
       h3: { fontWeight: 700, letterSpacing: -0.2 },

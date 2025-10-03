@@ -10,6 +10,7 @@ import {
   Typography,
   Box,
   IconButton,
+  Divider,
   Table,
   TableBody,
   TableHead,
@@ -74,7 +75,7 @@ type DetailItem = { label: string; value: React.ReactNode };
 // 1) 2 sütunlu tablo (her satırda 2 label-değer çifti)
 function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }) {
   return (
-    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
       <Table
         size="small"
         sx={{
@@ -171,7 +172,7 @@ function NoteChip({ children }: { children: React.ReactNode }) {
         '& .MuiChip-label': {
           display: 'block',
           py: 0.75,
-          px: 1,
+          px: 0.5,
           whiteSpace: 'normal',
         },
         bgcolor: (t) => (t.palette.mode === 'dark' ? t.palette.background.default : t.palette.background.paper),
@@ -193,14 +194,16 @@ function NotesMessageBox({ text }: { text?: string | null }) {
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 1,
-        p: 1,
+        borderRadius: 0.5,
+        p: 1.5,
         bgcolor: (t) => t.palette.background.default,
       }}
     >
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
         Ek Notlar
       </Typography>
+
+      <Divider />
 
       <Box
         sx={{
@@ -347,8 +350,8 @@ export default function ProductInfo(props: ProductInfoProps) {
   const showMediaActions = Boolean(base);
 
   return (
-    <Paper variant="outlined" sx={{ p: 1, borderRadius: 2, bgcolor: 'background.default' }}>
-      <Paper variant="outlined" elevation={0} sx={{ p: 2, borderRadius: 1.75, bgcolor: 'background.paper' }}>
+    <Paper variant="outlined" sx={{ p: 1, borderRadius: 0.5, bgcolor: 'background.default' }}>
+      <Paper variant="outlined" elevation={0} sx={{ p: 1.5, borderRadius: 0, bgcolor: 'background.paper' }}>
         <Stack spacing={1.5}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             {/* Başlık */}

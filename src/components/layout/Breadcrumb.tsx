@@ -1,8 +1,10 @@
+// src/components/layout/Breadcrumb.tsx
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Breadcrumbs, Typography, Divider } from '@mui/material';
+import { Breadcrumbs, Typography } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import { mainLinks } from '@/constants/mainlinks';
 import type { UrlObject } from 'url'; // sadece tip, runtime yok
@@ -24,58 +26,46 @@ const getLabelFromMainLinks = (href: string, segment: string): string => {
   return formatBreadcrumb(decodeURIComponent(segment));
 };
 
-const Breadcrumb = () => {
+export default function Breadcrumb() {
   const pathname = usePathname();
-  const pathParts = pathname.split('/').filter(Boolean);
+  const pathParts = React.useMemo(() => pathname.split('/').filter(Boolean), [pathname]);
 
   // Home link: string yerine UrlObject ver
   const homeHref: UrlObject = { pathname: '/create_request' };
 
-  const breadcrumbs = [
+  const breadcrumbs: React.ReactNode[] = [
     <Link key="home" href={homeHref} style={{ display: 'flex', alignItems: 'center' }}>
-      <HomeIcon
-        fontSize="small"
-        sx={(t) => ({
-          color: t.palette.mode === 'dark'
-            ? t.palette.error.light   // karanlıkta görünür kalsın
-            : t.palette.error.dark,   // aydınlıkta koyu kırmızı
-        })}
-      />
-    </Link>
+      <HomeIcon fontSize="small" color="primary" />
+    </Link>,
   ];
 
   let previousLabel: string | null = null;
 
   pathParts.forEach((part, index) => {
     const hrefStr = '/' + pathParts.slice(0, index + 1).join('/');
-    const hrefObj: UrlObject = { pathname: hrefStr };
+    const hrefObj: UrlObject = { pathname: hrefStr }; // ← KİLİT NOKTA
     const isLast = index === pathParts.length - 1;
     const label = getLabelFromMainLinks(hrefStr, part);
 
     if (label === previousLabel) return;
     previousLabel = label;
 
-    const item = isLast ? (
-      <Typography key={hrefStr} color="text.primary" fontWeight={500}>
-        {label}
-      </Typography>
-    ) : (
-      <Link key={hrefStr} href={hrefObj} style={{ textTransform: 'capitalize' }}>
-        {label}
-      </Link>
+    breadcrumbs.push(
+      isLast ? (
+        <Typography key={hrefStr} color="text.primary" fontWeight={500}>
+          {label}
+        </Typography>
+      ) : (
+        <Link key={hrefStr} href={hrefObj} style={{ textTransform: 'capitalize' }}>
+          {label}
+        </Link>
+      ),
     );
-
-    breadcrumbs.push(item);
   });
 
   return (
     <>
-      <Breadcrumbs aria-label="breadcrumb">
-        {breadcrumbs}
-      </Breadcrumbs>
-      <Divider sx={{ my: 1.5 }} />
+      <Breadcrumbs aria-label="breadcrumb">{breadcrumbs}</Breadcrumbs>
     </>
   );
-};
-
-export default Breadcrumb;
+}

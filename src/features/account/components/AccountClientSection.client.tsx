@@ -44,11 +44,13 @@ function Inner({ initialUserData }: Props) {
         roleLabel={roleLabel}
         roleStyle={roleStyle}
       />
+
       <AccountForm
         userData={userData}
         setUserData={setUserData}
         onEmailChange={handleEmailChange}  // ← burada wrapper’ı veriyoruz
       />
+      
       <PasswordForm />
     </>
   );

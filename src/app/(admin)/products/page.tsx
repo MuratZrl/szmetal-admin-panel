@@ -75,7 +75,11 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
           </Grid>
 
           <Grid size={{ xs: 12, md: 9 }}>
-            <ProductsGrid products={items} mediaUrlsById={mediaUrlsById} />
+            <ProductsGrid
+              products={items}
+              mediaUrlsById={mediaUrlsById}
+              role={profile?.role ?? null}
+            />
             <ProductsPagination page={page} totalPages={pageCount} />
           </Grid>
         </Grid>

@@ -2,73 +2,72 @@
 import { alpha, type PaletteOptions } from '@mui/material/styles';
 import { grey } from '@mui/material/colors';
 
-// Koyu ama bir tık daha aydınlık kırmızı palet
-const TEXT = '#F3F4F6';
-const OUTLINE = '#93A4B0';
+// Koyu temada kırmızıyı daha canlı (doygun) ve koyu tutacak palet.
+// Not: surface / accent / requestStatus genişletmeleri theme.d.ts içinde tanımlı.
+
+const TEXT = '#F1F5F9';
+const OUTLINE = '#9FB1BF';
 
 export const darkPalette = {
   mode: 'dark',
 
-  // Brand renkler aynı; tema "karanlık ama boğuk değil"
-  primary:   { main: '#C21F25', light: '#ddbabcff', dark: '#7A1216', contrastText: '#FFFFFF' },
-  secondary: { main: '#8C2213', light: '#B03B25', dark: '#58160D', contrastText: '#FFFFFF' },
+  // Canlı koyu kırmızı: doygun, ama göz yakmayan bir crimson
+  primary:   { main: '#E11D2E', light: '#FF6B77', dark: '#990F1A', contrastText: '#FFFFFF' },
+  secondary: { main: '#8F1D22', light: '#B64A50', dark: '#5F1216', contrastText: '#FFFFFF' },
 
-  warning: { main: '#D78A0D', light: '#F2B746', dark: '#8A5A08', contrastText: '#0B0B0B' },
-  error:   { main: '#B91C1C', light: '#DC2626', dark: '#7F1D1D', contrastText: '#FFFFFF' },
   success: { main: '#22C55E', light: '#86EFAC', dark: '#15803D', contrastText: '#0B0B0B' },
+  warning: { main: '#F59E0B', light: '#FACC15', dark: '#92400E', contrastText: '#0B0B0B' },
+  error:   { main: '#EF2E3A', light: '#F79AA0', dark: '#9C1C23', contrastText: '#FFFFFF' },
   info:    { main: '#06B6D4', light: '#67E8F9', dark: '#0E7490', contrastText: '#0B0B0B' },
 
+  // Uygulama içi durum rozetleri
   requestStatus: {
-    pending:  { bg: '#2E2204', fg: '#FFD667', bd: '#473408' },
-    approved: { bg: '#0E2414', fg: '#66D17A', bd: '#15361E' },
-    rejected: { bg: '#2A0E10', fg: '#F8A9A9', bd: '#45171A' },
+    pending:  { bg: '#1B1404', fg: '#FFD667', bd: '#3A2B07' },
+    approved: { bg: '#0B1C12', fg: '#73E28B', bd: '#123121' },
+    rejected: { bg: '#220D0F', fg: '#FFB2B2', bd: '#3C1518' },
   },
 
   text: {
     primary: TEXT,
-    secondary: alpha(TEXT, 0.82), // 0.78 → 0.82, biraz daha okunaklı
+    secondary: alpha(TEXT, 0.84),
     disabled: alpha(TEXT, 0.40),
   },
 
-  // Bölücüler hafifçe belirgin
-  divider: alpha(OUTLINE, 0.22), // 0.18 → 0.22
+  divider: alpha(OUTLINE, 0.26),
 
-  // Arka planlar yarım ton aydınlık
   background: {
-    default: '#0D0F12', // #0A0A0A → #0D0F12
-    paper:   '#14171B', // #111214 → #14171B
+    default: '#070A0D',
+    paper:   '#0D1217',
   },
 
-  // Yüzey katmanları da bir tık açıldı
   surface: {
-    1: '#14171B', // #111214 → #14171B
-    2: '#1A1F24', // #16181B → #1A1F24
-    3: '#20262C', // #1B2024 → #20262C
-    4: '#2A3138', // #23272C → #2A3138
-    outline: alpha(OUTLINE, 0.18), // 0.16 → 0.18
-    muted:   alpha(OUTLINE, 0.10), // 0.08 → 0.10
+    1: '#0D1217',
+    2: '#0f161eff',
+    3: '#293036ff',
+    4: '#080809ff',
+    outline: alpha(OUTLINE, 0.22),
+    muted:   alpha(OUTLINE, 0.12),
   },
 
-  // Accent aynı; kontrast korunsun
+  // Vurgu rengi primary ile aynı aileden, komponentlerde tutarlılık için
   accent: {
-    main: '#C6252B',
-    light: '#E0474E',
-    dark:  '#8A181D',
+    main: '#E11D2E',
+    light: '#FF6B77',
+    dark:  '#990F1A',
     contrastText: '#FFFFFF',
   },
 
   grey,
 
-  // Etkileşim durumları azıcık belirgin
   action: {
-    active:             alpha(TEXT, 0.58), // 0.56 → 0.58
-    hover:              alpha(TEXT, 0.08), // 0.07 → 0.08
-    selected:           alpha(TEXT, 0.14), // 0.12 → 0.14
-    disabled:           alpha(TEXT, 0.32),
-    disabledBackground: alpha(TEXT, 0.12), // 0.11 → 0.12
-    focus:              alpha(TEXT, 0.14), // 0.12 → 0.14
+    active:             alpha(TEXT, 0.68),
+    hover:              alpha('#FFFFFF', 0.10),
+    selected:           alpha('#FFFFFF', 0.18),
+    disabled:           alpha(TEXT, 0.36),
+    disabledBackground: alpha('#FFFFFF', 0.14),
+    focus:              alpha('#FFFFFF', 0.22),
   },
 
-  contrastThreshold: 3,
-  tonalOffset: 0.2,
+  contrastThreshold: 3.8,
+  tonalOffset: 0.22,
 } as const satisfies PaletteOptions;

@@ -67,8 +67,7 @@ export default function ProductMedia({
     <Paper
       variant="outlined"
       sx={{
-        p: 1.5,
-        borderRadius: 2,
+        borderRadius: 0.5,
         position: 'relative',
         width: '100%',
         aspectRatio,

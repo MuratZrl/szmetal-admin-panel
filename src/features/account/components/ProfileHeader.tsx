@@ -58,15 +58,13 @@ export default function ProfileHeader({
           src={userData?.image || undefined}
           alt={userData?.username ?? 'Avatar'}
           sx={(t) => ({
-            width: { xs: 56, sm: 64, md: 72 },               // ← responsive avatar
+            width: { xs: 56, sm: 64, md: 72 },
             height: { xs: 56, sm: 64, md: 72 },
             bgcolor:
               t.palette.mode === 'dark'
                 ? alpha(t.palette.primary.main, 0.2)
                 : alpha(t.palette.primary.main, 0.08),
             color: t.palette.primary.main,
-            border: '1px solid',
-            borderColor: 'divider',
             flex: '0 0 auto',
           })}
           imgProps={{

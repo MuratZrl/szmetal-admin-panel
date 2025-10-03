@@ -438,42 +438,6 @@ export type Database = {
         }
         Relationships: []
       }
-      system_drafts_backup_20250902: {
-        Row: {
-          birim_agirlik: number
-          created_at: string | null
-          form_data: Json | null
-          id: string
-          profil_adi: string | null
-          profil_kodu: string | null
-          profil_resmi: string
-          slug: string
-          user_id: string
-        }
-        Insert: {
-          birim_agirlik: number
-          created_at?: string | null
-          form_data?: Json | null
-          id?: string
-          profil_adi?: string | null
-          profil_kodu?: string | null
-          profil_resmi: string
-          slug: string
-          user_id: string
-        }
-        Update: {
-          birim_agirlik?: number
-          created_at?: string | null
-          form_data?: Json | null
-          id?: string
-          profil_adi?: string | null
-          profil_kodu?: string | null
-          profil_resmi?: string
-          slug?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       system_form_configs: {
         Row: {
           fields: Json

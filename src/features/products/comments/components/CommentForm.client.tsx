@@ -85,8 +85,8 @@ export default function CommentForm({
       onSubmit={handleSubmit(onSubmit)}
       aria-disabled={inputDisabled ? 'true' : undefined}
       sx={{
-        p: 1,
-        borderRadius: 1.5,
+        p: 1.75,
+        borderRadius: 0.5,
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: t => (t.palette.mode === 'dark' ? t.palette.background.default : t.palette.background.paper),
@@ -94,9 +94,10 @@ export default function CommentForm({
     >
       <Stack spacing={1}>
         <TextField
+          variant='standard'
           fullWidth
           multiline
-          minRows={3}
+          minRows={2}
           maxRows={8}
           placeholder={currentUserId === null ? 'Yorum yazmak için giriş yapın' : 'Yorum yazın...'}
           disabled={inputDisabled}

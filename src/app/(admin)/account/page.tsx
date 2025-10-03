@@ -1,6 +1,6 @@
 // app/(admin)/account/page.tsx
 import { redirect } from 'next/navigation';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 import AccountClientSection from '@/features/account/components/AccountClientSection.client';
 import { getAccountData } from '@/features/account/services/getAccountData.server';
 
@@ -20,10 +20,8 @@ export default async function AccountPage() {
   }
 
   return (
-    <Box px={1} py={2}>
-      <Paper sx={{ maxWidth: 1200, mx: 'auto', borderRadius: 7, p: 2 }}>
-        <AccountClientSection initialUserData={profile} />
-      </Paper>
+    <Box >
+      <AccountClientSection initialUserData={profile} />
     </Box>
   );
 }

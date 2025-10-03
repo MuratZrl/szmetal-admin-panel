@@ -103,7 +103,13 @@ export default function PasswordForm() {
         border: `1px solid ${t.palette.divider}`,
       })}
     >
-      <Typography fontSize={14} fontWeight={600} pb={2} gutterBottom color="text.secondary">
+      <Typography 
+        fontSize={14} 
+        fontWeight={600} 
+        mb={3} 
+        gutterBottom 
+        color="text.secondary"
+      >
         Şifreyi Güncelle
       </Typography>
 
