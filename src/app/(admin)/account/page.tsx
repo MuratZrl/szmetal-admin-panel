@@ -20,7 +20,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <Box >
+    <Box px={1} py={2}>
       <AccountClientSection initialUserData={profile} />
     </Box>
   );

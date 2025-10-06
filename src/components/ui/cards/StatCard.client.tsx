@@ -2,7 +2,6 @@
 'use client';
 
 import * as React from 'react';
-
 import {
   Card,
   CardContent,
@@ -12,7 +11,6 @@ import {
 } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-
 import CountUp from 'react-countup';
 
 type TrendDir = 'up' | 'down';
@@ -21,33 +19,42 @@ type StatCardProps = {
   title: string;
   /** Kartın ana değeri (toplam vs.) */
   value: number;
-  /** Yüzdelik değişimin yönü (ok ve renk için) */
+
+  /** Yüzdelik değişim yönü. Gelmezse yüzdeye göre türetilir. */
   trend?: TrendDir;
-  /** Yüzdelik değişim (0..100). UI'da mutlak gösterilir, renk/ok yön belirler. */
-  percentage?: number;
-  /** Geçen aya göre mutlak fark (bu ay eklenen − geçen ay eklenen). Metin olarak gösterilir. */
-  delta?: number;
+  /** Yüzdelik değişim. 0..100 aralığında beklenir; işaret önemlidir. */
+  percentage?: number | null;
+
+  /** Bu ay eklenen adet (istenirse negatif de olabilir) */
+  delta?: number | null;
 
   /** Başlığın altında küçük açıklama */
   subtitle?: string;
-  /** Sağ üstte info ikonu ile gösterilecek kısa yardım metni */
-  helpText?: string;
-  /** Başlığın solunda gösterilecek küçük bir ikon (opsiyonel) */
+  /** Başlığın solunda opsiyonel küçük ikon */
   icon?: React.ReactNode;
 
-  /** Kart yükleniyor ise iskelet gösterimi */
+  /** Yükleme iskeleti */
   loading?: boolean;
 
-  /** Başlık rengi/aksan için öncelik. Default otomatik tema. */
+  /** Renk aksanı */
   color?: 'default' | 'primary' | 'success' | 'info' | 'warning' | 'error';
 
   /** Değeri özel formatlamak istersen */
   valueFormatter?: (n: number) => string;
-  /** Kartın yüksekliği; otomatik bırakılabilir */
+
+  /** Kart yüksekliği */
   minHeight?: number;
 
-  /** percentage yokken (prev=0 vb.) sağ üstte gösterilecek metin. Varsayılan: 'Yeni' */
+  /** percentage yokken gösterilecek etiket (prev=0 gibi) */
   emptyPctLabel?: string;
+  /** percentage yaklaşık 0 iken gösterilecek etiket (eşit/çok küçük fark) */
+  noChangeLabel?: string;
+
+  /** Yüzdede kaç ondalık gösterilsin */
+  percentDecimals?: number;
+
+  /** |percentage| ≤ epsilon ise “Değişim yok” say. Varsayılan: 0.5 yüzde puan */
+  noChangeEpsilon?: number;
 };
 
 export default function StatCard({
@@ -59,31 +66,40 @@ export default function StatCard({
   subtitle,
   icon,
   loading = false,
+  color = 'default',
+  valueFormatter,
   minHeight = 110,
-  emptyPctLabel = 'Yeni',   // ← yeni prop default
+  emptyPctLabel = 'Yeni',
+  noChangeLabel = 'Değişim yok',
+  percentDecimals = 0,
+  noChangeEpsilon = 0.5,
 }: StatCardProps) {
+  // Yüzdeyi normalize et
+  const rawPct = typeof percentage === 'number' ? percentage : undefined;
+  const isPctProvided = typeof rawPct === 'number' && Number.isFinite(rawPct);
 
-  const pct = Number.isFinite(percentage as number)
-    ? Math.abs(percentage as number)
+  // “değişim yok” penceresi (eşitlik ve minik dalgalanma için)
+  const isNoChange = isPctProvided ? Math.abs(rawPct as number) <= Math.max(0, noChangeEpsilon) : false;
+
+  // Gösterilecek mod
+  const showPct = isPctProvided && !isNoChange;
+  const pctAbs = showPct ? Math.abs(rawPct as number) : undefined;
+
+  // Yönü belirle (trend gelmezse yüzde işaretine bak)
+  const effectiveTrend: TrendDir | undefined = showPct
+    ? trend ?? ((rawPct as number) >= 0 ? 'up' : 'down')
     : undefined;
-
-  const isDown = trend === 'down';
 
   // Delta metni
   let deltaText = 'Bu ay yeni kayıt yok.';
-  if (typeof delta === 'number' && delta > 0) {
-    deltaText = `Bu ay ${delta} yeni kayıt.`;
+  if (typeof delta === 'number') {
+    if (delta > 0) deltaText = `Bu ay ${delta} yeni kayıt.`;
+    else if (delta < 0) deltaText = `Geçen aya göre ${Math.abs(delta)} daha az.`;
   }
 
   if (loading) {
     return (
-      <Card
-        sx={{
-          borderRadius: 2,
-          minHeight,
-        }}
-        data-testid="stat-card-skeleton"
-      >
+      <Card sx={{ borderRadius: 2, minHeight }} data-testid="stat-card-skeleton">
         <CardContent sx={{ px: { xs: 1.5, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
             <Skeleton variant="text" width={160} height={18} />
@@ -101,31 +117,28 @@ export default function StatCard({
       sx={{
         borderRadius: 2,
         minHeight,
+        ...(color !== 'default' && {
+          '--_color':
+            color === 'primary' ? 'primary.main' :
+            color === 'success' ? 'success.main' :
+            color === 'info'    ? 'info.main' :
+            color === 'warning' ? 'warning.main' :
+            color === 'error'   ? 'error.main' :
+            'text.primary',
+        } as React.CSSProperties),
       }}
       data-testid="stat-card"
     >
-
       <CardContent sx={{ px: { xs: 1.5, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
-
-        {/* Üst satır: başlık + yardım + yüzde/ok */}
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          mb={0.75}
-          gap={1}
-          flexWrap="wrap"
-        >
-          
+        {/* Üst satır: başlık + yüzde/ok veya etiket */}
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75} gap={1} flexWrap="wrap">
           {/* Sol blok: ikon + başlık + alt başlık */}
           <Box display="flex" alignItems="center" gap={1} minWidth={0}>
             {icon && <Box aria-hidden>{icon}</Box>}
             <Box minWidth={0}>
-              <Box display="flex" alignItems="center" gap={0.75}>
-                <Typography variant="subtitle2" color="text.secondary" noWrap>
-                  {title}
-                </Typography>
-              </Box>
+              <Typography variant="subtitle2" color="text.secondary" noWrap>
+                {title}
+              </Typography>
               {subtitle && (
                 <Typography variant="caption" color="text.secondary" noWrap>
                   {subtitle}
@@ -134,16 +147,28 @@ export default function StatCard({
             </Box>
           </Box>
 
-          {typeof pct === 'number' ? (
+          {/* Sağ blok: yüzde ya da etiket */}
+          {showPct && typeof pctAbs === 'number' ? (
             <Box display="flex" alignItems="center" gap={{ xs: 0.25, sm: 0.5 }}>
-              {isDown ? <ArrowDropDownIcon fontSize="small" color="error" /> : <ArrowDropUpIcon fontSize="small" color="success" />}
-              <Typography variant="body2" color={isDown ? 'error.main' : 'success.main'} sx={{ fontWeight: 500 }}>
-                <CountUp end={pct} duration={0.9} suffix="%" decimals={0} />
+              {effectiveTrend === 'down'
+                ? <ArrowDropDownIcon fontSize="small" color="error" />
+                : <ArrowDropUpIcon fontSize="small" color="success" />}
+              <Typography
+                variant="body2"
+                color={effectiveTrend === 'down' ? 'error.main' : 'success.main'}
+                sx={{ fontWeight: 500 }}
+              >
+                <CountUp
+                  end={pctAbs}
+                  duration={0.9}
+                  suffix="%"
+                  decimals={Math.max(0, percentDecimals)}
+                />
               </Typography>
             </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              {emptyPctLabel}   {/* ← sabit 'Yeni' yerine override edilebilir */}
+              {isPctProvided ? noChangeLabel : emptyPctLabel}
             </Typography>
           )}
         </Box>
@@ -157,15 +182,11 @@ export default function StatCard({
           aria-live="polite"
           data-testid="stat-card-value"
         >
-
-          {/* CountUp ile TR formatı: separator '.' decimal ',' */}
-          <CountUp
-            end={Number.isFinite(value) ? value : 0}
-            duration={1.1}
-            separator="."
-            decimal=","
-            preserveValue={false}
-          />
+          {typeof valueFormatter === 'function' ? (
+            valueFormatter(value)
+          ) : (
+            <CountUp end={Number.isFinite(value) ? value : 0} duration={1.1} separator="." decimal="," />
+          )}
         </Typography>
 
         {/* Delta cümlesi */}
@@ -177,7 +198,6 @@ export default function StatCard({
         >
           {deltaText}
         </Typography>
-
       </CardContent>
     </Card>
   );

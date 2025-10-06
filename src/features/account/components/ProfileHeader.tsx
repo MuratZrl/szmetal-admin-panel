@@ -6,7 +6,7 @@ import { Avatar, Box, Typography, Chip, Button } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { UserData } from '@/features/account/hooks/useAccount';
-import { getRoleInfo } from '@/features/account/helpers';
+import { getRoleInfo } from '@/utils/roles';
 
 export type ProfileHeaderProps = {
   userData: UserData;

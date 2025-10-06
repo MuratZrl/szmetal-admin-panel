@@ -61,33 +61,66 @@ export type Database = {
       }
       orders: {
         Row: {
+          actor_id: string | null
           created_at: string
           id: string
           is_read: boolean
           message: string
-          title: string
-          type: string
+          order_code: string | null
+          read_at: string | null
+          request_id: string | null
+          status: string | null
+          system_slug: string | null
+          system_type: string | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
+          actor_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
           message: string
-          title: string
-          type: string
+          order_code?: string | null
+          read_at?: string | null
+          request_id?: string | null
+          status?: string | null
+          system_slug?: string | null
+          system_type?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
+          actor_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
           message?: string
-          title?: string
-          type?: string
+          order_code?: string | null
+          read_at?: string | null
+          request_id?: string | null
+          status?: string | null
+          system_slug?: string | null
+          system_type?: string | null
+          updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_comment_pins: {
         Row: {
@@ -673,6 +706,10 @@ export type Database = {
       }
       is_current_staff: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_staff: {
+        Args: { uid: string }
         Returns: boolean
       }
       request_approve_or_reject: {

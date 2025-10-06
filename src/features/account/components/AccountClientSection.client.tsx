@@ -6,7 +6,7 @@ import { useAccount, type UserData } from "@/features/account/hooks/useAccount";
 import ProfileHeader from "@/features/account/components/ProfileHeader";
 import AccountForm from "@/features/account/components/AccountForm";
 import PasswordForm from "@/features/account/components/PasswordForm";
-import { getRoleInfo } from "@/features/account/helpers";
+import { getRoleInfo } from "@/utils/roles";
 import AccountSkeleton from "@/features/account/components/AccountCard.client";
 
 type Props = {

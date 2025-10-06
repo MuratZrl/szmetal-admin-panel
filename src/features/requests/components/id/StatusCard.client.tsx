@@ -1,8 +1,9 @@
+// features/requests/components/id/StatusCard.client.tsx
 'use client';
 
 import * as React from 'react';
 import {
-  Paper, Typography, Divider, Stack, Button, Chip, Box, CircularProgress,
+  Paper, Typography, Divider, Stack, Button, Chip, CircularProgress,
 } from '@mui/material';
 import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
@@ -86,41 +87,47 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
       <Typography variant="subtitle1" sx={{ mb: 1 }}>Talep Durumu</Typography>
       <Divider sx={{ mb: 1 }} />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', minHeight: 40 }}>
+      {/* Üst satır: durum bilgisi */}
+      <Stack direction="row" alignItems="center" spacing={1}>
         <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
           Mevcut
         </Typography>
-
         <Chip
           size="small"
           label={statusTextTR(current)}
           color={statusChipColor(current)}
           variant="outlined"
         />
+      </Stack>
 
-        <Stack direction="row" spacing={1} sx={{ ml: 'auto', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            disabled={actionsDisabled}
-            onClick={() => openConfirm('approved')}
-            sx={{ borderRadius: 2, textTransform: 'capitalize' }}
-          >
-            {loading && nextStatus === 'approved' ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
-            Onayla
-          </Button>
+      {/* Dikey aksiyonlar */}
+      <Stack 
+        spacing={1} 
+        sx={{ mt: 1 }}
+        direction={{ xs: 'column', sm: 'row' }}
 
-          <Button
-            variant="outlined"
-            color="error"
-            disabled={actionsDisabled}
-            onClick={() => openConfirm('rejected')}
-            sx={{ borderRadius: 2, textTransform: 'capitalize' }}
-          >
-            {loading && nextStatus === 'rejected' ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
-            Reddet
-          </Button>
-        </Stack>
-      </Box>
+      >
+        <Button
+          variant="contained"
+          disabled={actionsDisabled}
+          onClick={() => openConfirm('approved')}
+          sx={{ borderRadius: 2, textTransform: 'capitalize' }}
+        >
+          {loading && nextStatus === 'approved' ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
+          Onayla
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="error"
+          disabled={actionsDisabled}
+          onClick={() => openConfirm('rejected')}
+          sx={{ borderRadius: 2, textTransform: 'capitalize'}}
+        >
+          {loading && nextStatus === 'rejected' ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
+          Reddet
+        </Button>
+      </Stack>
 
       <ConfirmDialog
         open={confirmOpen}

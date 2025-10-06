@@ -1,147 +1,124 @@
-// app/api/[id]/requests/status/route.ts
+// app/api/requests/[id]/status/route.ts
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Database } from '@/types/supabase';
 
-/* -------------------------------- Types ---------------------------------- */
-type Users          = Database['public']['Tables']['users'];
-type UsersRow       = Users['Row'];
+/* ------------------------------ Tipler ------------------------------ */
+type UsersRow       = Database['public']['Tables']['users']['Row'];
+type RequestsRow    = Database['public']['Tables']['requests']['Row'];
+type RequestsUpdate = Database['public']['Tables']['requests']['Update'];
+type OrdersInsert   = Database['public']['Tables']['orders']['Insert'];
+type ReqStatus      = RequestsRow['status']; // 'pending' | 'approved' | 'rejected'
+type FinalStatus = Extract<ReqStatus, 'approved' | 'rejected'>;
 
-type Requests       = Database['public']['Tables']['requests'];
-type RequestRow     = Requests['Row'];
-type RequestUpd     = Requests['Update'];
-type RequestId      = RequestRow['id'];
-type ReqStatus      = RequestRow['status']; // 'approved' | 'rejected' | 'pending'
-
-type Orders         = Database['public']['Tables']['orders'];
-type OrdersInsert   = Orders['Insert'];
-type OrderType      = NonNullable<OrdersInsert['type']>; // 'success' | 'error' | 'info' vs
-
-type Body = { status: ReqStatus };
-
-/* --------------------------- Helpers ------------------------------------- */
-function parseStatus(v: unknown): Body['status'] | null {
-  const s = typeof v === 'string' ? v.toLowerCase().trim() : '';
-  return s === 'approved' || s === 'rejected' || s === 'pending' ? s : null;
+/* ----------------------------- Helpers ------------------------------ */
+function isFinalStatus(s: string): s is FinalStatus {
+  return s === 'approved' || s === 'rejected';
 }
 
-// TS Postgrest never susturucu
-function asUpdateParam<T>(u: T) { return u as unknown as never; }
-function asWriteParam<T>(u: T)  { return u as unknown as never; }
+function parseStatus(v: unknown): FinalStatus | null {
+  const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return isFinalStatus(s) ? s : null;
+}
 
-function normalizeSpaces(s: string): string {
-  return s.replace(/\s+/g, ' ').trim();
+function shortCodeFromUuid(id: string): string {
+  // UUID → RQ-7D77EC3A
+  const compact = id.replace(/-/g, '').toUpperCase();
+  return `RQ-${compact.slice(0, 8)}`;
 }
-function ensureSuffixOnce(base: string, suffix: string): string {
-  const b = normalizeSpaces(base);
-  const s = normalizeSpaces(suffix);
-  return b.toLowerCase().endsWith(` ${s.toLowerCase()}`) ? b : `${b} ${s}`;
-}
-function humanizeSlug(slug?: string | null): string {
-  if (typeof slug !== 'string') return '';
-  const s = slug.replace(/[-_]+/g, ' ').trim();
-  // İlk harfi büyüt, geri kalanı bırakalım
-  return s.length ? s[0].toUpperCase() + s.slice(1) : s;
-}
-function buildOrderPayload(args: {
-  status: Exclude<ReqStatus, 'pending'>;
-  userId: RequestRow['user_id'];
+
+const asUpdate = <T,>(v: T) => v as unknown as never;
+const asInsert = <T,>(v: T) => v as unknown as never;
+
+function toOrderPayload(args: {
+  status: Extract<ReqStatus, 'approved' | 'rejected'>;
+  userId: RequestsRow['user_id'];
+  actorId: string;                       // onay/red veren staff
+  requestId: RequestsRow['id'];
   systemSlug?: string | null;
 }): OrdersInsert {
-  const subject = ensureSuffixOnce(
-    humanizeSlug(args.systemSlug) || 'Talebiniz',
-    'talebiniz'
-  );
+  const slug = typeof args.systemSlug === 'string'
+    ? args.systemSlug.replace(/[-_]+/g, ' ').trim()
+    : '';
+  const subject = (slug ? slug[0].toUpperCase() + slug.slice(1) : 'Talebiniz') + ' talebiniz';
   const approved = args.status === 'approved';
-  const type: OrderType = approved ? 'success' : 'error';
-  const title = approved ? 'Talebiniz onaylandı' : 'Talebiniz reddedildi';
-  const message = approved
-    ? `${subject} başarıyla onaylandı.`
-    : `${subject} reddedildi.`;
 
   return {
     user_id: args.userId,
-    title,
-    message,
-    type,
+    request_id: args.requestId,
+    order_code: shortCodeFromUuid(String(args.requestId)), // ← asıl düzeltme
+    system_slug: args.systemSlug ?? null,
+    system_type: null,                    // elinde yoksa boş bırak
+    message: approved
+      ? `${subject} başarıyla onaylandı.`
+      : `${subject} reddedildi.`,
+    status: args.status,
     is_read: false,
-  } as OrdersInsert;
+    actor_id: args.actorId,
+    // created_at/updated_at DB default/trigger
+  };
 }
 
-/* --------------------------------- Route --------------------------------- */
+/* ----------------------------- Route ------------------------------- */
 export async function POST(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
+  req: globalThis.Request,
+  ctx: { params: Promise<{ id: string }> } // Next 15: params Promise
 ) {
   const { id } = await ctx.params;
 
-  // 1) body
-  const body = (await req.json().catch(() => null)) as Partial<Body> | null;
-  const status = parseStatus(body?.status);
-  if (!id || !status) {
+  const body = (await req.json().catch(() => null)) as { status?: unknown } | null;
+  const next = parseStatus(body?.status);
+  if (!id || !next) {
     return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
   }
 
-  // 2) auth
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
 
-  // 3) rol
-  type UserRoleOnly = Pick<UsersRow, 'role'>;
+  // auth
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  // role check
   const { data: me, error: meErr } = await supabase
     .from('users')
     .select('role')
-    .eq('id', user.id as UsersRow['id'])
-    .single<UserRoleOnly>();
-
-  if (meErr || !me || !['Admin', 'Manager'].includes(String(me.role))) {
+    .eq('id', user.id)
+    .maybeSingle<Pick<UsersRow, 'role'>>();
+  if (meErr) return NextResponse.json({ error: meErr.message }, { status: 500 });
+  if (!me || (me.role !== 'Admin' && me.role !== 'Manager')) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  // 4) pending dışı hedef yok
-  if (status === 'pending') {
-    return NextResponse.json({ error: 'no_op' }, { status: 400 });
-  }
-
-  // 5) status=approved|rejected güncelle
-  const patch = { status, updated_at: new Date().toISOString() } satisfies RequestUpd;
-
+  // Atomik update: sadece pending → approved|rejected
+  const patch: RequestsUpdate = { status: next };
   const { data: upd, error: updErr } = await supabase
     .from('requests')
-    .update(asUpdateParam<RequestUpd>(patch))
-    .eq('id', id as RequestId)
-    .eq('status', 'pending' as ReqStatus)
-    .select('id, status, user_id, system_slug')  // orders için lazım olacak alanları al
-    .maybeSingle<Pick<RequestRow, 'id' | 'status' | 'user_id' | 'system_slug'>>();
+    .update(asUpdate<RequestsUpdate>(patch))
+    .eq('id', id)
+    .eq('status', 'pending')
+    .select('id, status, user_id, system_slug')
+    .maybeSingle<Pick<RequestsRow, 'id' | 'status' | 'user_id' | 'system_slug'>>();
 
-  if (updErr) {
-    return NextResponse.json({ error: updErr.message }, { status: 400 });
-  }
-  if (!upd) {
-    // id var ama satır pending değil → kilit
-    return NextResponse.json({ error: 'status_locked' }, { status: 409 });
-  }
+  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+  if (!upd)   return NextResponse.json({ error: 'ALREADY_FINAL_OR_NOT_FOUND' }, { status: 409 });
 
-  // 6) orders’a insert (onay/red bildirimi)
-  const orderPayload = buildOrderPayload({
-    status,
+  // orders bildirimi (RLS: staff insert izni gerekir)
+  const payload = toOrderPayload({
+    status: upd.status as Extract<ReqStatus, 'approved' | 'rejected'>,
     userId: upd.user_id,
+    actorId: user.id,
+    requestId: upd.id,
     systemSlug: upd.system_slug,
   });
 
   const { error: ordErr } = await supabase
     .from('orders')
-    .insert(asWriteParam<OrdersInsert>(orderPayload));
+    .insert(asInsert<OrdersInsert>(payload));
 
-  // Atomiklik yok; insert fail olursa yine de status değişti. Bunu en azından bildir.
   if (ordErr) {
-    // İstersen burada log’layıp yine 200 dönebilirsin, ama ben dürüstüm:
     return NextResponse.json(
       { id: upd.id, status: upd.status, warn: 'order_insert_failed', detail: ordErr.message },
-      { status: 207 } // Multi-Status vari, client tarafında uyarı gösterebilirsin
+      { status: 207 }
     );
   }
 

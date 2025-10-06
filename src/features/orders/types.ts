@@ -1,8 +1,17 @@
 // src/features/orders/types.ts
-import type { Database } from '@/types/supabase';
+export type OrderStatus = 'approved' | 'rejected';
 
-// Supabase'teki orders satırı + "tille" yazım kazasına tolerans
-export type OrderRow = Database['public']['Tables']['orders']['Row'] & {
-  title?: string | null;
-  tille?: string | null;
+export type OrderRow = {
+  id: string;
+  user_id: string;
+  request_id: string | null;
+  order_code: string | null;
+  system_slug: string | null;
+  system_type: string | null;
+  message: string;
+  status: OrderStatus;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;  // ISO
+  updated_at: string;  // ISO
 };

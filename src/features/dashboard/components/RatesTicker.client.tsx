@@ -186,7 +186,7 @@ function RateChip({ label, value, delta, density, meta }: RateChipProps) {
   );
 
   return meta ? (
-    <Tooltip title={meta}>
+    <Tooltip placement="left" title={meta}>
       <Box>{chip}</Box>
     </Tooltip>
   ) : (

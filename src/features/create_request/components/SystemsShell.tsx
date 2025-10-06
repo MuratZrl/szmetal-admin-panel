@@ -70,7 +70,11 @@ export default function SystemsShell({ initialSystems }: SystemsShellProps) {
           <Grid container spacing={2} justifyContent={justify} sx={{ width: '100%' }}>
             {systems.map((s) => (
               <Grid key={s.id} size={itemSize}>
-                <SystemCard {...s} onRequestClick={() => goStep2(s.id)} />
+                <SystemCard 
+                  {...s} 
+                  tags={s.tag ? [s.tag] : []} 
+                  onRequestClick={() => goStep2(s.id)} 
+                />
               </Grid>
             ))}
           </Grid>

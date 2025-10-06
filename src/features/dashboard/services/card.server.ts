@@ -1,6 +1,5 @@
-// src/features/dashboard/services/cards.server.ts
 import { unstable_noStore as noStore } from 'next/cache';
-import { createSupabaseAdminClient } from '@/lib/supabase/supabaseAdmin'; // ← değişti
+import { createSupabaseAdminClient } from '@/lib/supabase/supabaseAdmin';
 
 type TrendDir = 'up' | 'down';
 type Trend = { change: number | null; trend: TrendDir };
@@ -8,19 +7,19 @@ type Trend = { change: number | null; trend: TrendDir };
 export type CardsTotals = {
   totalUsers: number;
   totalPendingRequests: number;
-  totalSystems: number;
+  totalProducts: number;
 };
 
 export type CardsTrends = {
-  user: { change: number | null; trend: TrendDir };
-  request: { change: number | null; trend: TrendDir };
-  system: { change: number | null; trend: TrendDir };
+  user: Trend;
+  request: Trend;
+  product: Trend;
 };
 
 export type CardsDeltas = {
   user: number;
   request: number;
-  system: number;
+  product: number;
 };
 
 export type CardsData = {
@@ -45,10 +44,9 @@ function monthRange(offset: number): { startIso: string; endIso: string } {
 
 type Client = Awaited<ReturnType<typeof createSupabaseAdminClient>>;
 
-// Güvenli sayım: '*', head:true + detaylı log
 async function countExact(
   sb: Client,
-  table: 'users' | 'systems' | 'requests',
+  table: 'users' | 'products' | 'requests',
   where?: { column: string; value: string | number | boolean },
 ): Promise<number> {
   let q = sb.from(table).select('*', { count: 'exact', head: true });
@@ -63,7 +61,7 @@ async function countExact(
 
 async function countBetween(
   sb: Client,
-  table: 'users' | 'systems' | 'requests',
+  table: 'users' | 'products' | 'requests',
   createdCol: string,
   startIso: string,
   endIso: string,
@@ -83,44 +81,72 @@ async function countBetween(
   return typeof count === 'number' ? count : 0;
 }
 
+/** Belirli bir aya kadar (endIso dahil değil) kümülatif toplam say. */
+async function countUntil(
+  sb: Client,
+  table: 'users' | 'products' | 'requests',
+  createdCol: string,
+  endIso: string,
+  where?: { column: string; value: string | number | boolean },
+): Promise<number> {
+  let q = sb.from(table).select('*', { count: 'exact', head: true }).lt(createdCol, endIso);
+  if (where) q = q.eq(where.column, where.value);
+  const { count, error } = await q;
+  if (error) {
+    console.error('countUntil error', { table, createdCol, endIso, where, message: error.message, details: (error).details, hint: (error).hint });
+    return 0;
+  }
+  return typeof count === 'number' ? count : 0;
+}
+
 // --------------- Ana servis ---------------
 export async function fetchDashboardCards(): Promise<CardsData> {
   noStore();
   const sb = createSupabaseAdminClient();
 
-  // 1) Toplamlar (RPC YOK, direkt sayıyoruz)
-  const [totalUsers, totalSystems, totalPendingRequests] = await Promise.all([
+  // 1) Toplamlar
+  const [totalUsers, totalProducts, totalPendingRequests] = await Promise.all([
     countExact(sb, 'users'),
-    countExact(sb, 'systems'),                 // 'systems' tablon yoksa bunu 'products' veya uygun tabloya çevir
+    countExact(sb, 'products'),
     countExact(sb, 'requests', { column: 'status', value: 'pending' }),
   ]);
 
-  const totals: CardsTotals = { totalUsers, totalPendingRequests, totalSystems };
+  const totals: CardsTotals = { totalUsers, totalPendingRequests, totalProducts };
 
   // 2) Aylık karşılaştırmalar
   const { startIso: curS, endIso: curE } = monthRange(0);
   const { startIso: prevS, endIso: prevE } = monthRange(-1);
 
-  const [uCurr, uPrev, sCurr, sPrev, pCurr, pPrev] = await Promise.all([
-    countBetween(sb, 'users', 'created_at', curS,  curE),
-    countBetween(sb, 'users', 'created_at', prevS, prevE),
-    countBetween(sb, 'systems', 'created_at', curS,  curE),
-    countBetween(sb, 'systems', 'created_at', prevS, prevE),
-    countBetween(sb, 'requests', 'created_at', curS,  curE,  { column: 'status', value: 'pending' }),
-    countBetween(sb, 'requests', 'created_at', prevS, prevE, { column: 'status', value: 'pending' }),
+  // 'created_at' kolonu varsayımı. Farklıysa değiştir.
+  const CREATED_COL = 'created_at';
+
+  // Ay bazlı "yeni eklenen" kullanıcı ve bekleyen talepler
+  const [uCurr, uPrev, pendCurr, pendPrev] = await Promise.all([
+    countBetween(sb, 'users', CREATED_COL, curS, curE),
+    countBetween(sb, 'users', CREATED_COL, prevS, prevE),
+    countBetween(sb, 'requests', CREATED_COL, curS, curE, { column: 'status', value: 'pending' }),
+    countBetween(sb, 'requests', CREATED_COL, prevS, prevE, { column: 'status', value: 'pending' }),
   ]);
 
+  // Ürün kartı için TREND kümülatif toplamlara göre
+  const [prodTotalCurr, prodTotalPrev] = await Promise.all([
+    countUntil(sb, 'products', CREATED_COL, curE),
+    countUntil(sb, 'products', CREATED_COL, prevE),
+  ]);
+
+  // Ürün kartı için DELTA yine bu aya eklenen adet (görsel metin için)
+  const prodCurr = await countBetween(sb, 'products', CREATED_COL, curS, curE);
+
   const trends: CardsTrends = {
-    user:    calcTrend(uCurr, uPrev),
-    system:  calcTrend(sCurr, sPrev),
-    request: calcTrend(pCurr, pPrev),
+    user: calcTrend(uCurr, uPrev),
+    request: calcTrend(pendCurr, pendPrev),
+    product: calcTrend(prodTotalCurr, prodTotalPrev), // ← burada artık -100% yok
   };
 
-  // Sen “bu ayki adet” göstermek istiyorum demişsin; önce fark alıyordun.
   const deltas: CardsDeltas = {
     user: uCurr,
-    system: sCurr,
-    request: pCurr,
+    request: pendCurr,
+    product: prodCurr,
   };
 
   return { totals, trends, deltas };

@@ -50,7 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             sx={{
               px: 2,
               py: 2,
-              borderRadius: 0.5,
+              borderRadius: 2.5,
               bgcolor: 'var(--rs-surface-1)',
             }}
           >

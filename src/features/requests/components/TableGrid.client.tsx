@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 import type { RequestTableRow } from '@/features/requests/types';
@@ -97,12 +97,6 @@ export default function TableGrid({ rows: serverRows }: Props) {
         }}
         pageSizeOptions={[10, 25, 50]}
       />
-
-      {rows.length === 0 && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Gösterilecek talep bulunamadı.
-        </Typography>
-      )}
     </Box>
   );
 }

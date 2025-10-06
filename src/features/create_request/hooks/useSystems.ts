@@ -43,7 +43,7 @@ export default function useSystems(initial?: SystemCardType[]) {
 
     const { data, error } = await supabase
       .from('systems')
-      .select('slug,title,description,tag,image_url,button_labels,links,is_active,created_at,meta')
+      .select('slug, title, description, tag, image_url, button_labels, links, is_active, created_at, meta')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 

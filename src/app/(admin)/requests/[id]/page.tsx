@@ -5,12 +5,10 @@ import { notFound } from 'next/navigation';
 
 import { Box, Grid, Stack } from '@mui/material';
 
-import {
-  FormInfoCard,
-  SummarySection,
-  RequestDetailHeader,
-  MaterialListCard,
-} from '@/features/requests/components/id';
+import FormInfoCard from '@/features/requests/components/id/InfoCard';
+import SummarySection from '@/features/requests/components/id/SummarySection';
+import MaterialListCard from '@/features/requests/components/id/MaterialListCard';
+import RequestDetailHeader from '@/features/requests/components/id/RequestDetailHeader';
 
 import {
   fetchRequestByParam,
@@ -43,34 +41,45 @@ export default async function RequestDetailPage({ params }: PageProps) {
 
   return (
     <Box sx={{ px: 1, py: 2 }} >
-      <RequestDetailHeader id={row.id} systemSlug={row.system_slug} />
+      <RequestDetailHeader
+        id={row.id}
+        systemSlug={row.system_slug}
+        status={row.status}
+      />
 
       <Grid container spacing={2}>
 
         {/* Sol kolon: Form + Kullanıcı kartı */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={2}>
+
             <FormInfoCard form={f} />
             <UserDetailCard user={user} />
+
           </Stack>
         </Grid>
 
         {/* Sağ kolon: Özet */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={2}>
-            <SummarySection summary={s} />
             
             {/* Yeni durum kartı */}
             <StatusCard
               requestId={row.id}
               status={row.status}
             />
+
           </Stack>
         </Grid>
 
-        {/* Alt: Malzeme tablosu */}
+        {/* Alt: Özet ve Malzeme tablosu */}
         <Grid size={{ xs: 12 }}>
-          <MaterialListCard rows={materialRows} />
+          <Stack spacing={2}> {/* istediğin kadar arttır: 2 -> 3 -> 4 */}
+
+            <SummarySection summary={s} />
+            <MaterialListCard rows={materialRows} />
+            
+          </Stack>
         </Grid>
 
       </Grid>

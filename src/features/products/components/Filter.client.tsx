@@ -154,7 +154,13 @@ export default function Filters({
   return (
     <Box className="space-y-4" sx={{ position: 'sticky', top: 16 }}>
 
-      <TextField label="Ara (ad veya kod)" size="small" value={q} onChange={e => setQ(e.target.value)} fullWidth />
+      <TextField 
+        fullWidth 
+        label="Ara (ad veya kod)" 
+        size="small" 
+        value={q} 
+        onChange={e => setQ(e.target.value)} 
+      />
       
       <Box mt={2} >
         <FormControlLabel

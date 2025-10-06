@@ -1,32 +1,20 @@
-// app/(admin)/orders/page.tsx
-import { Paper } from '@mui/material';
-import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
-import OrdersGrid from '@/features/orders/components/OrdersGrid.client';
-import type { Database } from '@/types/supabase';
+// src/app/(admin)/orders/page.tsx
+import * as React from 'react';
+import { Box, Stack, Typography } from '@mui/material';
+import InboxGrid from '@/features/orders/components/InboxGrid.client';
+import { fetchInboxForCurrentUser } from '@/features/orders/services/index.server';
 
-type OrdersRow = Database['public']['Tables']['orders']['Row'] & {
-  title?: string | null;
-  tille?: string | null; // kolon yok ama client kodu bunu opsiyonel olarak tolere ediyor
-};
+export const revalidate = 0;
 
-export default async function OrdersPage() {
-  const supabase = await createSupabaseRSCClient();
-
-  const { data, error } = await supabase
-    .from('orders')
-    // 'tille' YOK. Çıkardık.
-    .select('id,user_id,message,is_read,type,created_at,title')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw new Error(`Orders fetch failed: ${error.message}`);
-  }
-
-  const rows: OrdersRow[] = Array.isArray(data) ? data : [];
+export default async function OrdersInboxPage() {
+  const { userId, rows } = await fetchInboxForCurrentUser();
 
   return (
-    <Paper elevation={0} variant="outlined">
-        <OrdersGrid initialRows={rows} />
-    </Paper>
+    <Box sx={{ p: 2 }}>
+      <Stack spacing={2}>
+        <Typography variant="h6">Gelen Kutusu</Typography>
+        <InboxGrid initialRows={rows} userId={userId} />
+      </Stack>
+    </Box>
   );
 }
