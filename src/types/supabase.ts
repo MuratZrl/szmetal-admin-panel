@@ -114,6 +114,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_request_fk"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false

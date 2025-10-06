@@ -154,12 +154,19 @@ export default function Filters({
   return (
     <Box className="space-y-4" sx={{ position: 'sticky', top: 16 }}>
 
-      <TextField 
-        fullWidth 
-        label="Ara (ad veya kod)" 
-        size="small" 
-        value={q} 
-        onChange={e => setQ(e.target.value)} 
+      <TextField
+        fullWidth
+        label="Ara (ad veya kod)"
+        size="small"
+        value={q}
+        onChange={e => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();   // form submit vs. olmasın
+            apply();              // aynı fonksiyon, direkt çalıştır
+          }
+        }}
+        inputProps={{ enterKeyHint: 'search' }} // mobil klavyede "Search" tuşu
       />
       
       <Box mt={2} >
