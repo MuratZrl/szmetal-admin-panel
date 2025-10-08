@@ -16,6 +16,7 @@ import { useProductsSelection } from '../selection/ProductsSelectionContext.clie
 import BulkDeleteDialog from './BulkDeleteDialog.client';
 import BulkDeleteAllDialog from './BulkDeleteAllDialog.client';
 
+// Sadece izinler kalsın
 type Perms = { canCreate: boolean; canBulkDelete: boolean };
 
 export default function ProductsToolbar({ perms }: { perms: Perms }) {
@@ -24,149 +25,141 @@ export default function ProductsToolbar({ perms }: { perms: Perms }) {
   const [openAll, setOpenAll] = React.useState(false);
 
   const theme = useTheme();
-  const smUp = useMediaQuery(theme.breakpoints.up('sm')); // xs: ikon-only, sm+: tam buton
+  const smUp = useMediaQuery(theme.breakpoints.up('sm'));
 
   const hasSelection = count > 0 && perms.canBulkDelete;
 
   return (
     <>
-      <Grid
-        container
-        alignItems="center"
-        spacing={1}
-        sx={{ mb: 1 }}
-      >
+      <Grid container alignItems="center" spacing={1} sx={{ mb: 1 }}>
         {/* Sol: Başlık */}
-        <Grid size={{ xs: 12, sm: 6, md: 6 }} >
+        <Grid size={{ xs: 12, sm: 6, md: 6 }}>
           <Typography variant="h5">Profilleri Listele</Typography>
         </Grid>
 
         {/* Sağ: Aksiyonlar */}
-        <Grid size={{ xs: 12, sm: 6, md: 6 }} >
+        <Grid size={{ xs: 12, sm: 6, md: 6 }}>
           {smUp ? (
             // sm ve üstü: tam yazılı butonlar
             <Stack
               direction="row"
               justifyContent="flex-end"
               alignItems="center"
-              sx={{
-                gap: 2,
-                flexWrap: 'wrap',
-                // metin taşmasın, butonlar kırılabilsin
-                '& > *': { minWidth: 0 },
-              }}
+              sx={{ gap: 2, flexWrap: 'wrap', '& > *': { minWidth: 0 } }}
             >
               {perms.canBulkDelete && (
                 <>
-              <Button
-                variant="outlined"
-                startIcon={<CloseIcon />}
-                disabled={!hasSelection}
-                onClick={clear}
-                draggable={false}
-              >
-                Vazgeç
-              </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloseIcon />}
+                    disabled={!hasSelection}
+                    onClick={clear}
+                    draggable={false}
+                  >
+                    Vazgeç
+                  </Button>
 
-              <Button
-                color="error"
-                variant="contained"
-                startIcon={<DeleteOutlineIcon />}
-                disabled={!hasSelection}
-                onClick={() => setOpen(true)}
-                draggable={false}
-              >
-                Seçilenleri sil {hasSelection ? `(${count})` : ''}
-              </Button>
+                  <Button
+                    color="error"
+                    variant="contained"
+                    startIcon={<DeleteOutlineIcon />}
+                    disabled={!hasSelection}
+                    onClick={() => setOpen(true)}
+                    draggable={false}
+                  >
+                    Seçilenleri sil {hasSelection ? `(${count})` : ''}
+                  </Button>
 
-              <Button
-                color="error"
-                variant="outlined"
-                startIcon={<DeleteForeverIcon />}
-                onClick={() => setOpenAll(true)}
-                draggable={false}
-              >
-                Tümünü Sil
-              </Button>
+                  <Button
+                    color="error"
+                    variant="outlined"
+                    startIcon={<DeleteForeverIcon />}
+                    onClick={() => setOpenAll(true)}
+                    draggable={false}
+                  >
+                    Tümünü Sil
+                  </Button>
+                </>
+              )}
 
-              <Button
-                component={Link}
-                href="/products/new"
-                variant="contained"
-                startIcon={<AddIcon />}
-                draggable={false}
-              >
-                Profil Ekle
-              </Button>
-              </>
+              {perms.canCreate && (
+                <Button
+                  component={Link}
+                  href="/products/new"
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  draggable={false}
+                >
+                  Profil Ekle
+                </Button>
               )}
             </Stack>
           ) : (
-            // xs: ikon-only, tooltip’lü kompakt sıra
-            <Stack
-              direction="row"
-              spacing={0.5}
-              justifyContent="flex-end"
-              alignItems="center"
-            >
-              <Tooltip title="Vazgeç">
-                <span>
+            // xs: ikon-only
+            <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
+              {perms.canBulkDelete && (
+                <>
+                  <Tooltip title="Vazgeç">
+                    <span>
+                      <IconButton
+                        color="default"
+                        disabled={!hasSelection}
+                        onClick={clear}
+                        aria-label="Vazgeç"
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+
+                  <Tooltip title={hasSelection ? `Seçilenleri sil (${count})` : 'Seçilenleri sil'}>
+                    <span>
+                      <IconButton
+                        color="error"
+                        disabled={!hasSelection}
+                        onClick={() => setOpen(true)}
+                        aria-label="Seçilenleri sil"
+                      >
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+
+                  <Tooltip title="Tümünü Sil">
+                    <IconButton
+                      color="error"
+                      onClick={() => setOpenAll(true)}
+                      aria-label="Tümünü Sil"
+                    >
+                      <DeleteForeverIcon />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+
+              {perms.canCreate && (
+                <Tooltip title="Profil Ekle">
                   <IconButton
-                    color="default"
-                    disabled={!hasSelection}
-                    onClick={clear}
-                    aria-label="Vazgeç"
+                    component={Link}
+                    href="/products/new"
+                    color="primary"
+                    aria-label="Profil Ekle"
                   >
-                    <CloseIcon />
+                    <AddIcon />
                   </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title={hasSelection ? `Seçilenleri sil (${count})` : 'Seçilenleri sil'}>
-                <span>
-                  <IconButton
-                    color="error"
-                    disabled={!hasSelection}
-                    onClick={() => setOpen(true)}
-                    aria-label="Seçilenleri sil"
-                  >
-                    <DeleteOutlineIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-
-              <Tooltip title="Tümünü Sil">
-                <IconButton
-                  color="error"
-                  onClick={() => setOpenAll(true)}
-                  aria-label="Tümünü Sil"
-                >
-                  <DeleteForeverIcon />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title="Ürün Ekle">
-                <IconButton
-                  component={Link}
-                  href="/products/new"
-                  color="primary"
-                  aria-label="Ürün Ekle"
-                >
-                  <AddIcon />
-                </IconButton>
-              </Tooltip>
+                </Tooltip>
+              )}
             </Stack>
           )}
         </Grid>
       </Grid>
-      
+
       {perms.canBulkDelete && (
         <>
           <BulkDeleteDialog open={open} onClose={() => setOpen(false)} />
           <BulkDeleteAllDialog open={openAll} onClose={() => setOpenAll(false)} />
         </>
       )}
-      
     </>
   );
 }

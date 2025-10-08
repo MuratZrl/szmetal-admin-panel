@@ -43,6 +43,20 @@ function fallbackText(value: string | null | undefined): string {
   return s.length > 0 ? s : '---';
 }
 
+/** Tarihi TR yereliyle okunur biçimde formatla */
+function formatDateTimeTR(iso: string | null | undefined): string {
+  if (!iso) return '---';
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return '---';
+  return new Date(t).toLocaleString('tr-TR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 /** Readonly görünüm için Select'e uygulanacak stil:
  * - Disabled grileşmesini kaldır
  * - Pointer etkileşimini kapat
@@ -303,6 +317,24 @@ export function buildColumns(
       minWidth: 120,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
+    },
+
+    /* --- YENİ: Katılma Tarihi (en son sütun) --- */
+    {
+      field: 'created_at',
+      headerName: 'Katılma Tarihi',
+      flex: 1,
+      minWidth: 180,
+      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
+        formatDateTimeTR(params.value ?? null),
+      // Tarihe göre sırala; parse edilemeyenler en alta düşer.
+      sortComparator: (a: unknown, b: unknown): number => {
+        const ta = typeof a === 'string' ? Date.parse(a) : Number.NaN;
+        const tb = typeof b === 'string' ? Date.parse(b) : Number.NaN;
+        const ax = Number.isFinite(ta) ? ta : Number.NEGATIVE_INFINITY;
+        const bx = Number.isFinite(tb) ? tb : Number.NEGATIVE_INFINITY;
+        return ax - bx;
+      },
     },
   ];
 

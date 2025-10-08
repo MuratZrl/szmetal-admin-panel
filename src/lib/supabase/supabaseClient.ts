@@ -31,7 +31,7 @@ export function createSupabaseBrowserClient(): TypedSupabaseClient {
       detectSessionInUrl: true,
       // LocalStorage’da ayrı bir client session tutmak istemiyorsan false.
       // Server tarafı cookie ile ilerlediğinden karışıklığı azaltır.
-      persistSession: false,
+      persistSession: true,
       autoRefreshToken: true,
     },
   });

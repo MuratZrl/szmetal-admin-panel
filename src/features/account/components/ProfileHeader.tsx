@@ -136,7 +136,7 @@ export default function ProfileHeader({
       >
         <Button
           component="label"
-          variant="outlined"
+          variant="contained"
           size="small"
           disabled={uploading}
           sx={{

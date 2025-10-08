@@ -84,28 +84,32 @@ export default function StatusCard({ requestId, status, onStatusChange }: Props)
 
   return (
     <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+      
       <Typography variant="subtitle1" sx={{ mb: 1 }}>Talep Durumu</Typography>
+
       <Divider sx={{ mb: 1 }} />
 
       {/* Üst satır: durum bilgisi */}
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+      <Stack direction="row" alignItems="center" spacing={2} >
+
+        <Typography variant="body2" color="text.secondary" >
           Mevcut
         </Typography>
+
         <Chip
           size="small"
           label={statusTextTR(current)}
           color={statusChipColor(current)}
           variant="outlined"
         />
+
       </Stack>
 
       {/* Dikey aksiyonlar */}
       <Stack 
-        spacing={1} 
-        sx={{ mt: 1 }}
+        spacing={1.5} 
         direction={{ xs: 'column', sm: 'row' }}
-
+        justifySelf={'end'}
       >
         <Button
           variant="contained"

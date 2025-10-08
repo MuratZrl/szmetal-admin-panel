@@ -1,12 +1,36 @@
-export const dynamic = 'force-dynamic'; // ← server component’ta işe yarar
-
+// src/app/(auth)/reset-password/page.tsx
+import * as React from 'react';
 import { Suspense } from 'react';
-import ResetPasswordClient from './ResetPasswordClient';
+import { Box, Typography } from '@mui/material';
 
-export default function Page() {
+import AuthCard from '../components/layout/AuthCard';
+import ResetPasswordForm from '@/app/(auth)/reset-password/ResetPassword.client';
+
+export const dynamic = 'force-dynamic';
+
+export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div>Yükleniyor...</div>}>
-      <ResetPasswordClient />
-    </Suspense>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100dvh',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 1,
+      }}
+    >
+      <AuthCard>
+        <Typography variant="h5" fontWeight={600} mb={1}>
+          Şifrenizi Sıfırlayın
+        </Typography>
+        <Typography variant="subtitle1" mb={3}>
+          Güçlü bir şifre belirleyin. Link doğrulaması otomatik yapılır.
+        </Typography>
+
+        <Suspense fallback={<div>Yükleniyor...</div>}>
+          <ResetPasswordForm />
+        </Suspense>
+      </AuthCard>
+    </Box>
   );
 }

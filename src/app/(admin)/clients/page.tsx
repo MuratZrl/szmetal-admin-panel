@@ -12,8 +12,6 @@ import ChartCard from '@/components/ui/cards/ChartCard.client';
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 
-import { get6RollingMonthRange } from '@/features/dashboard/utils/rollingMonths';
-
 import {
   STATUS_OPTIONS,
   type AppStatus,
@@ -65,7 +63,10 @@ export default async function Page() {
     }
   }
 
-  const { labelTR: labelTR6 } = get6RollingMonthRange();
+  // "May - Eki" gibi aralık etiketi
+  const first = line6m.labels[0] ?? '';
+  const last = line6m.labels[line6m.labels.length - 1] ?? '';
+  const rangeLabel = first && last ? `${first} - ${last}` : undefined;
 
   const STATUS_COLOR: Record<AppStatus, string> = {
     Active: '#2e7d32',
@@ -91,7 +92,10 @@ export default async function Page() {
       {/* 2) Grafikler */}
       <Grid container spacing={2} sx={{ mt: 2 }} alignItems="stretch">
         <Grid size={{ xs: 12, md: 6 }}>
-          <ChartCard title="Toplam Kullanıcılar" timeLabel={labelTR6}>
+          <ChartCard
+            title="Toplam Kullanıcılar"
+            timeLabel={rangeLabel}
+          >
             <LineAreaChart
               labels={line6m.labels}
               series={[
@@ -110,7 +114,10 @@ export default async function Page() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <ChartCard title="Duruma Göre Toplam Kullanıcılar" timeLabel={labelTR6}>
+          <ChartCard
+            title="Duruma Göre Toplam Kullanıcılar"
+            timeLabel={rangeLabel}
+          >
             <GroupBarChart labels={line6m.labels} series={barSeries} height={320} />
           </ChartCard>
         </Grid>

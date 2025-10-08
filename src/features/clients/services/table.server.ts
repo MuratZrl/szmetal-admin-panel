@@ -1,8 +1,12 @@
 // src/features/clients/services/table.server.ts
 import 'server-only';
+
 import { unstable_noStore as noStore } from 'next/cache';
+
 import { createClient } from '@supabase/supabase-js';
+
 import type { Database } from '@/types/supabase';
+
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 
 /** UI DataGrid'in beklediği tip */
@@ -16,7 +20,8 @@ export type UserRow = {
   status: string | null;
   phone: string | null;
   country: string | null;
-};
+  created_at: string; // <-- EKLE
+}
 
 /** Sorgudan dönen satırların DB tabanlı seçimi */
 type UsersSelectRow = Pick<
@@ -38,6 +43,7 @@ function mapRow(r: UsersSelectRow): UserRow {
     status: r.status ?? null,
     phone: r.phone ?? null,
     country: r.country ?? null,
+    created_at: r.created_at, // <-- EKLE
   };
 }
 

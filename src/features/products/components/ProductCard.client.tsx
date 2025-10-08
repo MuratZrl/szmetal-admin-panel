@@ -19,6 +19,8 @@ import { useProductsSelection } from '@/features/products/selection/ProductsSele
 import type { LabelMaps } from '@/features/products/services/labelMaps.server';
 import { prettyTr } from '@/features/products/utils/tr-text';
 
+import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
+
 type Role = 'Admin' | 'Manager' | 'User';
 
 type Props = {
@@ -53,6 +55,15 @@ function normalizeRole(r: Props['role']): Role {
   return 'User';
 }
 
+function prettifyLabel(
+  value: string | null | undefined,
+  map?: Record<string, string> | undefined
+): string {
+  // prettyTr zaten string döndürüyor varsayımıyla:
+  const raw = prettyTr(value ?? '', map);
+  return isSlugLike(raw) ? humanizeSystemSlug(raw) : raw;
+}
+
 export default function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
   const theme = useTheme();
   const downSm = useMediaQuery(theme.breakpoints.down('sm'));
@@ -64,9 +75,9 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   // HATA DÜZELTİLDİ: Burada yalnızca Manager ise seçim kapalı.
   const canSelect = normalizedRole !== 'Manager';
 
-  const variantLabel  = prettyTr(product.variant,     labels?.variant);
-  const categoryLabel = prettyTr(product.category,    labels?.category);
-  const subLabel      = prettyTr(product.subCategory, labels?.subcategory);
+  const variantLabel  = prettifyLabel(product.variant,     labels?.variant);
+  const categoryLabel = prettifyLabel(product.category,    labels?.category);
+  const subLabel      = prettifyLabel(product.subCategory, labels?.subcategory);
 
   // 1) Eğer server'dan çözümlenmiş URL geldiyse onu kullan.
   // 2) Gelmediyse eski alanı deneriz ama path ise yine placeholder olur.

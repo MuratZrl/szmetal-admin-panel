@@ -12,11 +12,13 @@ import type { RequestTableRow } from '@/features/requests/types';
 
 import { RequestStatus } from '@/features/requests/types';
 
+import { humanizeSystemSlug } from '@/utils/caseFilter';
+
 const REQUEST_STATUS = ['pending','approved','rejected'] as const;
 
 function statusLabelTR(value: string | null | undefined): string {
   switch ((value ?? '').toLowerCase()) {
-    case 'pending':  return 'Beklemede';
+    case 'pending':  return 'Bekleyen';
     case 'approved': return 'Onaylandı';
     case 'rejected': return 'Reddedildi';
     default:         return '---';
@@ -148,13 +150,26 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       align: 'left',
       headerAlign: 'left',
       sortable: true,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', height: 1, width: 1 }}>
-          <Typography variant="body2" sx={{ whiteSpace: 'normal', width: 1 }}>
-            {fallbackText(params.value)}
-          </Typography>
-        </Box>
-      ),
+      // İstersen sıralamayı da insanlaştırılmış metne göre yap:
+      sortComparator: (v1, v2) =>
+        humanizeSystemSlug(String(v1 ?? '')).localeCompare(
+          humanizeSystemSlug(String(v2 ?? '')),
+          'tr'
+        ),
+      renderCell: (params) => {
+        const label = humanizeSystemSlug(params.value ?? params.row.system_slug ?? null);
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', height: 1, width: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ whiteSpace: 'normal', width: 1 }}
+              title={label}
+            >
+              {label}
+            </Typography>
+          </Box>
+        );
+      },
     },
     {
       field: 'phone',

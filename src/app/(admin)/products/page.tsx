@@ -59,7 +59,7 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
   const mediaUrlsById: Record<string, string | null> = Object.fromEntries(mediaUrlsByIdEntries);
 
   const perms = {
-    canCreate: profile?.role === 'Admin',
+    canCreate: profile?.role === 'Admin' || profile?.role === 'Manager',
     canBulkDelete: profile?.role === 'Admin',
   };
 

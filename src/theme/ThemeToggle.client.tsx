@@ -29,7 +29,7 @@ const buttonSx: SxProps<Theme> = (theme) => {
   };
 };
 
-export default function ThemeToggle({ placement = 'bottom' }: Props): React.JSX.Element {
+export default function ThemeToggle({ placement = 'left' }: Props): React.JSX.Element {
   const { mode, toggle } = useThemeMode();
 
   const [mounted, setMounted] = React.useState(false);

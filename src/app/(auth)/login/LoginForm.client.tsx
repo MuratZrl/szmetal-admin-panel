@@ -180,7 +180,7 @@ export default function LoginForm() {
 
         {/* Alt bağlantılar */}
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Typography color="text.secondary">
+          <Typography >
             <Link href="/forgot-password" style={{ textDecoration: 'none' }}>
               <Typography
                 component="span"
@@ -199,7 +199,7 @@ export default function LoginForm() {
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6 }} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-          <Typography color="text.primary">
+          <Typography >
             Hesabınız yoksa{' '}
             <Link href="/register" style={{ textDecoration: 'none' }}>
               <Typography

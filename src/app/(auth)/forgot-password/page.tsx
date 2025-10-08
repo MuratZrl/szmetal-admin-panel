@@ -1,3 +1,4 @@
+// src/app/(auth)/forgot-password/page.tsx
 import * as React from 'react';
 import { Box, Typography } from '@mui/material';
 import AuthCard from '../components/layout/AuthCard';

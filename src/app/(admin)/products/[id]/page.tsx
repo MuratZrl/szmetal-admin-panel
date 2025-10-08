@@ -94,7 +94,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!row) notFound();
 
-  const canEdit = role === 'Admin';
+  const canEdit = role === 'Admin' || role === 'Manager';
   const canPin = role === 'Admin'; // ← EKLENDİ
   
   const product = mapRowToProduct(row);

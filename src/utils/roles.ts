@@ -1,15 +1,14 @@
-// src/features/account/helpers.ts
-import type { SxProps, Theme } from '@mui/system';
+// src/utils/roles.ts
+import type { SxProps, Theme } from '@mui/material/styles';
 import type { ChipProps } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
-export type RoleKey = 'Admin' | 'Manager' | 'User' | 'Banned' | string;
+export type RoleKey = 'Admin' | 'Manager' | 'User' | (string & {});
 
 export const ROLE_LABEL_MAP: Record<string, string> = {
   Admin: 'Admin',
   Manager: 'Yönetici',
   User: 'Kullanıcı',
-  Banned: 'Engelli',
 };
 
 export function getRoleLabel(role?: RoleKey): string {
@@ -25,7 +24,6 @@ export function getRoleChipColor(role?: RoleKey): ChipColor {
   if (r === 'admin') return 'warning';
   if (r === 'manager') return 'info';
   if (r === 'user') return 'default';
-  if (r === 'banned') return 'error';
   return 'default';
 }
 
@@ -39,7 +37,6 @@ export function getRoleChipSx(role?: RoleKey): SxProps<Theme> {
   return (theme) => {
     const color = getRoleChipColor(role);
 
-    // default renk: nötr metin rengi
     if (color === 'default') {
       return {
         fontWeight: 700,
@@ -49,7 +46,6 @@ export function getRoleChipSx(role?: RoleKey): SxProps<Theme> {
       };
     }
 
-    // Tema paletlerinden "light" tonu seç
     const labelColor = (() => {
       switch (color) {
         case 'primary':   return theme.palette.primary.light;

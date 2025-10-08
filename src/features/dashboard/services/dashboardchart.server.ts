@@ -1,5 +1,5 @@
 // src/features/dashboard/services/dashboard.server.ts
-import { fetchDashboardCharts } from './chart.server';
+import { fetchDashboardCharts } from './usersChart.server';
 import { fetchRequestsBySystemGroup3M } from './subchart.server';
 import { fetchRequestsStatusPieAllTime } from './subchart2.server';
 import { fetchRequestsByCountryGroup3M } from './subchart3.server';

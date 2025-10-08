@@ -113,40 +113,41 @@ export async function fetchDashboardCards(): Promise<CardsData> {
 
   const totals: CardsTotals = { totalUsers, totalPendingRequests, totalProducts };
 
-  // 2) Aylık karşılaştırmalar
-  const { startIso: curS, endIso: curE } = monthRange(0);
+  // 2) Aylık aralıklar
+  const { startIso: curS,  endIso: curE }  = monthRange(0);
   const { startIso: prevS, endIso: prevE } = monthRange(-1);
-
-  // 'created_at' kolonu varsayımı. Farklıysa değiştir.
   const CREATED_COL = 'created_at';
 
-  // Ay bazlı "yeni eklenen" kullanıcı ve bekleyen talepler
-  const [uCurr, uPrev, pendCurr, pendPrev] = await Promise.all([
-    countBetween(sb, 'users', CREATED_COL, curS, curE),
-    countBetween(sb, 'users', CREATED_COL, prevS, prevE),
-    countBetween(sb, 'requests', CREATED_COL, curS, curE, { column: 'status', value: 'pending' }),
+  // Bu ay eklenen kullanıcı ve bekleyen talepler (delta için)
+  const [uCurr, pendCurr, pendPrev] = await Promise.all([
+    countBetween(sb, 'users',    CREATED_COL, curS,  curE),
+    countBetween(sb, 'requests', CREATED_COL, curS,  curE, { column: 'status', value: 'pending' }),
     countBetween(sb, 'requests', CREATED_COL, prevS, prevE, { column: 'status', value: 'pending' }),
   ]);
 
-  // Ürün kartı için TREND kümülatif toplamlara göre
+  // Kullanıcı yüzdesi için KÜMÜLATİF toplamlar
+  const [userTotalCurr, userTotalPrev] = await Promise.all([
+    countUntil(sb, 'users', CREATED_COL, curE),   // bu ayın sonu itibarıyla toplam
+    countUntil(sb, 'users', CREATED_COL, prevE),  // geçen ayın sonu itibarıyla toplam
+  ]);
+
+  // Ürün kartı: zaten kümülatif trend + bu ay eklenen delta
   const [prodTotalCurr, prodTotalPrev] = await Promise.all([
     countUntil(sb, 'products', CREATED_COL, curE),
     countUntil(sb, 'products', CREATED_COL, prevE),
   ]);
-
-  // Ürün kartı için DELTA yine bu aya eklenen adet (görsel metin için)
   const prodCurr = await countBetween(sb, 'products', CREATED_COL, curS, curE);
 
   const trends: CardsTrends = {
-    user: calcTrend(uCurr, uPrev),
-    request: calcTrend(pendCurr, pendPrev),
-    product: calcTrend(prodTotalCurr, prodTotalPrev), // ← burada artık -100% yok
+    user:    calcTrend(userTotalCurr, userTotalPrev),   // ← burada düzeldi
+    request: calcTrend(pendCurr,      pendPrev),
+    product: calcTrend(prodTotalCurr, prodTotalPrev),
   };
 
   const deltas: CardsDeltas = {
-    user: uCurr,
-    request: pendCurr,
-    product: prodCurr,
+    user: uCurr,          // bu ay eklenen kullanıcı
+    request: pendCurr,    // bu ay açılan bekleyen
+    product: prodCurr,    // bu ay eklenen ürün
   };
 
   return { totals, trends, deltas };

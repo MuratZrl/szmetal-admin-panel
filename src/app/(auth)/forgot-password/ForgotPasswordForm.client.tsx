@@ -1,3 +1,4 @@
+// src/app/(auth)/forgot-password/ForgotPasswordForm.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -107,12 +108,12 @@ export default function ForgotPasswordForm() {
         </Grid>
 
         <Grid size={{ xs: 12 }} sx={{ display: 'flex', justifyContent: 'space-between' }} >
-          <Typography>
+          <Typography >
             <Link href="/login" style={{ textDecoration: 'none' }} >
               <Typography
                 component="span"
                 sx={{
-                  color: 'primary.main',
+                  color: 'text.primary',
                   fontStyle: 'italic',
                   fontWeight: 500,
                   cursor: 'pointer',
@@ -120,20 +121,6 @@ export default function ForgotPasswordForm() {
                 }}
               >
                 Giriş yapın
-              </Typography>
-            </Link>
-          </Typography>
-
-          <Typography >
-            Hesabınız yoksa{' '}
-            <Link href="/register" style={{ textDecoration: 'none' }} >
-              <Typography
-                component="span"
-                fontStyle="italic"
-                fontWeight={500}
-                sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-              >
-                kayıt olun
               </Typography>
             </Link>
           </Typography>

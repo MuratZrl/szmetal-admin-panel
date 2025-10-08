@@ -18,7 +18,7 @@ import {
   TableCell,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PrintIcon from '@mui/icons-material/Print';
 
 import { detectMediaKind } from '@/features/products/utils/media';
 
@@ -310,7 +310,6 @@ export default function ProductInfo(props: ProductInfoProps) {
   const isSecureRoute = (u: string) => u.startsWith('/api/products/storage');
 
   const base = (chosen.url || anyUrl) as string;
-  const openHref = base && isSecureRoute(base) ? withQuery(base, { disposition: 'inline' }) : base;
 
   const safeExt = mediaExt ?? 'pdf';
   const filename = `${title.replace(/\s+/g, '-').replace(/[^\w.-]/g, '')}.${safeExt}`;
@@ -349,10 +348,19 @@ export default function ProductInfo(props: ProductInfoProps) {
 
   const showMediaActions = Boolean(base);
 
+  // ------- Yazdır helper'ı -------
+  function handlePrint() {
+    // Özel yazdırma sayfasını yeni sekmede aç; o sayfa otomatik print çağırır.
+    const pid = props.id;
+    const w = window.open(`/products/${encodeURIComponent(pid)}/print`, '_blank', 'noopener,noreferrer');
+    w?.focus();
+  }
+
   return (
     <Paper variant="outlined" sx={{ p: 1, borderRadius: 0.5, bgcolor: 'background.default' }}>
       <Paper variant="outlined" elevation={0} sx={{ p: 1.5, borderRadius: 0, bgcolor: 'background.paper' }}>
         <Stack spacing={1.5}>
+          
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             {/* Başlık */}
             {title ? (
@@ -364,16 +372,6 @@ export default function ProductInfo(props: ProductInfoProps) {
             {/* Medya aksiyonları */}
             {showMediaActions ? (
               <Stack direction="row" spacing={0.5}>
-                <IconButton
-                  LinkComponent={Link}
-                  href={openHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Yeni sekmede aç"
-                  size="small"
-                >
-                  <OpenInNewIcon fontSize="small" />
-                </IconButton>
 
                 <IconButton
                   LinkComponent={Link}
@@ -382,6 +380,15 @@ export default function ProductInfo(props: ProductInfoProps) {
                   size="small"
                 >
                   <DownloadIcon fontSize="small" />
+                </IconButton>
+
+                {/* Yazdır */}
+                <IconButton
+                  onClick={handlePrint}
+                  aria-label="Yazdır"
+                  size="small"
+                >
+                  <PrintIcon fontSize="small" />
                 </IconButton>
               </Stack>
             ) : null}

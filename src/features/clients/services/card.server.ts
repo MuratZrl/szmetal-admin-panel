@@ -32,19 +32,18 @@ export type ClientsCardsData = {
   deltas: ClientsCardsDeltas;
 };
 
-/** Tek tip: public şemalı Supabase client */
 type PublicClient = SupabaseClient<Database, 'public'>;
 
-/** Supabase count null dönerse 0’a sabitle */
 function safeCount(n: number | null): number {
   return Number.isFinite(n as number) ? (n as number) : 0;
 }
 
-/** UTC ay başlangıcı (güvenli sınırlar) */
+/** UTC ay başlangıcı */
 function monthStartUTC(year: number, month: number): Date {
   return new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
 }
 
+/** prev→curr değişim: yüzde | null (prev=0’da null), yön ve delta */
 function computeChange(prev: number, curr: number): { pct: number | null; trend: TrendDir; delta: number } {
   const delta = curr - prev;
   const trend: TrendDir = delta >= 0 ? 'up' : 'down';
@@ -53,118 +52,92 @@ function computeChange(prev: number, curr: number): { pct: number | null; trend:
   return { pct, trend, delta };
 }
 
-/** Yalnızca bu dosyada kullanılan admin client (RLS bypass). Client’a sızmaz. */
+/** Service role varsa RLS bypass için admin client */
 function createSupabaseServiceClientOrNull(): PublicClient | null {
   const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY; // .env.local zorunlu
+  const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!SRV) return null;
-  // İkinci generic parametreyi 'public' vererek tipi sabitliyoruz
   return createClient<Database, 'public'>(URL, SRV, { auth: { persistSession: false } });
 }
 
 /**
- * Admin/Clients kartları: toplamlar ve aylık değişimler
- * Bu dosyada service role varsa onu kullanır, yoksa normal server client’a düşer
- * (RLS açık kalır, sayılar eksik olabilir).
+ * Clients kartları:
+ * - totals.*: şu anki toplamlar
+ * - trends.*: geçen ay toplam ↔ bu ay toplam karşılaştırması (MoM)
+ * - deltas.*: bu ay eklenen adet (yeni kayıt sayısı)
  */
 export async function fetchClientsCards(): Promise<ClientsCardsData> {
   const admin = createSupabaseServiceClientOrNull();
-
-  // Tipi tekilleştir: PublicClient
-  let supabase: PublicClient;
-  if (admin) {
-    supabase = admin;
-  } else {
-    // Bazı kurulumlarda ssr client tipi farklı generic imzası taşıyabilir.
-    // unknown üzerinden PublicClient'e sabitlemek, TS2352'yi güvenle çözer.
-    supabase = (await createSupabaseServerClient()) as unknown as PublicClient;
-  }
+  const supabase: PublicClient = admin ?? ((await createSupabaseServerClient()) as unknown as PublicClient);
 
   // Ay sınırları
   const now = new Date();
   const startThis = monthStartUTC(now.getUTCFullYear(), now.getUTCMonth());
   const startNext = monthStartUTC(now.getUTCFullYear(), now.getUTCMonth() + 1);
-  const startPrev = monthStartUTC(now.getUTCFullYear(), now.getUTCMonth() - 1);
 
-  // Toplamlar
+  /* -------- 1) Şu anki toplamlar (value) -------- */
   const totalQ       = supabase.from('users').select('id', { count: 'exact', head: true });
   const activeTotalQ = supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'Active');
   const bannedTotalQ = supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'Banned');
 
-  // Bu ay eklenenler
-  const newUsersThisQ = supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
+  /* -------- 2) Geçen ay sonu toplamları (trend için MoM) --------
+     Not: Sadece created_at < startThis filtresiyle “geçen ayın sonundaki toplam”ı yaklaşıklarız.
+     Soft delete/hareket tarihleri tutulmadığı için bu en makul snapshot. */
+  const totalPrevQ       = supabase.from('users').select('id', { count: 'exact', head: true })
+    .lt('created_at', startThis.toISOString());
+  const activePrevQ      = supabase.from('users').select('id', { count: 'exact', head: true })
+    .eq('status', 'Active').lt('created_at', startThis.toISOString());
+  const bannedPrevQ      = supabase.from('users').select('id', { count: 'exact', head: true })
+    .eq('status', 'Banned').lt('created_at', startThis.toISOString());
+
+  /* -------- 3) Bu ay eklenen adetler (delta metni için) -------- */
+  const newUsersThisQ = supabase.from('users').select('id', { count: 'exact', head: true })
     .gte('created_at', startThis.toISOString())
     .lt('created_at', startNext.toISOString());
 
-  const newUsersPrevQ = supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .gte('created_at', startPrev.toISOString())
-    .lt('created_at', startThis.toISOString());
-
-  const newActiveThisQ = supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
+  const newActiveThisQ = supabase.from('users').select('id', { count: 'exact', head: true })
     .eq('status', 'Active')
     .gte('created_at', startThis.toISOString())
     .lt('created_at', startNext.toISOString());
 
-  const newActivePrevQ = supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'Active')
-    .gte('created_at', startPrev.toISOString())
-    .lt('created_at', startThis.toISOString());
-
-  const newBannedThisQ = supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
+  const newBannedThisQ = supabase.from('users').select('id', { count: 'exact', head: true })
     .eq('status', 'Banned')
     .gte('created_at', startThis.toISOString())
     .lt('created_at', startNext.toISOString());
-
-  const newBannedPrevQ = supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'Banned')
-    .gte('created_at', startPrev.toISOString())
-    .lt('created_at', startThis.toISOString());
 
   const [
     totalRes,
     activeTotalRes,
     bannedTotalRes,
+    totalPrevRes,
+    activePrevRes,
+    bannedPrevRes,
     newUsersThisRes,
-    newUsersPrevRes,
     newActiveThisRes,
-    newActivePrevRes,
     newBannedThisRes,
-    newBannedPrevRes,
   ] = await Promise.all([
     totalQ,
     activeTotalQ,
     bannedTotalQ,
+    totalPrevQ,
+    activePrevQ,
+    bannedPrevQ,
     newUsersThisQ,
-    newUsersPrevQ,
     newActiveThisQ,
-    newActivePrevQ,
     newBannedThisQ,
-    newBannedPrevQ,
   ]);
 
-  // Log (hata varsa gör)
+  // Hata log
   for (const [label, r] of [
     ['total', totalRes],
     ['activeTotal', activeTotalRes],
     ['bannedTotal', bannedTotalRes],
+    ['totalPrev', totalPrevRes],
+    ['activePrev', activePrevRes],
+    ['bannedPrev', bannedPrevRes],
     ['newUsersThis', newUsersThisRes],
-    ['newUsersPrev', newUsersPrevRes],
     ['newActiveThis', newActiveThisRes],
-    ['newActivePrev', newActivePrevRes],
     ['newBannedThis', newBannedThisRes],
-    ['newBannedPrev', newBannedPrevRes],
   ] as const) {
     if (r.error) console.error(`fetchClientsCards ${label} error:`, r.error);
   }
@@ -175,27 +148,22 @@ export async function fetchClientsCards(): Promise<ClientsCardsData> {
     totalBannedUsers: safeCount(bannedTotalRes.count),
   };
 
-  const usersPrev  = safeCount(newUsersPrevRes.count);
-  const usersThis  = safeCount(newUsersThisRes.count);
-  const activePrev = safeCount(newActivePrevRes.count);
-  const activeThis = safeCount(newActiveThisRes.count);
-  const bannedPrev = safeCount(newBannedPrevRes.count);
-  const bannedThis = safeCount(newBannedThisRes.count);
-
-  const usersCh  = computeChange(usersPrev, usersThis);
-  const activeCh = computeChange(activePrev, activeThis);
-  const bannedCh = computeChange(bannedPrev, bannedThis);
+  // MoM trendler: geçen ay toplam ↔ bu ay toplam
+  const usersCh  = computeChange(safeCount(totalPrevRes.count), totals.totalUsers);
+  const activeCh = computeChange(safeCount(activePrevRes.count), totals.totalActiveUsers);
+  const bannedCh = computeChange(safeCount(bannedPrevRes.count), totals.totalBannedUsers);
 
   const trends: ClientsCardsTrends = {
-    users: usersCh.pct === null ? null : { change: usersCh.pct, trend: usersCh.trend },
+    users:  usersCh.pct  === null ? null : { change: usersCh.pct,  trend: usersCh.trend },
     active: activeCh.pct === null ? null : { change: activeCh.pct, trend: activeCh.trend },
     banned: bannedCh.pct === null ? null : { change: bannedCh.pct, trend: bannedCh.trend },
   };
 
+  // Delta: bu ay eklenen yeni kayıt adedi (caption için)
   const deltas: ClientsCardsDeltas = {
-    users: usersThis,
-    active: activeThis,
-    banned: bannedThis,
+    users:  safeCount(newUsersThisRes.count),
+    active: safeCount(newActiveThisRes.count),
+    banned: safeCount(newBannedThisRes.count),
   };
 
   return { totals, trends, deltas };
