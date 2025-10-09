@@ -125,7 +125,7 @@ export default function AccountForm({
               InputLabelProps={{ shrink: true }}
             />
             <Button
-              variant="outlined"
+              variant="text"
               size="small"
               onClick={() =>
                 onEmailChange

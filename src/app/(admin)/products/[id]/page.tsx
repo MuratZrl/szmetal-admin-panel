@@ -1,8 +1,14 @@
 // app/(admin)/products/[id]/page.tsx
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Box, Grid, Stack } from '@mui/material';
 
+import { requirePageAccess } from '@/lib/supabase/auth/server'; // ← EKLE
 import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
 
 import { fetchProductById } from '@/features/products/services/products.server';
@@ -28,17 +34,17 @@ const PRODUCT_BUCKET =
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  // İstersen metadata tarafını da kapat:
+  await requirePageAccess('products'); // ← opsiyonel ama tavsiye
   const { id } = await params;
   const row = await fetchProductById(id);
   if (!row) return { title: 'Ürün bulunamadı' };
-
   const p = mapRowToProduct(row);
   return { title: `${p.code} — ${p.name}` };
 }
 
-/* ------------------------------------------------------------
- * Session info: role + userId + username + email + avatarUrl
- * ----------------------------------------------------------*/
+/* ------------------------------------------------------------ */
+
 type UserSlim = Pick<Tables<'users'>, 'role' | 'username' | 'email' | 'image' | 'updated_at'>;
 
 async function getSessionInfo(): Promise<{
@@ -53,7 +59,8 @@ async function getSessionInfo(): Promise<{
   const { data: auth } = await sb.auth.getUser();
   const user = auth.user;
   if (!user) {
-    return { role: null, userId: null, username: null, email: null, avatarUrl: null };
+    // normalde middleware yakalar ama sağlam olsun
+    redirect('/login');
   }
 
   const { data: row } = await sb
@@ -63,17 +70,15 @@ async function getSessionInfo(): Promise<{
     .maybeSingle()
     .returns<UserSlim | null>();
 
-  const email: string | null = row?.email ?? user.email ?? null;  
+  const email: string | null = row?.email ?? user.email ?? null;
   const username: string | null = row?.username ?? null;
 
-  // OAuth metadata fallback
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
   const metaAvatar =
     (typeof meta.avatar_url === 'string' && meta.avatar_url) ||
     (typeof meta.picture === 'string' && meta.picture) ||
     null;
 
-  // Public avatars bucket → public URL, ardından cache-buster
   const publicUrl = await resolveAvatarUrl(row?.image ?? metaAvatar);
   const avatarUrl = withVersion(publicUrl, row?.updated_at ?? null);
 
@@ -83,9 +88,12 @@ async function getSessionInfo(): Promise<{
 }
 
 export default async function ProductDetailPage({ params }: Props) {
+  // ←←← KİLİT BURADA
+  const { profile } = await requirePageAccess('products'); // Admin+Manager dışındakiler 403/redirect
+
   const { id } = await params;
 
-  const [{ role, userId, username, email, avatarUrl }, row, dicts, comments] = await Promise.all([
+  const [{ userId, username, email, avatarUrl }, row, dicts, comments] = await Promise.all([
     getSessionInfo(),
     fetchProductById(id),
     fetchProductDicts(),
@@ -94,30 +102,24 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!row) notFound();
 
-  const canEdit = role === 'Admin' || role === 'Manager';
-  const canPin = role === 'Admin'; // ← EKLENDİ
-  
+  const canEdit = profile.role === 'Admin' || profile.role === 'Manager';
+  const canPin = profile.role === 'Admin';
+
   const product = mapRowToProduct(row);
 
   const { categoryLabelMap, subLabelMap } = buildCategoryHelpers(dicts.categoryTree);
   const variantLabelMap = Object.fromEntries(dicts.variants.map(v => [v.key, v.name] as const));
 
-  // ---------- MEDYA SEÇİMİ + GÜVENLİ URL ----------
   const preferPdf = (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
   const rawPrimary = preferPdf ? product.filePath : product.image;
   const rawSecondary = preferPdf ? product.image : product.filePath;
 
   function toSecureUrl(storageKey: string | null | undefined): string | null {
     if (!storageKey) return null;
-
-    // Tam http(s) URL ise dokunma (ama tercih edilen değil)
     if (/^https?:\/\//i.test(storageKey)) return storageKey;
-
-    // Eski kayıtlarda yanlışlıkla "product-media/..." prefiksi varsa, strip et.
     const key = storageKey.startsWith(PRODUCT_BUCKET + '/')
       ? storageKey.slice(PRODUCT_BUCKET.length + 1)
       : storageKey;
-
     return `/api/products/storage?bucket=${encodeURIComponent(PRODUCT_BUCKET)}&path=${encodeURIComponent(key)}`;
   }
 
@@ -147,14 +149,13 @@ export default async function ProductDetailPage({ params }: Props) {
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Stack spacing={2}>
-            
             <ProductInfo
               title={`${product.code} — ${product.name}`}
               variant={product.variant}
               category={product.category}
               subCategory={product.subCategory ?? undefined}
               date={product.date}
-              revisionDate={product.revisionDate || ''}  // ← EKLE
+              revisionDate={product.revisionDate || ''}
               id={String(product.id)}
               drawer={product.drawer}
               control={product.control}
@@ -189,7 +190,7 @@ export default async function ProductDetailPage({ params }: Props) {
               currentUserEmail={email}
               currentUserAvatarUrl={avatarUrl}
               initialComments={comments}
-              canPin={canPin}              // ← EKLENDİ
+              canPin={canPin}
             />
           </Stack>
         </Grid>

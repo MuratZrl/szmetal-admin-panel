@@ -5,17 +5,22 @@ import * as React from 'react';
 import { ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import type { SidebarLink } from '../types';
-import { LinkAdapter } from '@/theme'; // <- theme/index.tsx içinde export’lu
+import { LinkAdapter } from '@/theme';
 
 type Props = {
   link: SidebarLink;
   active: boolean;
-  unreadCount: number;   // prop kalsın; üst katmanları kırmayalım
+  unreadCount: number;
   compact?: boolean;
   onLogout?: () => void;
 };
 
-export default function SidebarNavItem({ link, active, /* unreadCount */ compact, onLogout }: Props) {
+export default function SidebarNavItem({
+  link,
+  active,
+  compact,
+  onLogout,
+}: Props) {
   const { label, labelTr, href, icon: Icon, disabled } = link;
   const isLogout = label === 'Logout';
   const title = labelTr ?? label;
@@ -37,7 +42,6 @@ export default function SidebarNavItem({ link, active, /* unreadCount */ compact
     };
   };
 
-  // Rozet FALAN yok. Direkt ikon.
   const iconEl = (
     <Box component="span" sx={{ display: 'inline-flex' }}>
       <Icon fontSize="medium" />

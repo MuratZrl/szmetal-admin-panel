@@ -1,4 +1,4 @@
-// app/(admin)/layout.tsx
+// /src/app/(admin)/layout.tsx
 import * as React from 'react';
 
 import { redirect } from 'next/navigation';

@@ -1,25 +1,18 @@
 // src/features/sidebar/types.ts
-import type { ComponentType } from 'react';
-import type { SvgIconProps } from '@mui/material';
+import * as React from 'react';
 
-export type Role = 'Admin' | 'Manager' | 'User' | null;
+export type Role = 'Admin' | 'Manager' | 'User';
 
-// Uygulamada gerçekten kullandığın görünür etiketler
-export type SidebarLinkLabel =
-  | 'Account'
-  | 'Dashboard'
-  | 'Create Request'
-  | 'Requests'
-  | 'Clients'
-  | 'Orders'
-  | 'Products'
-  | 'Logout';
+export type NavSection = 'main' | 'quick' | 'footer';
 
 export type SidebarLink = {
-  label: SidebarLinkLabel;
-  labelTr: string;
-  href: `/${string}`;        // zorunlu ve slash ile başlasın
-  icon: ComponentType<SvgIconProps>;
+  label: string;
+  labelTr?: string;
+  href?: `/${string}`;
+  icon: React.ElementType;
   disabled?: boolean;
-  roles?: Array<Exclude<Role, null>>;
+  /** Hangi blokta görünsün? Belirtmezsen 'main' kabul edilir. */
+  section?: NavSection;
+  /** Aynı bölümdeki sıralama için opsiyonel. Küçük olan üstte. */
+  order?: number;
 };

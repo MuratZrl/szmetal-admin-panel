@@ -17,7 +17,7 @@ const formatBreadcrumb = (str: string) =>
 
 const getLabelFromMainLinks = (href: string, segment: string): string => {
   const match = mainLinks.find(link => href === link.href || href === `${link.href}/${segment}`);
-  if (match) return match.labelTr;
+  if (match) return match.labelTr ?? match.label; // ← fallback: her zaman string
 
   if (/^[a-zA-Z0-9_-]{6,}$/.test(segment)) return 'Detay';
   if (segment === 'step2') return 'Adım 2';

@@ -1,3 +1,4 @@
+// src/features/sidebar/components/SidebarFooter.tsx
 'use client';
 
 import * as React from 'react';
@@ -20,7 +21,7 @@ export default function SidebarFooter({ logoutLink, unreadCount, onLogout }: Pro
       justifyContent="center"
       alignItems="center"
       flexDirection="column"
-      sx={{ gap: 0.5 }}
+      sx={{ gap: .75 }}
     >
 
       <ThemeToggle placement="right" />

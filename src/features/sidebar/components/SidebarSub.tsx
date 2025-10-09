@@ -1,0 +1,34 @@
+// src/features/sidebar/components/SidebarSub.tsx
+'use client';
+
+import * as React from 'react';
+import { List } from '@mui/material';
+import { usePathname } from 'next/navigation';
+import SidebarNavItem from './SidebarNavItem';
+import type { SidebarLink } from '../types';
+
+type Props = { links: SidebarLink[]; compact?: boolean };
+
+export default function SidebarQuickActions({ links, compact = true }: Props) {
+  const pathname = usePathname();
+
+  const quick = links
+    .filter(l => (l.section ?? 'main') === 'quick')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  if (quick.length === 0) return null;
+
+  return (
+    <List sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75, }}>
+      {quick.map(link => (
+        <SidebarNavItem
+          key={link.href ?? link.label}
+          link={link}
+          active={Boolean(link.href && pathname?.startsWith(link.href))}
+          unreadCount={0}
+          compact={compact}
+        />
+      ))}
+    </List>
+  );
+}

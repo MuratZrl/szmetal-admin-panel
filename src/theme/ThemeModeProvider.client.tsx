@@ -1,3 +1,4 @@
+// src/theme/ThemeModeProvider.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -67,4 +68,8 @@ export function useThemeMode() {
   const ctx = React.useContext(ThemeModeCtx);
   if (!ctx) throw new Error('useThemeMode must be used within ThemeModeProvider');
   return ctx;
+}
+
+export function useThemeModeOptional() {
+  return React.useContext(ThemeModeCtx) ?? null;
 }

@@ -1,4 +1,9 @@
 // app/(admin)/products/page.tsx
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 import { Box, Grid, Divider } from '@mui/material';
 import { requirePageAccess } from '@/lib/supabase/auth/server';
 
@@ -14,8 +19,6 @@ import { fetchProductDicts } from '@/features/products/services/dicts.server';
 
 import { resolveStorageUrl } from '@/features/products/services/resolveStorageUrl.server';
 import { withVersion } from '@/features/products/utils/url';
-
-export const dynamic = 'force-dynamic';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 48;

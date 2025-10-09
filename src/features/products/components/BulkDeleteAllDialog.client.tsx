@@ -1,12 +1,16 @@
+// src/features/components/BulkDeleteAllDialog.client.tsx
 'use client';
 
 import * as React from 'react';
-import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Stack, Alert, Typography, CircularProgress
-} from '@mui/material';
 import { useRouter } from 'next/navigation';
+import {
+  Stack,
+  Alert,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 import { supabase } from '@/lib/supabase/supabaseClient';
 import { deleteAllProducts } from '@/features/products/services/products.client';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
@@ -23,21 +27,26 @@ export default function BulkDeleteAllDialog({ open, onClose }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
-  // Açılınca toplamı getir
+  // Açılınca toplam sayıyı çek
   React.useEffect(() => {
     let active = true;
+
     async function fetchCount() {
       setLoading(true);
-      const { count, error } = await supabase
+      const { count: total, error } = await supabase
         .from('products')
         .select('id', { count: 'exact', head: true });
-      if (active) {
-        if (!error) setCount(count ?? 0);
-        setLoading(false);
-      }
+
+      if (!active) return;
+
+      if (!error) setCount(total ?? 0);
+      setLoading(false);
     }
+
     if (open) fetchCount();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [open]);
 
   async function handleConfirm() {
@@ -56,58 +65,43 @@ export default function BulkDeleteAllDialog({ open, onClose }: Props) {
     }
   }
 
-  const disabled = loading || deleting || (count !== null && count <= 0);
+  const confirmDisabled =
+    loading || deleting || (count !== null && count <= 0);
 
   return (
-    <Dialog 
-      fullWidth 
+    <ConfirmDialog
+      open={open}
+      onClose={onClose}
+      onConfirm={handleConfirm}
+      title="Tüm Ürünleri Sil"
+      // description yerine children içinde Alert kullanıyoruz
+      confirmText={deleting ? 'Siliniyor…' : 'Tümünü Sil'}
+      cancelText="Vazgeç"
+      confirmColor="error"
+      confirmDisabled={confirmDisabled}
+      disableClose={deleting}
       maxWidth="sm"
-      open={open} 
-      onClose={deleting ? undefined : onClose} 
+      fullWidth
     >
-      
-      <DialogTitle>Tüm Ürünleri Sil</DialogTitle>
+      <Stack spacing={2} sx={{ pt: 0.5 }}>
+        <Alert severity="warning" variant="outlined">
+          Bu işlem geri alınamaz. Bütün ürün kayıtları kalıcı olarak silinecektir.
+        </Alert>
 
-      <DialogContent>
+        <Stack direction="row" alignItems="center" gap={1}>
+          <Typography variant="body2" color="text.secondary">
+            Toplam ürün sayısı:
+          </Typography>
 
-        <Stack spacing={2} sx={{ pt: 0.5 }}>
-
-          <Alert severity="warning" variant="outlined">
-            Bu işlem geri alınamaz. Bütün ürün kayıtları kalıcı olarak silinecektir.
-          </Alert>
-
-          <Stack direction="row" justifyContent="flex-start" alignItems="center" gap={1} >
-          
-            <Typography variant="body2" color="text.secondary">
-              Toplam ürün sayısı:
+          {loading ? (
+            <CircularProgress size={18} />
+          ) : (
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              {count ?? '—'}
             </Typography>
-
-            {loading ? <CircularProgress size={18} /> : (
-              <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                {count ?? '—'}
-              </Typography>
-            )}
-          
-          </Stack>
+          )}
         </Stack>
-
-      </DialogContent>
-
-      <DialogActions>
-    
-        <Button onClick={onClose} disabled={deleting}>Vazgeç</Button>
-    
-        <Button
-          color="error"
-          variant="contained"
-          onClick={handleConfirm}
-          disabled={disabled}
-        >
-          {deleting ? 'Siliniyor…' : 'Tümünü Sil'}
-        </Button>
-    
-      </DialogActions>
-    
-    </Dialog>
+      </Stack>
+    </ConfirmDialog>
   );
 }

@@ -3,10 +3,16 @@ import SidebarRoot from './components/SidebarRoot.client';
 import type { SidebarInitialData } from './services/sidebar.server';
 import type { SidebarLink } from './types';
 
-export default function Sidebar({ initialData, mainLinks }: { initialData: SidebarInitialData; mainLinks: SidebarLink[]; }) {
+export default function Sidebar({
+  initialData,
+  mainLinks,
+}: {
+  initialData: SidebarInitialData;
+  mainLinks: SidebarLink[];
+}) {
   return (
     <SidebarRoot
-      initialRole={initialData.role}
+      initialRole={initialData.role}              // Role | null
       initialUnread={initialData.unreadCount}
       userId={initialData.userId}
       mainLinks={mainLinks}

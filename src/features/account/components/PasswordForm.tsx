@@ -1,11 +1,9 @@
-// src/features/account/PasswordForm.tsx
 'use client';
 
 import * as React from 'react';
 import { useState } from 'react';
 import {
   Box, Grid, TextField, Button, InputAdornment, IconButton, Typography,
-  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -17,6 +15,7 @@ import type { Asserts } from 'yup';
 import { passwordSchema } from '@/constants/account/form-validations/passwordSchemas';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 import { changePasswordAction } from '@/features/account/actions';
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 
 type PasswordFormValues = Asserts<typeof passwordSchema>;
 
@@ -50,7 +49,6 @@ export default function PasswordForm() {
     });
 
     if (!res.ok) {
-      // Sunucu mesajı ayrıntılı gelir
       show(res.message ?? 'Şifre güncellenemedi. Lütfen tekrar deneyin.', 'error');
       return;
     }
@@ -71,12 +69,11 @@ export default function PasswordForm() {
 
       if (res.ok) {
         show('Hesabınız kalıcı olarak kapatıldı.', 'success');
-        // Cookie’yi server’da temizleyip login’e yönlendir
         window.location.assign('/api/logout?redirect=/login');
         return;
       }
 
-      const payload = await res.json().catch(() => ({} as { error?: string }));
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
       const reason = payload?.error ?? 'unknown';
       if (res.status === 401 && reason === 'invalid_password') {
         show('Parola doğrulaması başarısız. Tekrar deneyin.', 'error');
@@ -103,11 +100,11 @@ export default function PasswordForm() {
         border: `1px solid ${t.palette.divider}`,
       })}
     >
-      <Typography 
-        fontSize={14} 
-        fontWeight={600} 
-        mb={3} 
-        gutterBottom 
+      <Typography
+        fontSize={14}
+        fontWeight={600}
+        mb={3}
+        gutterBottom
         color="text.secondary"
       >
         Şifreyi Güncelle
@@ -128,7 +125,11 @@ export default function PasswordForm() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowCurrent((s) => !s)} edge="end" aria-label="Mevcut şifreyi göster/gizle">
+                    <IconButton
+                      onClick={() => setShowCurrent((s) => !s)}
+                      edge="end"
+                      aria-label="Mevcut şifreyi göster/gizle"
+                    >
                       {showCurrent ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -150,7 +151,11 @@ export default function PasswordForm() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowNew((s) => !s)} edge="end" aria-label="Yeni şifreyi göster/gizle">
+                    <IconButton
+                      onClick={() => setShowNew((s) => !s)}
+                      edge="end"
+                      aria-label="Yeni şifreyi göster/gizle"
+                    >
                       {showNew ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -166,7 +171,7 @@ export default function PasswordForm() {
             variant="outlined"
             color="error"
             onClick={() => setCloseOpen(true)}
-            sx={{ textTransform: 'capitalize' }}
+            sx={{ textTransform: 'capitalize', borderRadius: 2 }}
           >
             Hesabı Kapat
           </Button>
@@ -177,61 +182,57 @@ export default function PasswordForm() {
             color="primary"
             disabled={!isDirty || !isValid || isSubmitting}
             disableElevation
-            sx={(t) => ({ px: 3, py: 1, borderRadius: t.shape.borderRadius, textTransform: 'capitalize' })}
+            sx={(t) => ({
+              px: 3,
+              py: 1,
+              borderRadius: t.shape.borderRadius,
+              textTransform: 'capitalize',
+            })}
           >
             {isSubmitting ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
           </Button>
         </Box>
       </form>
 
-      <Dialog open={closeOpen} onClose={() => !closeLoading && setCloseOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Hesabı Kapat</DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Bu işlem geri alınamaz. Devam etmek için aşağıya <b>SİL</b> yazın ve parolanızı girin.
-          </Typography>
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Onay"
-                placeholder="SİL"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                type="password"
-                label="Parola"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="current-password"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
+      {/* Reusable ConfirmDialog kullanımı */}
+      <ConfirmDialog
+        open={closeOpen}
+        onClose={() => setCloseOpen(false)}
+        onConfirm={handleCloseAccount}
+        title="Hesabı Kapat"
+        description="Bu işlem geri alınamaz. Devam etmek için aşağıya SİL yazın ve parolanızı girin."
+        confirmText={closeLoading ? 'Kapatılıyor...' : 'Kalıcı Olarak Sil'}
+        cancelText="Vazgeç"
+        confirmColor="error"
+        confirmDisabled={!confirmEnabled || closeLoading}
+        disableClose={closeLoading}
+        maxWidth="xs"
+      >
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Onay"
+              placeholder="SİL"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
           </Grid>
-        </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setCloseOpen(false)} disabled={closeLoading} sx={{ textTransform: 'capitalize' }}>
-            Vazgeç
-          </Button>
-          <Button
-            onClick={handleCloseAccount}
-            disabled={!confirmEnabled || closeLoading}
-            variant="contained"
-            color="error"
-            sx={{ textTransform: 'capitalize' }}
-          >
-            {closeLoading ? 'Kapatılıyor...' : 'Kalıcı Olarak Sil'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              type="password"
+              label="Parola"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="current-password"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        </Grid>
+      </ConfirmDialog>
     </Box>
   );
 }

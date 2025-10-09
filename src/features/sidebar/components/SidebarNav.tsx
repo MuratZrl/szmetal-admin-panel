@@ -11,7 +11,7 @@ type Props = {
   links: SidebarLink[];
   unreadCount: number;
   loading: boolean;
-  compact?: boolean; // ← eklendi
+  compact?: boolean;
 };
 
 export default function SidebarNav({ links, unreadCount, loading, compact }: Props) {
@@ -31,15 +31,17 @@ export default function SidebarNav({ links, unreadCount, loading, compact }: Pro
     );
   }
 
+  const main = links.filter(l => (l.section ?? 'main') === 'main');
+
   return (
-    <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-      {links.filter(l => l.label !== 'Logout').map(link => (
+    <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+      {main.map(link => (
         <SidebarNavItem
           key={link.href ?? link.label}
           link={link}
           unreadCount={unreadCount}
           active={Boolean(link.href && pathname?.startsWith(link.href))}
-          compact={compact} // ← geçir
+          compact={compact}
         />
       ))}
     </List>

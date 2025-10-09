@@ -1,5 +1,11 @@
 // app/(admin)/requests/page.tsx
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 import { Box, Grid } from '@mui/material';
+
+import { requirePageAccess } from '@/lib/supabase/auth/server';      // ← EKLE
 
 import CardsGrid from '@/features/requests/components/CardsGrid.client';
 import { getRequestsCardsData } from '@/features/requests/services/card.server';
@@ -20,15 +26,15 @@ const STATUS_TR: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: '#ed6c02',  // warning
-  approved: '#2e7d32', // success
-  rejected: '#d32f2f', // error
+  pending: '#ed6c02',
+  approved: '#2e7d32',
+  rejected: '#d32f2f',
 };
 
-// En azından günde bir yenilensin; etiketteki gün değişiyor
-export const revalidate = 86400;
-
 export default async function RequestsPage() {
+  // ←← KİLİT: Sadece Admin/Manager içeri girsin
+  await requirePageAccess('requests');
+
   const [cardsData, charts, tablePage] = await Promise.all([
     getRequestsCardsData(),
     getRequestsLineCharts({ cumulative: true }),
@@ -41,7 +47,6 @@ export default async function RequestsPage() {
     }),
   ]);
 
-  // Etiket: "Nis 14 - Eyl 14"
   const firstLabel = charts.totals.labels[0] ?? '';
   const lastLabel = charts.totals.labels[charts.totals.labels.length - 1] ?? '';
   const rangeLabel = firstLabel && lastLabel ? `${firstLabel} - ${lastLabel}` : undefined;
@@ -64,10 +69,8 @@ export default async function RequestsPage() {
 
   return (
     <Box px={1} py={2}>
-      {/* 1) kart */}
       <CardsGrid data={cardsData} />
 
-      {/* 2) grafik */}
       <Grid container spacing={2} sx={{ mt: 2 }} alignItems="stretch">
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Toplam Talepler" timeLabel={rangeLabel}>
@@ -90,7 +93,6 @@ export default async function RequestsPage() {
         </Grid>
       </Grid>
 
-      {/* 3) Tablo */}
       <Grid sx={{ mt: 2 }}>
         <TableGrid rows={tablePage.rows} />
       </Grid>

@@ -4,10 +4,9 @@ import 'server-only';
 import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { createServerClient  } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
 
-/** Uygulamadaki rol ve statüler */
 export type Role = 'Admin' | 'Manager' | 'User';
 export type UserStatus = 'Active' | 'Inactive' | 'Banned';
 
@@ -19,11 +18,6 @@ type ProfileRow = Pick<
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-/**
- * RSC (Server Component) için tek bir Supabase client — okuma modunda.
- * setAll no-op: RSC içinde cookie yazamazsın; token yenileme yazmaları middleware/route’da yapılmalı.
- * Tipi bilerek anotlamıyoruz; createServerClient ne döndürüyorsa onu kabul ediyoruz.
- */
 export const getServerSupabase = cache(async () => {
   const jar = await cookies();
   return createServerClient<Database, 'public'>(URL, ANON, {
@@ -39,7 +33,6 @@ export const getServerSupabase = cache(async () => {
   });
 });
 
-/** Oturumdaki kullanıcıyı tek seferlik getir (cache) */
 export const getUserOrNull = cache(async () => {
   const sb = await getServerSupabase();
   const { data, error } = await sb.auth.getUser();
@@ -47,7 +40,6 @@ export const getUserOrNull = cache(async () => {
   return data.user ?? null;
 });
 
-/** Kullanıcı + profil satırı (tek seferlik, cache) */
 export const getUserAndProfile = cache(async (): Promise<{
   user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>> | null;
   profile: ProfileRow | null;
@@ -65,19 +57,16 @@ export const getUserAndProfile = cache(async (): Promise<{
   return { user, profile: profile ?? null };
 });
 
-/** Auth zorunlu: yoksa /login */
-export const requireUser = cache(async () => {
-  const user = await getUserOrNull();
-  if (!user) redirect('/login');
-  return user;
-});
-
-/** Ban kontrolü: banlıysa /unauthorized, yoksa kullanıcıyı döndür */
-export const requireActiveUser = cache(async () => {
+/** Profil zorunlu + ban kontrolü: profil yoksa veya banlıysa redirect. */
+export const requireActiveUser = cache(async (): Promise<{
+  user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>>;
+  profile: ProfileRow;
+}> => {
   const { user, profile } = await getUserAndProfile();
   if (!user) redirect('/login');
-  if (profile?.status === 'Banned') redirect('/unauthorized');
-  return { user, profile };
+  if (!profile) redirect('/login?error=profile-missing');
+  if (profile.status === 'Banned') redirect('/unauthorized');
+  return { user, profile }; // redirect never döndüğü için profile kesin var
 });
 
 /**
@@ -89,13 +78,11 @@ export const requireActiveUser = cache(async () => {
  */
 export async function requirePageAccess(
   page: 'dashboard' | 'account' | 'create_request' | 'orders' | 'clients' | 'requests' | 'products'
-) {
+): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>>; profile: ProfileRow }> {
   const { user, profile } = await requireActiveUser();
-  const role = (profile?.role ?? 'User') as Role;
-  const status = (profile?.status ?? 'Active') as UserStatus;
+  const role = profile.role as Role;
+  const status = profile.status as UserStatus;
 
-  // ❌ Eskisi: Inactive + create_request → /account
-  // ✅ Doğrusu: açıkça yetkisiz sayfa
   if (status === 'Inactive' && page === 'create_request') {
     redirect('/unauthorized?reason=inactive');
   }
