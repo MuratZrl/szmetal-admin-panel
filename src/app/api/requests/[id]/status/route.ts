@@ -1,9 +1,40 @@
 // app/api/requests/[id]/status/route.ts
+
+/**
+ * PATCH benzeri: /api/requests/:id/status  → POST
+ *
+ * AMAÇ
+ *  - 'requests' tablosunda sadece 'pending' durumundaki bir kaydı
+ *    atomik olarak 'approved' veya 'rejected' hale getirir.
+ *  - Başarılı bir geçişten sonra 'orders' tablosuna kullanıcıya
+ *    gidecek bildirim amaçlı bir satır ekler (inbox).
+ *
+ * KİMLER ÇAĞIRABİLİR?
+ *  - Auth zorunlu.
+ *  - Sadece 'Admin' veya 'Manager' rolü. 'User' yasak.
+ *
+ * NEDEN POST?
+ *  - App Router'da segment alan route'larda PATCH/PUT da olurdu,
+ *    fakat burada "status değiştir" gibi bir işlem endpoint’i var
+ *    ve ek yan etki (orders insert) üretiyor; POST ile ifade etmek
+ *    pratik. İstersen method guard ile PATCH’a da açılabilir.
+ *
+ * DÖNÜŞ
+ *  - 200: { id, status }  → güncel durum
+ *  - 207: order insert başarısız ama request güncellendi
+ *  - 400: geçersiz body/status
+ *  - 401: yetkisiz
+ *  - 403: rol uygun değil
+ *  - 409: kayıt yok veya zaten final durumda
+ *  - 500: veritabanı hatası
+ */
+
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Database } from '@/types/supabase';
 
 /* ------------------------------ Tipler ------------------------------ */
+// Supabase tipleri: tablo sütunlarına tam uyum sağlamak için
 type UsersRow       = Database['public']['Tables']['users']['Row'];
 type RequestsRow    = Database['public']['Tables']['requests']['Row'];
 type RequestsUpdate = Database['public']['Tables']['requests']['Update'];
@@ -12,24 +43,48 @@ type ReqStatus      = RequestsRow['status']; // 'pending' | 'approved' | 'reject
 type FinalStatus = Extract<ReqStatus, 'approved' | 'rejected'>;
 
 /* ----------------------------- Helpers ------------------------------ */
+
+/**
+ * 'approved' | 'rejected' daraltması. Runtime guard + TS type predicate.
+ */
 function isFinalStatus(s: string): s is FinalStatus {
   return s === 'approved' || s === 'rejected';
 }
 
+/**
+ * Body'den gelen status değerini normalize eder.
+ * Harf durumu ve boşluklar temizlenir.
+ */
 function parseStatus(v: unknown): FinalStatus | null {
   const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
   return isFinalStatus(s) ? s : null;
 }
 
+/**
+ * Kullanıcıya gösterilecek kısa sipariş kodu.
+ * UUID → "RQ-7D77EC3A" gibi.
+ */
 function shortCodeFromUuid(id: string): string {
-  // UUID → RQ-7D77EC3A
   const compact = id.replace(/-/g, '').toUpperCase();
   return `RQ-${compact.slice(0, 8)}`;
 }
 
+/**
+ * PostgREST/TypeScript generics zincirinde bazen .update/.insert çağrılarında
+ * "never" infer’leriyle papaz olabiliyoruz. Aşağıdaki yardımcılar, “bu değer
+ * yazılabilir parametredir” bilgisini TS’ye zorla kabul ettirir.
+ * Not: runtime etkisi yok, sadece type-level cast.
+ */
 const asUpdate = <T,>(v: T) => v as unknown as never;
 const asInsert = <T,>(v: T) => v as unknown as never;
 
+/**
+ * Request final olduktan sonra 'orders' için oluşturulacak payload.
+ * Buradaki metinler kullanıcının Inbox/grid'inde okunur.
+ * - order_code: request id’den türetilen kısa kod
+ * - system_slug: varsa taşınır, system_type elimizde yoksa null
+ * - message: onay/ret metni
+ */
 function toOrderPayload(args: {
   status: Extract<ReqStatus, 'approved' | 'rejected'>;
   userId: RequestsRow['user_id'];
@@ -46,9 +101,9 @@ function toOrderPayload(args: {
   return {
     user_id: args.userId,
     request_id: args.requestId,
-    order_code: shortCodeFromUuid(String(args.requestId)), // ← asıl düzeltme
+    order_code: shortCodeFromUuid(String(args.requestId)), // kısa kod
     system_slug: args.systemSlug ?? null,
-    system_type: null,                    // elinde yoksa boş bırak
+    system_type: null,                    // bilgi yoksa boş bırak
     message: approved
       ? `${subject} başarıyla onaylandı.`
       : `${subject} reddedildi.`,
@@ -62,8 +117,9 @@ function toOrderPayload(args: {
 /* ----------------------------- Route ------------------------------- */
 export async function POST(
   req: globalThis.Request,
-  ctx: { params: Promise<{ id: string }> } // Next 15: params Promise
+  ctx: { params: Promise<{ id: string }> } // Next 15: dinamik segment param’ı Promise
 ) {
+  // 1) Param + body doğrulama
   const { id } = await ctx.params;
 
   const body = (await req.json().catch(() => null)) as { status?: unknown } | null;
@@ -72,13 +128,13 @@ export async function POST(
     return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
   }
 
+  // 2) Supabase ve auth
   const supabase = await createSupabaseServerClient();
 
-  // auth
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  // role check
+  // 3) Rol kontrolü — sadece Admin/Manager
   const { data: me, error: meErr } = await supabase
     .from('users')
     .select('role')
@@ -89,7 +145,7 @@ export async function POST(
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  // Atomik update: sadece pending → approved|rejected
+  // 4) Atomik status geçişi: sadece pending → approved|rejected
   const patch: RequestsUpdate = { status: next };
   const { data: upd, error: updErr } = await supabase
     .from('requests')
@@ -102,7 +158,8 @@ export async function POST(
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
   if (!upd)   return NextResponse.json({ error: 'ALREADY_FINAL_OR_NOT_FOUND' }, { status: 409 });
 
-  // orders bildirimi (RLS: staff insert izni gerekir)
+  // 5) Kullanıcıya 'orders' üzerinden bildirim insert’i
+  // RLS: staff’ın bu tabloya insert izni olması gerekir.
   const payload = toOrderPayload({
     status: upd.status as Extract<ReqStatus, 'approved' | 'rejected'>,
     userId: upd.user_id,
@@ -116,11 +173,15 @@ export async function POST(
     .insert(asInsert<OrdersInsert>(payload));
 
   if (ordErr) {
+    // 207 Multi-Status: ana işlem başarılı, ikincil yan etki başarısız.
+    // UI bu durumda yine "onaylandı/reddedildi"yi gösterebilir, ama
+    // bildirim grid’inde eksik satır için uyarı verebilir.
     return NextResponse.json(
       { id: upd.id, status: upd.status, warn: 'order_insert_failed', detail: ordErr.message },
       { status: 207 }
     );
   }
 
+  // 6) Her şey yolunda
   return NextResponse.json({ id: upd.id, status: upd.status });
 }

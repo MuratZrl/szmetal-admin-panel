@@ -87,7 +87,7 @@ function normalizeStatusLabel(label: string): 'pending' | 'approved' | 'rejected
   const s = label.toLowerCase().trim();
   if (['pending', 'bekleyen', 'beklemede'].includes(s)) return 'pending';
   if (['approved', 'onaylanan', 'onaylandı', 'onayli', 'onaylı', 'onay'].includes(s)) return 'approved';
-  if (['rejected', 'reddedilen', 'reddedildi', 'ret', 'red'].includes(s)) return 'rejected';
+  if (['rejected', 'reddedilen', 'reddedildi'].includes(s)) return 'rejected';
   return null;
 }
 

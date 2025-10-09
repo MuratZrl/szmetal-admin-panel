@@ -19,16 +19,37 @@ type Props = {
   mainLinks: SidebarLink[];
 };
 
+type OrdersBroadcast = { type: 'read-all' };
+
 export default function SidebarRoot({ initialRole, initialUnread, userId, mainLinks }: Props) {
   const role: Role = initialRole;
   const loading = false;
 
-  // unread server ile aynı başlayıp client'ta artacak
+  // 1) unread state
   const [unread, setUnread] = React.useState<number>(initialUnread);
+
+  // 2) initialUnread prop değişirse state’i senkronla (router.refresh sonrası)
+  React.useEffect(() => {
+    setUnread(initialUnread);
+  }, [initialUnread]);
+
   const router = useRouter();
 
-  // sadece mount sonrası çalışır; hydration'ı bozmaz
+  // Realtime INSERT → unread +1 (eski davranışın aynen kalsın)
   useSidebarRealtime(userId, () => setUnread(prev => prev + 1));
+
+  // 3) Orders sayfasından gelen "read-all" mesajını dinle
+  React.useEffect(() => {
+    const bc = new BroadcastChannel('orders');
+    bc.onmessage = (ev: MessageEvent) => {
+      const data = ev.data as unknown;
+      const msg = data as Partial<OrdersBroadcast> | null;
+      if (msg && msg.type === 'read-all') {
+        setUnread(0);
+      }
+    };
+    return () => bc.close();
+  }, []);
 
   const filtered = React.useMemo(
     () => filterLinksByRole(mainLinks, role, loading),
@@ -58,19 +79,17 @@ export default function SidebarRoot({ initialRole, initialUnread, userId, mainLi
           return {
             width: SIDEBAR_WIDTH,
             boxSizing: 'border-box',
-            borderRadius: 0,
-            backgroundColor: bg,
             borderRight: `1px solid ${theme.palette.divider}`,
             paddingTop: theme.spacing(3.5),
             paddingBottom: theme.spacing(3.5),
+            borderRadius: 0,
+            backgroundColor: bg,
           };
         },
       }}
     >
       <SidebarLogo />
       <Box display="flex" flexDirection="column" alignItems="center" flex={1} justifyContent="center">
-        {/* Tooltip placement tek tek SidebarNavItem içinde verilecek.
-           Lokal ThemeProvider KULLANMA. */}
         <SidebarNav links={filtered} unreadCount={unread} loading={loading} compact={compact} />
       </Box>
       <SidebarFooter

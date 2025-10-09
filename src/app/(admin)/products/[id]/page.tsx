@@ -63,7 +63,7 @@ async function getSessionInfo(): Promise<{
     .maybeSingle()
     .returns<UserSlim | null>();
 
-  const email: string | null = row?.email ?? user.email ?? null;
+  const email: string | null = row?.email ?? user.email ?? null;  
   const username: string | null = row?.username ?? null;
 
   // OAuth metadata fallback

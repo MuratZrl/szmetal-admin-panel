@@ -12,6 +12,8 @@ import LabelIcon from '@mui/icons-material/Label';
 
 import type { OrderRow } from '@/features/orders/types';
 
+import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter'; // ← EKLENDİ
+
 type ChipColor =
   | 'default'
   | 'primary'
@@ -92,15 +94,12 @@ export function buildOrdersColumns(): GridColDef<OrderRow>[] {
       headerName: 'Sipariş Kodu',
       minWidth: 180,
       flex: 0.35,
-
-      // valueGetter kullanmadan, tip kavgası yapmadan göster
       sortable: false,
       editable: false,
       resizable: false,
       filterable: false,
       disableColumnMenu: true,
-
-      renderCell: (p: GridRenderCellParams<OrderRow>) => {
+      renderCell: (p) => {
         const text = pickStringField(p.row, ['order_code', 'system_slug']);
         return (
           <Tooltip title={text} arrow>
@@ -117,19 +116,22 @@ export function buildOrdersColumns(): GridColDef<OrderRow>[] {
       headerName: 'Sipariş Türü',
       minWidth: 160,
       flex: 0.25,
-
       sortable: false,
       editable: false,
       resizable: false,
       filterable: false,
       disableColumnMenu: true,
 
+      // Kebab/underscore ise TR’ye göre insanileştir
       renderCell: (p: GridRenderCellParams<OrderRow>) => {
-        const text = pickStringField(p.row, ['system_type', 'system_slug']);
+        const raw = pickStringField(p.row, ['system_type', 'system_slug']);
+        const view =
+          raw && isSlugLike(raw) ? humanizeSystemSlug(raw, 'tr-TR') : (raw || '—');
+
         return (
-          <Tooltip title={text} arrow>
+          <Tooltip title={raw || ''} arrow>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {text}
+              {view}
             </span>
           </Tooltip>
         );
@@ -141,14 +143,12 @@ export function buildOrdersColumns(): GridColDef<OrderRow>[] {
       headerName: 'Mesaj',
       minWidth: 320,
       flex: 0.9,
-
       sortable: false,
       editable: false,
       resizable: false,
       filterable: false,
       disableColumnMenu: true,
-
-      renderCell: (params: GridRenderCellParams<OrderRow>) => {
+      renderCell: (params) => {
         const text = pickStringField(params.row, ['message']);
         return (
           <Tooltip title={text} arrow>
@@ -165,13 +165,11 @@ export function buildOrdersColumns(): GridColDef<OrderRow>[] {
       headerName: 'Durum',
       minWidth: 140,
       flex: 0.25,
-
       sortable: true,
       editable: false,
       resizable: false,
       filterable: false,
       disableColumnMenu: true,
-
       renderCell: (params: GridRenderCellParams<OrderRow, OrderRow['status']>) => {
         const meta = params.value ? STATUS_META[params.value] : DEFAULT_META;
         const I = meta.Icon;
@@ -193,13 +191,11 @@ export function buildOrdersColumns(): GridColDef<OrderRow>[] {
       headerName: 'Sipariş Oluşturulma Tarihi',
       minWidth: 180,
       flex: 0.35,
-
       sortable: true,
       editable: false,
       resizable: false,
       filterable: false,
       disableColumnMenu: true,
-
       valueFormatter: (value) => formatDate(typeof value === 'string' ? value : ''),
     },
   ];

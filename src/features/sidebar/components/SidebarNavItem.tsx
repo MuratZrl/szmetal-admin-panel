@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Badge, ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
+import { ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import type { SidebarLink } from '../types';
 import { LinkAdapter } from '@/theme'; // <- theme/index.tsx içinde export’lu
@@ -10,12 +10,12 @@ import { LinkAdapter } from '@/theme'; // <- theme/index.tsx içinde export’lu
 type Props = {
   link: SidebarLink;
   active: boolean;
-  unreadCount: number;
+  unreadCount: number;   // prop kalsın; üst katmanları kırmayalım
   compact?: boolean;
   onLogout?: () => void;
 };
 
-export default function SidebarNavItem({ link, active, unreadCount, compact, onLogout }: Props) {
+export default function SidebarNavItem({ link, active, /* unreadCount */ compact, onLogout }: Props) {
   const { label, labelTr, href, icon: Icon, disabled } = link;
   const isLogout = label === 'Logout';
   const title = labelTr ?? label;
@@ -29,28 +29,21 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
       minWidth: compact ? 44 : undefined,
       px: compact ? 0 : undefined,
       borderRadius: compact ? '50%' : theme.shape.borderRadius,
-      '& .MuiBadge-root': { pointerEvents: 'none' },
       '&:hover': { backgroundColor: alpha(base, 0.10) },
       '&.Mui-selected': { backgroundColor: alpha(base, 0.18) },
       '&.Mui-selected:hover': { backgroundColor: alpha(base, 0.22) },
       '&.Mui-focusVisible': { backgroundColor: alpha(base, 0.14) },
-      '&.Mui-disabled': { backgroundColor: theme.palette.action.disabledBackground },
+      '&.Mui-disabled': { backgroundColor: (t) => t.palette.action.disabledBackground },
     };
   };
 
+  // Rozet FALAN yok. Direkt ikon.
   const iconEl = (
     <Box component="span" sx={{ display: 'inline-flex' }}>
-      {label === 'Orders' ? (
-        <Badge badgeContent={unreadCount} color="error">
-          <Icon fontSize="medium" />
-        </Badge>
-      ) : (
-        <Icon fontSize="medium" />
-      )}
+      <Icon fontSize="medium" />
     </Box>
   );
 
-  // Tooltip Popper ayarları SSR/CSR deterministik kalsın diye sabit objeler
   const tooltipCommon = {
     title,
     placement: 'right' as const,
@@ -81,8 +74,8 @@ export default function SidebarNavItem({ link, active, unreadCount, compact, onL
       })
     : ({
         component: LinkAdapter,
-        href,            // NextLink’e forward edilir
-        prefetch: false, // deterministik olsun
+        href,
+        prefetch: false,
       });
 
   const Button = (

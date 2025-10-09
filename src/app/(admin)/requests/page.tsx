@@ -15,8 +15,8 @@ import { getRequestsTablePage } from '@/features/requests/services/table.server'
 
 const STATUS_TR: Record<string, string> = {
   pending: 'Bekleyen',
-  approved: 'Kabul',
-  rejected: 'Reddedilen',
+  approved: 'Onaylandı',
+  rejected: 'Reddedildi',
 };
 
 const STATUS_COLOR: Record<string, string> = {

@@ -22,6 +22,7 @@ export default function SidebarFooter({ logoutLink, unreadCount, onLogout }: Pro
       flexDirection="column"
       sx={{ gap: 0.5 }}
     >
+
       <ThemeToggle placement="right" />
 
       {logoutLink ? (
@@ -33,6 +34,7 @@ export default function SidebarFooter({ logoutLink, unreadCount, onLogout }: Pro
           onLogout={onLogout}
         />
       ) : null}
+      
     </Box>
   );
 }

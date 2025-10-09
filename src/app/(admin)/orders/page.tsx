@@ -13,6 +13,7 @@ export default async function OrdersInboxPage() {
     <Box sx={{ p: 2 }}>
       <Stack spacing={2}>
         <Typography variant="h6">Gelen Kutusu</Typography>
+
         <InboxGrid initialRows={rows} userId={userId} />
       </Stack>
     </Box>
