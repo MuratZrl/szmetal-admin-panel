@@ -37,7 +37,7 @@ export const darkPalette = {
 
   background: {
     default: '#070A0D',
-    paper:   '#0D1217',
+    paper:   '#07090bff',
   },
 
   surface: {

@@ -218,6 +218,9 @@ export function buildColumns(
       width: 80,
       sortable: false,
       filterable: false,
+      editable: false,
+      disableColumnMenu: true,
+      resizable: false,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) => {
         const src = params.value ?? undefined;
         const name = params.row.username ?? params.row.email;
@@ -233,6 +236,8 @@ export function buildColumns(
       headerName: 'Kullanıcı Adı',
       flex: 1,
       minWidth: 140,
+      disableColumnMenu: true,
+      editable: false,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
@@ -241,6 +246,9 @@ export function buildColumns(
       headerName: 'E-posta',
       flex: 1.2,
       minWidth: 180,
+      editable: false,
+      disableColumnMenu: true,
+      resizable: false,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
@@ -255,6 +263,8 @@ export function buildColumns(
       headerAlign: 'left',
       cellClassName: 'col-role-left',
       editable: false,
+      disableColumnMenu: true,
+      resizable: false,
       type: 'singleSelect',
       valueOptions: ROLE_OPTIONS.map((v) => ({ value: v, label: ROLE_LABELS_TR[v] })),
       renderCell: (params) => (
@@ -273,6 +283,8 @@ export function buildColumns(
       field: 'company',
       headerName: 'Şirket',
       flex: 1,
+      editable: false,
+      disableColumnMenu: true,
       minWidth: 140,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
@@ -287,8 +299,10 @@ export function buildColumns(
       align: 'left',
       headerAlign: 'left',
       cellClassName: 'col-status-left',
-      editable: false,
       type: 'singleSelect',
+      editable: false,
+      resizable: false,
+      disableColumnMenu: true,
       valueOptions: STATUS_OPTIONS.map((v) => ({ value: v, label: STATUS_LABELS_TR[v] })),
       renderCell: (params: GridRenderCellParams<UserRow, AppStatus | null>) => (
         <StatusSelectCell
@@ -307,6 +321,8 @@ export function buildColumns(
       headerName: 'Telefon',
       flex: 1,
       minWidth: 150,
+      editable: false,
+      disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
@@ -315,6 +331,8 @@ export function buildColumns(
       headerName: 'Ülke',
       flex: 0.8,
       minWidth: 120,
+      editable: false,
+      disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
@@ -325,6 +343,9 @@ export function buildColumns(
       headerName: 'Katılma Tarihi',
       flex: 1,
       minWidth: 180,
+      editable: false,
+      resizable: false,
+      disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         formatDateTimeTR(params.value ?? null),
       // Tarihe göre sırala; parse edilemeyenler en alta düşer.

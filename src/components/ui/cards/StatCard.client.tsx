@@ -8,9 +8,11 @@ import {
   Typography,
   Box,
   Skeleton,
+  Button,
 } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { usePathname, useRouter } from 'next/navigation';
 import CountUp from 'react-countup';
 
 type TrendDir = 'up' | 'down';
@@ -55,6 +57,13 @@ type StatCardProps = {
 
   /** |percentage| ≤ epsilon ise “Değişim yok” say. Varsayılan: 0.5 yüzde puan */
   noChangeEpsilon?: number;
+
+  details?: React.ReactElement;
+
+  /** Dashboard’ta tıklanınca gidilecek sayfa */
+  detailsHref?: `/${string}`;
+  /** Buton metni override etmek istersen */
+  detailsLabel?: string;
 };
 
 export default function StatCard({
@@ -73,19 +82,29 @@ export default function StatCard({
   noChangeLabel = 'Değişim yok',
   percentDecimals = 0,
   noChangeEpsilon = 0.5,
+  details,
+  detailsHref,
+  detailsLabel = 'Detaylar',
 }: StatCardProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Sadece dashboard'ta ve detailsHref varsa buton göster
+  const isDashboard = pathname === '/dashboard';
+  const showDetailsButton = isDashboard && Boolean(detailsHref);
+
   // Yüzdeyi normalize et
   const rawPct = typeof percentage === 'number' ? percentage : undefined;
   const isPctProvided = typeof rawPct === 'number' && Number.isFinite(rawPct);
 
-  // “değişim yok” penceresi (eşitlik ve minik dalgalanma için)
+  // “değişim yok” penceresi
   const isNoChange = isPctProvided ? Math.abs(rawPct as number) <= Math.max(0, noChangeEpsilon) : false;
 
   // Gösterilecek mod
   const showPct = isPctProvided && !isNoChange;
   const pctAbs = showPct ? Math.abs(rawPct as number) : undefined;
 
-  // Yönü belirle (trend gelmezse yüzde işaretine bak)
+  // Yönü belirle
   const effectiveTrend: TrendDir | undefined = showPct
     ? trend ?? ((rawPct as number) >= 0 ? 'up' : 'down')
     : undefined;
@@ -96,6 +115,12 @@ export default function StatCard({
     if (delta > 0) deltaText = `Bu ay ${delta} yeni kayıt.`;
     else if (delta < 0) deltaText = `Geçen aya göre ${Math.abs(delta)} daha az.`;
   }
+
+  const handleDetails = React.useCallback(() => {
+    if (showDetailsButton && detailsHref) {
+      router.push(detailsHref);
+    }
+  }, [showDetailsButton, detailsHref, router]);
 
   if (loading) {
     return (
@@ -117,6 +142,8 @@ export default function StatCard({
       sx={{
         borderRadius: 2,
         minHeight,
+        display: 'flex',
+        flexDirection: 'column',
         ...(color !== 'default' && {
           '--_color':
             color === 'primary' ? 'primary.main' :
@@ -129,10 +156,18 @@ export default function StatCard({
       }}
       data-testid="stat-card"
     >
-      <CardContent sx={{ px: { xs: 1.5, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
+      <CardContent
+        sx={{
+          px: { xs: 1.5, sm: 2.5 },
+          py: { xs: 1.5, sm: 2 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.25,
+          flexGrow: 1,
+        }}
+      >
         {/* Üst satır: başlık + yüzde/ok veya etiket */}
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75} gap={1} flexWrap="wrap">
-          {/* Sol blok: ikon + başlık + alt başlık */}
           <Box display="flex" alignItems="center" gap={1} minWidth={0}>
             {icon && <Box aria-hidden>{icon}</Box>}
             <Box minWidth={0}>
@@ -147,7 +182,6 @@ export default function StatCard({
             </Box>
           </Box>
 
-          {/* Sağ blok: yüzde ya da etiket */}
           {showPct && typeof pctAbs === 'number' ? (
             <Box display="flex" alignItems="center" gap={{ xs: 0.25, sm: 0.5 }}>
               {effectiveTrend === 'down'
@@ -189,15 +223,50 @@ export default function StatCard({
           )}
         </Typography>
 
-        {/* Delta cümlesi */}
-        <Typography
-          variant="caption"
-          sx={{ display: 'block', mt: 0.6 }}
-          color={typeof delta === 'number' && delta > 0 ? 'success.main' : 'text.secondary'}
-          data-testid="stat-card-delta"
+        {/* Varsa ek detay içeriği */}
+        {details ?? null}
+
+        {/* Alt satır: delta metni + (varsa) Detaylar butonu */}
+        <Box
+          sx={{
+            mt: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
         >
-          {deltaText}
-        </Typography>
+          <Typography
+            variant="caption"
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            color={typeof delta === 'number' && delta > 0 ? 'success.main' : 'text.secondary'}
+            data-testid="stat-card-delta"
+            title={deltaText}
+            noWrap
+          >
+            {deltaText}
+          </Typography>
+
+          {showDetailsButton && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              onClick={handleDetails}
+              data-testid="stat-card-details-btn"
+              aria-label={detailsLabel}
+              sx={{ flexShrink: 0 }}
+            >
+              {detailsLabel}
+            </Button>
+          )}
+        </Box>
+
       </CardContent>
     </Card>
   );

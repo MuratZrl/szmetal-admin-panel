@@ -134,7 +134,6 @@ export default function AccountForm({
               }
               sx={{
                 px: 2,
-                borderRadius: 1,
                 whiteSpace: 'nowrap',
                 alignSelf: 'stretch',
                 textTransform: 'capitalize',

@@ -87,8 +87,13 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       field: 'image',
       headerName: 'Görsel',
       width: 80,
+
       sortable: false,
+      editable: false,
+      resizable: false,
       filterable: false,
+      disableColumnMenu: true,
+
       align: 'left',
       headerAlign: 'left',
       renderCell: (params: GridRenderCellParams<RequestTableRow, string | null>) => {
@@ -108,7 +113,11 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       align: 'left',
       headerAlign: 'left',
       
-      sortable: true,
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: 1, width: 1 }}>
           <Typography variant="body2" sx={{ whiteSpace: 'normal', width: 1 }}>
@@ -124,7 +133,12 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       minWidth: 180,
       align: 'left',
       headerAlign: 'left',
-      sortable: true,
+
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params: GridRenderCellParams<RequestTableRow, string | null>) => {
         const v = params.value ?? null;
         if (!v) return <Typography variant="body2">---</Typography>;
@@ -149,7 +163,12 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       minWidth: 160,
       align: 'left',
       headerAlign: 'left',
-      sortable: true,
+
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       // İstersen sıralamayı da insanlaştırılmış metne göre yap:
       sortComparator: (v1, v2) =>
         humanizeSystemSlug(String(v1 ?? '')).localeCompare(
@@ -178,7 +197,12 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       minWidth: 160,
       align: 'left',
       headerAlign: 'left',
-      sortable: true,
+
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params) => {
         const v = params.value ?? null;
         return (
@@ -201,7 +225,12 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       minWidth: 200,
       align: 'left',
       headerAlign: 'left',
-      sortable: true,
+
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: 1, width: 1 }}>
           <Typography variant="body2" sx={{ whiteSpace: 'normal', width: 1 }}>
@@ -213,11 +242,15 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
     {
       field: 'country',
       headerName: 'Ülke',
-      flex: 0.7,
-      minWidth: 120,
+      flex: 1,
       align: 'left',
       headerAlign: 'left',
-      sortable: true,
+
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', height: 1 }}>
           <Typography variant="body2">{fallbackText(params.value)}</Typography>
@@ -231,16 +264,26 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       minWidth: 140,
       align: 'left',
       headerAlign: 'left',
-      sortable: true,
+
+      editable: false,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params) => <StatusChipCell value={params.value ?? params.row.status ?? null} />,
     },
     {
       field: 'detail',
-      headerName: 'Detay',
+      headerName: 'Detaylar',
       flex: 0.9,
       width: 120,
+
       sortable: false,
+      editable: false,
+      resizable: false,
       filterable: false,
+      disableColumnMenu: true,
+
       align: 'left',
       headerAlign: 'left',
       disableExport: true,
@@ -267,8 +310,13 @@ export function buildColumns(opts?: { onChangeStatus?: OnChangeStatus; isPending
       headerName: 'Hızlı İşlem',
       width: 190,
       flex: 1,
+
       sortable: false,
+      editable: false,
+      resizable: false,
       filterable: false,
+      disableColumnMenu: true,
+
       align: 'left',
       headerAlign: 'left',
       disableExport: true,

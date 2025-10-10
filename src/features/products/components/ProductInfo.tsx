@@ -1,6 +1,7 @@
 // src/features/products/components/ProductInfo.tsx
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 
 import {
@@ -10,13 +11,14 @@ import {
   Typography,
   Box,
   IconButton,
-  Divider,
   Table,
   TableBody,
   TableHead,
   TableRow,
   TableCell,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import { darken } from '@mui/material/styles';
 import DownloadIcon from '@mui/icons-material/Download';
 import PrintIcon from '@mui/icons-material/Print';
 
@@ -72,31 +74,53 @@ export type ProductInfoProps = {
 // Basit label-value türü
 type DetailItem = { label: string; value: React.ReactNode };
 
+/** Ortak yüzey rengi: tüm gövde hücreleri ve kutu zeminleri */
+const surfaceBg = (t: Theme): string =>
+  t.palette.mode === 'dark' ? t.palette.background.default : t.palette.background.paper;
+
+/** Bölüm başlığı için koyu zemin: yüzeyden türetip koyulaştır */
+const sectionHeaderBg = (t: Theme): string =>
+  darken(surfaceBg(t), t.palette.mode === 'dark' ? 0.32 : 0.08);
+
 // 1) 2 sütunlu tablo (her satırda 2 label-değer çifti)
 function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }) {
   return (
-    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
+    <Box 
+      sx={{ 
+        border: 1, 
+        borderColor: 'divider', 
+        borderRadius: 0.5, 
+        overflow: 'hidden' 
+      }}
+    >
       <Table
         size="small"
         sx={{
           tableLayout: 'fixed',
-          '& .MuiTableCell-root': (theme) => ({
+          // Gövde hücrelerinin zemini
+          '& .MuiTableCell-root': (t) => ({
             borderBottom: 0,
-            bgcolor:
-              theme.palette.mode === 'dark'
-                ? theme.palette.background.default
-                : theme.palette.background.paper,
+            bgcolor: surfaceBg(t),
           }),
-          '& .MuiTableBody-root .MuiTableRow-root:not(:last-of-type) .MuiTableCell-root': (theme) => ({
-            borderBottom: `1px solid ${theme.palette.divider}`,
+          // Thead’i koyu yap
+          '& .MuiTableHead-root .MuiTableCell-root': (t) => ({
+            bgcolor: sectionHeaderBg(t),
           }),
-          '& td, & th': { py: 0.75, px: 1 },
+          '& .MuiTableBody-root .MuiTableRow-root:not(:last-of-type) .MuiTableCell-root': (t) => ({
+            borderBottom: `1px solid ${t.palette.divider}`,
+          }),
+          '& td, & th': { px: 2 },
         }}
       >
         <TableHead>
           <TableRow>
-            <TableCell component="th" scope="colgroup" colSpan={4} sx={{ fontWeight: 700, px: 1.5, py: 1 }}>
-              <Typography variant="subtitle2" component="span" color="text.secondary">
+            <TableCell
+              component="th"
+              scope="colgroup"
+              colSpan={4}
+              sx={{ fontWeight: 700, px: 1.5, color: 'text.primary' }}
+            >
+              <Typography variant="subtitle2" component="span">
                 Özellikler
               </Typography>
             </TableCell>
@@ -165,18 +189,18 @@ function NoteChip({ children }: { children: React.ReactNode }) {
           {children}
         </Typography>
       }
-      sx={{
+      sx={(t) => ({
         alignSelf: 'flex-start',
         maxWidth: { xs: '100%', sm: '85%' },
         height: 'auto',
         '& .MuiChip-label': {
           display: 'block',
-          py: 0.75,
-          px: 0.5,
+          py: 2,
+          px: 2.5,
           whiteSpace: 'normal',
         },
-        bgcolor: (t) => (t.palette.mode === 'dark' ? t.palette.background.default : t.palette.background.paper),
-      }}
+        bgcolor: surfaceBg(t), // kutu zeminiyle aynı
+      })}
     />
   );
 }
@@ -184,27 +208,33 @@ function NoteChip({ children }: { children: React.ReactNode }) {
 // 3) Açıklama Kısmı - Not kutusu içinde NoteChip kullan
 function NotesMessageBox({ text }: { text?: string | null }) {
   const raw = typeof text === 'string' ? text : '';
-  const lines = raw
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const lines = raw.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
 
   return (
     <Box
-      sx={{
+      sx={(t) => ({
         border: '1px solid',
         borderColor: 'divider',
         borderRadius: 0.5,
-        p: 1.5,
-        bgcolor: (t) => t.palette.background.default,
-      }}
+        bgcolor: surfaceBg(t), // kutunun zemini
+      })}
     >
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
-        Ek Notlar
-      </Typography>
+      {/* Koyu başlık şeridi */}
+      <Box
+        sx={(t) => ({
+          bgcolor: sectionHeaderBg(t),
+          borderRadius: 0.5,
+          px: 2,
+          py: 1.75,
+          mb: 0,
+        })}
+      >
+        <Typography variant="body2" sx={{ fontWeight: 700 }} color="text.primary">
+          Ek Notlar
+        </Typography>
+      </Box>
 
-      <Divider />
-
+      {/* İçerik */}
       <Box
         sx={{
           display: 'flex',
@@ -328,11 +358,10 @@ export default function ProductInfo(props: ProductInfoProps) {
   rows.push([make('Kullanım Durumu:', safe(usageNode)), make('Müşteri Kalıbı:', safe(moldChip))]);
   rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
 
-  // Tam burada: Tarih ve Revizyon Tarihi aynı satırda
+  // Tarih ve Revizyon Tarihi aynı satırda
   rows.push([make('Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
 
   const tail: DetailItem[] = [];
-  // Dikkat: 'Tarih' artık yukarıda eklendi, burada eklemiyoruz.
   if (tempCode) tail.push(make('Geçici Kod:', tempCode));
   if (profileCode) tail.push(make('Profil Kodu:', profileCode));
   if (manufacturerCode) tail.push(make('Üretici Kodu:', manufacturerCode));
@@ -350,7 +379,6 @@ export default function ProductInfo(props: ProductInfoProps) {
 
   // ------- Yazdır helper'ı -------
   function handlePrint() {
-    // Özel yazdırma sayfasını yeni sekmede aç; o sayfa otomatik print çağırır.
     const pid = props.id;
     const w = window.open(`/products/${encodeURIComponent(pid)}/print`, '_blank', 'noopener,noreferrer');
     w?.focus();
@@ -360,7 +388,6 @@ export default function ProductInfo(props: ProductInfoProps) {
     <Paper variant="outlined" sx={{ p: 1, borderRadius: 0.5, bgcolor: 'background.default' }}>
       <Paper variant="outlined" elevation={0} sx={{ p: 1.5, borderRadius: 0, bgcolor: 'background.paper' }}>
         <Stack spacing={1.5}>
-          
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             {/* Başlık */}
             {title ? (
@@ -372,22 +399,11 @@ export default function ProductInfo(props: ProductInfoProps) {
             {/* Medya aksiyonları */}
             {showMediaActions ? (
               <Stack direction="row" spacing={0.5}>
-
-                <IconButton
-                  LinkComponent={Link}
-                  href={downloadHref}
-                  aria-label="İndir"
-                  size="small"
-                >
+                <IconButton LinkComponent={Link} href={downloadHref} aria-label="İndir" size="small">
                   <DownloadIcon fontSize="small" />
                 </IconButton>
 
-                {/* Yazdır */}
-                <IconButton
-                  onClick={handlePrint}
-                  aria-label="Yazdır"
-                  size="small"
-                >
+                <IconButton onClick={handlePrint} aria-label="Yazdır" size="small">
                   <PrintIcon fontSize="small" />
                 </IconButton>
               </Stack>

@@ -32,7 +32,9 @@ export default async function DashboardPage() {
   return (
     <Box px={1} py={2}>
       <DashboardHeader />
+
       <CardsGrid data={cards} />
+      
       <Grid container spacing={2} sx={{ mt: 2 }} alignItems="stretch">
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Yeni Kullanıcılar" timeLabel={labelTR6}>

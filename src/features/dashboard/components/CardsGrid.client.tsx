@@ -35,6 +35,7 @@ export default function CardsGrid({ data }: Props) {
           delta={deltas.user}
           emptyPctLabel={emptyUserLabel}
           color="primary"
+          detailsHref="/clients"      // ← 1. kart: /clients
         />
       </Grid>
 
@@ -47,6 +48,7 @@ export default function CardsGrid({ data }: Props) {
           delta={deltas.request}
           emptyPctLabel={emptyReqLabel}
           color="warning"
+          detailsHref="/requests"     // ← 2. kart: /requests
         />
       </Grid>
 
@@ -59,6 +61,7 @@ export default function CardsGrid({ data }: Props) {
           delta={deltas.product}
           emptyPctLabel={emptyProdLabel}
           color="info"
+          detailsHref="/products"     // ← 3. kart: /products
         />
       </Grid>
     </Grid>

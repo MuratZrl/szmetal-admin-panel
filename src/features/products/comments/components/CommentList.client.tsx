@@ -269,9 +269,8 @@ export default function CommentList({
       <Paper
         elevation={0}
         sx={theme => ({
-          p: 2,
-          borderRadius: 1,
-          bgcolor: alpha(theme.palette.background.default, 0.6),
+          p: 1,
+          bgcolor: alpha(theme.palette.background.default, 0),
         })}
       >
         <Typography variant="body2" color="text.secondary">

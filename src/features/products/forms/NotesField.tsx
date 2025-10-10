@@ -1,3 +1,4 @@
+// src/features/products/forms/NotesField.tsx
 'use client';
 
 import * as React from 'react';
