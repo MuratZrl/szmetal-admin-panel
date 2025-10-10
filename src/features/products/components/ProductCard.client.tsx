@@ -71,7 +71,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const selected = isSelected(product.id);
 
   const normalizedRole = normalizeRole(role);
-  const canSelect = normalizedRole !== 'Manager';
+  const canSelect = normalizedRole !== 'User';
   const canEdit = normalizedRole === 'Admin' || normalizedRole === 'Manager';
 
   const variantLabel  = prettifyLabel(product.variant,     labels?.variant);
@@ -244,34 +244,20 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           </Typography>
 
           <Stack direction="column" spacing={0.25} my={0.5}>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              sx={{ fontWeight: (t) => t.typography.fontWeightBold }} // ← komple bold
+            >
               Birim Ağırlık: {product.unit_weight_g_pm} gr
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Tarih: {product.date}
+              Yapıldığı Tarih: {product.date}
             </Typography>
           </Stack>
 
           <Stack direction="row" alignItems="center" sx={{ flexWrap: 'wrap', gap: 1, maxWidth: 1 }}>
-            <Chip
-              variant="outlined"
-              size="small"
-              label={`${variantLabel} Profilleri`}
-              sx={{
-                textTransform: 'none',
-                maxWidth: 1,
-                height: 'auto',
-                alignItems: 'flex-start',
-                '& .MuiChip-label': {
-                  display: 'block',
-                  whiteSpace: 'normal',
-                  overflowWrap: 'anywhere',
-                  wordBreak: 'break-word',
-                  lineHeight: 1.2,
-                  py: 0.25,
-                },
-              }}
-            />
+            
             <Chip
               variant="outlined"
               size="small"
@@ -291,6 +277,27 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
                 },
               }}
             />
+            
+            <Chip
+              variant="outlined"
+              size="small"
+              label={`${variantLabel} Profilleri`}
+              sx={{
+                textTransform: 'none',
+                maxWidth: 1,
+                height: 'auto',
+                alignItems: 'flex-start',
+                '& .MuiChip-label': {
+                  display: 'block',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.2,
+                  py: 0.25,
+                },
+              }}
+            />
+
           </Stack>
         </CardContent>
       </CardActionArea>

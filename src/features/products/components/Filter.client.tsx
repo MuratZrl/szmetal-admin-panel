@@ -301,7 +301,7 @@ export default function Filters({
 
           mt={2}
         >
-          Variant
+          Varyant
         </Typography>
         <FormGroup>
           {variants.map(v => (

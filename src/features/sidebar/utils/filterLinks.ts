@@ -13,7 +13,7 @@ const ADMIN_ONLY_PREFIXES: ReadonlyArray<string> = ['/dashboard'];
  * Sıradan kullanıcıya açık sayfalar.
  * User rolü yalnızca bunları görür (Inactive ise create_request hariç).
  */
-const USER_ALLOWED_PREFIXES: ReadonlyArray<string> = ['/account', '/create_request', '/orders'];
+const USER_ALLOWED_PREFIXES: ReadonlyArray<string> = ['/account', '/create_request', '/orders', '/products'];
 
 /* ------------------------------- helpers ------------------------------- */
 

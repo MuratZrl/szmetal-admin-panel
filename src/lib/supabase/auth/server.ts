@@ -77,7 +77,7 @@ export const requireActiveUser = cache(async (): Promise<{
  * - Ek kural: "Inactive" kullanıcı /create_request göremez
  */
 export async function requirePageAccess(
-  page: 'dashboard' | 'account' | 'create_request' | 'orders' | 'clients' | 'requests' | 'products'
+  page: 'account' | 'dashboard' | 'create_request' | 'orders' | 'clients' | 'requests' | 'products'
 ): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>>; profile: ProfileRow }> {
   const { user, profile } = await requireActiveUser();
   const role = profile.role as Role;
@@ -95,7 +95,7 @@ export async function requirePageAccess(
   }
 
   // role === 'User'
-  const userAllowed = new Set(['account', 'create_request', 'orders']);
+  const userAllowed = new Set(['account', 'create_request', 'orders', 'products']);
   if (!userAllowed.has(page)) redirect('/unauthorized?reason=role');
 
   return { user, profile };

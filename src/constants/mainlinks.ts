@@ -1,4 +1,5 @@
 // src/constants/mainlinks.ts
+
 import {
   AccountCircle,
   Dashboard,
@@ -9,6 +10,7 @@ import {
   ShoppingBasket,
   Category,
 } from '@mui/icons-material';
+
 import type { SidebarLink } from '@/features/sidebar/types';
 
 export const mainLinks: SidebarLink[] = [

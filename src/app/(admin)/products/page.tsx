@@ -1,7 +1,7 @@
 // app/(admin)/products/page.tsx
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 import { Box, Grid, Divider } from '@mui/material';
