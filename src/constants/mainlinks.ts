@@ -15,7 +15,7 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Account',        labelTr: 'Hesabım',        href: '/account',        icon: AccountCircle },
   { label: 'Dashboard',      labelTr: 'Kontrol Paneli', href: '/dashboard',      icon: Dashboard },
   { label: 'Requests',       labelTr: 'Talepler',       href: '/requests',       icon: Analytics },
-  { label: 'Clients',        labelTr: 'Müşteriler',     href: '/clients',        icon: People },
+  { label: 'Clients',        labelTr: 'Kullanıcılar',   href: '/clients',        icon: People },
   { label: 'Products',       labelTr: 'Ürünler',        href: '/products',       icon: Category },
 
   // Quick bölümünde istediklerin:
