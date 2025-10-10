@@ -41,7 +41,10 @@ export async function POST(req: NextRequest) {
     .returns<{ role: DbRole }[]>()
     .maybeSingle();
 
-  if (me?.role !== 'Admin') {
+  const role = me?.role ?? null;
+  const ALLOWED: readonly DbRole[] = ['Admin', 'Manager'];
+
+  if (!role || !ALLOWED.includes(role)) {
     return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 

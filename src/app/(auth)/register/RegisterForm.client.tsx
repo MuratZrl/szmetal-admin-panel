@@ -32,6 +32,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 import { glassTextFieldProps } from '../constants/formstyles';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+
 import { supabase } from '@/lib/supabase/supabaseClient';
 
 /* -------------------------------------------------------------------------- */
@@ -52,6 +53,7 @@ const schema = yup
         USERNAME_REGEX,
         'Harf, rakam, boşluk, ., _ ve - kullanılabilir'
       )
+      .test('has-space', 'En az bir boşluk içermeli', (v) => typeof v === 'string' && v.includes(' '))
       .required('Kullanıcı adı zorunludur'),
     email: yup
       .string()
@@ -261,6 +263,7 @@ export default function RegisterForm(): React.JSX.Element {
   return (
     <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)} aria-live="polite">
       <Grid container spacing={2}>
+
         {/* Kullanıcı adı */}
         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
           <TextField
@@ -441,6 +444,7 @@ export default function RegisterForm(): React.JSX.Element {
             </Link>
           </Typography>
         </Grid>
+
       </Grid>
     </Box>
   );

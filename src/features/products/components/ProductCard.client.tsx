@@ -10,6 +10,7 @@ import {
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import EditIcon from '@mui/icons-material/Edit'; // ← eklendi
 import { alpha, useTheme } from '@mui/material/styles';
 
 import HoverPreview from '@/features/products/components/HoverPreview.client';
@@ -18,7 +19,6 @@ import type { Product } from '@/features/products/types';
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
 import type { LabelMaps } from '@/features/products/services/labelMaps.server';
 import { prettyTr } from '@/features/products/utils/tr-text';
-
 import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
 
 type Role = 'Admin' | 'Manager' | 'User';
@@ -59,7 +59,6 @@ function prettifyLabel(
   value: string | null | undefined,
   map?: Record<string, string> | undefined
 ): string {
-  // prettyTr zaten string döndürüyor varsayımıyla:
   const raw = prettyTr(value ?? '', map);
   return isSlugLike(raw) ? humanizeSystemSlug(raw) : raw;
 }
@@ -72,15 +71,13 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const selected = isSelected(product.id);
 
   const normalizedRole = normalizeRole(role);
-  // HATA DÜZELTİLDİ: Burada yalnızca Manager ise seçim kapalı.
   const canSelect = normalizedRole !== 'Manager';
+  const canEdit = normalizedRole === 'Admin' || normalizedRole === 'Manager';
 
   const variantLabel  = prettifyLabel(product.variant,     labels?.variant);
   const categoryLabel = prettifyLabel(product.category,    labels?.category);
   const subLabel      = prettifyLabel(product.subCategory, labels?.subcategory);
 
-  // 1) Eğer server'dan çözümlenmiş URL geldiyse onu kullan.
-  // 2) Gelmediyse eski alanı deneriz ama path ise yine placeholder olur.
   const displayUrl =
     resolvedImageUrl ??
     (typeof product.image === 'string' && /^https?:\/\//i.test(product.image) ? product.image : null);
@@ -177,7 +174,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           }}
         >
           {isPdf && displayUrl ? (
-            // PDF: tüm sayfayı çerçeve içine "sığdır" (zoom/view parametreleri)
+            // PDF
             <Box
               sx={{
                 position: 'absolute',
@@ -198,7 +195,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               />
             </Box>
           ) : (
-            // Görsel: kırpma yok, contain ile letterbox/pillarbox
+            // Image
             <CardMedia
               component="img"
               image={finalImgSrc}
@@ -298,13 +295,13 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         </CardContent>
       </CardActionArea>
 
+      {/* Footer: üstte butonlar (solda Düzenle, sağda Detaylar), altta checkbox */}
       <Box
         component="footer"
         sx={{
           display: 'flex',
-          justifyContent: canSelect ? 'space-between' : 'flex-end',
-          alignItems: 'center',
-          gap: 1,
+          flexDirection: 'column',
+          gap: 0.25,
           px: { xs: 1, sm: 1.5, md: 1.5 },
           py: { xs: 0.5, sm: 0.75 },
           borderTop: '1px solid',
@@ -312,29 +309,67 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           bgcolor: t => alpha(t.palette.background.paper, 0.9),
         }}
       >
-        <Button
-          LinkComponent={Link}
-          href={`/products/${product.id}`}
-          size="small"
-          variant="text"
-          startIcon={<InfoOutlinedIcon />}
-          draggable={false}
-          onClick={(e) => e.stopPropagation()}
-          sx={{ px: 2 }}
+        {/* Üst sıra: yan yana butonlar */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: 36,
+          }}
         >
-          Detaylar
-        </Button>
+          <Box>
+            {canEdit && (
+              <Button
+                LinkComponent={Link}
+                href={`/products/${product.id}/edit`}
+                size="small"
+                variant="text"
+                startIcon={<EditIcon />}
+                draggable={false}
+                onClick={(e) => e.stopPropagation()}
+                sx={{ px: 0.5 }}
+                aria-label="Ürünü düzenle"
+              >
+                Hızlı Düzenle
+              </Button>
+            )}
+          </Box>
 
-        {canSelect && (
-          <Checkbox
-            aria-label="Ürünü seç"
+          <Button
+            LinkComponent={Link}
+            href={`/products/${product.id}`}
             size="small"
-            checked={selected}
+            variant="outlined"
+            startIcon={<InfoOutlinedIcon />}
+            draggable={false}
             onClick={(e) => e.stopPropagation()}
-            onChange={() => toggle(product.id)}
-            icon={<RadioButtonUncheckedIcon />}
-            checkedIcon={<RadioButtonCheckedIcon />}
-          />
+            sx={{ px: 1.5 }}
+          >
+            Detaylar
+          </Button>
+        </Box>
+
+        {/* Alt sıra: checkbox en altta */}
+        {canSelect && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              minHeight: 32,
+            }}
+          >
+            <Checkbox
+              aria-label="Ürünü seç"
+              size="small"
+              checked={selected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => toggle(product.id)}
+              icon={<RadioButtonUncheckedIcon />}
+              checkedIcon={<RadioButtonCheckedIcon />}
+            />
+          </Box>
         )}
       </Box>
 

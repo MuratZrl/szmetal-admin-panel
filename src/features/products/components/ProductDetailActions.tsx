@@ -34,7 +34,7 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
             if (typeof window !== 'undefined' && window.history.length > 1) window.history.back();
             else window.location.href = `/products/${id}`;
           }}
-          sx={{ textTransform: 'capitalize', borderRadius: 2 }}
+          sx={{ textTransform: 'capitalize' }}
         >
           Geri
         </Button>
@@ -46,9 +46,9 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
             variant="contained"
             startIcon={<EditIcon />}
             draggable={false}
-            sx={{ textTransform: 'capitalize', borderRadius: 2 }}
+            sx={{ textTransform: 'capitalize' }}
           >
-            Düzenle
+            Profili Düzenle
           </Button>
         )}
 

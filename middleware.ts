@@ -1,10 +1,12 @@
 // middleware.ts
 import { NextResponse, type NextRequest } from 'next/server';
+
 import {
   createServerClient,
   type CookieMethodsServer,
   type CookieOptions,
-} from '@supabase/ssr';
+} from '@supabase/ssr'; 
+
 import type { Database, Tables } from '@/types/supabase';
 
 type Role = Tables<'users'>['role'];
@@ -16,8 +18,8 @@ const PUBLIC_ROUTES = ['/', '/403', '/unauthorized'] as const;
 
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
   Admin: ['*'],
-  Manager: ['/create_request', '/requests', '/clients', '/orders', '/products', '/account'],
-  User: ['/account', '/create_request', '/orders'],
+  Manager: ['/account', '/requests', '/clients', '/orders', '/create_request', '/products'],
+  User: ['/account', '/create_request', '/orders', '/products'],
 } as const;
 
 function normPath(p: string): string {

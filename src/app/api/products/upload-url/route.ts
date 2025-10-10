@@ -10,7 +10,7 @@ import type { Database } from '@/types/supabase';
 type Body = {
   /** Klasör/prefix: örn "65800a9c-...-b297c7" (ürün id) */
   dir: string;
-  /** Orijinal dosya adı ya da uzantı ipucu için ext, ikisinden biri yeter. */
+  /** Orijinal dosya adı ya da uzantı ipucu için e  xt, ikisinden biri yeter. */
   originalName?: string;
   extHint?: string | null;
 };
@@ -45,7 +45,10 @@ export async function POST(req: NextRequest) {
     .returns<{ role: DbRole }[]>()
     .maybeSingle();
 
-  if (me?.role !== 'Admin') {
+  const role = me?.role ?? null;
+  const ALLOWED: readonly DbRole[] = ['Admin', 'Manager'];
+
+  if (!role || !ALLOWED.includes(role)) {
     return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 

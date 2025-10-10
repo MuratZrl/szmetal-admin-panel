@@ -124,7 +124,7 @@ export default function CommentForm({
                 variant="contained"
                 endIcon={<SendRoundedIcon />}
                 disabled={!canSubmit}
-                sx={{ fontWeight: 600 }}
+                sx={{ fontWeight: 600, borderRadius: 2 }}
               >
                 Gönder
               </Button>
