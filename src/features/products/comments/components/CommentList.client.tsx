@@ -537,7 +537,7 @@ export default function CommentList({
                   </>
                 ) : (
                   // Düzenleme modu
-                  <Box sx={{ mt: 0.75 }}>
+                  <Box >
                     <TextField
                       fullWidth
                       multiline

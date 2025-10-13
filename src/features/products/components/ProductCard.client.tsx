@@ -391,6 +391,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460 }}
         />
       )}
+      
     </Card>
   );
 }
