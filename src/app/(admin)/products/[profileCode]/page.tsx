@@ -182,6 +182,7 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
+              
               {/* ←←← ARTIK profileCode ve code’u geçiriyoruz */}
               <ProductDetailActions
                 id={String(product.id)}
@@ -189,6 +190,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 profileCode={product.profileCode}
                 code={product.code}
               />
+
             </ProductInfo>
 
             <CommentSection
@@ -200,6 +202,7 @@ export default async function ProductDetailPage({ params }: Props) {
               initialComments={comments}
               canPin={canPin}
             />
+            
           </Stack>
         </Grid>
       </Grid>
