@@ -75,7 +75,7 @@ export default function CommentForm({
     currentUserId === null
       ? 'Giriş yapmalısınız'
       : trimmed.length === 0
-      ? 'Önce bir şeyler yazın'
+      ? 'Önce yorum yazınız'
       : 'Gönder';
 
   return (
@@ -117,7 +117,7 @@ export default function CommentForm({
             {len}/{maxLen}
           </Typography>
 
-          <Tooltip title={tooltipTitle}>
+          <Tooltip placement="left" title={tooltipTitle}>
             <span>
               <Button
                 type="submit"

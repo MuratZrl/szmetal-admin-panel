@@ -6,11 +6,6 @@ import {
   Avatar,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   IconButton,
   List,
   Menu,
@@ -32,6 +27,7 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 import type { CommentItem } from '@/features/products/comments/types';
 
 /* -------------------------------------------------------------------------- */
@@ -151,6 +147,7 @@ export default function CommentList({
   pinnedId,
   onTogglePin,
 }: Props) {
+
   // Menü yönetimi
   const [menuAnchor, setMenuAnchor] = React.useState<HTMLElement | null>(null);
   const [menuForId, setMenuForId] = React.useState<number | null>(null);
@@ -170,6 +167,7 @@ export default function CommentList({
 
   // Silme diyaloğu
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<number | null>(null);
+  const [deleting, setDeleting] = React.useState<boolean>(false);
 
   // İlk yüklemede vote state’i doldur
   React.useEffect(() => {
@@ -260,8 +258,13 @@ export default function CommentList({
   async function confirmDelete() {
     const id = confirmDeleteId;
     if (id === null) return;
-    setConfirmDeleteId(null);
-    await onDelete(id);
+    setDeleting(true);
+    try {
+      await onDelete(id);
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
+    }
   }
 
   if (comments.length === 0) {
@@ -376,7 +379,7 @@ export default function CommentList({
                     </Typography>
                   ) : null}
 
-                  <Tooltip title={formatFullDate(c.created_at)} placement="top" arrow>
+                  <Tooltip title={formatFullDate(c.created_at)} placement="bottom" arrow>
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -394,7 +397,7 @@ export default function CommentList({
 
                   {/* Sabitle */}
                   {canPin ? (
-                    <Tooltip title={isPinned ? 'Sabitliği kaldır' : 'Yorumu sabitle'} arrow>
+                    <Tooltip placement='bottom' title={isPinned ? 'Sabitliği kaldır' : 'Yorumu sabitle'} arrow>
                       <span>
                         <IconButton
                           size="small"
@@ -419,7 +422,7 @@ export default function CommentList({
 
                   {/* Kendi yorumunsa menü */}
                   {mine && !isEditing ? (
-                    <Tooltip title="Seçenekler" arrow>
+                    <Tooltip placement='bottom' title="Seçenekler" arrow>
                       <IconButton
                         size="small"
                         onClick={e => openMenu(e, c.id)}
@@ -576,6 +579,27 @@ export default function CommentList({
         })}
       </List>
 
+      {/* Silme onayı: ConfirmDialog kullanımı */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => void confirmDelete()}
+        title="Yorumu sil"
+        description="Bu yorumu silmek istediğine emin misin? Bu işlem geri alınamaz."
+        confirmText={deleting ? 'Siliniyor...' : 'Sil'}
+        cancelText="İptal"
+        confirmColor="error"
+        disableClose={deleting}
+        confirmDisabled={deleting}
+      >
+        {confirmDeleteId !== null ? (
+          <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+            {(comments.find(x => x.id === confirmDeleteId)?.content ?? '').slice(0, 300)}
+            {(comments.find(x => x.id === confirmDeleteId)?.content ?? '').length > 300 ? '…' : ''}
+          </Typography>
+        ) : null}
+      </ConfirmDialog>
+
       {/* Menü */}
       <Menu
         anchorEl={menuAnchor}
@@ -610,32 +634,6 @@ export default function CommentList({
         </MenuItem>
       </Menu>
 
-      {/* Silme onayı */}
-      <Dialog
-        open={confirmDeleteId !== null}
-        onClose={() => setConfirmDeleteId(null)}
-        aria-labelledby="delete-dialog-title"
-      >
-        <DialogTitle id="delete-dialog-title">Yorumu sil</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Bu yorumu silmek istediğine emin misin? Bu işlem geri alınamaz.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDeleteId(null)} variant="outlined">
-            İptal
-          </Button>
-          <Button
-            onClick={() => void confirmDelete()}
-            variant="contained"
-            color="error"
-            startIcon={<DeleteOutlineIcon />}
-          >
-            Sil
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 }

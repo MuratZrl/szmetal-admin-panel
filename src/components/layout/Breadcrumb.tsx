@@ -8,7 +8,7 @@ import { Breadcrumbs, Typography } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import { mainLinks } from '@/constants/mainlinks';
 import type { UrlObject } from 'url';
-import { alpha } from '@mui/material/styles'; // ← eklendi
+import { alpha } from '@mui/material/styles';
 
 const formatBreadcrumb = (str: string) =>
   str
@@ -32,7 +32,10 @@ const getLabelFromMainLinks = (href: string, segmentRaw: string): string => {
   const special = TR_SEGMENT_LABELS[segment.toLowerCase()];
   if (special) return special;
 
+  // DİKKAT: /products/* altında ilk yaprak segment için "Detay" kullanmıyoruz.
+  // Buradaki fonksiyon genel; /products özelini forEach içinde ele alacağız.
   if (/^[a-zA-Z0-9_-]{6,}$/.test(segment)) return 'Detay';
+
   if (segment === 'step2') return 'Adım 2';
   if (segment === 'step3') return 'Adım 3';
 
@@ -43,7 +46,6 @@ export default function Breadcrumb() {
   const pathname = usePathname();
   const pathParts = React.useMemo(() => pathname.split('/').filter(Boolean), [pathname]);
 
-  // İster UrlObject bırak, ister string kullan — Next Link ikisini de yer.
   const homeHref: UrlObject = { pathname: '/create_request' };
 
   const breadcrumbs: React.ReactNode[] = [
@@ -56,9 +58,15 @@ export default function Breadcrumb() {
 
   pathParts.forEach((part, index) => {
     const hrefStr = '/' + pathParts.slice(0, index + 1).join('/');
+    const parentHrefStr = '/' + pathParts.slice(0, index).join('/');
     const hrefObj: UrlObject = { pathname: hrefStr };
     const isLast = index === pathParts.length - 1;
-    const label = getLabelFromMainLinks(hrefStr, part);
+
+    // /products/{leaf} durumunda leaf'i olduğu gibi göster
+    const isProductsLeaf = parentHrefStr === '/products';
+    const label = isProductsLeaf
+      ? decodeURIComponent(part) // gerçek profileCode/kod göster
+      : getLabelFromMainLinks(hrefStr, part);
 
     if (label === previousLabel) return;
     previousLabel = label;
@@ -80,7 +88,6 @@ export default function Breadcrumb() {
     <Breadcrumbs
       aria-label="breadcrumb"
       sx={{
-        // Sadece bu bileşen içindeki <a>’ları hedefle
         '& a': {
           color: 'primary.main',
           textDecoration: 'none',
@@ -90,7 +97,7 @@ export default function Breadcrumb() {
           transition: 'color .15s ease, text-decoration-color .15s ease',
         },
         '& a:visited': {
-          color: 'primary.main', // mor yok
+          color: 'primary.main',
         },
         '& a:hover': theme => ({
           textDecoration: 'underline',

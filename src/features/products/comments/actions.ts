@@ -12,6 +12,7 @@ import type { Database } from '@/types/supabase';
 const TABLE = 'product_comments' as const;
 const VOTE_TABLE = 'product_comment_votes' as const;
 const PIN_TABLE = 'product_comment_pins' as const;
+const PRODUCTS_TABLE = 'products' as const;
 
 /* -------------------------------------------------------------------------- */
 /* Tipler                                                                      */
@@ -23,10 +24,9 @@ type RowUpdate = Database['public']['Tables'][typeof TABLE]['Update'];
 type VoteInsert = Database['public']['Tables'][typeof VOTE_TABLE]['Insert'];
 
 type PinInsert = Database['public']['Tables'][typeof PIN_TABLE]['Insert'];
-// PinUpdate kullanılmayacak, tanımlamıyoruz ki eslint susun.
 
 export type AddCommentInput = {
-  productId: string;
+  productId: string;   // ürün id (numeric string)
   content: string;
 };
 export type DeleteCommentInput = {
@@ -47,7 +47,7 @@ export type SetVoteInput = {
 };
 
 export type SetPinnedCommentInput = {
-  productId: string;
+  productId: string;       // numeric id string
   commentId: number | null; // null => sabitlemeyi kaldır
 };
 
@@ -60,7 +60,6 @@ const MAX_LEN = 2000;
 // overload’ı memnun et: unknown → never (any YOK)
 function asInsert(v: RowInsert) { return v as unknown as never; }
 function asUpdate(v: RowUpdate) { return v as unknown as never; }
-
 function asVoteInsert(v: VoteInsert) { return v as unknown as never; }
 function asPinInsert(v: PinInsert) { return v as unknown as never; }
 
@@ -80,8 +79,16 @@ function validateContent(raw: string): string {
   return trimmed;
 }
 
-function productPath(productIdNum: number): string {
-  return `/products/${productIdNum}`;
+/** KANONİK ürün yolu: /products/{profile_code || code || id} */
+async function canonicalProductPath(sb: Awaited<ReturnType<typeof createSupabaseRouteClient>>, productId: number) {
+  type PMin = Pick<Database['public']['Tables'][typeof PRODUCTS_TABLE]['Row'], 'profile_code' | 'code'>;
+  const { data } = await sb
+    .from(PRODUCTS_TABLE)
+    .select('profile_code, code')
+    .eq('id', productId)
+    .maybeSingle<PMin>();
+  const key = (data?.profile_code?.trim() || data?.code?.trim() || String(productId)) as string;
+  return `/products/${encodeURIComponent(key)}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -109,7 +116,7 @@ export async function addCommentAction(input: AddCommentInput): Promise<void> {
   const { error } = await sb.from(TABLE).insert(asInsert(row));
   if (error) throw new Error('Yorum kaydedilemedi.');
 
-  revalidatePath(productPath(productIdNum));
+  revalidatePath(await canonicalProductPath(sb, productIdNum));
 }
 
 export async function deleteCommentAction(input: DeleteCommentInput): Promise<void> {
@@ -125,7 +132,7 @@ export async function deleteCommentAction(input: DeleteCommentInput): Promise<vo
 
   if (error) throw new Error('Yorum silinemedi.');
 
-  revalidatePath(productPath(productIdNum));
+  revalidatePath(await canonicalProductPath(sb, productIdNum));
 }
 
 export async function updateCommentAction(input: UpdateCommentInput): Promise<void> {
@@ -144,7 +151,7 @@ export async function updateCommentAction(input: UpdateCommentInput): Promise<vo
 
   if (error) throw new Error('Yorum güncellenemedi.');
 
-  revalidatePath(productPath(productIdNum));
+  revalidatePath(await canonicalProductPath(sb, productIdNum));
 }
 
 export async function setCommentVote(input: SetVoteInput): Promise<void> {
@@ -178,7 +185,7 @@ export async function setCommentVote(input: SetVoteInput): Promise<void> {
     if (error) throw new Error('Oy güncellenemedi.');
   }
 
-  revalidatePath(productPath(productIdNum));
+  revalidatePath(await canonicalProductPath(sb, productIdNum));
 }
 
 // ---------- YORUM SABİTLE / KALDIR ----------
@@ -199,22 +206,19 @@ export async function setPinnedCommentAction(input: SetPinnedCommentInput): Prom
       .delete()
       .eq('product_id', productIdNum);
     if (error) throw new Error('Sabit yorum kaldırılamadı.');
-    revalidatePath(productPath(productIdNum));
+    revalidatePath(await canonicalProductPath(sb, productIdNum));
     return;
   }
 
-  // Güvenlik: Bu yorum gerçekten bu ürüne mi ait?
-  type CommentMinimal = Pick<Database['public']['Tables'][typeof TABLE]['Row'], 'id' | 'product_id'>;
-
-  const { data: commentRow, error: cErr } = await sb
+  // Bu yorum gerçekten BU ürüne mi ait? (tek sorguda doğrula)
+  const { count, error: chkErr } = await sb
     .from(TABLE)
-    .select('id, product_id')
+    .select('id', { head: true, count: 'exact' })
     .eq('id', input.commentId)
-    .maybeSingle<CommentMinimal>();
+    .eq('product_id', productIdNum);
 
-  if (cErr || !commentRow || commentRow.product_id !== productIdNum) {
-    throw new Error('Yorum bu ürüne ait değil.');
-  }
+  if (chkErr) throw new Error('Yorum doğrulanamadı.');
+  if (!count || count < 1) throw new Error('Yorum bu ürüne ait değil.');
 
   const pinRow: PinInsert = {
     product_id: productIdNum,
@@ -227,5 +231,5 @@ export async function setPinnedCommentAction(input: SetPinnedCommentInput): Prom
     .upsert(asPinInsert(pinRow), { onConflict: 'product_id' });
   if (error) throw new Error('Yorum sabitlenemedi.');
 
-  revalidatePath(productPath(productIdNum));
+  revalidatePath(await canonicalProductPath(sb, productIdNum));
 }

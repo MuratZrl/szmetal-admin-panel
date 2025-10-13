@@ -1,4 +1,4 @@
-// app/(admin)/products/[id]/print/page.tsx
+// app/(admin)/products/[profileCode]/print/page.tsx
 import { notFound } from 'next/navigation';
 import { Box } from '@mui/material';
 

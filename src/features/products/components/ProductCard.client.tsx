@@ -2,24 +2,31 @@
 'use client';
 
 import * as React from 'react';
+
 import Link from 'next/link';
+
 import {
   Card, CardActionArea, CardContent, CardMedia,
   Typography, Chip, Stack, Checkbox, Box, useMediaQuery, Button,
 } from '@mui/material';
+
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import EditIcon from '@mui/icons-material/Edit'; // ← eklendi
+import EditIcon from '@mui/icons-material/Edit';
+
 import { alpha, useTheme } from '@mui/material/styles';
 
 import HoverPreview from '@/features/products/components/HoverPreview.client';
 import { detectMediaKind } from '@/features/products/utils/media';
 import type { Product } from '@/features/products/types';
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
+
 import type { LabelMaps } from '@/features/products/services/labelMaps.server';
+
 import { prettyTr } from '@/features/products/utils/tr-text';
 import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
+import { productCanonicalPath, productEditPath } from '@/features/products/utils/url';
 
 type Role = 'Admin' | 'Manager' | 'User';
 
@@ -78,6 +85,11 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const categoryLabel = prettifyLabel(product.category,    labels?.category);
   const subLabel      = prettifyLabel(product.subCategory, labels?.subcategory);
 
+  // Sade kategori satırı (• ile ayrılmış, tek satır, ince tipografi)
+  const categoryLine = React.useMemo(() => {
+    return [categoryLabel, subLabel].filter(Boolean).join(' • ');
+  }, [categoryLabel, subLabel]);
+
   const displayUrl =
     resolvedImageUrl ??
     (typeof product.image === 'string' && /^https?:\/\//i.test(product.image) ? product.image : null);
@@ -133,6 +145,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     hoverTimers.current.close = window.setTimeout(() => setHoverOpen(false), 100);
   };
 
+  // KANONİK DETAY LİNKİ: profileCode varsa onu kullan
+  const detailHref = productCanonicalPath(product);
+  const editHref = productEditPath(product);
+
   return (
     <Card
       variant="elevation"
@@ -148,7 +164,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     >
       <CardActionArea
         LinkComponent={Link}
-        href={`/products/${product.id}`}
+        href={detailHref}
         draggable={false}
         sx={{
           flex: '1 1 auto',
@@ -247,7 +263,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             <Typography
               variant="subtitle2"
               color="text.secondary"
-              sx={{ fontWeight: (t) => t.typography.fontWeightBold }} // ← komple bold
+              sx={{ fontWeight: (t) => t.typography.fontWeightBold }}
             >
               Birim Ağırlık: {product.unit_weight_g_pm} gr
             </Typography>
@@ -256,53 +272,46 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             </Typography>
           </Stack>
 
-          <Stack direction="row" alignItems="center" sx={{ flexWrap: 'wrap', gap: 1, maxWidth: 1 }}>
-            
-            <Chip
-              variant="outlined"
-              size="small"
-              label={`${categoryLabel} / ${subLabel}`}
+          {/* Sadeleştirilmiş kategori/alt kategori satırı */}
+          {!!categoryLine && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              title={categoryLine}
               sx={{
-                textTransform: 'none',
-                maxWidth: 1,
-                height: 'auto',
-                alignItems: 'flex-start',
-                '& .MuiChip-label': {
-                  display: 'block',
-                  whiteSpace: 'normal',
-                  overflowWrap: 'anywhere',
-                  wordBreak: 'break-word',
-                  lineHeight: 1.2,
-                  py: 0.25,
-                },
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                width: 1,
               }}
-            />
-            
-            <Chip
-              variant="outlined"
-              size="small"
-              label={`${variantLabel} Profilleri`}
-              sx={{
-                textTransform: 'none',
-                maxWidth: 1,
-                height: 'auto',
-                alignItems: 'flex-start',
-                '& .MuiChip-label': {
-                  display: 'block',
-                  whiteSpace: 'normal',
-                  overflowWrap: 'anywhere',
-                  wordBreak: 'break-word',
-                  lineHeight: 1.2,
-                  py: 0.25,
-                },
-              }}
-            />
+            >
+              {categoryLine}
+            </Typography>
+          )}
 
-          </Stack>
+          {/* Varyant bilgisi ayrı, küçük bir chip olarak kalsın */}
+          {!!variantLabel && (
+            <Box sx={{ mt: 0.25 }}>
+              <Chip
+                variant="outlined"
+                size="small"
+                label={`${variantLabel} Profilleri`}
+                sx={{
+                  textTransform: 'none',
+                  height: 22,
+                  '& .MuiChip-label': {
+                    px: 0.75,
+                    lineHeight: 1.2,
+                  },
+                }}
+              />
+            </Box>
+          )}
         </CardContent>
       </CardActionArea>
 
-      {/* Footer: üstte butonlar (solda Düzenle, sağda Detaylar), altta checkbox */}
+      {/* Footer */}
       <Box
         component="footer"
         sx={{
@@ -316,7 +325,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           bgcolor: t => alpha(t.palette.background.paper, 0.9),
         }}
       >
-        {/* Üst sıra: yan yana butonlar */}
         <Box
           sx={{
             display: 'flex',
@@ -329,7 +337,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             {canEdit && (
               <Button
                 LinkComponent={Link}
-                href={`/products/${product.id}/edit`}
+                href={editHref}
                 size="small"
                 variant="text"
                 startIcon={<EditIcon />}
@@ -345,7 +353,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
 
           <Button
             LinkComponent={Link}
-            href={`/products/${product.id}`}
+            href={detailHref}
             size="small"
             variant="outlined"
             startIcon={<InfoOutlinedIcon />}
@@ -357,7 +365,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           </Button>
         </Box>
 
-        {/* Alt sıra: checkbox en altta */}
         {canSelect && (
           <Box
             sx={{
@@ -391,7 +398,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460 }}
         />
       )}
-      
     </Card>
   );
 }

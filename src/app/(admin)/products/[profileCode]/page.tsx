@@ -1,21 +1,20 @@
-// app/(admin)/products/[id]/page.tsx
-
-export const dynamic = 'force-dynamic';
+// app/(admin)/products/[profileCode]/page.tsx
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Box, Grid, Stack } from '@mui/material';
 
-import { requirePageAccess } from '@/lib/supabase/auth/server'; // ← EKLE
+import { requirePageAccess } from '@/lib/supabase/auth/server';
 import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
 
-import { fetchProductById } from '@/features/products/services/products.server';
+import { fetchProductByKey } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
 
-import { withVersion } from '@/features/products/utils/url';
+import { withVersion, productCanonicalPath } from '@/features/products/utils/url'; // ← EKLENDİ
 import { resolveAvatarUrl } from '@/features/products/comments/services/resolveAvatarUrl.server';
 
 import { mapRowToProduct } from '@/features/products/types';
@@ -26,24 +25,23 @@ import ProductInfo from '@/features/products/components/ProductInfo';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions';
 import CommentSection from '@/features/products/components/CommentSection.client';
 
-import type { Tables } from '@/types/supabase';
+import type { Tables, Database } from '@/types/supabase';
+type ProductsRow = Database['public']['Tables']['products']['Row']; // ← tip rahatlığı
 
 const PRODUCT_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET ?? 'product-media';
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ profileCode: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // İstersen metadata tarafını da kapat:
-  await requirePageAccess('products'); // ← opsiyonel ama tavsiye
-  const { id } = await params;
-  const row = await fetchProductById(id);
+  await requirePageAccess('products');
+  const { profileCode } = await params;
+  const row = await fetchProductByKey(profileCode);
   if (!row) return { title: 'Ürün bulunamadı' };
   const p = mapRowToProduct(row);
-  return { title: `${p.code} — ${p.name}` };
+  const leaf = p.profileCode || p.code || `#${p.id}`;
+  return { title: `${leaf} — ${p.name}` };
 }
-
-/* ------------------------------------------------------------ */
 
 type UserSlim = Pick<Tables<'users'>, 'role' | 'username' | 'email' | 'image' | 'updated_at'>;
 
@@ -58,10 +56,7 @@ async function getSessionInfo(): Promise<{
 
   const { data: auth } = await sb.auth.getUser();
   const user = auth.user;
-  if (!user) {
-    // normalde middleware yakalar ama sağlam olsun
-    redirect('/login');
-  }
+  if (!user) redirect('/login');
 
   const { data: row } = await sb
     .from('users')
@@ -88,19 +83,22 @@ async function getSessionInfo(): Promise<{
 }
 
 export default async function ProductDetailPage({ params }: Props) {
-  // ←←← KİLİT BURADA
-  const { profile } = await requirePageAccess('products'); // Admin+Manager dışındakiler 403/redirect
+  const { profile } = await requirePageAccess('products');
+  const { profileCode } = await params;
 
-  const { id } = await params;
-
-  const [{ userId, username, email, avatarUrl }, row, dicts, comments] = await Promise.all([
+  const [{ userId, username, email, avatarUrl }, row, dicts] = await Promise.all([
     getSessionInfo(),
-    fetchProductById(id),
+    fetchProductByKey(profileCode),
     fetchProductDicts(),
-    fetchProductComments(id),
   ]);
 
   if (!row) notFound();
+
+  // ←←← KANONİK ZORLAMA: /products/{profileCode} değilse redirect
+  const canonical = productCanonicalPath(row as ProductsRow);
+  if (`/products/${profileCode}` !== canonical) {
+    redirect(canonical);
+  }
 
   const canEdit = profile.role === 'Admin' || profile.role === 'Manager';
   const canPin = profile.role === 'Admin';
@@ -133,6 +131,8 @@ export default async function ProductDetailPage({ params }: Props) {
     ? (extLower as AllowedExt)
     : null;
 
+  const comments = await fetchProductComments(String(product.id));
+
   return (
     <Box px={1} py={1}>
       <Grid container spacing={2}>
@@ -162,7 +162,9 @@ export default async function ProductDetailPage({ params }: Props) {
               scale={product.scale}
               outerSizeMm={product.outerSizeMm}
               sectionMm2={product.sectionMm2}
-              unit_weight_g_pm={typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined}
+              unit_weight_g_pm={
+                typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined
+              }
               has_customer_mold={row.has_customer_mold}
               availability={product.availability}
               hasCustomerMold={product.hasCustomerMold}
@@ -180,7 +182,13 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
-              <ProductDetailActions id={String(product.id)} canEdit={canEdit} />
+              {/* ←←← ARTIK profileCode ve code’u geçiriyoruz */}
+              <ProductDetailActions
+                id={String(product.id)}
+                canEdit={canEdit}
+                profileCode={product.profileCode}
+                code={product.code}
+              />
             </ProductInfo>
 
             <CommentSection

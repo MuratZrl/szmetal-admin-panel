@@ -1,6 +1,7 @@
 // app/(admin)/not-found.tsx
 import * as React from 'react';
 import Link from 'next/link';
+
 import {
   Box,
   Grid,
@@ -16,8 +17,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 export default function AdminNotFound(): React.JSX.Element {
@@ -56,7 +57,7 @@ export default function AdminNotFound(): React.JSX.Element {
                 Admin bölümünde böyle bir sayfa yok.
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Yolunu kaybettin. Aşağıdaki kısa yollar güvenli.
+                Yolunu kaybettin. 
               </Typography>
             </Stack>
           </Grid>
