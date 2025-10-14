@@ -335,8 +335,9 @@ export default function Filters({
         </FormGroup>
       </Box>
 
+
       {/* Tarih aralığı */}
-      <Grid container spacing={1} my={2} >
+      <Grid container spacing={1} my={3} >
         <Grid size={{ xs: 6 }}>
           <TextField label="Tarih baş." type="date" size="small"
             value={from} onChange={e => setFrom(e.target.value)} fullWidth InputLabelProps={{ shrink: true }} />
@@ -348,7 +349,7 @@ export default function Filters({
       </Grid>
 
       {/* Sıralama */}
-      <TextField label="Sırala" select size="small" value={sort} onChange={e => setSort(e.target.value)} fullWidth sx={{ mb: 2 }}>
+      <TextField label="Sırala" select size="small" value={sort} onChange={e => setSort(e.target.value)} fullWidth sx={{ mb: 3 }}>
         <MenuItem value="date-desc">Tarih yeni → eski</MenuItem>
         <MenuItem value="date-asc">Tarih eski → yeni</MenuItem>
         <MenuItem value="weight-asc">Ağırlık artan</MenuItem>

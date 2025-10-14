@@ -1,3 +1,4 @@
+// src/features/products/utils/tr-text.ts
 export const TR_TOKEN_FIXES: Readonly<Record<string, string>> = {
   surme: 'Sürme',
   katlanir: 'Katlanır',
@@ -6,6 +7,7 @@ export const TR_TOKEN_FIXES: Readonly<Record<string, string>> = {
   isicam: 'Isıcam',
   cam: 'Cam',
   balkon: 'Balkon',
+  adaptor: 'Adaptör',
   // ihtiyaca göre ekle
 };
 

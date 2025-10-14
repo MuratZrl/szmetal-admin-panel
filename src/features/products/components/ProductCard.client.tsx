@@ -296,42 +296,66 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           </Stack>
 
           {!!categoryNodes.length && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              title={categoryLine}
-              noWrap
-              sx={{
-                display: 'block',
-                width: titleWidth,        // başlıkla aynı genişlik istiyorsan
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {categoryNodes}
-            </Typography>
-          )}
-
-          {/* Varyant bilgisi ayrı, küçük bir chip olarak kalsın */}
-          {!!variantLabel && (
-            <Box >
+            <Box>
               <Chip
-                variant="outlined"
                 size="small"
-                label={`${variantLabel} Profilleri`}
+                variant="outlined"
+                title={categoryLine}
+                label={
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-block',        // ← flex değil
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      verticalAlign: 'middle',
+                    }}
+                  >
+                    {categoryNodes}
+                  </Box>
+                }
                 sx={(t) => ({
-                  height: 25,
+                  height: 24,
                   border: 0,
-                  fontWeight: 400,
-                  bgcolor: t.palette.surface[3],       // her iki temada uyumlu
-                  color: t.palette.text.primary,
+                  bgcolor: t.palette.surface[3],
+                  color: t.palette.text.secondary,
+                  maxWidth: titleWidth,               // ← responsive genişlik sınırı
+                  minWidth: 0,                        // ← daralabilsin
                   '& .MuiChip-label': {
-                    lineHeight: 1.2,
+                    px: 0.75,
+                    py: 0,
+                    width: '100%',
+                    minWidth: 0,                      // ← label da daralabilsin
+                    overflow: 'hidden',               // ← taşanı gizle
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
                   },
                 })}
               />
             </Box>
+          )}
+
+          {/* Varyant bilgisi ayrı, küçük bir chip olarak kalsın */}
+          {!!variantLabel && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              noWrap
+              sx={{
+                display: 'block',
+                width: titleWidth,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={`${variantLabel} Profilleri`}
+            >
+              {`${variantLabel} Profilleri`}
+            </Typography>
           )}
         </CardContent>
       </CardActionArea>
@@ -385,7 +409,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             endIcon={<MoreHorizIcon />}
             draggable={false}
             onClick={(e) => e.stopPropagation()}
-            sx={{ px: 1.5 }}
+            sx={{ px: 1 }}
           >
             Detaylar
           </Button>
