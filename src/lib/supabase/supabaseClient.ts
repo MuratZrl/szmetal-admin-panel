@@ -6,6 +6,12 @@ import type { Database } from '@/types/supabase';
 
 export type TypedSupabaseClient = SupabaseClient<Database>;
 
+/**
+ * ensureEnv
+ * ---------
+ * • Tarayıcı client’ı ayağa kalkmadan önce zorunlu env’leri doğrular.
+ * • Eksikse net bir hata fırlatır. Böylece “sessiz kırık client” yerine erken teşhis alırsın.
+ */
 function ensureEnv(): { url: string; anon: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -16,21 +22,23 @@ function ensureEnv(): { url: string; anon: string } {
 }
 
 /**
- * Browser için Supabase client factory.
- * Not: Email/şifre login’i server route’u ile yaptığın için
- * client SDK’da oturum bulunmayabilir. Auth gerektiren DB çağrılarını
- * server components / route handlers / server actions üzerinden yap.
+ * createSupabaseBrowserClient
+ * ---------------------------
+ * • Kullanım yeri: TARAYICI (Client Components).
+ * • Auth:
+ *    - detectSessionInUrl: true → reset linkleri/OAuth dönüşlerinde URL token’ını yakalar.
+ *    - persistSession: true → localStorage’da session tutar (SPA davranışı).
+ *    - autoRefreshToken: true → access token’ı süre dolmadan yeniler.
+ * • Not:
+ *    - Bu client’ı “hafif” işler, realtime, storage, hızlı okuma için kullan.
+ *    - RLS kontrollü kritik DB yazmalarını Server Action/Route Handler ile yap.
  */
 export function createSupabaseBrowserClient(): TypedSupabaseClient {
   const { url, anon } = ensureEnv();
 
   return createClient<Database>(url, anon, {
     auth: {
-      // OAuth kullanmıyorsun ama password reset gibi URL token akışlarında
-      // gerekeceği için açık kalsın. İstemiyorsan false yapabilirsin.
       detectSessionInUrl: true,
-      // LocalStorage’da ayrı bir client session tutmak istemiyorsan false.
-      // Server tarafı cookie ile ilerlediğinden karışıklığı azaltır.
       persistSession: true,
       autoRefreshToken: true,
     },
@@ -38,8 +46,11 @@ export function createSupabaseBrowserClient(): TypedSupabaseClient {
 }
 
 /**
- * HMR sırasında yeniden yaratmayı önlemek için tekil client.
- * İstersen yalnızca bu export’u kullan.
+ * HMR tekilliği
+ * -------------
+ * • Dev modda hot-reload sırasında client’ı yeniden oluşturmamak için
+ *   global bir referansta tutuyoruz.
+ * • Üretimde tek kere yaratılır, dev’de de stabil kalır.
  */
 declare global {
   var __SB_BROWSER__: TypedSupabaseClient | undefined;

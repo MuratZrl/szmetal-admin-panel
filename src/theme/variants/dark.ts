@@ -43,7 +43,7 @@ export const darkPalette = {
   surface: {
     1: '#01050aff',
     2: '#020304ff',
-    3: '#000000ff',
+    3: '#181818ff',
     4: '#000000ff',
     outline: alpha(OUTLINE, 0.22),
     muted:   alpha(OUTLINE, 0.12),

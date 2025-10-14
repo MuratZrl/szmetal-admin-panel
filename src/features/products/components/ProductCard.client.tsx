@@ -10,9 +10,10 @@ import {
   Typography, Chip, Stack, Checkbox, Box, useMediaQuery, Button,
 } from '@mui/material';
 
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import EditIcon from '@mui/icons-material/Edit';
 
 import { alpha, useTheme } from '@mui/material/styles';
@@ -85,9 +86,26 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const categoryLabel = prettifyLabel(product.category,    labels?.category);
   const subLabel      = prettifyLabel(product.subCategory, labels?.subcategory);
 
-  // Sade kategori satırı (• ile ayrılmış, tek satır, ince tipografi)
+  // Tooltip/title için düz metin
   const categoryLine = React.useMemo(() => {
-    return [categoryLabel, subLabel].filter(Boolean).join(' • ');
+    return [categoryLabel, subLabel].filter(Boolean).join(' / ');
+  }, [categoryLabel, subLabel]);
+
+  // Ekranda ikonlu render için node dizisi
+  const categoryNodes = React.useMemo(() => {
+    const parts = [categoryLabel, subLabel].filter(Boolean);
+    return parts.map((part, i) => (
+      <React.Fragment key={`${part}-${i}`}>
+        {i > 0 && (
+          <ArrowForwardIosIcon
+            fontSize="inherit"              // Typography boyutunu miras al
+            sx={{ mx: 0.5, opacity: 0.6, verticalAlign: 'middle' }}
+            aria-hidden
+          />
+        )}
+        <span>{part}</span>
+      </React.Fragment>
+    ));
   }, [categoryLabel, subLabel]);
 
   const displayUrl =
@@ -121,6 +139,8 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   // Media rect
   const [mediaRect, setMediaRect] = React.useState<{ width: number; height: number } | null>(null);
   const mediaBoxRef = React.useRef<HTMLDivElement | null>(null);
+
+  const titleWidth = { xs: '100%', sm: 280 };
 
   React.useEffect(() => {
     if (!mediaBoxRef.current) return;
@@ -242,16 +262,19 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             px: { xs: 1.5, sm: 2 },
             py: { xs: 1.25, sm: 1.5 },
             width: 1,
+            minWidth: 0,                   // ← flex içinde ellipsis için şart
           }}
         >
           <Typography
             variant="subtitle1"
             title={`${product.code} • ${product.name}`}
+            noWrap
             sx={{
-              display: '-webkit-box',
-              WebkitBoxOrient: 'vertical',
-              WebkitLineClamp: 2,
+              display: 'block',
+              width: titleWidth,           // başlık genişliği
               overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
               lineHeight: 1.25,
               fontSize: { xs: '0.95rem', sm: '1rem' },
             }}
@@ -259,7 +282,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             {product.code} — {product.name}
           </Typography>
 
-          <Stack direction="column" spacing={0.25} my={0.5}>
+          <Stack direction="column"  my={0.25}>
             <Typography
               variant="subtitle2"
               color="text.secondary"
@@ -272,39 +295,41 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             </Typography>
           </Stack>
 
-          {/* Sadeleştirilmiş kategori/alt kategori satırı */}
-          {!!categoryLine && (
+          {!!categoryNodes.length && (
             <Typography
               variant="caption"
               color="text.secondary"
               title={categoryLine}
+              noWrap
               sx={{
                 display: 'block',
+                width: titleWidth,        // başlıkla aynı genişlik istiyorsan
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                width: 1,
               }}
             >
-              {categoryLine}
+              {categoryNodes}
             </Typography>
           )}
 
           {/* Varyant bilgisi ayrı, küçük bir chip olarak kalsın */}
           {!!variantLabel && (
-            <Box sx={{ mt: 0.25 }}>
+            <Box >
               <Chip
                 variant="outlined"
                 size="small"
                 label={`${variantLabel} Profilleri`}
-                sx={{
-                  textTransform: 'none',
-                  height: 22,
+                sx={(t) => ({
+                  height: 25,
+                  border: 0,
+                  fontWeight: 400,
+                  bgcolor: t.palette.surface[3],       // her iki temada uyumlu
+                  color: t.palette.text.primary,
                   '& .MuiChip-label': {
-                    px: 0.75,
                     lineHeight: 1.2,
                   },
-                }}
+                })}
               />
             </Box>
           )}
@@ -325,6 +350,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           bgcolor: t => alpha(t.palette.background.paper, 0.9),
         }}
       >
+
         <Box
           sx={{
             display: 'flex',
@@ -356,7 +382,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             href={detailHref}
             size="small"
             variant="outlined"
-            startIcon={<InfoOutlinedIcon />}
+            endIcon={<MoreHorizIcon />}
             draggable={false}
             onClick={(e) => e.stopPropagation()}
             sx={{ px: 1.5 }}
@@ -398,6 +424,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460 }}
         />
       )}
+      
     </Card>
   );
 }

@@ -36,6 +36,22 @@ export default function Filters({
     return node?.subs?.map(s => s.slug) ?? [];
   }, [categoryTree]);
 
+  const collator = React.useMemo(
+    () => new Intl.Collator('tr', { sensitivity: 'base', numeric: false }),
+    []
+  );
+
+  const variantsSorted = React.useMemo(() => {
+    return [...variants].sort((a, b) => {
+      // boşluk/undefined kenarlarını da sakinleştir
+      const an = (a.name ?? '').trim();
+      const bn = (b.name ?? '').trim();
+      const cmp = collator.compare(an, bn);
+      // eşitse anahtar ile deterministik bağla
+      return cmp !== 0 ? cmp : collator.compare(a.key, b.key);
+    });
+  }, [variants, collator]);
+
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -304,7 +320,7 @@ export default function Filters({
           Varyant
         </Typography>
         <FormGroup>
-          {variants.map(v => (
+          {variantsSorted.map(v => (
             <FormControlLabel
               key={v.key}
               control={
@@ -313,7 +329,7 @@ export default function Filters({
                   onChange={() => toggleVariant(v.key)}
                 />
               }
-              label={v.name}   // ← UI’da name göster
+              label={v.name}
             />
           ))}
         </FormGroup>

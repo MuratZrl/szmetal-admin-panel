@@ -50,6 +50,7 @@ export default async function Page() {
 
   // Kendi rolünü DB'den oku (public.users)
   let myRole: AppRole = 'User';
+  
   if (selfUserId) {
     const { data } = await sb
       .from('users')
