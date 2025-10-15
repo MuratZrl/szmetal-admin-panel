@@ -43,22 +43,20 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
   const pageSize = toInt(sp.pageSize, DEFAULT_PAGE_SIZE, { min: 1, max: MAX_PAGE_SIZE });
   const filters = parseProductFilters(sp);
 
-  const [{ items, pageCount }, dicts] = await Promise.all([
+  const [{ items, pageCount, total }, dicts] = await Promise.all([
     fetchFilteredProducts(filters, { page, pageSize }),
     fetchProductDicts(),
   ]);
 
-  // Kartta gösterilecek medya: PDF varsa onu, yoksa image.
-  // Her iki durumda da path → signed URL; mutlak URL ise aynen (veya public'ten private'a çevireceksek util zaten imzalıyor).
   const mediaUrlsByIdEntries = await Promise.all(
     items.map(async (p) => {
       const preferPdf = (p.fileExt ?? '').toLowerCase() === 'pdf' && !!p.filePath;
-      const raw = preferPdf ? p.filePath : p.image;  // ikisi de string | null
+      const raw = preferPdf ? p.filePath : p.image;
       const signed = await resolveStorageUrl(raw);
       const withVer = withVersion(signed, p.updatedAt ?? p.createdAt ?? null);
       return [String(p.id), withVer] as const;
     })
-  );
+  ); 
   const mediaUrlsById: Record<string, string | null> = Object.fromEntries(mediaUrlsByIdEntries);
 
   const perms = {
@@ -69,7 +67,7 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
   return (
     <Box px={1} py={1}>
       <ProductsSelectionProvider>
-        <ProductsToolbar perms={perms} />
+        <ProductsToolbar perms={perms} totalCount={total} />
         <Divider sx={{ mb: 2 }} />
 
         <Grid container spacing={2}>
@@ -78,11 +76,7 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
           </Grid>
 
           <Grid size={{ xs: 12, md: 9 }}>
-            <ProductsGrid
-              products={items}
-              mediaUrlsById={mediaUrlsById}
-              role={profile?.role ?? null}
-            />
+            <ProductsGrid products={items} mediaUrlsById={mediaUrlsById} role={profile?.role ?? null} />
             <ProductsPagination page={page} totalPages={pageCount} />
           </Grid>
         </Grid>

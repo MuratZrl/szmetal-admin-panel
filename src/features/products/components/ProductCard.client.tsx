@@ -268,15 +268,14 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           <Typography
             variant="subtitle1"
             title={`${product.code} • ${product.name}`}
-            noWrap
             sx={{
               display: 'block',
-              width: titleWidth,           // başlık genişliği
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              width: titleWidth,              // { xs: '100%', sm: 280 } gibi
               lineHeight: 1.25,
               fontSize: { xs: '0.95rem', sm: '1rem' },
+              whiteSpace: 'normal',           // ← kaydır
+              wordBreak: 'break-word',        // ← uzun kelimelerde kır
+              overflowWrap: 'anywhere',       // ← çok inatçı durumlar için
             }}
           >
             {product.code} — {product.name}
@@ -312,6 +311,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       verticalAlign: 'middle',
+                      fontWeight: '400',
                     }}
                   >
                     {categoryNodes}
@@ -390,7 +390,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
                 href={editHref}
                 size="small"
                 variant="text"
-                startIcon={<EditIcon />}
+                endIcon={<EditIcon />}
                 draggable={false}
                 onClick={(e) => e.stopPropagation()}
                 sx={{ px: 0.5 }}
