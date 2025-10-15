@@ -24,7 +24,7 @@ export default function NotesField({ disabled = false }: Props) {
     >
       <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
         <TextField
-          label="Açıklama"
+          label="Ek Notlar"
           multiline
           fullWidth
           {...register('description')}

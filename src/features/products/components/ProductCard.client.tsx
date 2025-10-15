@@ -13,7 +13,6 @@ import {
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import EditIcon from '@mui/icons-material/Edit';
 
 import { alpha, useTheme } from '@mui/material/styles';
@@ -178,7 +177,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        borderRadius: 1.5,
+        borderRadius: 1.75,
         height: { xs: 'auto', md: '100%' },
       }}
     >
@@ -389,11 +388,11 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
                 LinkComponent={Link}
                 href={editHref}
                 size="small"
-                variant="text"
+                variant="outlined"
                 endIcon={<EditIcon />}
                 draggable={false}
                 onClick={(e) => e.stopPropagation()}
-                sx={{ px: 0.5 }}
+                sx={{ px: 1.5 }}
                 aria-label="Ürünü düzenle"
               >
                 Hızlı Düzenle
@@ -405,13 +404,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             LinkComponent={Link}
             href={detailHref}
             size="small"
-            variant="outlined"
-            endIcon={<MoreHorizIcon />}
             draggable={false}
             onClick={(e) => e.stopPropagation()}
-            sx={{ px: 1 }}
           >
-            Detaylar
+            Profili İncele
           </Button>
         </Box>
 

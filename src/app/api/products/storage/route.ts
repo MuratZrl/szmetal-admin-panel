@@ -50,15 +50,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'bucket ve path zorunludur.' }, { status: 400 });
   }
 
-  // 1) Oturum (çerezleri request’ten oku, yoksa 401 gel-git yaşarsın)
+  // 1) Oturum zorunlu
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get: (name: string) => req.cookies.get(name)?.value,
-        set() { /* no-op */ },
-        remove() { /* no-op */ },
+        set() {},
+        remove() {},
       },
     }
   );
@@ -69,23 +69,35 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Oturum bulunamadı.' }, { status: 401 });
   }
 
-  // 2) Rol kontrolü (yalnızca Admin + Manager)
+  // 2) İsteğe bağlı: BANNED engelle, diğer tüm roller geçsin
   type DbRole = Database['public']['Tables']['users']['Row']['role'];
+  type DbStatus = Database['public']['Tables']['users']['Row']['status'];
+
   const { data: me, error: meErr } = await supabase
     .from('users')
-    .select('role')
+    .select('role, status')
     .eq('id', userId)
     .maybeSingle()
-    .returns<{ role: DbRole } | null>();
+    .returns<{ role: DbRole; status: DbStatus } | null>();
+
   if (meErr) {
-    return NextResponse.json({ error: 'Rol okunamadı.' }, { status: 500 });
+    return NextResponse.json({ error: 'Kullanıcı bilgisi okunamadı.' }, { status: 500 });
   }
-  const role = me?.role ?? null;
-  if (!role || (role !== 'Admin' && role !== 'Manager')) {
+
+  // Banned’ı dışarıda bırak; Admin/Manager/User hepsi dosya görebilir
+  if (me?.status === 'Banned') {
     return NextResponse.json({ error: 'Yetki yok.' }, { status: 403 });
   }
 
-  // 3) Storage’dan indir (Service Role ile)
+  // 3) Sadece belirli bucket’a izin vermek istersen (güvenlik kemeri)
+  const ALLOWED_BUCKETS = new Set<string>([
+    process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET ?? 'product-media',
+  ]);
+  if (!ALLOWED_BUCKETS.has(bucket)) {
+    return NextResponse.json({ error: 'Bucket erişimine izin yok.' }, { status: 403 });
+  }
+
+  // 4) Storage’dan indir (Service Role ile)
   const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!SERVICE_ROLE_KEY || !SUPABASE_URL) {
@@ -98,16 +110,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Dosya bulunamadı.' }, { status: 404 });
   }
 
-  // Content-Type: blob’dan ya da path uzantısından
   const typeFromBlob = (blob as unknown as { type?: string })?.type || '';
   const contentType = typeFromBlob || guessContentTypeByExtFromPath(path);
-
   const buf = Buffer.from(await blob.arrayBuffer());
 
   const headers = new Headers({
     'Content-Type': contentType,
-    'Content-Disposition':
-      `${disposition}; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    'Content-Disposition': `${disposition}; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
     'Cache-Control': 'private, max-age=60, must-revalidate',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'SAMEORIGIN',
