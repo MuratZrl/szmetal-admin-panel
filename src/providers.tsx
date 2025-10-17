@@ -54,7 +54,9 @@ export default function Providers({
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeModeProvider initialMode={initialMode}>
         <MuiThemeBridge>
-          <SnackbarProvider>{children}</SnackbarProvider>
+          <SnackbarProvider>
+            {children}
+          </SnackbarProvider>
         </MuiThemeBridge>
       </ThemeModeProvider>
     </AppRouterCacheProvider>

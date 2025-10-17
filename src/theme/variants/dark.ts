@@ -15,9 +15,9 @@ export const darkPalette = {
   primary:   { main: '#E11D2E', light: '#FF6B77', dark: '#990F1A', contrastText: '#FFFFFF' },
   secondary: { main: '#8F1D22', light: '#B64A50', dark: '#5F1216', contrastText: '#FFFFFF' },
 
-  success: { main: '#22C55E', light: '#86EFAC', dark: '#15803D', contrastText: '#0B0B0B' },
-  warning: { main: '#F59E0B', light: '#FACC15', dark: '#92400E', contrastText: '#0B0B0B' },
-  error:   { main: '#EF2E3A', light: '#F79AA0', dark: '#9C1C23', contrastText: '#FFFFFF' },
+  success: { main: '#0ae427ff', light: '#86EFAC', dark: '#15803D', contrastText: '#0B0B0B' },
+  warning: { main: '#F59E0B', light: '#f6fa15ff', dark: '#92400E', contrastText: '#0B0B0B' },
+  error:   { main: '#c00808ff', light: '#f1c9ccff', dark: '#9C1C23', contrastText: '#FFFFFF' },
   info:    { main: '#06B6D4', light: '#67E8F9', dark: '#0E7490', contrastText: '#0B0B0B' },
 
   // Uygulama içi durum rozetleri
