@@ -237,6 +237,7 @@ export type Database = {
       }
       products: {
         Row: {
+          archived_at: string | null
           availability: boolean
           category: string
           category_id: string | null
@@ -270,6 +271,7 @@ export type Database = {
           variant: string
         }
         Insert: {
+          archived_at?: string | null
           availability?: boolean
           category: string
           category_id?: string | null
@@ -303,6 +305,7 @@ export type Database = {
           variant: string
         }
         Update: {
+          archived_at?: string | null
           availability?: boolean
           category?: string
           category_id?: string | null
@@ -703,6 +706,34 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_user_status: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: undefined
+      }
+      citext: {
+        Args: { "": boolean } | { "": string } | { "": unknown }
+        Returns: string
+      }
+      citext_hash: {
+        Args: { "": string }
+        Returns: number
+      }
+      citextin: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextout: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      citextrecv: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextsend: {
+        Args: { "": string }
+        Returns: string
+      }
       email_available: {
         Args: { p_email: string }
         Returns: boolean

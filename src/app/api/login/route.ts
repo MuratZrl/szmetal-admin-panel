@@ -1,6 +1,6 @@
 // src/app/api/login/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer'; // ← değişti
+import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,14 +17,17 @@ type LoginErrorKey =
   | 'profile_missing'
   | 'banned'
   | 'inactive'
-  | 'server_error';
+  | 'server_error'
+  | 'method_not_allowed';
 
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_ATTEMPTS = 10;
 
 declare global {
+  // Dev HMR sırasında aynı Map’i korumak için global referans
   var __RL__: Map<string, number[]> | undefined;
 }
+
 const rlStore: Map<string, number[]> = (globalThis.__RL__ ??= new Map<string, number[]>());
 
 function clientIp(req: NextRequest): string {
@@ -82,7 +85,14 @@ export async function POST(req: NextRequest) {
     return json<{ error: LoginErrorKey }>({ error: 'email_or_password_missing' }, 400);
   }
 
-  const supabase = await createSupabaseRouteClient(); // ← değişti
+  const supabase = await createSupabaseRouteClient();
+
+  // Sessiyon varsa önce sessizce kapat. Supabase bazen "refresh_token_not_found" fırlatıyor.
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // Boşver, amaç logları temiz tutmak
+  }
 
   const { data, error } = await supabase.auth.signInWithPassword(dto);
 
@@ -96,12 +106,13 @@ export async function POST(req: NextRequest) {
 
   const user = data.user;
   if (!user) {
-    await supabase.auth.signOut();
+    // Teoride olmaz ama olur da olursa, temizlik yap.
+    try { await supabase.auth.signOut(); } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'server_error' }, 500);
   }
 
   if (!user.email_confirmed_at) {
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'email_not_confirmed' }, 409);
   }
 
@@ -109,22 +120,33 @@ export async function POST(req: NextRequest) {
     .from('users')
     .select('status, role')
     .eq('id', user.id)
-    .single<ProfileRow>();
+    .maybeSingle<ProfileRow>();
 
   if (profErr || !profile) {
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'profile_missing' }, 403);
   }
 
   if (profile.status === 'Banned') {
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'banned' }, 403);
   }
 
   if (profile.status === 'Inactive') {
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'inactive' }, 403);
   }
 
+  // Başarılı
   return json<{ ok: true; role: Role }>({ ok: true, role: profile.role }, 200);
 }
+
+// Güvenli olsun: POST dışında method yok.
+export async function GET() {
+  return json<{ error: LoginErrorKey }>({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: 'POST' } });
+}
+
+export async function PUT()  { return GET(); }
+export async function PATCH(){ return GET(); }
+export async function DELETE(){return GET(); }
+export async function OPTIONS(){ return GET(); }

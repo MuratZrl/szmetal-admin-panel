@@ -1,6 +1,8 @@
+// src/app/(auth)/components/layout/MainPanel.tsx
 'use client';
 
 import * as React from 'react';
+
 import { Box, Paper } from '@mui/material';
 
 import Header from '@/app/(auth)/components/layout/Header';
@@ -10,10 +12,10 @@ type Props = {
   children: React.ReactNode;
 };
 
-const C1 = '#370000';
-const C2 = '#860000';
+const C1 = '#5d5d5dff';
+const C2 = '#151515ff';
 
-export default function AuthRightPanel({ children }: Props) {
+export default function AuthMainPanel({ children }: Props) {
   return (
     <Box sx={{ position: 'relative', width: 1, height: 1, overflow: 'hidden' }}>
       {/* Statik gradient arka plan */}

@@ -198,25 +198,6 @@ export default function LoginForm() {
           </Typography>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-          <Typography >
-            Hesabınız yoksa{' '}
-            <Link href="/register" style={{ textDecoration: 'none' }}>
-              <Typography
-                component="span"
-                sx={{
-                  color: 'text.primary',
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  '&:hover': { textDecoration: 'underline' },
-                }}
-              >
-                kayıt olun
-              </Typography>
-            </Link>
-          </Typography>
-        </Grid>
       </Grid>
     </Box>
   );
