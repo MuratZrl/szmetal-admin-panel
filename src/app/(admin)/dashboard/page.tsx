@@ -11,7 +11,6 @@ import ChartCard from '@/components/ui/cards/ChartCard.client';
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 import PieDonutChart from '@/components/ui/charts/PieChart.client';
-import PremiumSection from '@/features/dashboard/components/PremiumSection.client';
 import { get3RollingMonthRange, get6RollingMonthRange } from '@/features/dashboard/utils/rollingMonths';
 
 export const dynamic = 'force-dynamic';
@@ -88,14 +87,6 @@ export default async function DashboardPage() {
           </ChartCard>
         </Grid>
 
-        <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
-          <PremiumSection
-            title="Premium Özelliğine Erişin"
-            description="Gelişmiş raporlar, detaylı analizler ve öncelikli destekle daha hızlı ilerleyin."
-            ctaLabel="Yükselt"
-            href="/upgrade"
-          />
-        </Grid>
       </Grid>
     </Box>
   );

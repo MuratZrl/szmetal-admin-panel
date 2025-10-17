@@ -10,7 +10,7 @@ const AuthCard = ({ children, ...props }: CardProps) => {
       sx={{
         width: '100%',
         p: 4,
-        borderRadius: 4,
+        borderRadius: 2,
         boxShadow: 5,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)',
