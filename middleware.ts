@@ -14,7 +14,7 @@ type UserRow = { role: Role; status: Status };
 const AUTH_ROUTES = ['/login', '/register', '/forget-password', '/reset-password'] as const;
 const PUBLIC_ROUTES = ['/', '/403', '/unauthorized'] as const;
 
-/** Rol erişimleri: spes’e göre User sadece 3 sayfa görecek. */
+/** Rol erişimleri (son halinle aynı bıraktım) */
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
   Admin: ['*'],
   Manager: ['/account', '/requests', '/clients', '/orders', '/create_request', '/products'],
@@ -23,6 +23,10 @@ const ROLE_ACCESS: Record<Role, readonly string[]> = {
 
 /** Herkes için ortak ana sayfa */
 const HOME_PATH = '/account' as const;
+
+/* -------------------------------------------------------------------------- */
+/* Yardımcılar                                                                */
+/* -------------------------------------------------------------------------- */
 
 function normPath(p: string): string {
   if (!p || p === '/') return '/';
@@ -48,10 +52,34 @@ function isAllowedForRole(role: Role, path: string): boolean {
   return allowed.some((base) => n === base || n.startsWith(`${base}/`));
 }
 
+/** Tarayıcıda Supabase oturum çerezi var mı? Varsa SDK’ya sormaya değer. */
+function hasSupabaseSessionCookies(req: NextRequest): boolean {
+  const names = req.cookies.getAll().map(c => c.name);
+  const hasLegacy = names.includes('sb-access-token') || names.includes('sb-refresh-token');
+  const hasPacked = names.some(n => /^sb-[a-z0-9-]+-auth-token$/i.test(n));
+  return hasLegacy || hasPacked;
+}
+
+/** Mevcut istekte görünen tüm Supabase auth cookie adları */
+function getSupabaseCookieNames(req: NextRequest): string[] {
+  return req.cookies
+    .getAll()
+    .map(c => c.name)
+    .filter(n =>
+      n === 'sb-access-token' ||
+      n === 'sb-refresh-token' ||
+      /^sb-[a-z0-9-]+-auth-token$/i.test(n)
+    );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Middleware                                                                 */
+/* -------------------------------------------------------------------------- */
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
   const npath = normPath(req.nextUrl.pathname);
 
-  // Statik istekleri geç
+  // 0) Statik istekleri geç
   if (
     npath.startsWith('/_next') ||
     npath.startsWith('/assets') ||
@@ -67,8 +95,33 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const base = NextResponse.next();
   base.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 
-  // Supabase cookie köprüsü (Edge uyumlu)
   const written: Array<{ name: string; value: string; options: CookieOptions }> = [];
+  const withForwardedCookies = (out: NextResponse): NextResponse => {
+    out.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    for (const { name, value, options } of written) out.cookies.set(name, value, options);
+    return out;
+  };
+  const writeCookie = (name: string, value: string, options: CookieOptions) => {
+    written.push({ name, value, options });
+    base.cookies.set(name, value, options);
+  };
+
+  /* 1) ERKEN ÇIKIŞ: Supabase oturum çerezi yoksa SDK’ya hiç sorma.
+        Böylece "Invalid Refresh Token: Refresh Token Not Found" logu gelmez. */
+  const hasSessionCookie = hasSupabaseSessionCookies(req);
+  if (!hasSessionCookie) {
+    // Korumalı rota mı? Auth/public değilse login’e yolla.
+    if (!isAuthRoute(npath) && !isPublicRoute(npath)) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
+      return withForwardedCookies(NextResponse.redirect(url));
+    }
+    // Auth veya public ise sessiz geç
+    return withForwardedCookies(base);
+  }
+
+  // 2) Supabase client (cookie bridge ile)
   const cookiesAdapter: CookieMethodsServer = {
     getAll: () => req.cookies.getAll(),
     setAll: (list) => {
@@ -84,30 +137,21 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     { cookies: cookiesAdapter }
   );
 
-  const withForwardedCookies = (out: NextResponse): NextResponse => {
-    out.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    for (const { name, value, options } of written) out.cookies.set(name, value, options);
-    return out;
-  };
-  const writeCookie = (name: string, value: string, options: CookieOptions) => {
-    written.push({ name, value, options });
-    base.cookies.set(name, value, options);
-  };
-
-  // 1) Oturum
+  // 3) Oturumu oku
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    if (!isAuthRoute(npath) && !isPublicRoute(npath)) {
-      const url = req.nextUrl.clone();
-      url.pathname = '/login';
-      url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
-      return withForwardedCookies(NextResponse.redirect(url));
+    // Çerez var ama geçerli user yok: tüm Supabase auth çerezlerini temizle, login’e
+    for (const name of getSupabaseCookieNames(req)) {
+      writeCookie(name, '', { path: '/', maxAge: 0 });
     }
-    return withForwardedCookies(base);
+    const url = req.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
+    return withForwardedCookies(NextResponse.redirect(url));
   }
 
-  // 2) Profil
+  // 4) Profil
   type UserId = Tables<'users'>['id'];
   const profRes = await supabase
     .from('users')
@@ -117,17 +161,19 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   const profile = (profRes.data ?? null) as UserRow | null;
   if (!profile) {
-    // Profil yoksa sessiyonu sil ve login’e gönder
-    writeCookie('sb-access-token', '', { path: '/', maxAge: 0 });
-    writeCookie('sb-refresh-token', '', { path: '/', maxAge: 0 });
+    // Profil yoksa tüm Supabase auth cookie’lerini temizleyip login’e
+    for (const name of getSupabaseCookieNames(req)) {
+      writeCookie(name, '', { path: '/', maxAge: 0 });
+    }
     const url = new URL('/login?error=profile-missing', req.url);
     return withForwardedCookies(NextResponse.redirect(url));
   }
 
-  // 3) Status kuralları
+  // 5) Status kuralları
   if (profile.status === 'Banned') {
-    writeCookie('sb-access-token', '', { path: '/', maxAge: 0 });
-    writeCookie('sb-refresh-token', '', { path: '/', maxAge: 0 });
+    for (const name of getSupabaseCookieNames(req)) {
+      writeCookie(name, '', { path: '/', maxAge: 0 });
+    }
     return withForwardedCookies(
       NextResponse.redirect(new URL('/unauthorized?reason=banned', req.url))
     );
@@ -138,26 +184,28 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 4) Login iken auth sayfalarına gitme → HERKES /account
+  // 6) Login iken auth sayfalarına gitme → HERKES /account
   if (isAuthRoute(npath)) {
     return withForwardedCookies(NextResponse.redirect(new URL(HOME_PATH, req.url)));
   }
 
-  // 5) Root → HERKES /account
+  // 7) Root → HERKES /account
   if (npath === '/') {
     return withForwardedCookies(NextResponse.redirect(new URL(HOME_PATH, req.url)));
   }
 
-  // 6) Rol yetkisi
+  // 8) Rol yetkisi
   if (!isAllowedForRole(profile.role, npath)) {
     return withForwardedCookies(
       NextResponse.redirect(new URL('/unauthorized?reason=role', req.url))
     );
   }
 
-  // 7) Yol temiz
+  // 9) Yol temiz
   return withForwardedCookies(base);
 }
+
+/* -------------------------------------------------------------------------- */
 
 export const config = {
   matcher: [

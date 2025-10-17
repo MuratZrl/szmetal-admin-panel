@@ -26,8 +26,8 @@ import {
 import { alpha } from '@mui/material/styles';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
+import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { glassTextFieldProps } from '../constants/formstyles';
@@ -40,27 +40,26 @@ import { supabase } from '@/lib/supabase/supabaseClient';
 /* -------------------------------------------------------------------------- */
 
 const PASSWORD_RULES = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
-const USERNAME_REGEX = /^[\p{L}\p{N}._\- ]+$/u;
 
 const schema = yup
+
   .object({
+
     username: yup
       .string()
+      // iç boşluk serbest; baştaki/sondaki boşlukları normalize ediyoruz
       .transform(v => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : v))
       .min(3, 'En az 3 karakter')
       .max(40, 'En fazla 40 karakter')
-      .matches(
-        USERNAME_REGEX,
-        'Harf, rakam, boşluk, ., _ ve - kullanılabilir'
-      )
-      .test('has-space', 'En az bir boşluk içermeli', (v) => typeof v === 'string' && v.includes(' '))
       .required('Kullanıcı adı zorunludur'),
+    
     email: yup
       .string()
       .trim()
       .lowercase()
       .email('Geçerli bir e-posta girin')
       .required('E-posta zorunludur'),
+      
     password: yup
       .string()
       .matches(
@@ -68,10 +67,12 @@ const schema = yup
         'En az 8 karakter, büyük/küçük harf, rakam ve sembol içermeli'
       )
       .required('Şifre zorunludur'),
+
     confirmPassword: yup
       .string()
       .oneOf([yup.ref('password')], 'Şifreler uyuşmuyor')
       .required('Şifre tekrar zorunludur'),
+      
   })
   .required();
 

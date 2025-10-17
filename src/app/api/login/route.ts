@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
   // Sessiyon varsa önce sessizce kapat. Supabase bazen "refresh_token_not_found" fırlatıyor.
   try {
     await supabase.auth.signOut();
+    
   } catch {
     // Boşver, amaç logları temiz tutmak
   }
