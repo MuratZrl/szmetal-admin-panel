@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 import AccountClientSection from '@/features/account/components/AccountClientSection.client';
 import { getAccountData } from '@/features/account/services/getAccountData.server';
 
-export const dynamic = 'force-dynamic'; // veya: export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function AccountPage() {
   const { user, profile } = await getAccountData();
