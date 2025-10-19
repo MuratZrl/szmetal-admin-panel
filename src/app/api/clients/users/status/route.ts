@@ -1,21 +1,11 @@
 // app/api/clients/users/status/route.ts
 import { NextResponse } from 'next/server';
 import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
-import { isAppStatus, isUUID } from '@/features/clients/constants/users';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import { isAppStatus, isUUID } from '@/features/clients/constants/users';
 
 type Body = { userId: string; status: string };
-
-type Users       = Database['public']['Tables']['users'];
-type UsersRow    = Users['Row'];
-type UsersUpdate = Users['Update'];
-type Status      = UsersRow['status'];
-type UserSlim    = Pick<UsersRow, 'id' | 'status'>;
-
-// TS'in update(...) parametresini 'never' zannetmesini geçersiz kılmak için
-function asUpdateParam<T>(u: T) {
-  return u as unknown as never;
-}
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as Body | null;
@@ -23,18 +13,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
-  const supabase = await createSupabaseRouteClient();
+  // 1) Oturum sahibini bul ve Admin mi kontrol et
+  const userSb = await createSupabaseRouteClient(); // session’lı client
+  const { data: auth } = await userSb.auth.getUser();
+  const me = auth?.user ?? null;
+  if (!me) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-  // 1) Patch'i tablo tipine karşı garanti altına al
-  const patch = { status: body.status as Status } satisfies UsersUpdate;
-
-  // 2) Update'e 'never' vererek TS'in inference tripini atlat
-  const { data, error } = await supabase
+  const { data: myRow, error: meErr } = await userSb
     .from('users')
-    .update(asUpdateParam<UsersUpdate>(patch))
-    .eq('id', body.userId as UsersRow['id'])
+    .select('role, status')
+    .eq('id', me.id)
+    .single();
+
+  if (meErr || !myRow || myRow.role !== 'Admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // 2) Servis anahtarıyla RLS bypass ederek update yap
+  const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SRV) {
+    return NextResponse.json({ error: 'Service key missing' }, { status: 500 });
+  }
+
+  const adminSb = createClient<Database>(URL, SRV, { auth: { persistSession: false } });
+
+  const { data, error } = await adminSb
+    .from('users')
+    .update({ status: body.status as Database['public']['Tables']['users']['Row']['status'] })
+    .eq('id', body.userId as Database['public']['Tables']['users']['Row']['id'])
     .select('id, status')
-    .single<UserSlim>();
+    .single();
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message ?? 'Update failed' }, { status: 400 });

@@ -8,7 +8,6 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   type GridColDef,
   type GridRenderCellParams,
-  useGridApiContext,
 } from '@mui/x-data-grid';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
@@ -39,6 +38,8 @@ export const STATUS_LABELS_TR: Record<AppStatus, string> = {
   Banned: 'Banlanmış',
 };
 
+/* -------------------------------------------------------------------------- */
+/* Yardımcılar                                                                 */
 /* -------------------------------------------------------------------------- */
 
 function fallbackText(value: string | null | undefined): string {
@@ -73,41 +74,44 @@ const READONLY_SELECT_SX = {
   cursor: 'default',
 };
 
+/** DataGrid satırını kontrol eden patch callback'leri (TableGrid’den gelir) */
+type PatchFns = {
+  patchRow?: (id: string, patch: Partial<UserRow>) => void;
+  restoreRow?: (snapshot: UserRow) => void;
+  removeRow?: (id: string) => void;
+};
+
 /* -------------------------------------------------------------------------- */
 /* Role Select Cell                                                            */
 /* -------------------------------------------------------------------------- */
 
 type RoleSelectCellProps =
-  GridRenderCellParams<UserRow, AppRole | null> & { editable: boolean };
+  GridRenderCellParams<UserRow, AppRole | null> & { editable: boolean } & PatchFns;
 
 function RoleSelectCell(props: RoleSelectCellProps) {
-  const { editable, id, field, value: rawValue } = props;
-  const apiRef = useGridApiContext();
-  const value = rawValue ?? ('' as unknown as AppRole);
+  const { editable, id, field, value: rawValue, row, patchRow, restoreRow } = props;
+  const value = (rawValue ?? '') as AppRole | '';
 
   const handleChange = (e: SelectChangeEvent<AppRole>) => {
     if (!editable) return;
     const next = e.target.value as AppRole;
-    const prev = value;
 
-    // optimistic
-    apiRef.current.updateRows([
-      { id: id as UserRow['id'], [field]: next } as Partial<UserRow> & { id: UserRow['id'] },
-    ]);
+    // optimistic → lokal tablo state’ini güncelle
+    const snapshot: UserRow = { ...row };
+    patchRow?.(String(id), { [field]: next } as Partial<UserRow>);
 
     // persist
     void (async () => {
-      const res = await fetch('/api/clients/users/role', {
+      // DİKKAT: sende role endpoint'i /api/clients/role (dosya: app/api/clients/role/route.ts)
+      const res = await fetch('/api/clients/role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: String(id), role: next }),
       }).catch(() => null);
 
       if (!res || !res.ok) {
-        // revert
-        apiRef.current.updateRows([
-          { id: id as UserRow['id'], [field]: prev } as Partial<UserRow> & { id: UserRow['id'] },
-        ]);
+        // Hata → geri al
+        restoreRow?.(snapshot);
       }
     })();
   };
@@ -142,22 +146,19 @@ function RoleSelectCell(props: RoleSelectCellProps) {
 /* -------------------------------------------------------------------------- */
 
 type StatusSelectCellProps =
-  GridRenderCellParams<UserRow, AppStatus | null> & { editable: boolean };
+  GridRenderCellParams<UserRow, AppStatus | null> & { editable: boolean } & PatchFns;
 
 function StatusSelectCell(props: StatusSelectCellProps) {
-  const { editable, id, field, value: rawValue } = props;
-  const apiRef = useGridApiContext();
-  const value = rawValue ?? ('' as unknown as AppStatus);
+  const { editable, id, field, value: rawValue, row, patchRow, restoreRow } = props;
+  const value = (rawValue ?? '') as AppStatus | '';
 
   const handleChange = (e: SelectChangeEvent<AppStatus>) => {
     if (!editable) return;
     const next = e.target.value as AppStatus;
-    const prev = value;
 
-    // optimistic
-    apiRef.current.updateRows([
-      { id: id as UserRow['id'], [field]: next } as Partial<UserRow> & { id: UserRow['id'] },
-    ]);
+    // optimistic → lokal tablo state’ini güncelle
+    const snapshot: UserRow = { ...row };
+    patchRow?.(String(id), { [field]: next } as Partial<UserRow>);
 
     // persist
     void (async () => {
@@ -168,10 +169,8 @@ function StatusSelectCell(props: StatusSelectCellProps) {
       }).catch(() => null);
 
       if (!res || !res.ok) {
-        // revert
-        apiRef.current.updateRows([
-          { id: id as UserRow['id'], [field]: prev } as Partial<UserRow> & { id: UserRow['id'] },
-        ]);
+        // Hata → geri al
+        restoreRow?.(snapshot);
       }
     })();
   };
@@ -205,18 +204,16 @@ function StatusSelectCell(props: StatusSelectCellProps) {
 /* Delete Cell                                                                 */
 /* -------------------------------------------------------------------------- */
 
-type DeleteCellProps = GridRenderCellParams<UserRow, null> & {
-  canDelete: boolean;
-};
+type DeleteCellProps =
+  GridRenderCellParams<UserRow, null> & { canDelete: boolean } & PatchFns;
 
 function DeleteCell(props: DeleteCellProps) {
-  const { id, row, canDelete } = props;
-  const apiRef = useGridApiContext();
+  const { id, row, canDelete, removeRow, restoreRow } = props;
 
   const [open, setOpen] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
-  const { show } = useSnackbar();                // ← snackbar burada
+  const { show } = useSnackbar();
   const name = row.username || row.email || 'kullanıcı';
 
   const openDialog = (e: React.MouseEvent) => {
@@ -234,11 +231,9 @@ function DeleteCell(props: DeleteCellProps) {
     if (!canDelete) return;
     setBusy(true);
 
-    // 1) Optimistic remove
-    const snapshot = row as UserRow;
-    apiRef.current.updateRows([
-      { id: id as UserRow['id'], _action: 'delete' } as { id: UserRow['id']; _action: 'delete' },
-    ]);
+    // 1) Optimistic: satırı kaldır
+    const snapshot: UserRow = { ...row };
+    removeRow?.(String(id));
 
     // 2) Persist
     let ok = false;
@@ -255,8 +250,8 @@ function DeleteCell(props: DeleteCellProps) {
         throw new Error(msg);
       }
     } catch (err) {
-      // 3) Revert + snackbar error
-      apiRef.current.updateRows([{ ...(snapshot as UserRow), id: id as UserRow['id'] }]);
+      // 3) Revert + snackbar
+      restoreRow?.(snapshot);
       show(err instanceof Error ? `Silinemedi: ${err.message}` : 'Silinemedi.', 'error');
       setBusy(false);
       setOpen(false);
@@ -303,14 +298,17 @@ export function buildColumns(
   {
     canEditRole,
     canEditStatus,
-    canDeleteUser, // ← yeni
-    selfUserId,    // ← yeni
+    canDeleteUser,
+    selfUserId,
+    patchRow,
+    restoreRow,
+    removeRow,
   }: {
     canEditRole?: (row: UserRow) => boolean;
     canEditStatus?: (row: UserRow) => boolean;
     canDeleteUser?: (row: UserRow) => boolean;
-    selfUserId?: string | null; // ← yeni
-  } = {}
+    selfUserId?: string | null;
+  } & PatchFns = {}
 ): GridColDef<UserRow>[] {
   const cols: GridColDef<UserRow>[] = [
     {
@@ -368,10 +366,12 @@ export function buildColumns(
       resizable: false,
       type: 'singleSelect',
       valueOptions: ROLE_OPTIONS.map((v) => ({ value: v, label: ROLE_LABELS_TR[v] })),
-      renderCell: (params) => (
+      renderCell: (p) => (
         <RoleSelectCell
-          {...params}
-          editable={canEditRole ? canEditRole(params.row) : false}
+          {...p}
+          editable={canEditRole ? canEditRole(p.row) : false}
+          patchRow={patchRow}
+          restoreRow={restoreRow}
         />
       ),
       sortComparator: (a, b) =>
@@ -405,10 +405,12 @@ export function buildColumns(
       resizable: false,
       disableColumnMenu: true,
       valueOptions: STATUS_OPTIONS.map((v) => ({ value: v, label: STATUS_LABELS_TR[v] })),
-      renderCell: (params: GridRenderCellParams<UserRow, AppStatus | null>) => (
+      renderCell: (p: GridRenderCellParams<UserRow, AppStatus | null>) => (
         <StatusSelectCell
-          {...params}
-          editable={canEditStatus ? canEditStatus(params.row) : false}
+          {...p}
+          editable={canEditStatus ? canEditStatus(p.row) : false}
+          patchRow={patchRow}
+          restoreRow={restoreRow}
         />
       ),
       sortComparator: (a, b) =>
@@ -438,7 +440,7 @@ export function buildColumns(
         fallbackText(params.value),
     },
 
-    /* --- YENİ: Katılma Tarihi --- */
+    /* --- Katılma Tarihi --- */
     {
       field: 'created_at',
       headerName: 'Katılma Tarihi',
@@ -449,7 +451,6 @@ export function buildColumns(
       disableColumnMenu: true,
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         formatDateTimeTR(params.value ?? null),
-      // Tarihe göre sırala; parse edilemeyenler en alta düşer.
       sortComparator: (a: unknown, b: unknown): number => {
         const ta = typeof a === 'string' ? Date.parse(a) : Number.NaN;
         const tb = typeof b === 'string' ? Date.parse(b) : Number.NaN;
@@ -459,7 +460,7 @@ export function buildColumns(
       },
     },
 
-    /* --- YENİ: Silme Sütunu (en son sütun) --- */
+    /* --- Silme Sütunu (en son sütun) --- */
     {
       field: '__delete__',
       headerName: 'Sil',
@@ -470,22 +471,20 @@ export function buildColumns(
       disableColumnMenu: true,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => {
+      renderCell: (p) => {
         // KENDİ SATIRIN: buton hiç görünmesin, boş kalsın
-        const isSelf = selfUserId ? params.row.id === selfUserId : false;
+        const isSelf = selfUserId ? p.row.id === selfUserId : false;
         if (isSelf) {
-          // Görsel olarak boş bir yer tutucu (isteğe bağlı)
           return <Box component="span" sx={{ display: 'inline-block', width: 24, height: 24 }} />;
-          // veya sadece: return null;
         }
-
-        // Diğer durumlarda normal DeleteCell: yetkin varsa aktif, yoksa disabled
-        const canDelete = canDeleteUser ? canDeleteUser(params.row) : false;
+        const canDelete = canDeleteUser ? canDeleteUser(p.row) : false;
         return (
           <DeleteCell
-            {...params}
+            {...p}
             value={null}
             canDelete={canDelete}
+            removeRow={removeRow}
+            restoreRow={restoreRow}
           />
         );
       },
