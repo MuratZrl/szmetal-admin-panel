@@ -11,8 +11,14 @@ type Role = Tables<'users'>['role'];
 type Status = Tables<'users'>['status'];
 type UserRow = { role: Role; status: Status };
 
-const AUTH_ROUTES = ['/login', '/register', '/forget-password', '/reset-password'] as const;
-const PUBLIC_ROUTES = ['/', '/403', '/unauthorized'] as const;
+const AUTH_ROUTES = [
+  '/login',
+  '/register',
+  '/forgot-password',  // Formdaki link
+  '/reset-password',
+] as const;
+
+const PUBLIC_ROUTES = ['/403', '/unauthorized'] as const;
 
 /** Rol erişimleri (son halinle aynı bıraktım) */
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
@@ -178,10 +184,15 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
       NextResponse.redirect(new URL('/unauthorized?reason=banned', req.url))
     );
   }
-  if (profile.status === 'Inactive' && (npath === '/create_request' || npath.startsWith('/create_request/'))) {
-    return withForwardedCookies(
-      NextResponse.redirect(new URL('/unauthorized?reason=inactive', req.url))
-    );
+
+  if (profile.status === 'Inactive') {
+    const isAccount =
+      npath === '/account' || npath.startsWith('/account/');
+    if (!isAccount) {
+      const url = new URL('/account?reason=inactive', req.url);
+      return withForwardedCookies(NextResponse.redirect(url));
+    }
+    // /account ise devam
   }
 
   // 6) Login iken auth sayfalarına gitme → HERKES /account

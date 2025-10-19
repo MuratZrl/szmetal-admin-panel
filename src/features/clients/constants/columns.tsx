@@ -3,13 +3,16 @@
 
 import * as React from 'react';
 
-import { Box, Avatar, Select, MenuItem } from '@mui/material';
+import { Box, Avatar, Select, MenuItem, IconButton, Tooltip } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   type GridColDef,
   type GridRenderCellParams,
   useGridApiContext,
 } from '@mui/x-data-grid';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
+import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 
 import type { UserRow } from '@/features/clients/services/table.server';
 
@@ -199,6 +202,100 @@ function StatusSelectCell(props: StatusSelectCellProps) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Delete Cell                                                                 */
+/* -------------------------------------------------------------------------- */
+
+type DeleteCellProps = GridRenderCellParams<UserRow, null> & {
+  canDelete: boolean;
+};
+
+function DeleteCell(props: DeleteCellProps) {
+  const { id, row, canDelete } = props;
+  const apiRef = useGridApiContext();
+
+  const [open, setOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+
+  const { show } = useSnackbar();                // ← snackbar burada
+  const name = row.username || row.email || 'kullanıcı';
+
+  const openDialog = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canDelete) return;
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    if (busy) return;
+    setOpen(false);
+  };
+
+  const handleConfirm = async () => {
+    if (!canDelete) return;
+    setBusy(true);
+
+    // 1) Optimistic remove
+    const snapshot = row as UserRow;
+    apiRef.current.updateRows([
+      { id: id as UserRow['id'], _action: 'delete' } as { id: UserRow['id']; _action: 'delete' },
+    ]);
+
+    // 2) Persist
+    let ok = false;
+    try {
+      const res = await fetch('/api/clients/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: String(id) }),
+      });
+      ok = res.ok;
+      if (!ok) {
+        const j = (await res.json().catch(() => null)) as { error?: string; details?: string } | null;
+        const msg = j?.error || j?.details || 'Silme başarısız.';
+        throw new Error(msg);
+      }
+    } catch (err) {
+      // 3) Revert + snackbar error
+      apiRef.current.updateRows([{ ...(snapshot as UserRow), id: id as UserRow['id'] }]);
+      show(err instanceof Error ? `Silinemedi: ${err.message}` : 'Silinemedi.', 'error');
+      setBusy(false);
+      setOpen(false);
+      return;
+    }
+
+    // 4) Snackbar success
+    show(`"${name}" silindi.`, 'success');
+    setBusy(false);
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <Tooltip title={canDelete ? 'Sil' : 'Yetki yok'}>
+        <span>
+          <IconButton aria-label="Sil" size="small" onClick={openDialog} disabled={!canDelete}>
+            <DeleteOutlineIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      <ConfirmDialog
+        open={open}
+        onClose={handleClose}
+        onConfirm={handleConfirm}
+        title="Kullanıcıyı sil"
+        description={`"${name}" kaydını silmek istediğine emin misin? Bu işlem geri alınamaz.`}
+        confirmText={busy ? 'Siliniyor...' : 'Evet, sil'}
+        cancelText="Vazgeç"
+        confirmColor="error"
+        confirmDisabled={busy}
+        disableClose={busy}
+      />
+    </>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Kolonlar                                                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -206,9 +303,13 @@ export function buildColumns(
   {
     canEditRole,
     canEditStatus,
+    canDeleteUser, // ← yeni
+    selfUserId,    // ← yeni
   }: {
     canEditRole?: (row: UserRow) => boolean;
     canEditStatus?: (row: UserRow) => boolean;
+    canDeleteUser?: (row: UserRow) => boolean;
+    selfUserId?: string | null; // ← yeni
   } = {}
 ): GridColDef<UserRow>[] {
   const cols: GridColDef<UserRow>[] = [
@@ -337,7 +438,7 @@ export function buildColumns(
         fallbackText(params.value),
     },
 
-    /* --- YENİ: Katılma Tarihi (en son sütun) --- */
+    /* --- YENİ: Katılma Tarihi --- */
     {
       field: 'created_at',
       headerName: 'Katılma Tarihi',
@@ -355,6 +456,38 @@ export function buildColumns(
         const ax = Number.isFinite(ta) ? ta : Number.NEGATIVE_INFINITY;
         const bx = Number.isFinite(tb) ? tb : Number.NEGATIVE_INFINITY;
         return ax - bx;
+      },
+    },
+
+    /* --- YENİ: Silme Sütunu (en son sütun) --- */
+    {
+      field: '__delete__',
+      headerName: 'Sil',
+      width: 90,
+      sortable: false,
+      filterable: false,
+      editable: false,
+      disableColumnMenu: true,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        // KENDİ SATIRIN: buton hiç görünmesin, boş kalsın
+        const isSelf = selfUserId ? params.row.id === selfUserId : false;
+        if (isSelf) {
+          // Görsel olarak boş bir yer tutucu (isteğe bağlı)
+          return <Box component="span" sx={{ display: 'inline-block', width: 24, height: 24 }} />;
+          // veya sadece: return null;
+        }
+
+        // Diğer durumlarda normal DeleteCell: yetkin varsa aktif, yoksa disabled
+        const canDelete = canDeleteUser ? canDeleteUser(params.row) : false;
+        return (
+          <DeleteCell
+            {...params}
+            value={null}
+            canDelete={canDelete}
+          />
+        );
       },
     },
   ];

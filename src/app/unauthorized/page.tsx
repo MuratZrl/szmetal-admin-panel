@@ -20,6 +20,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 type Reason =
   | 'banned'
   | 'inactive'
+  | 'role'              // ← middleware’in gönderdiği değer
   | 'forbidden'
   | 'no_profile'
   | 'profile-missing'
@@ -30,6 +31,7 @@ function getReason(raw: string | null): Reason {
   const r = (raw ?? '').trim().toLowerCase();
   if (r === 'banned') return 'banned';
   if (r === 'inactive') return 'inactive';
+  if (r === 'role') return 'role';
   if (r === 'forbidden') return 'forbidden';
   if (r === 'no_profile') return 'no_profile';
   if (r === 'profile-missing') return 'profile-missing';
@@ -47,8 +49,9 @@ function reasonText(reason: Reason): { title: string; desc: string } {
     case 'inactive':
       return {
         title: 'Hesap Pasif',
-        desc: 'Hesabınız pasif durumda. Bazı sayfalara erişim kısıtlı olabilir.',
+        desc: 'Hesabınız pasif durumda. Yalnızca Hesabım sayfasını görüntüleyebilirsiniz.',
       };
+    case 'role':
     case 'forbidden':
       return {
         title: 'Erişim Reddedildi',
@@ -82,7 +85,7 @@ export default function UnauthorizedPage(): React.JSX.Element {
 
   return (
     <Box
-      sx={({
+      sx={{
         minHeight: '100vh',
         width: '100%',
         display: 'flex',
@@ -91,9 +94,10 @@ export default function UnauthorizedPage(): React.JSX.Element {
         px: 2,
         py: 6,
         bgcolor: 'background.default',
-      })}
+      }}
     >
-      <Grid justifyContent="center">
+      {/* Dış grid container OLMALI */}
+      <Grid container justifyContent="center">
         <Grid size={{ xs: 12, sm: 10, md: 7 }}>
           <Paper
             elevation={0}
@@ -113,7 +117,6 @@ export default function UnauthorizedPage(): React.JSX.Element {
                 {desc}
               </Typography>
 
-              {/* Ek bilgi */}
               <Alert
                 severity="error"
                 sx={{ width: '100%', mt: 1 }}
@@ -122,7 +125,6 @@ export default function UnauthorizedPage(): React.JSX.Element {
                 Eğer bunun bir hata olduğunu düşünüyorsanız sistem yöneticinizle iletişime geçin.
               </Alert>
 
-              {/* Aksiyonlar */}
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
                 spacing={1.25}
@@ -139,7 +141,8 @@ export default function UnauthorizedPage(): React.JSX.Element {
                 </Button>
 
                 <Button
-                  onClick={() => router.push('/')}
+                  // Doğrudan hedefe
+                  onClick={() => router.push('/account')}
                   variant="contained"
                   color="primary"
                   startIcon={<HomeIcon />}
@@ -147,7 +150,6 @@ export default function UnauthorizedPage(): React.JSX.Element {
                 >
                   Ana Sayfa
                 </Button>
-
               </Stack>
             </Stack>
           </Paper>

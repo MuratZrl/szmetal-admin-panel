@@ -1,57 +1,152 @@
-// src/lib/auth/guards.server.ts
+// src/lib/supabase/auth/guards.server.ts
+import 'server-only';
+
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+import type { Tables } from '@/types/supabase';
 
-type Status = 'Active' | 'Inactive' | 'Banned';
-type Role = 'Admin' | 'Manager' | 'User';
-type Profile = { status: Status; role: Role } | null;
+/* -------------------------------------------------------------------------- */
+/* Types                                                                       */
+/* -------------------------------------------------------------------------- */
 
-async function loadAuthState() {
-  const sb = await createSupabaseServerClient(); // sadece okur
-  const { data: sess } = await sb.auth.getSession();
-  const session = sess?.session ?? null;
+type Role = Tables<'users'>['role'];
+type Status = Tables<'users'>['status'];
 
-  if (!session) {
-    return { sb, session: null, user: null, profile: null as Profile };
-  }
+type ProfileRow = {
+  id: Tables<'users'>['id'];
+  role: Role;
+  status: Status;
+};
 
-  const { data: u } = await sb.auth.getUser();
-  const user = u?.user ?? null;
+/* -------------------------------------------------------------------------- */
+/* Role access matrix                                                          */
+/* -------------------------------------------------------------------------- */
 
-  if (!user) {
-    // render akışında cookie yazma yok; sadece durum döneriz
-    return { sb, session: null, user: null, profile: null as Profile };
-  }
+const ROLE_ACCESS: Record<Role, readonly string[]> = {
+  Admin: ['*'],
+  Manager: [
+    '/account',
+    '/requests',
+    '/clients',
+    '/orders',
+    '/create_request',
+    '/products',
+  ],
+  User: ['/account', '/create_request', '/orders', '/products'],
+} as const;
 
-  const { data: profile } = await sb
-    .from('users')
-    .select('status, role')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  return { sb, session, user, profile: (profile as Profile) ?? null };
+function normalizePath(p: string): string {
+  if (!p) return '/';
+  const q = p.split('#')[0]!.split('?')[0]!;
+  return q === '/' ? '/' : q.replace(/\/+$/g, '');
 }
 
-/** Login sayfasında çağır: aktif kullanıcı varsa account'a at; sorunluysa /api/logout ile temizlet */
-export async function guardLoginPage() {
+function roleAllows(role: Role, path: string): boolean {
+  const n = normalizePath(path);
+  const allow = ROLE_ACCESS[role];
+  if (!allow) return false;
+  if (allow.includes('*')) return true;
+  return allow.some(b => n === b || n.startsWith(`${b}/`));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Core loader                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Kullanıcı + profilini yükler. Yoksa { user:null, profile:null } döner. */
+export async function loadAuthState(): Promise<{
+  user: { id: string; email: string | null } | null;
+  profile: ProfileRow | null;
+}> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { user: null, profile: null };
+
+  const { data: prof } = await supabase
+    .from('users')
+    .select('id, role, status')
+    .eq('id', user.id)
+    .maybeSingle<ProfileRow>();
+
+  return {
+    user: { id: user.id, email: user.email ?? null },
+    profile: prof ?? null,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Guards                                                                      */
+/* -------------------------------------------------------------------------- */
+
+/** Login sayfasında çağır: girişliler içeri giremesin. */
+export async function guardLoginPage(): Promise<void> {
   const { user, profile } = await loadAuthState();
 
-  if (!user) return; // login render et
+  if (!user) return; // oturum yok → login render et
 
-  // Profil yok veya aktif değil → logout route'u cookie temizleyip geri çağırır
-  if (!profile || profile.status !== 'Active') {
-    redirect('/api/logout?redirect=/login');
+  // Banlı/profilsiz ise login göstermeyelim
+  if (!profile || profile.status === 'Banned') {
+    redirect('/unauthorized?reason=banned');
   }
 
-  // Aktif kullanıcı → login'e girmesin
+  // Active ya da Inactive fark etmez → login'e girmesin
   redirect('/account');
 }
 
-/** Account sayfası: aktif değilse logout route üzerinden login'e gönder */
-export async function guardAccountPage() {
+/** Account: yalnızca login ve banlı olmayan kullanıcı. Inactive serbest. */
+export async function guardAccountPage(): Promise<void> {
   const { user, profile } = await loadAuthState();
 
-  if (!user || !profile || profile.status !== 'Active') {
-    redirect('/api/logout?redirect=/login');
+  if (!user || !profile) {
+    redirect('/login');
+  }
+
+  if (profile.status === 'Banned') {
+    redirect('/unauthorized?reason=banned');
+  }
+  // Active/Inactive → render etmeye devam
+}
+
+/**
+ * Her korumalı sayfada çağır.
+ * Statü kuralları rol kurallarından ÖNCE uygulanır.
+ *
+ * Örnek:
+ *   await requirePageAccess('/clients')
+ *   await requirePageAccess('/dashboard')
+ */
+export async function requirePageAccess(pagePath: string): Promise<void> {
+  const path = normalizePath(pagePath);
+  const { user, profile } = await loadAuthState();
+
+  if (!user || !profile) {
+    redirect('/login');
+  }
+
+  // 1) Status önce
+  if (profile.status === 'Banned') {
+    redirect('/unauthorized?reason=banned');
+  }
+
+  if (profile.status === 'Inactive') {
+    // Inactive sadece /account
+    const isAccount = path === '/account' || path.startsWith('/account/');
+    if (!isAccount) redirect('/account?reason=inactive');
+    return; // /account serbest
+  }
+
+  // 2) Role sonra (Active kullanıcılar)
+  if (profile.role === 'Admin') return;
+
+  if (!roleAllows(profile.role, path)) {
+    redirect('/unauthorized?reason=role');
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* (Opsiyonel) Dışa aç: rol matrisi ve normalize yardımcıları                  */
+/* -------------------------------------------------------------------------- */
+export { ROLE_ACCESS };

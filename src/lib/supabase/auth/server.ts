@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
+import type { User } from '@supabase/supabase-js';
 
 export type Role = 'Admin' | 'Manager' | 'User';
 export type UserStatus = 'Active' | 'Inactive' | 'Banned';
@@ -18,22 +19,20 @@ type ProfileRow = Pick<
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+/** RSC'de cookie yazmayız, sadece okuruz. */
 export const getServerSupabase = cache(async () => {
   const jar = await cookies();
-  return createServerClient<Database, 'public'>(URL, ANON, {
+  return createServerClient<Database>(URL, ANON, {
     cookies: {
       getAll: () => jar.getAll(),
-      setAll: () => { /* RSC'de yazma yok */ },
-    },
-    auth: {
-      detectSessionInUrl: false,
-      persistSession: false,
-      autoRefreshToken: false,
+      setAll: () => {
+        /* no-op in RSC */
+      },
     },
   });
 });
 
-export const getUserOrNull = cache(async () => {
+export const getUserOrNull = cache(async (): Promise<User | null> => {
   const sb = await getServerSupabase();
   const { data, error } = await sb.auth.getUser();
   if (error) return null;
@@ -41,7 +40,7 @@ export const getUserOrNull = cache(async () => {
 });
 
 export const getUserAndProfile = cache(async (): Promise<{
-  user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>> | null;
+  user: User | null;
   profile: ProfileRow | null;
 }> => {
   const sb = await getServerSupabase();
@@ -57,28 +56,29 @@ export const getUserAndProfile = cache(async (): Promise<{
   return { user, profile: profile ?? null };
 });
 
-/** Profil zorunlu + ban kontrolü: profil yoksa veya banlıysa redirect. */
+/** Profil zorunlu + ban kontrolü */
 export const requireActiveUser = cache(async (): Promise<{
-  user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>>;
+  user: User;
   profile: ProfileRow;
 }> => {
   const { user, profile } = await getUserAndProfile();
   if (!user) redirect('/login');
   if (!profile) redirect('/login?error=profile-missing');
   if (profile.status === 'Banned') redirect('/unauthorized');
-  return { user, profile }; // redirect never döndüğü için profile kesin var
+  return { user, profile };
 });
 
-/**
- * Sayfa erişim kuralları:
- * - Admin: her yer
- * - Manager: "dashboard" hariç
- * - User: sadece "account", "create_request", "orders"
- * - Ek kural: "Inactive" kullanıcı /create_request göremez
- */
+/** Sayfa erişim kuralları */
 export async function requirePageAccess(
-  page: 'account' | 'dashboard' | 'create_request' | 'orders' | 'clients' | 'requests' | 'products'
-): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getUserOrNull>>>; profile: ProfileRow }> {
+  page:
+    | 'account'
+    | 'dashboard'
+    | 'create_request'
+    | 'orders'
+    | 'clients'
+    | 'requests'
+    | 'products'
+): Promise<{ user: User; profile: ProfileRow }> {
   const { user, profile } = await requireActiveUser();
   const role = profile.role as Role;
   const status = profile.status as UserStatus;
@@ -94,9 +94,10 @@ export async function requirePageAccess(
     return { user, profile };
   }
 
-  // role === 'User'
-  const userAllowed = new Set(['account', 'create_request', 'orders', 'products']);
-  if (!userAllowed.has(page)) redirect('/unauthorized?reason=role');
+  const userAllowed = new Set(['account', 'create_request', 'orders', 'products'] as const);
+  if (!userAllowed.has(page as (typeof userAllowed extends Set<infer U> ? U : never))) {
+    redirect('/unauthorized?reason=role');
+  }
 
   return { user, profile };
 }

@@ -1,12 +1,13 @@
-// src/features/systems/SystemsShell.tsx
+// src/features/create_request/components/SystemsShell.client.tsx
 'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
+import { Grid } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import type { Route } from 'next';
 
 import StepperComponent from '@/components/ui/stepper/Stepper';
 import SystemCard from '@/features/create_request/components/SystemCard.client';
@@ -21,21 +22,22 @@ export default function SystemsShell({ initialSystems }: SystemsShellProps) {
   const { systems, loading, refresh } = useSystems(initialSystems);
 
   const goStep2 = React.useCallback((slug: string) => {
-    router.push(`/create_request/${slug}/step2`);
+    const href = `/create_request/${slug}/step2` as Route; // Typed Routes ile barış
+    router.push(href);
   }, [router]);
 
   // Grid v2: size objesi sadece ITEM'larda kullanılır
-  const itemSize = React.useMemo(() => ({ xs: 12 as const, sm: 6 as const, md: 4 as const }), []);
+  const itemSize = React.useMemo(() => ({ xs: 12, sm: 6, md: 4 } as const), []);
   const skeletons = React.useMemo(() => Array.from({ length: 8 }), []);
   const justify = systems?.length === 1 ? 'flex-start' : 'flex-start';
 
   return (
-    <Box px={1} >
+    <Box px={1}>
       <Box>
         <StepperComponent activeStep={0} />
       </Box>
 
-      <Box >
+      <Box>
         {loading ? (
           <Grid container spacing={2} justifyContent={justify} sx={{ width: '100%' }}>
             {skeletons.map((_, i) => (
@@ -70,10 +72,10 @@ export default function SystemsShell({ initialSystems }: SystemsShellProps) {
           <Grid container spacing={2} justifyContent={justify} sx={{ width: '100%' }}>
             {systems.map((s) => (
               <Grid key={s.id} size={itemSize}>
-                <SystemCard 
-                  {...s} 
-                  tags={s.tag ? [s.tag] : []} 
-                  onRequestClick={() => goStep2(s.id)} 
+                <SystemCard
+                  {...s}
+                  tags={s.tag ? [s.tag] : []}
+                  onRequestClick={() => goStep2(s.id)}
                 />
               </Grid>
             ))}

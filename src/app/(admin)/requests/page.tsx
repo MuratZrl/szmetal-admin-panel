@@ -3,9 +3,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
+import * as React from 'react';
 import { Box, Grid } from '@mui/material';
 
-import { requirePageAccess } from '@/lib/supabase/auth/server';      // ← EKLE
+import { requirePageAccess } from '@/lib/supabase/auth/guards.server';
 
 import CardsGrid from '@/features/requests/components/CardsGrid.client';
 import { getRequestsCardsData } from '@/features/requests/services/card.server';
@@ -15,7 +16,6 @@ import LineAreaChart, { type LineSeries } from '@/components/ui/charts/LineAreaC
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 
 import { getRequestsLineCharts } from '@/features/requests/services/chart.server';
-
 import TableGrid from '@/features/requests/components/TableGrid.client';
 import { getRequestsTablePage } from '@/features/requests/services/table.server';
 
@@ -32,8 +32,8 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default async function RequestsPage() {
-  // ←← KİLİT: Sadece Admin/Manager içeri girsin
-  await requirePageAccess('requests');
+  // Sadece Admin/Manager
+  await requirePageAccess('/requests');
 
   const [cardsData, charts, tablePage] = await Promise.all([
     getRequestsCardsData(),
@@ -82,13 +82,10 @@ export default async function RequestsPage() {
             />
           </ChartCard>
         </Grid>
+
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Duruma Göre Toplam Talepler" timeLabel={rangeLabel}>
-            <GroupBarChart
-              labels={charts.byStatus.labels}
-              series={barSeries}
-              height={320}
-            />
+            <GroupBarChart labels={charts.byStatus.labels} series={barSeries} height={320} />
           </ChartCard>
         </Grid>
       </Grid>

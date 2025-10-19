@@ -1,4 +1,9 @@
 // app/(admin)/clients/page.tsx
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
+import * as React from 'react';
 import { Box, Grid } from '@mui/material';
 
 import { fetchClientsCards } from '@/features/clients/services/card.server';
@@ -18,24 +23,19 @@ import {
   STATUS_LABELS_TR,
 } from '@/features/clients/constants/users';
 
-import { requirePageAccess } from '@/lib/supabase/auth/server';
+import { requirePageAccess } from '@/lib/supabase/auth/guards.server';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
-
-// DİKKAT: doğru import yolu
-import AccessAutoRedirect from '@/features/auth/AccessAuthRedirect.client';
 
 // TableGrid’in beklediği rol tipi
 import type { AppRole } from '@/features/clients/constants/columns';
-
-export const revalidate = 60;
 
 function isAppRole(v: unknown): v is AppRole {
   return v === 'Admin' || v === 'Manager' || v === 'User';
 }
 
 export default async function Page() {
-  // Bu sayfaya kimler girebilir? (Admin, Manager)
-  await requirePageAccess('clients');
+  // Statü önce, rol sonra. Inactive ise /account’a döner.
+  await requirePageAccess('/clients');
 
   const [cards, line6m, rows] = await Promise.all([
     fetchClientsCards(),
@@ -50,18 +50,14 @@ export default async function Page() {
 
   // Kendi rolünü DB'den oku (public.users)
   let myRole: AppRole = 'User';
-  
   if (selfUserId) {
     const { data } = await sb
       .from('users')
       .select('role')
       .eq('id', selfUserId)
       .returns<{ role: string }[]>();
-
     const r = data?.[0]?.role ?? null;
-    if (isAppRole(r)) {
-      myRole = r;
-    }
+    if (isAppRole(r)) myRole = r;
   }
 
   // "May - Eki" gibi aralık etiketi
@@ -84,29 +80,17 @@ export default async function Page() {
 
   return (
     <Box px={1} py={2}>
-      {/* Oturum sahibini canlı izle; yetki düşerse anında yönlendir */}
-      <AccessAutoRedirect selfUserId={selfUserId} />
-
       {/* 1) Üst stat kartları */}
       <CardsGrid data={cards} />
 
       {/* 2) Grafikler */}
       <Grid container spacing={2} sx={{ mt: 2 }} alignItems="stretch">
         <Grid size={{ xs: 12, md: 6 }}>
-          <ChartCard
-            title="Toplam Kullanıcılar"
-            timeLabel={rangeLabel}
-          >
+          <ChartCard title="Toplam Kullanıcılar" timeLabel={rangeLabel}>
             <LineAreaChart
               labels={line6m.labels}
               series={[
-                {
-                  label: 'Toplam',
-                  data: line6m.totalUsers,
-                  area: true,
-                  showMark: true,
-                  valueSuffix: ' kullanıcı',
-                },
+                { label: 'Toplam', data: line6m.totalUsers, area: true, showMark: true, valueSuffix: ' kullanıcı' },
               ]}
               height={320}
               grid={{ horizontal: true, vertical: false }}
@@ -115,10 +99,7 @@ export default async function Page() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <ChartCard
-            title="Duruma Göre Toplam Kullanıcılar"
-            timeLabel={rangeLabel}
-          >
+          <ChartCard title="Duruma Göre Toplam Kullanıcılar" timeLabel={rangeLabel}>
             <GroupBarChart labels={line6m.labels} series={barSeries} height={320} />
           </ChartCard>
         </Grid>
