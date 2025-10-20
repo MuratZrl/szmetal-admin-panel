@@ -12,7 +12,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-const C1 = '#5d5d5dff';
+const C1 = '#4f4f4fff';
 const C2 = '#151515ff';
 
 export default function AuthMainPanel({ children }: Props) {

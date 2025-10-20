@@ -72,18 +72,34 @@ export default function LoginForm() {
         }),
       });
 
+      // YENİ
       if (res.status === 403) {
-        router.replace('/unauthorized');
+        let key = 'forbidden';
+        try {
+          const data: { error?: string } = await res.json();
+          key = data?.error ?? key;
+        } catch { /* yut gitsin */ }
+
+        if (key === 'banned') {
+          show('Hesabınız engellenmiş. Lütfen yönetici ile iletişime geçin.', 'error');
+        } else if (key === 'email_not_confirmed') {
+          show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
+        } else {
+          show('Erişim reddedildi.', 'error');
+        }
         return;
       }
+
       if (res.status === 409) {
         show('E-posta doğrulanmamış. Lütfen e-postanı doğrula.', 'error');
         return;
       }
+
       if (res.status === 401) {
         show('E-posta veya şifre hatalı.', 'error');
         return;
       }
+      
       if (!res.ok) {
         let reason = '';
         try {

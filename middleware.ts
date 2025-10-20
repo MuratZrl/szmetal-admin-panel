@@ -180,8 +180,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     for (const name of getSupabaseCookieNames(req)) {
       writeCookie(name, '', { path: '/', maxAge: 0 });
     }
+    // ESKİ: /unauthorized?reason=banned
+    // YENİ: direkt login'e at
     return withForwardedCookies(
-      NextResponse.redirect(new URL('/unauthorized?reason=banned', req.url))
+      NextResponse.redirect(new URL('/login?reason=banned', req.url))
     );
   }
 

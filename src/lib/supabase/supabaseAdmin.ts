@@ -1,7 +1,7 @@
 // src/lib/supabase/supabaseAdmin.ts
 import 'server-only';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
 /**
@@ -33,7 +33,7 @@ function ensureAdminEnv() {
  * • Tasarım:
  *    - Singleton: HMR/çoklu çağrıda aynı client geri döner.
  */
-let _adminClient: ReturnType<typeof createClient<Database>> | null = null;
+let _adminClient: SupabaseClient<Database> | null = null;
 
 export function createSupabaseAdminClient() {
   if (_adminClient) return _adminClient;

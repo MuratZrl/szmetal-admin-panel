@@ -20,7 +20,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 type Reason =
   | 'banned'
   | 'inactive'
-  | 'role'              // ← middleware’in gönderdiği değer
+  | 'role'
   | 'forbidden'
   | 'no_profile'
   | 'profile-missing'
@@ -83,6 +83,9 @@ export default function UnauthorizedPage(): React.JSX.Element {
   const reason = getReason(params.get('reason'));
   const { title, desc } = reasonText(reason);
 
+  // banned iken geri butonu YOK
+  const showBack = reason !== 'banned';
+
   return (
     <Box
       sx={{
@@ -96,7 +99,6 @@ export default function UnauthorizedPage(): React.JSX.Element {
         bgcolor: 'background.default',
       }}
     >
-      {/* Dış grid container OLMALI */}
       <Grid container justifyContent="center">
         <Grid size={{ xs: 12, sm: 10, md: 7 }}>
           <Paper
@@ -131,17 +133,18 @@ export default function UnauthorizedPage(): React.JSX.Element {
                 sx={{ mt: 1 }}
                 justifyContent="center"
               >
-                <Button
-                  onClick={() => router.back()}
-                  variant="outlined"
-                  startIcon={<ArrowBackIcon />}
-                  sx={{ textTransform: 'capitalize', borderRadius: 2 }}
-                >
-                  Geri Dön
-                </Button>
+                {showBack && (
+                  <Button
+                    onClick={() => router.back()}
+                    variant="outlined"
+                    startIcon={<ArrowBackIcon />}
+                    sx={{ textTransform: 'capitalize', borderRadius: 2 }}
+                  >
+                    Geri Dön
+                  </Button>
+                )}
 
                 <Button
-                  // Doğrudan hedefe
                   onClick={() => router.push('/account')}
                   variant="contained"
                   color="primary"

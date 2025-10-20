@@ -1,9 +1,16 @@
 // app/api/clients/users/status/route.ts
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { isAppStatus, isUUID } from '@/features/clients/constants/users';
+
+type UsersRow = Database['public']['Tables']['users']['Row'];
+type RoleStatus = Pick<UsersRow, 'role' | 'status'>;
+type IdStatus = Pick<UsersRow, 'id' | 'status'>;
 
 type Body = { userId: string; status: string };
 
@@ -21,13 +28,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: myRow, error: meErr } = await userSb
-    .from('users')
-    .select('role, status')
-    .eq('id', me.id)
-    .single();
+  const meResp = await userSb.from('users').select('role, status').eq('id', me.id).maybeSingle();
+  const myRow = meResp.data as RoleStatus | null;
 
-  if (meErr || !myRow || myRow.role !== 'Admin') {
+  if (meResp.error || !myRow || myRow.role !== 'Admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -40,15 +44,19 @@ export async function POST(req: Request) {
 
   const adminSb = createClient<Database>(URL, SRV, { auth: { persistSession: false } });
 
-  const { data, error } = await adminSb
+  const newStatus = body.status as UsersRow['status'];
+
+  const updResp = await adminSb
     .from('users')
-    .update({ status: body.status as Database['public']['Tables']['users']['Row']['status'] })
-    .eq('id', body.userId as Database['public']['Tables']['users']['Row']['id'])
+    .update({ status: newStatus })
+    .eq('id', body.userId as UsersRow['id'])
     .select('id, status')
     .single();
 
-  if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? 'Update failed' }, { status: 400 });
+  const data = updResp.data as IdStatus | null;
+
+  if (updResp.error || !data) {
+    return NextResponse.json({ error: updResp.error?.message ?? 'Update failed' }, { status: 400 });
   }
 
   return NextResponse.json({ id: data.id, status: data.status });

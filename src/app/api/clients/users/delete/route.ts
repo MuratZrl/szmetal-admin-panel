@@ -7,6 +7,10 @@ import { createClient } from '@supabase/supabase-js';
 import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
 import type { Database } from '@/types/supabase';
 
+type UsersRow = Database['public']['Tables']['users']['Row'];
+type OnlyId = Pick<UsersRow, 'id'>;
+type OnlyRole = Pick<UsersRow, 'role'>;
+
 type Json = Record<string, unknown>;
 function json<T extends Json>(body: T, init?: number | ResponseInit) {
   const resInit: ResponseInit | undefined = typeof init === 'number' ? { status: init } : init;
@@ -39,28 +43,32 @@ export async function POST(req: NextRequest) {
   const { data: auth, error: authErr } = await sb.auth.getUser();
   if (authErr || !auth.user) return json({ error: 'unauthorized' }, 401);
 
-  const { data: meRow, error: meErr } = await sb
-    .from('users')
-    .select('role')
-    .eq('id', auth.user.id)
-    .maybeSingle<{ role: 'Admin' | 'Manager' | 'User' }>();
-  if (meErr || !meRow) return json({ error: 'profile_missing' }, 403);
+  const meResp = await sb.from('users').select('role').eq('id', auth.user.id).maybeSingle();
+  const meRow = meResp.data as OnlyRole | null;
+
+  if (meResp.error || !meRow) return json({ error: 'profile_missing' }, 403);
   if (meRow.role !== 'Admin') return json({ error: 'forbidden' }, 403);
 
   // 2) Body
   let payload: unknown;
-  try { payload = await req.json(); } catch { return json({ error: 'invalid_json' }, 400); }
+  try {
+    payload = await req.json();
+  } catch {
+    return json({ error: 'invalid_json' }, 400);
+  }
   const userId = pickUserId(payload);
   if (!userId) return json({ error: 'user_id_missing' }, 400);
   if (userId === auth.user.id) return json({ error: 'cannot_delete_self' }, 400);
 
-  // İsteğe bağlı: son Admin’i silmeye çalışıyorsan engelle
-  const { data: admins } = await sb.from('users').select('id').eq('role', 'Admin');
+  // 3) Son admin’i silmeyi engelle
+  const adminsResp = await sb.from('users').select('id').eq('role', 'Admin');
+  const admins = adminsResp.data as OnlyId[] | null;
+
   if ((admins?.length ?? 0) <= 1 && admins?.[0]?.id === userId) {
     return json({ error: 'cannot_delete_last_admin' }, 409);
   }
 
-  // 3) Gerçek silme: auth.users → cascade ile public.users da gider
+  // 4) Gerçek silme: auth.users → cascade ile public.users da gider
   const admin = getSupabaseAdmin();
   const { error: delErr } = await admin.auth.admin.deleteUser(userId);
   if (delErr) return json({ error: 'delete_failed', details: delErr.message }, 409);
@@ -69,7 +77,9 @@ export async function POST(req: NextRequest) {
 }
 
 // Diğer methodları kapat
-export async function GET()     { return json({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: 'POST' } }); }
+export async function GET() {
+  return json({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: 'POST' } });
+}
 export async function PUT()     { return GET(); }
 export async function PATCH()   { return GET(); }
 export async function DELETE()  { return GET(); }

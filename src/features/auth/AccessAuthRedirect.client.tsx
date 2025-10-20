@@ -19,25 +19,27 @@ type Props = {
   initialStatus?: Row['status'] | null;
 };
 
+type Decision =
+  | { action: 'none' }
+  | { action: 'redirect'; to: `/${string}` }
+  | { action: 'logout'; to: `/${string}` };
+
 /**
  * Layout için minimal politika:
- * - Banned: her yerde /unauthorized?reason=banned
+ * - Banned: her yerde LOGOUT + /login?reason=banned
  * - Inactive: /account dışındaysa /account?reason=inactive
- * - Active: dokunma (rol bazlı yetkileri sayfa guard’ları ve middleware halleder)
+ * - Active: dokunma
  */
-function layoutPolicy(
-  pathname: string,
-  status: Status
-): { shouldRedirect: boolean; to?: `/${string}` } {
+function layoutPolicy(pathname: string, status: Status): Decision {
   if (status === 'Banned') {
-    return { shouldRedirect: true, to: '/unauthorized?reason=banned' };
+    return { action: 'logout', to: '/login?reason=banned' };
   }
   if (status === 'Inactive') {
     if (!pathname.startsWith('/account')) {
-      return { shouldRedirect: true, to: '/account?reason=inactive' };
+      return { action: 'redirect', to: '/account?reason=inactive' };
     }
   }
-  return { shouldRedirect: false };
+  return { action: 'none' };
 }
 
 export default function AccessAutoRedirect({
@@ -62,15 +64,36 @@ export default function AccessAutoRedirect({
   const [, setRole] = React.useState<Role>(initialRole);
   const [status, setStatus] = React.useState<Status>(initialStatus);
 
-  // 1) İlk snapshot'a göre nazikçe yönlendir
+  // Logout’u çift tetiklemeyi engelle
+  const logoutOnceRef = React.useRef(false);
+  const doLogout = React.useCallback(
+    async (to: `/${string}`) => {
+      if (logoutOnceRef.current) return;
+      logoutOnceRef.current = true;
+      try {
+        await fetch(`/api/logout?redirect=${encodeURIComponent(to)}`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch {
+        // server logout başarısız olsa bile kullanıcıyı kurtarmak için yine de yönlendir
+      }
+      router.replace(to as Route);
+    },
+    [router]
+  );
+
+  // 1) İlk snapshot'a göre nazikçe yönlendir / logout et
   React.useEffect(() => {
     if (!status) return; // snapshot yoksa bekle
     const decision = layoutPolicy(pathname, status);
-    if (decision.shouldRedirect && decision.to) {
+    if (decision.action === 'logout') {
+      void doLogout(decision.to);
+    } else if (decision.action === 'redirect') {
       router.replace(decision.to as Route);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, status]);
 
   // 2) Snapshot yoksa bir defa DB'den çek
   React.useEffect(() => {
@@ -95,7 +118,9 @@ export default function AccessAutoRedirect({
 
       if (nextStatus) {
         const decision = layoutPolicy(pathname, nextStatus);
-        if (decision.shouldRedirect && decision.to) {
+        if (decision.action === 'logout') {
+          void doLogout(decision.to);
+        } else if (decision.action === 'redirect') {
           router.replace(decision.to as Route);
         }
       }
@@ -104,7 +129,7 @@ export default function AccessAutoRedirect({
     return () => {
       cancelled = true;
     };
-  }, [selfUserId, status, pathname, supabase, router]);
+  }, [selfUserId, status, pathname, supabase, router, doLogout]);
 
   // 3) Realtime: statü değişirse uygula (rolü layout’ta zorlamıyoruz)
   React.useEffect(() => {
@@ -119,13 +144,14 @@ export default function AccessAutoRedirect({
           const row = (payload.new ?? payload.old) as Partial<Row>;
           const nextStatus = (row?.status ?? null) as Status;
 
-          // Değişmediyse boşuna koşma
           if (nextStatus === status) return;
 
           setStatus(nextStatus);
 
           const decision = layoutPolicy(pathname, nextStatus);
-          if (decision.shouldRedirect && decision.to) {
+          if (decision.action === 'logout') {
+            void doLogout(decision.to);
+          } else if (decision.action === 'redirect') {
             router.replace(decision.to as Route);
           }
         }
@@ -135,7 +161,7 @@ export default function AccessAutoRedirect({
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [selfUserId, status, pathname, supabase, router]);
+  }, [selfUserId, status, pathname, supabase, router, doLogout]);
 
   return null;
 }
