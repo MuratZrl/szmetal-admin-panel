@@ -61,5 +61,6 @@
     "tailwindcss": "^4",
     "ts-prune": "^0.10.3",
     "typescript": "^5.9.2"
-  }
+  },
+  "engines": { "node": ">=20 <23" } 
 }
