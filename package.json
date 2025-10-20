@@ -5,7 +5,7 @@
   "scripts": {
     "types:supabase": "npx supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",
     "copy:pdf-worker": "node scripts/copy-pdf-worker.mjs",
-    "prebuild": "npm run copy:pdf-worker && npm run types:supabase",
+    "prebuild": "npm run copy:pdf-worker",
     "predev": "npm run types:supabase && npm outdated supabase || exit 0",
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -64,6 +64,11 @@
     "typescript": "^5.9.2"
   },
   "engines": {
-    "node": "20.x"
-  }
+    "node": "22.x"
+  },
+
+  "framework": "nextjs",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run prebuild && npm run build"
+
 }
