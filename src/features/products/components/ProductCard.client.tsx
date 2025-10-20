@@ -282,11 +282,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               whiteSpace: 'normal',
               overflowWrap: 'break-word',       // Safari destekli kırma
               wordBreak: 'break-word',          // WebKit legacy, iş görüyor
-              hyphens: 'auto',                  // dil tabanlı heceleme
+              hyphens: 'auto',
 
               // Aşırı uzun tek parça token’larda can simidi
               // (gerekirse aç, genelde yukarıdakiler yeter)
-              wordBreak: { xs: 'break-word', sm: 'break-word' },
               '&': { wordBreak: 'break-word' },
             }}
           >
