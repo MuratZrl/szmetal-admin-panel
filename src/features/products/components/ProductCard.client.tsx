@@ -266,15 +266,28 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         >
           <Typography
             variant="subtitle1"
+            component="p"
+            lang="tr"
             title={`${product.code} • ${product.name}`}
             sx={{
               display: 'block',
-              width: titleWidth,              // { xs: '100%', sm: 280 } gibi
+              width: { xs: '100%', sm: 280 },   // eski titleWidth mantığı
+              maxWidth: '100%',                 // Safari’de güvence
+              minWidth: 0,                      // flex içinde zorunlu
+              textAlign: 'start',               // “sağa yapışma” huyunu bırak
               lineHeight: 1.25,
               fontSize: { xs: '0.95rem', sm: '1rem' },
-              whiteSpace: 'normal',           // ← kaydır
-              wordBreak: 'break-word',        // ← uzun kelimelerde kır
-              overflowWrap: 'anywhere',       // ← çok inatçı durumlar için
+
+              // Wrapping: “…” yok, satıra kay
+              whiteSpace: 'normal',
+              overflowWrap: 'break-word',       // Safari destekli kırma
+              wordBreak: 'break-word',          // WebKit legacy, iş görüyor
+              hyphens: 'auto',                  // dil tabanlı heceleme
+
+              // Aşırı uzun tek parça token’larda can simidi
+              // (gerekirse aç, genelde yukarıdakiler yeter)
+              wordBreak: { xs: 'break-word', sm: 'break-word' },
+              '&': { wordBreak: 'break-word' },
             }}
           >
             {product.code} — {product.name}
