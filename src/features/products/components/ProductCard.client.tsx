@@ -96,11 +96,15 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     return parts.map((part, i) => (
       <React.Fragment key={`${part}-${i}`}>
         {i > 0 && (
-          <ArrowForwardIosIcon
-            fontSize="inherit"              // Typography boyutunu miras al
-            sx={{ mx: 0.5, opacity: 0.6, verticalAlign: 'middle' }}
-            aria-hidden
-          />
+          <>
+            <wbr />
+            <ArrowForwardIosIcon
+              fontSize="inherit"
+              sx={{ mx: 0.75, opacity: 0.85, verticalAlign: 'middle' }}
+              aria-hidden
+            />
+            <wbr />
+          </>
         )}
         <span>{part}</span>
       </React.Fragment>
@@ -309,41 +313,45 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             <Box>
               <Chip
                 size="small"
-                variant="outlined"
+                variant="filled"
                 title={categoryLine}
                 label={
                   <Box
                     component="span"
                     sx={{
-                      display: 'inline-block',        // ← flex değil
-                      minWidth: 0,
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      verticalAlign: 'middle',
-                      fontWeight: '400',
+                      display: 'inline',           // inline akış, çok satıra izin
+                      whiteSpace: 'normal',        // nowrap değil
+                      overflow: 'visible',         // “…” kapalı
+                      textOverflow: 'clip',
+                      wordBreak: 'break-word',     // uzun token’lar için
+                      overflowWrap: 'anywhere',    // Safari dahil
+                      lineHeight: 1.25,
                     }}
                   >
                     {categoryNodes}
                   </Box>
                 }
                 sx={(t) => ({
-                  height: 24,
+                  // sabit yükseklik YOK; çok satır destek
+                  height: 'auto',
+                  alignItems: 'flex-start',
                   border: 0,
-                  bgcolor: t.palette.surface[3],
+                  bgcolor: t.palette.surface?.[3] ?? alpha(t.palette.action.hover, 0.32),
                   color: t.palette.text.secondary,
-                  maxWidth: titleWidth,               // ← responsive genişlik sınırı
-                  minWidth: 0,                        // ← daralabilsin
+                  maxWidth: titleWidth,           // senin mevcut responsive sınırın
+                  minWidth: 0,
+
                   '& .MuiChip-label': {
+                    display: 'block',
+                    whiteSpace: 'normal',
+                    overflow: 'visible',
+                    textOverflow: 'clip',
                     px: 0.75,
-                    py: 0,
+                    py: 0.25,                     // içerik nefes alsın
                     width: '100%',
-                    minWidth: 0,                      // ← label da daralabilsin
-                    overflow: 'hidden',               // ← taşanı gizle
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
+                    minWidth: 0,
+                    alignItems: 'flex-start',
+                    gap: 2,
                   },
                 })}
               />
