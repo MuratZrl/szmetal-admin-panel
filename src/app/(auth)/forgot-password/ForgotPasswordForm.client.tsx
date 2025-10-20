@@ -20,8 +20,6 @@ import { supabase } from '@/lib/supabase/supabaseClient';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 
 import { glassTextFieldProps } from '../constants/formstyles';
-import type { SxProps, Theme } from '@mui/material/styles';
-import { mergeSx } from '@/utils/mergeSx';
 
 export default function ForgotPasswordForm() {
   const { show } = useSnackbar();
@@ -60,22 +58,19 @@ export default function ForgotPasswordForm() {
       setLoading(false);
     }
   };
-
-  // Var olan sx’i güvenle genişlet
-  const baseSx = glassTextFieldProps.InputProps?.sx as SxProps<Theme> | undefined;
-  const extendedSx: SxProps<Theme> = mergeSx(baseSx, { borderRadius: 5 });
-
+  
   return (
     <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
       <Grid container spacing={2}>
         <Grid size={{ xs: 12 }}>
+
           <TextField
             label="E-posta"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            {...glassTextFieldProps}
+            {...glassTextFieldProps} // veya {...glassTextFieldPropsFlat}
             InputProps={{
               ...(glassTextFieldProps.InputProps ?? {}),
               startAdornment: (
@@ -83,7 +78,6 @@ export default function ForgotPasswordForm() {
                   <MailOutline />
                 </InputAdornment>
               ),
-              sx: extendedSx, // ← tek satır, tertemiz
             }}
           />
         </Grid>
@@ -98,7 +92,7 @@ export default function ForgotPasswordForm() {
             sx={(t) => ({
               py: 1.25,
               textTransform: 'capitalize',
-              borderRadius: 7,
+              borderRadius: 1.15,
               borderColor: t.palette.divider,
               color: t.palette.text.primary,
             })}
