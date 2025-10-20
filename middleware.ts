@@ -14,7 +14,7 @@ type UserRow = { role: Role; status: Status };
 const AUTH_ROUTES = [
   '/login',
   '/register',
-  '/forgot-password',  // Formdaki link
+  '/forgot-password',
   '/reset-password',
 ] as const;
 
