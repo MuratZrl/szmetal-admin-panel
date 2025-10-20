@@ -380,17 +380,6 @@ export function buildColumns(
       valueFormatter: (value) => (value ? ROLE_LABELS_TR[value as AppRole] : '---'),
     },
 
-    {
-      field: 'company',
-      headerName: 'Şirket',
-      flex: 1,
-      editable: false,
-      disableColumnMenu: true,
-      minWidth: 140,
-      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
-        fallbackText(params.value),
-    },
-
     // STATUS
     {
       field: 'status',
@@ -420,6 +409,17 @@ export function buildColumns(
     },
 
     {
+      field: 'company',
+      headerName: 'Şirket',
+      flex: 1,
+      editable: false,
+      disableColumnMenu: true,
+      minWidth: 140,
+      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
+        fallbackText(params.value),
+    },
+
+    {
       field: 'phone',
       headerName: 'Telefon',
       flex: 1,
@@ -429,6 +429,7 @@ export function buildColumns(
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
+
     {
       field: 'country',
       headerName: 'Ülke',

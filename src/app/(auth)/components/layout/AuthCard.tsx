@@ -9,9 +9,9 @@ const AuthCard = ({ children, ...props }: CardProps) => {
     <Card
       sx={{
         width: '100%',
-        p: 4,
-        borderRadius: 2,
-        boxShadow: 5,
+        p: 3,
+        borderRadius: 1,
+        boxShadow: 3,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',

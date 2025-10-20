@@ -185,8 +185,8 @@ export default function LoginForm() {
             sx={(t) => ({
               py: 1.25,
               textTransform: 'capitalize',
-              borderRadius: 7,
-              borderColor: t.palette.divider,
+              borderRadius: 1.15,
+              borderColor: t.palette.text.primary,
               color: t.palette.text.primary,
             })}
           >
