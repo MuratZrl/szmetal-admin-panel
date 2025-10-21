@@ -311,15 +311,19 @@ export function buildColumns(
   } & PatchFns = {}
 ): GridColDef<UserRow>[] {
   const cols: GridColDef<UserRow>[] = [
+
+    /* --- Görsel --- */
     {
       field: 'image',
       headerName: 'Görsel',
-      width: 80,
-      sortable: false,
-      filterable: false,
+      flex: 0.5,
+
       editable: false,
-      disableColumnMenu: true,
+      sortable: false,
       resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) => {
         const src = params.value ?? undefined;
         const name = params.row.username ?? params.row.email;
@@ -330,40 +334,53 @@ export function buildColumns(
         );
       },
     },
+
+    /* --- Kullanıcı Adı --- */
     {
       field: 'username',
       headerName: 'Kullanıcı Adı',
       flex: 1,
-      minWidth: 140,
-      disableColumnMenu: true,
+      
       editable: false,
-      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
-        fallbackText(params.value),
-    },
-    {
-      field: 'email',
-      headerName: 'E-posta',
-      flex: 1.2,
-      minWidth: 180,
-      editable: false,
-      disableColumnMenu: true,
+      sortable: true,
       resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
 
-    // ROLE
+    /* --- E-posta --- */
+    {
+      field: 'email',
+      headerName: 'E-posta',
+      flex: 1.2,
+
+      editable: false,
+      sortable: true,
+      resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
+      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
+        fallbackText(params.value),
+    },
+
+    /* --- Rol --- */
     {
       field: 'role',
       headerName: 'Rol',
       flex: 1,
-      minWidth: 160,
-      align: 'left',
-      headerAlign: 'left',
+
       cellClassName: 'col-role-left',
+      
       editable: false,
-      disableColumnMenu: true,
+      sortable: true,
       resizable: false,
+      filterable: false,
+      disableColumnMenu: true,
+
       type: 'singleSelect',
       valueOptions: ROLE_OPTIONS.map((v) => ({ value: v, label: ROLE_LABELS_TR[v] })),
       renderCell: (p) => (
@@ -380,20 +397,22 @@ export function buildColumns(
       valueFormatter: (value) => (value ? ROLE_LABELS_TR[value as AppRole] : '---'),
     },
 
-    // STATUS
+    /* --- Durum --- */
     {
       field: 'status',
       headerName: 'Durum',
       flex: 1,
-      minWidth: 160,
-      align: 'left',
-      headerAlign: 'left',
-      cellClassName: 'col-status-left',
+
       type: 'singleSelect',
+      
       editable: false,
+      sortable: true,
       resizable: false,
+      filterable: false,
       disableColumnMenu: true,
+
       valueOptions: STATUS_OPTIONS.map((v) => ({ value: v, label: STATUS_LABELS_TR[v] })),
+      
       renderCell: (p: GridRenderCellParams<UserRow, AppStatus | null>) => (
         <StatusSelectCell
           {...p}
@@ -402,41 +421,56 @@ export function buildColumns(
           restoreRow={restoreRow}
         />
       ),
+
       sortComparator: (a, b) =>
         STATUS_OPTIONS.indexOf((a ?? 'Active') as AppStatus) -
         STATUS_OPTIONS.indexOf((b ?? 'Active') as AppStatus),
       valueFormatter: (value) => (value ? STATUS_LABELS_TR[value as AppStatus] : '---'),
     },
 
+    /* --- Şirket --- */
     {
       field: 'company',
       headerName: 'Şirket',
       flex: 1,
+      
       editable: false,
+      sortable: true,
+      resizable: false,
+      filterable: false,
       disableColumnMenu: true,
+
       minWidth: 140,
-      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
-        fallbackText(params.value),
+      renderCell: (params: GridRenderCellParams<UserRow, string | null>) => fallbackText(params.value),
     },
 
+    /* --- Telefon --- */
     {
       field: 'phone',
       headerName: 'Telefon',
       flex: 1,
-      minWidth: 150,
+      
       editable: false,
+      sortable: true,
+      resizable: false,
+      filterable: false,
       disableColumnMenu: true,
-      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
-        fallbackText(params.value),
+
+      renderCell: (params: GridRenderCellParams<UserRow, string | null>) => fallbackText(params.value),
     },
 
+    /* --- Ülke --- */
     {
       field: 'country',
       headerName: 'Ülke',
       flex: 0.8,
-      minWidth: 120,
+
       editable: false,
+      sortable: true,
+      resizable: false,
+      filterable: false,
       disableColumnMenu: true,
+
       renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
         fallbackText(params.value),
     },
@@ -446,12 +480,15 @@ export function buildColumns(
       field: 'created_at',
       headerName: 'Katılma Tarihi',
       flex: 1,
-      minWidth: 180,
+
       editable: false,
+      sortable: true,
       resizable: false,
+      filterable: false,
       disableColumnMenu: true,
-      renderCell: (params: GridRenderCellParams<UserRow, string | null>) =>
-        formatDateTimeTR(params.value ?? null),
+
+      renderCell: (params: GridRenderCellParams<UserRow, string | null>) => formatDateTimeTR(params.value ?? null),
+
       sortComparator: (a: unknown, b: unknown): number => {
         const ta = typeof a === 'string' ? Date.parse(a) : Number.NaN;
         const tb = typeof b === 'string' ? Date.parse(b) : Number.NaN;
@@ -459,26 +496,35 @@ export function buildColumns(
         const bx = Number.isFinite(tb) ? tb : Number.NEGATIVE_INFINITY;
         return ax - bx;
       },
+
     },
 
-    /* --- Silme Sütunu (en son sütun) --- */
+    /* --- Silme Sütunu --- */
     {
       field: '__delete__',
       headerName: 'Sil',
-      width: 90,
-      sortable: false,
-      filterable: false,
+      flex: 0.5,
+
       editable: false,
+      sortable: false,
+      resizable: false,
+      filterable: false,
       disableColumnMenu: true,
+
       align: 'center',
       headerAlign: 'center',
+
       renderCell: (p) => {
+
         // KENDİ SATIRIN: buton hiç görünmesin, boş kalsın
         const isSelf = selfUserId ? p.row.id === selfUserId : false;
+        
         if (isSelf) {
           return <Box component="span" sx={{ display: 'inline-block', width: 24, height: 24 }} />;
         }
+        
         const canDelete = canDeleteUser ? canDeleteUser(p.row) : false;
+        
         return (
           <DeleteCell
             {...p}
@@ -488,6 +534,7 @@ export function buildColumns(
             restoreRow={restoreRow}
           />
         );
+
       },
     },
   ];

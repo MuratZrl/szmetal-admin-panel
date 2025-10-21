@@ -3,60 +3,87 @@ import { alpha, type PaletteOptions } from '@mui/material/styles';
 import { grey } from '@mui/material/colors';
 
 /**
- * Light tema — daha yüksek kontrast (güncellendi)
- * Not: surface / accent / requestStatus genişletmeleri theme.d.ts içinde tanımlı.
+ * Light ama beyaz değil: nötr-kırmızı kırpılmış yüzeyler.
+ * requestStatus rozetleri ve users status renkleri tek kaynaktan gelir.
  */
 
-const TEXT = '#0A0C10';     // önceki #0B0D12 → bir tık daha koyu
-const OUTLINE = '#374151';  // önceki #4B5563 → çizgiler daha belirgin
+const TEXT = '#0B0D10';
+const OUTLINE = '#3D4552';
+
+// Tek kaynak: kullanıcı statü renkleri
+const STATUS = {
+  Active:   '#15803D',
+  Inactive: '#B77306',
+  Banned:   '#BB1723',
+} as const;
+
+// Requests rozetleri = users status ile aynı kök renklerden türetilir
+const badge = (main: string) => ({
+  bg: alpha(main, 0.12), // light temada daha açık dolgu
+  fg: main,              // pastel değil, ana renk
+  bd: alpha(main, 0.36), // belirgin ama yormayan kenar
+});
 
 export const lightPalette = {
   mode: 'light',
 
-  // Kırmızı aile (daha koyu, daha tok)
-  primary:   { main: '#C1121F', light: '#F04A55', dark: '#780D14', contrastText: '#FFFFFF' },
-  secondary: { main: '#6F1318', light: '#9A3A3F', dark: '#4A0C0F', contrastText: '#FFFFFF' },
+  // Kurumsal kırmızı
+  primary:   { main: '#A61119', light: '#E2575F', dark: '#700C10', contrastText: '#FFFFFF' },
+  secondary: { main: '#6E1519', light: '#9A3A40', dark: '#470D0F', contrastText: '#FFFFFF' },
 
-  success: { main: '#14833F', light: '#7EE2A0', dark: '#116636', contrastText: '#FFFFFF' },
-  warning: { main: '#C78506', light: '#F0C442', dark: '#7A5202', contrastText: '#111111' },
-  error:   { main: '#C81E2A', light: '#F28B92', dark: '#8E151D', contrastText: '#FFFFFF' },
-  info:    { main: '#0AA3BF', light: '#63DBEE', dark: '#0B6E84', contrastText: '#0A0A0A' },
+  success: { main: STATUS.Active,   light: '#86DFA6', dark: '#116636', contrastText: '#FFFFFF' },
+  warning: { main: STATUS.Inactive, light: '#F1C24A', dark: '#7C4F04', contrastText: '#111111' },
+  error:   { main: STATUS.Banned,   light: '#E9838B', dark: '#7E0F17', contrastText: '#FFFFFF' },
+  info:    { main: '#0A7AA6', light: '#64C6E2', dark: '#0B536F', contrastText: '#FFFFFF' },
 
-  // Uygulama içi durum rozetleri (kontrast artırıldı)
+  // Requests rozetleri = Users status ile birebir hizalı
   requestStatus: {
-    pending:  { bg: '#FFE8A3', fg: '#3D2A00', bd: '#E5B23C' },
-    approved: { bg: '#D7F0DE', fg: '#0B3A16', bd: '#8FD1A0' },
-    rejected: { bg: '#F8D8DC', fg: '#5D0C10', bd: '#E08B93' },
+    pending:  badge(STATUS.Inactive),
+    approved: badge(STATUS.Active),
+    rejected: badge(STATUS.Banned),
+  },
+
+  // Users için statü renkleri (tek kaynak)
+  status: STATUS,
+
+  charts: {
+    categorical: [
+      '#A61119', // primary
+      '#0A7AA6', // info
+      STATUS.Active,
+      STATUS.Inactive,
+      STATUS.Banned,
+      '#6E1519', // secondary
+    ] as const,
   },
 
   text: {
     primary: TEXT,
-    secondary: alpha(TEXT, 0.72), // 0.74 → ikincil metin daha net ayrışır
-    disabled: alpha(TEXT, 0.50),  // 0.48 → erişilebilir disabled
+    secondary: alpha(TEXT, 0.70),
+    disabled: alpha(TEXT, 0.46),
   },
 
-  divider: alpha(OUTLINE, 0.56), // 0.44 → çizgiler belirgin
+  divider: alpha(OUTLINE, 0.50),
 
+  // Beyaz yerine "anti-glare" açık yüzeyler (hafif sıcak kırmızı nötr)
   background: {
-    default: '#F9FAFB',
-    paper:   '#FFFFFF',
+    default: '#F4F2F3', // ekran geneli
+    paper:   '#F8F4F5', // kart/kağıt zemin
   },
 
-  // Surface katmanları — ton farkı büyütüldü
   surface: {
-    1: '#FFFFFF',
-    2: '#F5F7FB',  // önceki #F7F9FC
-    3: '#EBF0F6',  // önceki #EEF2F7
-    4: '#E0E7F0',  // önceki #E4E9F1
-    outline: alpha(OUTLINE, 0.56), // 0.48
-    muted:   alpha(OUTLINE, 0.32), // 0.26
+    1: '#F8F4F5', // en açık katman
+    2: '#F1ECEE',
+    3: '#E9E3E6',
+    4: '#E1DBDE', // tablo/header gibi alanlar
+    outline: alpha(OUTLINE, 0.52),
+    muted:   alpha(OUTLINE, 0.30),
   },
 
-  // Vurgu rengi, primary ile aynı aile (daha koyu)
   accent: {
-    main: '#C1121F',
-    light: '#F04A55',
-    dark:  '#780D14',
+    main: '#A61119',
+    light: '#E2575F',
+    dark:  '#700C10',
     contrastText: '#FFFFFF',
   },
 
@@ -64,14 +91,13 @@ export const lightPalette = {
 
   action: {
     active:             alpha(TEXT, 0.82),
-    hover:              alpha(TEXT, 0.12),
-    selected:           alpha(TEXT, 0.22),
-    disabled:           alpha(TEXT, 0.50),
-    disabledBackground: alpha(TEXT, 0.22),
-    focus:              alpha(TEXT, 0.30),
+    hover:              alpha(TEXT, 0.06),
+    selected:           alpha(TEXT, 0.14),
+    disabled:           alpha(TEXT, 0.46),
+    disabledBackground: alpha(TEXT, 0.16),
+    focus:              alpha(TEXT, 0.22),
   },
 
-  // MUI'nin contrastText seçimlerini daha sıkı hale getir
-  contrastThreshold: 5.2, // 4.5 → 5.2
-  tonalOffset: 0.35,      // 0.30 → 0.35
+  contrastThreshold: 4.9,
+  tonalOffset: 0.32,
 } as const satisfies PaletteOptions;

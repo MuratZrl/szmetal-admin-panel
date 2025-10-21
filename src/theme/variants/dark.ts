@@ -2,29 +2,58 @@
 import { alpha, type PaletteOptions } from '@mui/material/styles';
 import { grey } from '@mui/material/colors';
 
-// Koyu temada kırmızıyı daha canlı (doygun) ve koyu tutacak palet.
+// Koyu, ciddi, kırmızı ağırlıklı palet.
 // Not: surface / accent / requestStatus genişletmeleri theme.d.ts içinde tanımlı.
 
-const TEXT = '#F1F5F9';
-const OUTLINE = '#9FB1BF';
+const TEXT = '#F2F4F6';
+const OUTLINE = '#9FA4AA';
+
+// Tek kaynak: kullanıcı statü renkleri
+const STATUS = {
+  Active:   '#22C55E', // success.main
+  Inactive: '#F59E0B', // warning.main
+  Banned:   '#D0182C', // error.main
+} as const;
+
+// Requests rozetlerini aynı renklerden türet
+const badge = (main: string) => ({
+  bg: alpha(main, 0.14), // koyu temada hafif dolgu
+  fg: main,              // pastel yerine ana renk
+  bd: alpha(main, 0.36), // belirgin ama göz yormayan kenar
+});
 
 export const darkPalette = {
   mode: 'dark',
 
-  // Canlı koyu kırmızı: doygun, ama göz yakmayan bir crimson
-  primary:   { main: '#E11D2E', light: '#FF6B77', dark: '#990F1A', contrastText: '#FFFFFF' },
-  secondary: { main: '#8F1D22', light: '#B64A50', dark: '#5F1216', contrastText: '#FFFFFF' },
+  // Derin bordo-kırmızı ana vurgu
+  primary:   { main: '#B3122F', light: '#E2566C', dark: '#760E21', contrastText: '#FFFFFF' },
+  // İkincil: daha kahverengiye yakın koyu kırmızı
+  secondary: { main: '#6F272A', light: '#9C4A4F', dark: '#441618', contrastText: '#F8F9FA' },
 
-  success: { main: '#0ae427ff', light: '#86EFAC', dark: '#15803D', contrastText: '#0B0B0B' },
-  warning: { main: '#F59E0B', light: '#f6fa15ff', dark: '#92400E', contrastText: '#0B0B0B' },
-  error:   { main: '#c00808ff', light: '#f1c9ccff', dark: '#9C1C23', contrastText: '#FFFFFF' },
-  info:    { main: '#06B6D4', light: '#67E8F9', dark: '#0E7490', contrastText: '#0B0B0B' },
+  success: { main: STATUS.Active,   light: '#7EE8A1', dark: '#155E34', contrastText: '#0B0B0B' },
+  warning: { main: STATUS.Inactive, light: '#FCD34D', dark: '#92400E', contrastText: '#0B0B0B' },
+  error:   { main: STATUS.Banned,   light: '#F29AA4', dark: '#7A0E1A', contrastText: '#FFFFFF' },
+  info:    { main: '#2F6EE5', light: '#86B0FF', dark: '#1E3F94', contrastText: '#FFFFFF' },
 
-  // Uygulama içi durum rozetleri
+  // Requests rozetleri = Users status ile aynı renk ailesi
   requestStatus: {
-    pending:  { bg: '#1B1404', fg: '#FFD667', bd: '#3A2B07' },
-    approved: { bg: '#0B1C12', fg: '#73E28B', bd: '#123121' },
-    rejected: { bg: '#220D0F', fg: '#FFB2B2', bd: '#3C1518' },
+    pending:  badge(STATUS.Inactive),
+    approved: badge(STATUS.Active),
+    rejected: badge(STATUS.Banned),
+  },
+
+  // Users için statü renkleri (tek kaynak)
+  status: STATUS,
+
+  charts: {
+    categorical: [
+      '#B3122F', // primary
+      '#2F6EE5', // info
+      STATUS.Active,
+      STATUS.Inactive,
+      STATUS.Banned,
+      '#6F272A', // secondary
+    ] as const,
   },
 
   text: {
@@ -33,27 +62,27 @@ export const darkPalette = {
     disabled: alpha(TEXT, 0.40),
   },
 
-  divider: alpha(OUTLINE, 0.26),
+  divider: alpha(OUTLINE, 0.24),
 
   background: {
-    default: '#070A0D',
-    paper:   '#07090bff',
+    default: '#0C0A0B',
+    paper:   '#100D0E',
   },
 
   surface: {
-    1: '#01050aff',
-    2: '#020304ff',
-    3: '#181818ff',
-    4: '#000000ff',
+    1: '#0E0B0C',
+    2: '#131011',
+    3: '#191517',
+    4: '#201B1D',
     outline: alpha(OUTLINE, 0.22),
     muted:   alpha(OUTLINE, 0.12),
   },
 
-  // Vurgu rengi primary ile aynı aileden, komponentlerde tutarlılık için
+  // Vurgu rengi primary ile eşleşik
   accent: {
-    main: '#E11D2E',
-    light: '#FF6B77',
-    dark:  '#990F1A',
+    main: '#B3122F',
+    light: '#E2566C',
+    dark:  '#760E21',
     contrastText: '#FFFFFF',
   },
 
@@ -61,13 +90,13 @@ export const darkPalette = {
 
   action: {
     active:             alpha(TEXT, 0.68),
-    hover:              alpha('#FFFFFF', 0.10),
-    selected:           alpha('#FFFFFF', 0.18),
+    hover:              alpha('#FFFFFF', 0.08),
+    selected:           alpha('#FFFFFF', 0.16),
     disabled:           alpha(TEXT, 0.36),
-    disabledBackground: alpha('#FFFFFF', 0.14),
-    focus:              alpha('#FFFFFF', 0.22),
+    disabledBackground: alpha('#FFFFFF', 0.12),
+    focus:              alpha('#FFFFFF', 0.20),
   },
 
-  contrastThreshold: 3.8,
-  tonalOffset: 0.22,
+  contrastThreshold: 3.9,
+  tonalOffset: 0.24,
 } as const satisfies PaletteOptions;
