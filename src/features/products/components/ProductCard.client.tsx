@@ -81,7 +81,9 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const canSelect = normalizedRole !== 'User';
   const canEdit = normalizedRole === 'Admin' || normalizedRole === 'Manager';
 
-  const variantLabel  = prettifyLabel(product.variant,     labels?.variant);
+  const variantLabel = prettifyLabel(product.variant, labels?.variant).trim();
+  const isVariantNone = variantLabel.toLowerCase() === 'yok';
+
   const categoryLabel = prettifyLabel(product.category,    labels?.category);
   const subLabel      = prettifyLabel(product.subCategory, labels?.subcategory);
 
@@ -366,14 +368,14 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               noWrap
               sx={{
                 display: 'block',
-                width: titleWidth,
+                width: { xs: '100%', sm: 280 },
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
-              title={`${variantLabel} Profilleri`}
+              title={isVariantNone ? 'Yok' : `${variantLabel} Profilleri`}
             >
-              {`${variantLabel} Profilleri`}
+              {isVariantNone ? '' : `${variantLabel} Profilleri`}
             </Typography>
           )}
         </CardContent>
