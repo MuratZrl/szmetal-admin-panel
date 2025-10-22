@@ -414,17 +414,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
-          {/* 9. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="Profil Kodu"
-              fullWidth
-              placeholder="Örn: T.3152"
-              {...register('profileCode')}
-              helperText={toHelper(errors.profileCode?.message)}
-              error={!!errors.profileCode}
-            />
-          </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Geçici Kod"

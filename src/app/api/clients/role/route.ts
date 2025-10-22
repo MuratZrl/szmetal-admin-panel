@@ -51,13 +51,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // TIP YAMASI: types/supabase RPC listesi gerideyse rpc'yi gevşet.
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args?: Record<string, unknown>
-  ) => Promise<{ data: unknown; error: { message: string } | null }>;
-
-  const { data, error } = await rpc('update_user_role', {
+  const { data, error } = await supabase.rpc('update_user_role', {
     target_user_id: userId,
     new_role: role,
   });

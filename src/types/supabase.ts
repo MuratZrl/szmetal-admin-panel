@@ -738,6 +738,10 @@ export type Database = {
         Args: { p_email: string }
         Returns: boolean
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_current_owner: {
         Args: { p_user_id: string }
         Returns: boolean
@@ -764,6 +768,25 @@ export type Database = {
       unaccent_init: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      update_user_role: {
+        Args: { new_role: string; target_user_id: string }
+        Returns: {
+          company: string | null
+          country: string | null
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deleted_reason: string | null
+          email: string
+          id: string
+          image: string | null
+          phone: string | null
+          role: string
+          status: string
+          updated_at: string
+          username: string
+        }
       }
       username_available: {
         Args: { p_username: string }
