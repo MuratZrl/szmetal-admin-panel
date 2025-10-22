@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import {
-  Card, CardActionArea, CardContent, Typography, Stack, Box, useMediaQuery,
+  Card, CardActionArea, CardContent, Typography, Stack, Box,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 

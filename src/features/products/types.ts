@@ -88,7 +88,6 @@ export type Product = {
   outerSizeMm: number | null;
   sectionMm2: number | null;
   tempCode: string | null;
-  profileCode: string | null;
   manufacturerCode: string | null;
 
   // Dosya metadata (storage)
@@ -141,7 +140,6 @@ export function mapRowToProduct(r: ProductRow): Product {
     outerSizeMm: r.outer_size_mm ?? null,
     sectionMm2: r.section_mm2 ?? null,
     tempCode: r.temp_code ?? null,
-    profileCode: r.profile_code ?? null,
     manufacturerCode: r.manufacturer_code ?? null,
 
     fileBucket: r.file_bucket ?? null,
@@ -188,7 +186,6 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   if (patch.outerSizeMm !== undefined) out.outer_size_mm = patch.outerSizeMm;
   if (patch.sectionMm2 !== undefined) out.section_mm2 = patch.sectionMm2;
   if (patch.tempCode !== undefined) out.temp_code = patch.tempCode;
-  if (patch.profileCode !== undefined) out.profile_code = patch.profileCode;
   if (patch.manufacturerCode !== undefined) out.manufacturer_code = patch.manufacturerCode;
 
   if (patch.fileBucket !== undefined) out.file_bucket = patch.fileBucket;

@@ -77,7 +77,6 @@ export default function ProductCreateForm({ dicts }: Props) {
         outerSizeMm: v.outerSizeMm ?? undefined,
         sectionMm2: v.sectionMm2 ?? undefined,
         tempCode: v.tempCode ?? null,
-        profileCode: v.profileCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
         image: v.image || null,
         hasCustomerMold: customerMoldToBoolean(v.customerMold),

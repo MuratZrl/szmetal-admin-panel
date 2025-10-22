@@ -141,7 +141,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     outerSizeMm: initial.outerSizeMm ?? null,
     sectionMm2: initial.sectionMm2 ?? null,
     tempCode: initial.tempCode ?? null,
-    profileCode: initial.profileCode ?? null,
     manufacturerCode: initial.manufacturerCode ?? null,
     image: initial.image ?? '',
     description: initial.description ?? '',
@@ -191,7 +190,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         outerSizeMm: v.outerSizeMm ?? null,
         sectionMm2: v.sectionMm2 ?? null,
         tempCode: v.tempCode ?? null,
-        profileCode: v.profileCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
         image: nextImagePath, // ← DB'ye sadece path
         hasCustomerMold: customerMoldToBoolean(v.customerMold),

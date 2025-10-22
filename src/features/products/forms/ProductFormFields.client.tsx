@@ -119,6 +119,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Tam Ad"
               fullWidth
+              required
               placeholder="Örn: Motor Kutusu Profili"
               {...register('name')}
               error={!!errors.name}
@@ -129,6 +130,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Kod"
               fullWidth
+              required
               placeholder="Örn: T.3152"
               {...register('code')}
               error={!!errors.code}
@@ -146,6 +148,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   select
                   label="Kategori"
                   fullWidth
+                  required
                   {...field}
                   value={field.value ?? ''}
                   onChange={(e) => {
@@ -189,6 +192,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   select
                   label="Alt Kategori"
                   fullWidth
+                  required
                   {...field}
                   value={field.value ?? ''}
                   InputLabelProps={{ shrink: true }}
@@ -270,6 +274,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               name="unitWeightG"
               label="Birim Ağırlık"
               integer
+              required
               endAdornmentText="gr/m"
             />
           </Grid>
@@ -279,6 +284,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               label="Tarih"
               type="date"
               fullWidth
+              required
               placeholder="YYYY-MM-DD"
               {...register('date')}
               error={!!errors.date}
@@ -313,6 +319,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   label="Müşteri Kalıbı"
                   size="small"
                   fullWidth
+                  required
                   value={(field.value ?? 'Hayır') as CustomerMoldSelect}
                   onChange={(e) => field.onChange(e.target.value as CustomerMoldSelect)}
                   InputLabelProps={{ shrink: true }}
@@ -336,6 +343,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   label="Kullanılabilirlik Durumu"
                   size="small"
                   fullWidth
+                  required
                   value={String(field.value ?? true)}
                   onChange={(e) => field.onChange(e.target.value === 'true')}
                   InputLabelProps={{ shrink: true }}

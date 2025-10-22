@@ -1,23 +1,26 @@
-// app/(admin)/products/[profileCode]/edit/page.tsx
+// app/(admin)/products/[code]/edit/page.tsx
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Box, Grid, Divider, Typography } from '@mui/material';
 
 import { requirePageAccess } from '@/lib/supabase/auth/server';
-import { fetchProductByKey } from '@/features/products/services/products.server';
+import { fetchProductByCode } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import ProductEditForm from '@/features/products/components/ProductEditForm.client';
 import { mapRowToForm } from '@/features/products/forms/mappers';
-import { productCanonicalPath } from '@/features/products/utils/url'; // ← EKLENDİ
 import type { Database } from '@/types/supabase';
-type ProductsRow = Database['public']['Tables']['products']['Row'];
 
-type Props = { params: Promise<{ profileCode: string }> };
+type ProductsRow = Database['public']['Tables']['products']['Row'];
+type Props = { params: Promise<{ code: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await requirePageAccess('products');
-  const { profileCode } = await params;
-  const row = await fetchProductByKey(profileCode);
+  const { code } = await params;
+  const row = await fetchProductByCode(code);
   return { title: row ? `${row.code} — Düzenle` : 'Ürün bulunamadı' };
 }
 
@@ -27,30 +30,30 @@ export default async function EditProductPage({ params }: Props) {
     redirect('/unauthorized');
   }
 
-  const { profileCode } = await params;
+  const { code } = await params;
 
   const [row, dicts] = await Promise.all([
-    fetchProductByKey(profileCode),
+    fetchProductByCode(code),
     fetchProductDicts(),
   ]);
 
   if (!row) notFound();
 
-  // ←←← KANONİK ZORLAMA
-  const canonical = productCanonicalPath(row as ProductsRow); // `/products/${string}`
-  
-  const here = `/products/${profileCode}/edit`;
-  const want = `${canonical}/edit`;
-  
+  // KANONİK ZORLAMA: /products/{code}/edit
+  const canonical = `/products/${encodeURIComponent(row.code)}` as const;
+  const here = `/products/${code}/edit`;
+  const want = `${canonical}/edit` as `/products/${string}/edit`;
   if (here !== want) {
-    redirect(want as never);
+    redirect(want);
   }
 
-  const initial = { id: String(row.id), ...mapRowToForm(row) };
+  const initial = { id: String(row.id), ...mapRowToForm(row as ProductsRow) };
 
   return (
     <Box px={1} py={1}>
-      <Typography variant="h5" sx={{ mb: 1 }}>{row.code} — Düzenle</Typography>
+      <Typography variant="h5" sx={{ mb: 1 }}>
+        {row.code} — Düzenle
+      </Typography>
       <Divider sx={{ mb: 2 }} />
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 12 }}>

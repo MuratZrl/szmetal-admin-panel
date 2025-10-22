@@ -1,43 +1,34 @@
-// src/features/products/utils/url.ts
-import type { Product } from '@/features/products/types';
 import type { Database } from '@/types/supabase';
+import type { Product } from '@/features/products/types';
 
 type ProductsRow = Database['public']['Tables']['products']['Row'];
 
-/** Mevcut URL’ye sürüm paramı ekler; cache-busting için. */
+/** En küçük ortak giriş tipi */
+type CanonicalInput =
+  | { id: number; code?: string | null; profileCode?: string | null }
+  | (Pick<ProductsRow, 'code'> & Partial<Pick<ProductsRow, 'code'>>)
+  | (Pick<Product, 'code' >);
+
 export function withVersion(url?: string | null, v?: string | null): string | null {
   if (!url) return url ?? null;
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}v=${encodeURIComponent(v ?? '')}`;
 }
 
-/**
- * Ürün için kanonik detay linki:
- *  - profileCode varsa: /products/{profileCode}
- *  - yoksa code varsa:  /products/{code}
- *  - en son çare:       /products/{id}
- */
-export function productCanonicalPath(
-  p:
-    | Pick<Product, 'id' | 'profileCode' | 'code'>
-    | (Pick<ProductsRow, 'id' | 'code'> & Partial<Pick<ProductsRow, 'profile_code'>>)
-): `/products/${string}` {
+export function productCanonicalPath(p: CanonicalInput): `/products/${string}` {
   const profileCode =
-    (('profileCode' in p ? p.profileCode : undefined) ??
-      ('profile_code' in p ? p.profile_code : undefined) ??
+    (('code' in p ? p.code : undefined) ??
+      ('code' in p ? (p as { code?: string | null }).code : undefined) ??
       null);
 
-  const code = ('code' in p ? (p as { code?: string | null }).code : null) ?? null;
+  const code =
+    ('code' in p ? (p as { code?: string | null }).code : null) ?? null;
 
   const key = (profileCode && profileCode.trim()) || (code && code.trim());
   if (key) return `/products/${encodeURIComponent(key)}`;
-  return `/products/${String(p.id)}`;
+  return `/products/${String((p as { id: number }).id)}`;
 }
 
-export function productEditPath(
-  p:
-    | Pick<Product, 'id' | 'profileCode' | 'code'>
-    | (Pick<ProductsRow, 'id' | 'code'> & Partial<Pick<ProductsRow, 'profile_code'>>)
-): `/products/${string}/edit` {
+export function productEditPath(p: CanonicalInput): `/products/${string}/edit` {
   return `${productCanonicalPath(p)}/edit` as `/products/${string}/edit`;
 }

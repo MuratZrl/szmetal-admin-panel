@@ -154,7 +154,6 @@ export default function PrintableProductSheet({ product, media }: Props) {
   if (typeof product.outerSizeMm === 'number' || typeof product.sectionMm2 === 'number')
     rows.push(['Dış Çevre (mm):', nf(product.outerSizeMm) ?? '—', 'Kesit (mm²):', nf(product.sectionMm2) ?? '—']);
   
-  
   const mediaUrl = media.url;
   const isPdf = React.useMemo(() => {
     if (media.ext === 'pdf') return true;

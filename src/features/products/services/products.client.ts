@@ -92,7 +92,6 @@ export async function createProduct(v: CreateProductInput) {
     section_mm2: v.sectionMm2 ?? null,
 
     temp_code: toNull(v.tempCode),
-    profile_code: toNull(v.profileCode),
     manufacturer_code: toNull(v.manufacturerCode),
 
     image: v.image ?? null,
@@ -183,7 +182,6 @@ export async function updateProduct(id: number, v: UpdateProductInput): Promise<
   if (v.outerSizeMm !== undefined)      payload.outer_size_mm = v.outerSizeMm ?? null;
   if (v.sectionMm2 !== undefined)       payload.section_mm2 = v.sectionMm2 ?? null;
   if (v.tempCode !== undefined)         payload.temp_code = toNull(v.tempCode);
-  if (v.profileCode !== undefined)      payload.profile_code = toNull(v.profileCode);
   if (v.manufacturerCode !== undefined) payload.manufacturer_code = toNull(v.manufacturerCode);
 
   if (v.image !== undefined) payload.image = v.image ?? null;

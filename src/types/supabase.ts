@@ -259,7 +259,6 @@ export type Database = {
           manufacturer_code: string | null
           name: string
           outer_size_mm: number | null
-          profile_code: string | null
           revision_date: string | null
           scale: string | null
           section_mm2: number | null
@@ -293,7 +292,6 @@ export type Database = {
           manufacturer_code?: string | null
           name: string
           outer_size_mm?: number | null
-          profile_code?: string | null
           revision_date?: string | null
           scale?: string | null
           section_mm2?: number | null
@@ -327,7 +325,6 @@ export type Database = {
           manufacturer_code?: string | null
           name?: string
           outer_size_mm?: number | null
-          profile_code?: string | null
           revision_date?: string | null
           scale?: string | null
           section_mm2?: number | null
@@ -710,50 +707,11 @@ export type Database = {
         Args: { p_status: string; p_user_id: string }
         Returns: undefined
       }
-      citext: {
-        Args: { "": boolean } | { "": string } | { "": unknown }
-        Returns: string
-      }
-      citext_hash: {
-        Args: { "": string }
-        Returns: number
-      }
-      citextin: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      citextout: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      citextrecv: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      citextsend: {
-        Args: { "": string }
-        Returns: string
-      }
-      email_available: {
-        Args: { p_email: string }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_owner: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
-      is_current_staff: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_staff: {
-        Args: { uid: string }
-        Returns: boolean
-      }
+      email_available: { Args: { p_email: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_current_owner: { Args: { p_user_id: string }; Returns: boolean }
+      is_current_staff: { Args: never; Returns: boolean }
+      is_staff: { Args: { uid: string }; Returns: boolean }
       request_approve_or_reject: {
         Args: { p_id: string; p_status: string }
         Returns: {
@@ -761,14 +719,7 @@ export type Database = {
           status: string
         }[]
       }
-      unaccent: {
-        Args: { "": string }
-        Returns: string
-      }
-      unaccent_init: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
+      unaccent: { Args: { "": string }; Returns: string }
       update_user_role: {
         Args: { new_role: string; target_user_id: string }
         Returns: {
@@ -787,11 +738,14 @@ export type Database = {
           updated_at: string
           username: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      username_available: {
-        Args: { p_username: string }
-        Returns: boolean
-      }
+      username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
       app_role: "Admin" | "Manager" | "User"
