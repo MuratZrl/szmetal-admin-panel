@@ -2,33 +2,48 @@
 import 'server-only';
 
 import { cookies } from 'next/headers';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import {
+  createServerClient,
+  type CookieOptions,
+  type CookieMethodsServer,
+} from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 /**
- * createSupabaseRSCClient
- * -----------------------
- * • Kullanım yeri: Server Components (RSC) ve loader benzeri, KESİNLİKLE “yalnızca okuma”.
- * • Cookie policy: Yalnızca OKU. Cookie yazmak yasak (Next RSC kısıtı).
- * • Auth: SSR cookie’lerinden oturumu okur. Auto refresh/persist kapalı.
- * • Ne işe yarar?
- *    - Sunucu tarafı render’da (RSC) kullanıcı bilgisi/DB verisi okumak.
- *    - Sessiz, yan etkisiz, cache-friendly sorgular.
- * • Ne yapmaz?
- *    - Cookie yazmaz, login/logout yapmaz, “yan etki” yaratmaz.
+ * Bu modül projedeki Supabase client’larının tek doğruluk kaynağıdır.
+ * - RSC (Server Components) için: YALNIZCA OKUMA client’ı
+ * - Route Handler / Server Action için: OKU + YAZ client’ı
+ *
+ * Neden iki client?
+ * RSC ortamında response header’larına yazmak yasak. Login/logout gibi
+ * yan etkili işlemler cookies yazımı gerektirdiği için Route/Action tarafında
+ * ayrı bir client ile yapılmalı. Tek dosyada toplayıp drift’i önlüyoruz.
  */
+
+// Ortam değişkenlerini “fail-fast” doğrula.
+const URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '';
+const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+if (!URL || !ANON) throw new Error('[supabase] env eksik');
+
+/* ----------------------------------------------------------------
+   RSC (read-only) client
+   - Kullanım: RSC page.tsx, loader benzeri server-only okuma senaryoları
+   - Cookie: sadece OKU (setAll no-op)
+   - Auth: persist/refresh/detect kapalı (yan etki yok)
+----------------------------------------------------------------- */
 export async function createSupabaseRSCClient() {
-  const jar = await cookies();
-  return createServerClient<Database, 'public'>(URL, ANON, {
-    cookies: {
-      // RSC’de yalnızca mevcut cookie’yi okuyabiliriz
-      get: (name: string) => jar.get(name)?.value,
-      set: () => {},     // no-op: RSC cookie yazamaz
-      remove: () => {},  // no-op: RSC cookie silemez
+  const store = await cookies();
+
+  const cookiesAdapter: CookieMethodsServer = {
+    getAll: () => store.getAll(),
+    setAll: () => {
+      // RSC'de header yazımı yasak; sessiz no-op
     },
+  };
+
+  return createServerClient<Database>(URL, ANON, {
+    cookies: cookiesAdapter,
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -37,44 +52,45 @@ export async function createSupabaseRSCClient() {
   });
 }
 
-/**
- * createSupabaseRouteClient
- * -------------------------
- * • Kullanım yeri: Route Handlers (/app/api/*), Server Actions ve diğer tam sunucu tarafı kodlar.
- * • Cookie policy: OKU + YAZ. Session cookie’lerini güncelleyebilir.
- * • Auth: SSR cookie’lerinden okur, gerekirse set/delete yapar (login, logout vb.).
- * • Ne işe yarar?
- *    - Form işlemleri, login/logout, server-side DB yazma, RLS ile korunan endpoint’ler.
- * • Dikkat:
- *    - Bu fonksiyonun çağrıldığı dosya/route **server runtime** (Node.js) olmalı.
- *    - Kullanıcı girdisini doğrudan SQL’e yollama; daima uygun filtre/validasyon yap.
- */
+/* ----------------------------------------------------------------
+   Route/Action (read-write) client
+   - Kullanım: /app/api/* route.ts, server actions, login/logout vb.
+   - Cookie: OKU + YAZ (Supabase auth cookie’lerini günceller)
+   - Auth: persist/refresh açık
+   - Not: Bu dosya Node.js runtime’ında kullanılmalı.
+----------------------------------------------------------------- */
 export async function createSupabaseRouteClient() {
-  const jar = await cookies();
-  return createServerClient<Database, 'public'>(URL, ANON, {
-    cookies: {
-      get: (name: string) => jar.get(name)?.value,
-      set: (name: string, value: string, options: CookieOptions) => {
-        // Route/Action içinde cookie yazabiliriz (login, refresh, logout)
-        jar.set({ name, value, ...options });
-      },
-      remove: (name: string, options: CookieOptions) => {
-        jar.delete({ name, ...options });
-      },
+  const store = await cookies();
+
+  const cookiesAdapter: CookieMethodsServer = {
+    getAll: () => store.getAll(),
+    setAll: (list) => {
+      // Supabase, tek çağrıda birden fazla cookie basabilir.
+      for (const { name, value, options } of list) {
+        // Varsayılan path’i sabitle ki refresh cookie’leri her yerde geçerli olsun.
+        const merged: CookieOptions = { path: '/', ...options };
+        store.set(name, value, merged);
+      }
+    },
+  };
+
+  return createServerClient<Database>(URL, ANON, {
+    cookies: cookiesAdapter,
+    auth: {
+      detectSessionInUrl: false,
+      persistSession: true,
+      autoRefreshToken: true,
     },
   });
 }
 
-/**
- * Tür kolaylıkları:
- * • SupabaseRSCClient: RSC (read-only) client tip çıkarımı
- * • SupabaseRouteClient: Route/Action (read-write) client tip çıkarımı
- */
+/* ----------------------------------------------------------------
+   Tip kolaylıkları
+----------------------------------------------------------------- */
 export type SupabaseRSCClient   = Awaited<ReturnType<typeof createSupabaseRSCClient>>;
 export type SupabaseRouteClient = Awaited<ReturnType<typeof createSupabaseRouteClient>>;
 
-/**
- * Geriye dönük isim:
- * • Bazı modüller eski ismi arıyorsa aynı fonksiyona alias veriyoruz.
- */
+/* ----------------------------------------------------------------
+   Geriye dönük alias (eski import’lar kırılmasın)
+----------------------------------------------------------------- */
 export { createSupabaseRSCClient as createSupabaseServerClient };

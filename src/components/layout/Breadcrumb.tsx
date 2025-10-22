@@ -46,7 +46,7 @@ export default function Breadcrumb() {
   const pathname = usePathname();
   const pathParts = React.useMemo(() => pathname.split('/').filter(Boolean), [pathname]);
 
-  const homeHref: UrlObject = { pathname: '/create_request' };
+  const homeHref: UrlObject = { pathname: '/account' };
 
   const breadcrumbs: React.ReactNode[] = [
     <Link key="home" href={homeHref} style={{ display: 'flex', alignItems: 'center' }}>
@@ -63,7 +63,10 @@ export default function Breadcrumb() {
     const isLast = index === pathParts.length - 1;
 
     // /products/{leaf} durumunda leaf'i olduğu gibi göster
-    const isProductsLeaf = parentHrefStr === '/products';
+    const isProductsLeaf =
+      parentHrefStr === '/products' &&
+      !['new', 'create'].includes(part.toLowerCase());
+
     const label = isProductsLeaf
       ? decodeURIComponent(part) // gerçek profileCode/kod göster
       : getLabelFromMainLinks(hrefStr, part);

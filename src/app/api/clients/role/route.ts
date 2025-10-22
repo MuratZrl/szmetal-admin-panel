@@ -8,9 +8,7 @@ type AppRole = (typeof ROLE_OPTIONS)[number];
 
 const BodySchema = object({
   userId: string().uuid().required('userId gerekli ve UUID olmalı'),
-  role: mixed<AppRole>()
-    .oneOf(ROLE_OPTIONS, 'Geçersiz rol')
-    .required('role alanı zorunlu'),
+  role: mixed<AppRole>().oneOf(ROLE_OPTIONS, 'Geçersiz rol').required('role alanı zorunlu'),
 })
   .noUnknown(true, 'Bilinmeyen alan geldi')
   .strict(true);
@@ -23,11 +21,6 @@ function formatYupError(err: ValidationError) {
     errors: err.errors,
     field: err.path ?? null,
   };
-}
-
-// TS'i sakinleştir, 'any' kullanma:
-function asRpcArgs<T>(v: T) {
-  return (v as unknown) as never;
 }
 
 export async function POST(req: Request) {
@@ -52,28 +45,18 @@ export async function POST(req: Request) {
 
   const { userId, role } = body;
 
-  // Oturum kontrol (opsiyonel ama mantıklı)
+  // Oturum kontrol
   const { data: me } = await supabase.auth.getUser();
   if (!me?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // İdeal tipli çağrı (tipler güncelse):
-  // type Fn = Database['public']['Functions']['update_user_role'];
-  // const args: Fn['Args'] = { target_user_id: userId, new_role: role as Fn['Args']['new_role'] };
-  // const { data, error } = await supabase.rpc('update_user_role', args);
-
-  // Tipler gecikiyorsa geçici çözüm:
-  const { data, error } = await supabase.rpc(
-    'update_user_role',
-    asRpcArgs<{ target_user_id: string; new_role: AppRole }>({
-      target_user_id: userId,
-      new_role: role,
-    })
-  );
+  const { data, error } = await supabase.rpc('update_user_role', {
+    target_user_id: userId,
+    new_role: role,
+  });
 
   if (error) {
-    // RPC içinde admin kontrolü ve son admin koruması varsa 403 mantıklı
     return NextResponse.json({ error: error.message }, { status: 403 });
   }
 

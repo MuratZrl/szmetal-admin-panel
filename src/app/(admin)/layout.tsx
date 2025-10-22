@@ -1,21 +1,16 @@
-// /src/app/(admin)/layout.tsx
+// src/app/(admin)/layout.tsx
 import * as React from 'react';
-
 import { redirect } from 'next/navigation';
-
 import { Box, Paper } from '@mui/material';
 
 import Breadcrumb from '@/components/layout/Breadcrumb';
-
 import { SIDEBAR_WIDTH } from '@/constants/layout';
-
 import Sidebar from '@/features/sidebar';
-
 import { getSidebarInitialData } from '@/features/sidebar/services/sidebar.server';
-
 import { mainLinks } from '@/constants/mainlinks';
 
 import AuthRefresh from './AuthRefresh.client';
+import AccessAutoRedirect from '@/features/auth/AccessAuthRedirect.client';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -23,16 +18,26 @@ export const fetchCache = 'force-no-store';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const initialData = await getSidebarInitialData();
-  
+
   if (!initialData.userId) redirect('/login');
 
   return (
     <>
+      {/* Supabase oturum çerezlerini yenilemek için */}
       <AuthRefresh />
 
-      <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
+      {/* Rol/Status değişirse sayfayı yenilemeden anında yönlendir */}
+      <AccessAutoRedirect selfUserId={initialData.userId} />
 
-      <Sidebar initialData={initialData} mainLinks={mainLinks} />
+      <Box
+        sx={{
+          display: 'flex',
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          color: 'text.primary',
+        }}
+      >
+        <Sidebar initialData={initialData} mainLinks={mainLinks} />
 
         <Box
           component="main"
@@ -44,7 +49,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             py: { xs: 1, md: 2 },
           }}
         >
-
           <Paper
             variant="outlined"
             sx={{
@@ -54,9 +58,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               bgcolor: 'var(--rs-surface-1)',
             }}
           >
-            
             <Breadcrumb />
-            
+
             <Paper
               variant="outlined"
               sx={{
@@ -70,9 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             >
               {children}
             </Paper>
-            
           </Paper>
-          
         </Box>
       </Box>
     </>

@@ -1,32 +1,80 @@
+// src/components/ui/charts/GroupBarChart.client.tsx
 'use client';
 
 import * as React from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme, alpha, type Theme } from '@mui/material/styles';
 import { Box, Typography } from '@mui/material';
 
 export type GroupSeries = { label: string; data: number[]; color?: string };
 
+// İki tip statü tokenını destekleyelim:
+// - Uygulama kullanıcı statüsü: $status.Active | Inactive | Banned
+// - Request statüsü: $requestStatus.pending | approved | rejected (.fg/.bg/.bd opsiyonel)
+type AppStatus = 'Active' | 'Inactive' | 'Banned';
+type RequestStatus = 'pending' | 'approved' | 'rejected';
+
 type PaletteName = 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';
+type StatusToken = `$status.${AppStatus}`;
+type RequestStatusToken =
+  | `$requestStatus.${RequestStatus}`
+  | `$requestStatus.${RequestStatus}.fg`
+  | `$requestStatus.${RequestStatus}.bg`
+  | `$requestStatus.${RequestStatus}.bd`;
 
 type Props = {
   labels: string[];
   series: GroupSeries[];
   height?: number;
   title?: string;
-
-  /** Etikete göre palet anahtarı veya direkt CSS rengi atamak için */
-  colorKeyByLabel?: Partial<Record<string, PaletteName | string>>;
-  /** Renk tonu: 'solid' direkt ana rengi, 'soft' pastel verir */
+  /** Etikete göre palet anahtarı, semantik token veya direkt CSS rengi */
+  colorKeyByLabel?: Partial<Record<string, PaletteName | StatusToken | RequestStatusToken | string>>;
+  /** 'solid' ana renk, 'soft' pastel */
   tone?: 'solid' | 'soft';
 };
 
 function formatTR(n: number): string {
   return Number.isFinite(n) ? n.toLocaleString('tr-TR') : '0';
 }
-
 function isPaletteName(v: unknown): v is PaletteName {
   return v === 'primary' || v === 'secondary' || v === 'info' || v === 'success' || v === 'warning' || v === 'error';
+}
+function isStatusToken(v: string): v is StatusToken {
+  return v.startsWith('$status.');
+}
+function isRequestStatusToken(v: string): v is RequestStatusToken {
+  return v.startsWith('$requestStatus.');
+}
+
+function resolveToken(theme: Theme, token: PaletteName | StatusToken | RequestStatusToken | string | undefined, fallback: string): string {
+  if (!token) return fallback;
+
+  if (typeof token === 'string') {
+    // 1) MUI palette anahtar adı
+    if (isPaletteName(token)) return theme.palette[token].main;
+
+    // 2) '$status.X' (varsa tema içinde)
+    if (isStatusToken(token)) {
+      const key = token.split('.')[1] as AppStatus;
+      const col = (theme.palette)?.status?.[key] as string | undefined;
+      if (col) return col;
+    }
+
+    // 3) '$requestStatus.x(.fg|.bg|.bd)'
+    if (isRequestStatusToken(token)) {
+      // $requestStatus.pending.bg -> ["$requestStatus","pending","bg"]
+      const [, status, field] = token.split('.') as ['\$requestStatus', RequestStatus, 'fg' | 'bg' | 'bd' | undefined];
+      const entry = (theme.palette)?.requestStatus?.[status] as { fg?: string; bg?: string; bd?: string } | undefined;
+      const by = field ?? 'fg';
+      const col = entry?.[by];
+      if (col) return col;
+    }
+
+    // 4) Düz CSS rengi (#rrggbb, rgb(), hsl(), var(--...))
+    return token;
+  }
+
+  return fallback;
 }
 
 export default function GroupBarChart({
@@ -61,18 +109,12 @@ export default function GroupBarChart({
   const paletteOrder: PaletteName[] = ['primary', 'info', 'success', 'warning', 'error', 'secondary'];
 
   const baseColors = series.map((s, i) => {
-    // 1) Öncelik: colorKeyByLabel → palet adı veya doğrudan renk
+    // 1) colorKeyByLabel → palet adı / $status.X / $requestStatus.x(.fg|.bg|.bd) / düz CSS
     const mapped = colorKeyByLabel?.[s.label];
-    if (typeof mapped === 'string') {
-      if (isPaletteName(mapped)) return theme.palette[mapped].main;
-      // css rengi (#rrggbb, rgb(), hsl() vs.)
-      return mapped;
-    }
+    if (mapped) return resolveToken(theme, mapped, theme.palette.primary.main);
 
     // 2) Seri üstünden direkt renk
-    if (typeof s.color === 'string' && s.color.trim().length > 0) {
-      return s.color;
-    }
+    if (typeof s.color === 'string' && s.color.trim().length > 0) return s.color;
 
     // 3) Sıraya göre tema paletinden seç
     const key = paletteOrder[i % paletteOrder.length];
@@ -84,7 +126,6 @@ export default function GroupBarChart({
       ? baseColors.map((c) => alpha(c, theme.palette.mode === 'dark' ? 0.6 : 0.25))
       : baseColors;
 
-  // X-Charts, colors dizisini sırayla serilere atar
   return (
     <Box>
       {title && (
@@ -103,7 +144,6 @@ export default function GroupBarChart({
         series={series.map((s) => ({
           label: s.label,
           data: s.data,
-          // color vermiyoruz; colors[] kullanılacak
           valueFormatter: (v) => formatTR(v ?? 0),
         }))}
         colors={resolvedColors}

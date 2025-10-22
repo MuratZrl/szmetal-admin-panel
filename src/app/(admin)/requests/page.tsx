@@ -3,9 +3,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
+import * as React from 'react';
 import { Box, Grid } from '@mui/material';
 
-import { requirePageAccess } from '@/lib/supabase/auth/server';      // ← EKLE
+import { requirePageAccess } from '@/lib/supabase/auth/guards.server';
 
 import CardsGrid from '@/features/requests/components/CardsGrid.client';
 import { getRequestsCardsData } from '@/features/requests/services/card.server';
@@ -15,7 +16,6 @@ import LineAreaChart, { type LineSeries } from '@/components/ui/charts/LineAreaC
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 
 import { getRequestsLineCharts } from '@/features/requests/services/chart.server';
-
 import TableGrid from '@/features/requests/components/TableGrid.client';
 import { getRequestsTablePage } from '@/features/requests/services/table.server';
 
@@ -25,15 +25,10 @@ const STATUS_TR: Record<string, string> = {
   rejected: 'Reddedildi',
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  pending: '#ed6c02',
-  approved: '#2e7d32',
-  rejected: '#d32f2f',
-};
+// const STATUS_COLOR ...  <-- SİLİNDİ
 
 export default async function RequestsPage() {
-  // ←← KİLİT: Sadece Admin/Manager içeri girsin
-  await requirePageAccess('requests');
+  await requirePageAccess('/requests');
 
   const [cardsData, charts, tablePage] = await Promise.all([
     getRequestsCardsData(),
@@ -60,12 +55,19 @@ export default async function RequestsPage() {
     curve: 'monotoneX',
   }));
 
+  // Seriler renksiz geliyor; rengi token ile colorKeyByLabel üzerinden çözeceğiz
   const barSeries: Parameters<typeof GroupBarChart>[0]['series'] =
     charts.byStatus.series.map(s => ({
       label: STATUS_TR[s.label] ?? s.label,
       data: (s.data ?? []).slice(0, charts.byStatus.labels.length),
-      color: STATUS_COLOR[s.label],
     }));
+
+  // Türkçe etiket → tema tokenı
+  const colorKeyByLabel = {
+    [STATUS_TR.pending]: '$requestStatus.pending',     // .fg varsayılan
+    [STATUS_TR.approved]: '$requestStatus.approved',
+    [STATUS_TR.rejected]: '$requestStatus.rejected',
+  } as const;
 
   return (
     <Box px={1} py={2}>
@@ -82,11 +84,14 @@ export default async function RequestsPage() {
             />
           </ChartCard>
         </Grid>
+
         <Grid size={{ xs: 12, md: 6 }}>
           <ChartCard title="Duruma Göre Toplam Talepler" timeLabel={rangeLabel}>
             <GroupBarChart
               labels={charts.byStatus.labels}
               series={barSeries}
+              colorKeyByLabel={colorKeyByLabel}
+              tone="solid"
               height={320}
             />
           </ChartCard>

@@ -2,20 +2,21 @@
 import 'server-only';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { Tables } from '@/types/supabase';
+import type { User } from '@supabase/supabase-js';
 
 export type Role = Tables<'users'>['role'];
 
 export async function getSessionRole(): Promise<Role | null> {
   const sb = await createSupabaseServerClient();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return null;
+  const { data: { user }, error } = await sb.auth.getUser();
+  if (error || !user) return null;
 
-  const { data, error } = await sb
+  const { data, error: qerr } = await sb
     .from('users')
     .select('role')
-    .eq('id', user.id as Tables<'users'>['id'])
-    .maybeSingle<{ role: Role }>();   // ← burası kritik
+    .eq('id', (user as User).id)
+    .maybeSingle<{ role: Role }>();
 
-  if (error) return null;
+  if (qerr) return null;
   return data?.role ?? null;
 }

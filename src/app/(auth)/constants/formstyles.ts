@@ -46,7 +46,7 @@ export const glassTextFieldProps: Partial<TextFieldProps> = {
       const outline = isDark ? alpha('#ffffff', 0.35) : alpha('#000000', 0.40);
 
       return {
-        borderRadius: 12,
+        borderRadius: 1.15,
         backgroundColor: baseBg,
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',

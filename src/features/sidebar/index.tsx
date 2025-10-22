@@ -12,7 +12,8 @@ export default function Sidebar({
 }) {
   return (
     <SidebarRoot
-      initialRole={initialData.role}              // Role | null
+      initialRole={initialData.role}
+      initialStatus={initialData.status}      // ← EKLENDİ
       initialUnread={initialData.unreadCount}
       userId={initialData.userId}
       mainLinks={mainLinks}

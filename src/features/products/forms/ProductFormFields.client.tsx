@@ -14,6 +14,7 @@ import {
 import ImageIcon from '@mui/icons-material/Image';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { alpha, type Theme, type SxProps } from '@mui/material/styles';
 
 import { Controller, type UseFormReturn } from 'react-hook-form';
 
@@ -72,7 +73,17 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
   // Upload hook: BURASI ÖNEMLİ — dir veriyoruz ki server imzalı URL'i bu klasör için üretsin
   const up = useProductUpload(methods, dir);
 
-    /* ------------------------------ DOSYA PICKER FIX ------------------------------ */
+  const dimPlaceholderSx: SxProps<Theme> = (theme) => ({
+    // Safari/Chromium farkları için hem input hem textarea hedefle
+    '& input::placeholder, & textarea::placeholder': {
+      // UA default opaklığını nötralize et
+      opacity: 1,
+      // asıl karartmayı renk üzerinden yap (tema uyumlu)
+      color: alpha(theme.palette.text.primary, 0.35), // burayı 0.20–0.50 arası zevkine göre ayarla
+    },
+  });
+
+  /* ------------------------------ DOSYA PICKER FIX ------------------------------ */
 
   // 1) Native <input type="file">’ı ref ile kontrol edeceğiz
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -101,13 +112,15 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
 
   return (
     <>
-      <Box sx={{ mt: 0 }}>
+      <Box sx={[{ mt: 0 }, dimPlaceholderSx]}>
         <Grid container spacing={2}>
           {/* 1. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Tam Ad"
               fullWidth
+              required
+              placeholder="Örn: Motor Kutusu Profili"
               {...register('name')}
               error={!!errors.name}
               helperText={toHelper(errors.name?.message)}
@@ -117,6 +130,8 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Kod"
               fullWidth
+              required
+              placeholder="Örn: T.3152"
               {...register('code')}
               error={!!errors.code}
               helperText={toHelper(errors.code?.message)}
@@ -133,6 +148,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   select
                   label="Kategori"
                   fullWidth
+                  required
                   {...field}
                   value={field.value ?? ''}
                   onChange={(e) => {
@@ -176,6 +192,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   select
                   label="Alt Kategori"
                   fullWidth
+                  required
                   {...field}
                   value={field.value ?? ''}
                   InputLabelProps={{ shrink: true }}
@@ -257,6 +274,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               name="unitWeightG"
               label="Birim Ağırlık"
               integer
+              required
               endAdornmentText="gr/m"
             />
           </Grid>
@@ -266,6 +284,8 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               label="Tarih"
               type="date"
               fullWidth
+              required
+              placeholder="YYYY-MM-DD"
               {...register('date')}
               error={!!errors.date}
               helperText={toHelper(errors.date?.message)}
@@ -279,6 +299,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               label="Revizyon Tarihi"
               type="date"
               fullWidth
+              placeholder="YYYY-MM-DD"
               {...register('revisionDate')}
               error={!!errors.revisionDate}
               helperText={toHelper(errors.revisionDate?.message)}
@@ -298,6 +319,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   label="Müşteri Kalıbı"
                   size="small"
                   fullWidth
+                  required
                   value={(field.value ?? 'Hayır') as CustomerMoldSelect}
                   onChange={(e) => field.onChange(e.target.value as CustomerMoldSelect)}
                   InputLabelProps={{ shrink: true }}
@@ -321,6 +343,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   label="Kullanılabilirlik Durumu"
                   size="small"
                   fullWidth
+                  required
                   value={String(field.value ?? true)}
                   onChange={(e) => field.onChange(e.target.value === 'true')}
                   InputLabelProps={{ shrink: true }}
@@ -341,6 +364,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Çizen"
               fullWidth
+              placeholder="Örn: Sacit Zorlu"
               {...register('drawer')}
               helperText={toHelper(errors.drawer?.message)}
               error={!!errors.drawer}
@@ -352,6 +376,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Kontrol"
               fullWidth
+              placeholder="Örn: Eyüp Güzel"
               {...register('control')}
               helperText={toHelper(errors.control?.message)}
               error={!!errors.control}
@@ -362,6 +387,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Ölçek"
               fullWidth
+              placeholder="Örn: 2/1"
               {...register('scale')}
               helperText={toHelper(errors.scale?.message)}
               error={!!errors.scale}
@@ -389,26 +415,18 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             <TextField
               label="Üretici Kodu"
               fullWidth
+              placeholder="Örn: Ü-512"
               {...register('manufacturerCode')}
               helperText={toHelper(errors.manufacturerCode?.message)}
               error={!!errors.manufacturerCode}
             />
           </Grid>
 
-          {/* 9. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="Profil Kodu"
-              fullWidth
-              {...register('profileCode')}
-              helperText={toHelper(errors.profileCode?.message)}
-              error={!!errors.profileCode}
-            />
-          </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Geçici Kod"
               fullWidth
+              placeholder="Örn: GÇE-001"
               {...register('tempCode')}
               helperText={toHelper(errors.tempCode?.message)}
               error={!!errors.tempCode}

@@ -80,14 +80,19 @@ function validateContent(raw: string): string {
 }
 
 /** KANONİK ürün yolu: /products/{profile_code || code || id} */
-async function canonicalProductPath(sb: Awaited<ReturnType<typeof createSupabaseRouteClient>>, productId: number) {
-  type PMin = Pick<Database['public']['Tables'][typeof PRODUCTS_TABLE]['Row'], 'profile_code' | 'code'>;
+async function canonicalProductPath(
+  sb: Awaited<ReturnType<typeof createSupabaseRouteClient>>,
+  productId: number
+) {
+  type PMin = Pick<Database['public']['Tables']['products']['Row'], 'code'>;
+
   const { data } = await sb
     .from(PRODUCTS_TABLE)
-    .select('profile_code, code')
+    .select('code')
     .eq('id', productId)
     .maybeSingle<PMin>();
-  const key = (data?.profile_code?.trim() || data?.code?.trim() || String(productId)) as string;
+
+  const key = (data?.code?.trim() || String(productId)) as string;
   return `/products/${encodeURIComponent(key)}`;
 }
 

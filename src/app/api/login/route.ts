@@ -1,6 +1,8 @@
 // src/app/api/login/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
+import { createSupabaseAdminClient } from '@/lib/supabase/supabaseAdmin';
+import type { TablesInsert } from '@/types/supabase';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,10 +26,9 @@ const RATE_WINDOW_MS = 60_000;
 const RATE_MAX_ATTEMPTS = 10;
 
 declare global {
-  // Dev HMR sırasında aynı Map’i korumak için global referans
+  // HMR sırasında aynı Map’i koru
   var __RL__: Map<string, number[]> | undefined;
 }
-
 const rlStore: Map<string, number[]> = (globalThis.__RL__ ??= new Map<string, number[]>());
 
 function clientIp(req: NextRequest): string {
@@ -87,12 +88,11 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createSupabaseRouteClient();
 
-  // Sessiyon varsa önce sessizce kapat. Supabase bazen "refresh_token_not_found" fırlatıyor.
+  // Eski/bozuk session kalıntısını temizle
   try {
     await supabase.auth.signOut();
-    
   } catch {
-    // Boşver, amaç logları temiz tutmak
+    /* ignore */
   }
 
   const { data, error } = await supabase.auth.signInWithPassword(dto);
@@ -107,47 +107,82 @@ export async function POST(req: NextRequest) {
 
   const user = data.user;
   if (!user) {
-    // Teoride olmaz ama olur da olursa, temizlik yap.
-    try { await supabase.auth.signOut(); } catch {}
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'server_error' }, 500);
   }
 
   if (!user.email_confirmed_at) {
-    try { await supabase.auth.signOut(); } catch {}
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'email_not_confirmed' }, 409);
   }
 
-  const { data: profile, error: profErr } = await supabase
+  const email = (user.email || '').trim().toLowerCase();
+  if (!email) {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    return json<{ error: LoginErrorKey }>({ error: 'server_error' }, 500);
+  }
+
+  // 1) Profili auth uid ile ara
+  const { data: profileRow } = await supabase
     .from('users')
     .select('status, role')
     .eq('id', user.id)
     .maybeSingle<ProfileRow>();
 
-  if (profErr || !profile) {
-    try { await supabase.auth.signOut(); } catch {}
-    return json<{ error: LoginErrorKey }>({ error: 'profile_missing' }, 403);
+  let profile = profileRow ?? null;
+
+  // 2) Yoksa, id=auth uid olacak şekilde upsert et (status=Inactive, role=User)
+  if (!profile) {
+    type UsersInsert = TablesInsert<'users'>;
+    const username = email.split('@')[0] || `user_${user.id.slice(0, 8)}`;
+
+    const payload: UsersInsert = {
+      id: user.id,        // auth.users.id ile birebir
+      email,
+      username,
+      role: 'User',
+      status: 'Inactive',
+    } as UsersInsert;
+
+    const admin = createSupabaseAdminClient();
+    const insertRes = await admin
+      .from('users')
+      .upsert(payload, { onConflict: 'id' })
+      .select('status, role')
+      .maybeSingle<ProfileRow>();
+
+    profile = insertRes.data ?? { role: 'User', status: 'Inactive' };
   }
 
+  // 3) Banlı ise kapı dışarı
   if (profile.status === 'Banned') {
-    try { await supabase.auth.signOut(); } catch {}
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     return json<{ error: LoginErrorKey }>({ error: 'banned' }, 403);
   }
 
-  if (profile.status === 'Inactive') {
-    try { await supabase.auth.signOut(); } catch {}
-    return json<{ error: LoginErrorKey }>({ error: 'inactive' }, 403);
-  }
-
-  // Başarılı
-  return json<{ ok: true; role: Role }>({ ok: true, role: profile.role }, 200);
+  // Inactive giriş yapabilir; erişim kısıtları middleware/guards ile uygulanacak
+  return json<{ ok: true; role: Role; status: Status }>(
+    { ok: true, role: profile.role, status: profile.status },
+    200
+  );
 }
 
-// Güvenli olsun: POST dışında method yok.
+// POST dışındaki istekleri kapat
 export async function GET() {
-  return json<{ error: LoginErrorKey }>({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: 'POST' } });
+  return json<{ error: LoginErrorKey }>(
+    { error: 'method_not_allowed' },
+    { status: 405, headers: { Allow: 'POST' } }
+  );
 }
-
-export async function PUT()  { return GET(); }
-export async function PATCH(){ return GET(); }
-export async function DELETE(){return GET(); }
-export async function OPTIONS(){ return GET(); }
+export async function PUT()      { return GET(); }
+export async function PATCH()    { return GET(); }
+export async function DELETE()   { return GET(); }
+export async function OPTIONS()  { return GET(); }

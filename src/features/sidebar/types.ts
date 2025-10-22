@@ -1,18 +1,19 @@
 // src/features/sidebar/types.ts
-import * as React from 'react';
+import type { OverridableComponent } from '@mui/types';
+import type { SvgIconTypeMap } from '@mui/material/SvgIcon';
 
 export type Role = 'Admin' | 'Manager' | 'User';
-
-export type NavSection = 'main' | 'quick' | 'footer';
+export type Status = 'Active' | 'Inactive' | 'Banned';
 
 export type SidebarLink = {
   label: string;
   labelTr?: string;
-  href?: `/${string}`;
-  icon: React.ElementType;
-  disabled?: boolean;
-  /** Hangi blokta görünsün? Belirtmezsen 'main' kabul edilir. */
-  section?: NavSection;
-  /** Aynı bölümdeki sıralama için opsiyonel. Küçük olan üstte. */
+  href?: string;
+
+  // SADECE ŞU SATIRI değiştir
+  icon: OverridableComponent<SvgIconTypeMap<object, 'svg'>>;
+
+  section?: 'main' | 'quick' | 'footer';
   order?: number;
+  disabled?: boolean;
 };

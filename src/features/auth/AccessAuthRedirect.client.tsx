@@ -3,8 +3,9 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import type { Route } from 'next';
 
 // DB tipleri
 type Row = Database['public']['Tables']['users']['Row'];
@@ -13,121 +14,154 @@ type Status = Row['status'] | null | undefined;
 
 type Props = {
   selfUserId: string | null;
+  /** Server snapshot: layout'ta gönderin (getSidebarInitialData içinden) */
   initialRole?: Row['role'] | null;
   initialStatus?: Row['status'] | null;
 };
 
-function canAccess(pathname: string, role: Role, status: Status): boolean {
-  if (!role) return false;
-  if (status === 'Banned') return false;
+type Decision =
+  | { action: 'none' }
+  | { action: 'redirect'; to: `/${string}` }
+  | { action: 'logout'; to: `/${string}` };
 
-  if (role === 'Admin') return true;
-
-  if (role === 'Manager') {
-    // Manager sadece dashboard’a giremez
-    return !pathname.startsWith('/dashboard');
+/**
+ * Layout için minimal politika:
+ * - Banned: her yerde LOGOUT + /login?reason=banned
+ * - Inactive: /account dışındaysa /account?reason=inactive
+ * - Active: dokunma
+ */
+function layoutPolicy(pathname: string, status: Status): Decision {
+  if (status === 'Banned') {
+    return { action: 'logout', to: '/login?reason=banned' };
   }
-
-  if (role === 'User') {
-    if (pathname.startsWith('/account')) return true;
-    if (pathname.startsWith('/orders')) return true;
-    if (pathname.startsWith('/create_request')) return status !== 'Inactive';
-    return false;
+  if (status === 'Inactive') {
+    if (!pathname.startsWith('/account')) {
+      return { action: 'redirect', to: '/account?reason=inactive' };
+    }
   }
-
-  return false;
+  return { action: 'none' };
 }
 
-export default function AccessAutoRedirect({ selfUserId, initialRole = null, initialStatus = null }: Props) {
+export default function AccessAutoRedirect({
+  selfUserId,
+  initialRole = null,
+  initialStatus = null,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabase = React.useMemo<SupabaseClient<Database>>(
-    () => createClient<Database>(url, anon),
-    [url, anon]
+  // Sadece public istekler ve realtime için hafif client
+  const supabase = React.useMemo(
+    () =>
+      createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
-  // Tek gerçek: rol/status
-  const [role, setRole] = React.useState<Role>(initialRole);
+  // İlk snapshot ile state
+  const [, setRole] = React.useState<Role>(initialRole);
   const [status, setStatus] = React.useState<Status>(initialStatus);
 
-  // 1) Sunucudan gelen ilk değerlerle ani yönlendirmeyi yap (varsa)
-  React.useEffect(() => {
-    if (role) {
-      if (!canAccess(pathname, role, status)) {
-        if (status === 'Banned') router.replace('/unauthorized');
-        else router.replace('/account');
+  // Logout’u çift tetiklemeyi engelle
+  const logoutOnceRef = React.useRef(false);
+  const doLogout = React.useCallback(
+    async (to: `/${string}`) => {
+      if (logoutOnceRef.current) return;
+      logoutOnceRef.current = true;
+      try {
+        await fetch(`/api/logout?redirect=${encodeURIComponent(to)}`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch {
+        // server logout başarısız olsa bile kullanıcıyı kurtarmak için yine de yönlendir
       }
-    }
-    // sadece ilk mount + pathname değişiminde kontrol yeterli
-    // role/status'ı buraya koymuyoruz; aksi halde loop olabilir
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+      router.replace(to as Route);
+    },
+    [router]
+  );
 
-  // 2) Kesin durumu DB’den çek (RLS uygunsa döner)
+  // 1) İlk snapshot'a göre nazikçe yönlendir / logout et
   React.useEffect(() => {
-    let canceled = false;
+    if (!status) return; // snapshot yoksa bekle
+    const decision = layoutPolicy(pathname, status);
+    if (decision.action === 'logout') {
+      void doLogout(decision.to);
+    } else if (decision.action === 'redirect') {
+      router.replace(decision.to as Route);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, status]);
+
+  // 2) Snapshot yoksa bir defa DB'den çek
+  React.useEffect(() => {
+    let cancelled = false;
     if (!selfUserId) return;
+    if (status) return; // snapshot zaten var
 
     (async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('users')
-        .select('role, status')
+        .select('role,status')
         .eq('id', selfUserId)
         .maybeSingle();
 
-      if (canceled) return;
+      if (cancelled) return;
 
-      if (error) {
-        // Sessiz geç; server guard zaten koruyor
-        return;
-      }
+      const nextRole = data?.role ?? null;
+      const nextStatus = data?.status ?? null;
 
-      setRole(data?.role ?? null);
-      setStatus(data?.status ?? null);
+      setRole(nextRole);
+      setStatus(nextStatus);
 
-      if (data?.role && !canAccess(pathname, data.role, data.status)) {
-        if (data.status === 'Banned') router.replace('/unauthorized');
-        else router.replace('/account');
+      if (nextStatus) {
+        const decision = layoutPolicy(pathname, nextStatus);
+        if (decision.action === 'logout') {
+          void doLogout(decision.to);
+        } else if (decision.action === 'redirect') {
+          router.replace(decision.to as Route);
+        }
       }
     })();
 
     return () => {
-      canceled = true;
+      cancelled = true;
     };
-  }, [supabase, selfUserId, pathname, router]);
+  }, [selfUserId, status, pathname, supabase, router, doLogout]);
 
-  // 3) Realtime ile anlık değişimleri yakala
+  // 3) Realtime: statü değişirse uygula (rolü layout’ta zorlamıyoruz)
   React.useEffect(() => {
     if (!selfUserId) return;
 
-    const channel = supabase
-      .channel(`users-role-watch:${selfUserId}`)
+    const ch = supabase
+      .channel(`users-status-watch:${selfUserId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'users', filter: `id=eq.${selfUserId}` },
-        (payload) => {
-          const next = (payload.new ?? payload.old) as Partial<Row> | null;
-          const nextRole: Role = next?.role ?? null;
-          const nextStatus: Status = next?.status ?? null;
+        payload => {
+          const row = (payload.new ?? payload.old) as Partial<Row>;
+          const nextStatus = (row?.status ?? null) as Status;
 
-          setRole(nextRole);
+          if (nextStatus === status) return;
+
           setStatus(nextStatus);
 
-          if (!canAccess(pathname, nextRole, nextStatus)) {
-            if (nextStatus === 'Banned') router.replace('/unauthorized');
-            else router.replace('/account');
+          const decision = layoutPolicy(pathname, nextStatus);
+          if (decision.action === 'logout') {
+            void doLogout(decision.to);
+          } else if (decision.action === 'redirect') {
+            router.replace(decision.to as Route);
           }
         }
       )
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(ch);
     };
-  }, [supabase, selfUserId, pathname, router]);
+  }, [selfUserId, status, pathname, supabase, router, doLogout]);
 
   return null;
 }

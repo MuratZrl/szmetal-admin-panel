@@ -1,22 +1,21 @@
-// app/(admin)/products/[profileCode]/page.tsx
+// app/(admin)/products/[code]/page.tsx
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+
 import { Box, Grid, Stack } from '@mui/material';
 
 import { requirePageAccess } from '@/lib/supabase/auth/server';
 import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
 
-import { fetchProductByKey } from '@/features/products/services/products.server';
+import { fetchProductByCode } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
 
-import { withVersion, productCanonicalPath } from '@/features/products/utils/url'; // ← EKLENDİ
 import { resolveAvatarUrl } from '@/features/products/comments/services/resolveAvatarUrl.server';
-
 import { mapRowToProduct } from '@/features/products/types';
 import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 
@@ -25,22 +24,20 @@ import ProductInfo from '@/features/products/components/ProductInfo';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions';
 import CommentSection from '@/features/products/components/CommentSection.client';
 
-import type { Tables, Database } from '@/types/supabase';
-type ProductsRow = Database['public']['Tables']['products']['Row']; // ← tip rahatlığı
+import type { Tables } from '@/types/supabase';
 
 const PRODUCT_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET ?? 'product-media';
 
-type Props = { params: Promise<{ profileCode: string }> };
+type Props = { params: Promise<{ code: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await requirePageAccess('products');
-  const { profileCode } = await params;
-  const row = await fetchProductByKey(profileCode);
+  const { code } = await params;
+  const row = await fetchProductByCode(code);
   if (!row) return { title: 'Ürün bulunamadı' };
   const p = mapRowToProduct(row);
-  const leaf = p.profileCode || p.code || `#${p.id}`;
-  return { title: `${leaf} — ${p.name}` };
+  return { title: `${p.code} — ${p.name}` };
 }
 
 type UserSlim = Pick<Tables<'users'>, 'role' | 'username' | 'email' | 'image' | 'updated_at'>;
@@ -75,29 +72,39 @@ async function getSessionInfo(): Promise<{
     null;
 
   const publicUrl = await resolveAvatarUrl(row?.image ?? metaAvatar);
-  const avatarUrl = withVersion(publicUrl, row?.updated_at ?? null);
+  const avatarUrl = publicUrl;
 
   const role = (row?.role ?? null) as 'Admin' | 'Manager' | 'User' | null;
 
   return { role, userId: user.id, username, email, avatarUrl };
 }
 
+function toSecureUrl(storageKey: string | null | undefined): string | null {
+  if (!storageKey) return null;
+  if (/^https?:\/\//i.test(storageKey)) return storageKey;
+  const key = storageKey.startsWith(PRODUCT_BUCKET + '/')
+    ? storageKey.slice(PRODUCT_BUCKET.length + 1)
+    : storageKey;
+  return `/api/products/storage?bucket=${encodeURIComponent(PRODUCT_BUCKET)}&path=${encodeURIComponent(key)}`;
+}
+
 export default async function ProductDetailPage({ params }: Props) {
   const { profile } = await requirePageAccess('products');
-  const { profileCode } = await params;
+  const { code } = await params;
 
   const [{ userId, username, email, avatarUrl }, row, dicts] = await Promise.all([
     getSessionInfo(),
-    fetchProductByKey(profileCode),
+    fetchProductByCode(code),
     fetchProductDicts(),
   ]);
 
   if (!row) notFound();
 
-  // ←←← KANONİK ZORLAMA: /products/{profileCode} değilse redirect
-  const canonical = productCanonicalPath(row as ProductsRow);
-  if (`/products/${profileCode}` !== canonical) {
-    redirect(canonical);
+  // Kanonik rota: /products/{code}
+  const canonicalPath = `/products/${encodeURIComponent(code)}` as const;
+  if (canonicalPath !== `/products/${code}`) {
+    // Next'in "RouteImpl" mızmızlanmasını susturmak için template-literal cast:
+    redirect(canonicalPath as `/products/${string}`);
   }
 
   const canEdit = profile.role === 'Admin' || profile.role === 'Manager';
@@ -111,15 +118,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const preferPdf = (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
   const rawPrimary = preferPdf ? product.filePath : product.image;
   const rawSecondary = preferPdf ? product.image : product.filePath;
-
-  function toSecureUrl(storageKey: string | null | undefined): string | null {
-    if (!storageKey) return null;
-    if (/^https?:\/\//i.test(storageKey)) return storageKey;
-    const key = storageKey.startsWith(PRODUCT_BUCKET + '/')
-      ? storageKey.slice(PRODUCT_BUCKET.length + 1)
-      : storageKey;
-    return `/api/products/storage?bucket=${encodeURIComponent(PRODUCT_BUCKET)}&path=${encodeURIComponent(key)}`;
-  }
 
   const basePrimary = toSecureUrl(rawPrimary);
   const baseSecondary = toSecureUrl(rawSecondary);
@@ -151,6 +149,7 @@ export default async function ProductDetailPage({ params }: Props) {
           <Stack spacing={2}>
             <ProductInfo
               title={`${product.code} — ${product.name}`}
+              code={product.code}
               variant={product.variant}
               category={product.category}
               subCategory={product.subCategory ?? undefined}
@@ -169,7 +168,6 @@ export default async function ProductDetailPage({ params }: Props) {
               availability={product.availability}
               hasCustomerMold={product.hasCustomerMold}
               tempCode={product.tempCode}
-              profileCode={product.profileCode}
               manufacturerCode={product.manufacturerCode}
               labels={{
                 category: Object.fromEntries(categoryLabelMap),
@@ -182,15 +180,11 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
-              
-              {/* ←←← ARTIK profileCode ve code’u geçiriyoruz */}
               <ProductDetailActions
                 id={String(product.id)}
                 canEdit={canEdit}
-                profileCode={product.profileCode}
                 code={product.code}
               />
-
             </ProductInfo>
 
             <CommentSection
@@ -202,7 +196,6 @@ export default async function ProductDetailPage({ params }: Props) {
               initialComments={comments}
               canPin={canPin}
             />
-            
           </Stack>
         </Grid>
       </Grid>

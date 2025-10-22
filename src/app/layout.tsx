@@ -5,9 +5,14 @@ import { cookies } from 'next/headers';
 
 import { InitColorSchemeScript } from '@mui/material'; // <— DOĞRU import
 
+import type { Metadata } from 'next';
 import { fontSans, fontMono } from './fonts';
 
 import Providers from '@/providers';
+
+export const metadata: Metadata = {
+  icons: { icon: '/favicon.ico?v=2' },
+};
 
 type Mode = 'light' | 'dark' | 'system';
 

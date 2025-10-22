@@ -35,56 +35,58 @@ function CellCenter({ children }: { children: React.ReactNode }) {
 
 export function buildMaterialColumns(): GridColDef<MaterialRow>[] {
   const cols: GridColDef<MaterialRow>[] = [
-    {
-      field: 'profil_resmi',
-      headerName: 'Görsel',
-      width: 90,
-      sortable: false,
-      filterable: false,
-      align: 'left',
-      headerAlign: 'left',
-      renderCell: (p: GridRenderCellParams<MaterialRow, string | null>) => {
-        const src = (p.value ?? '').trim();
-        if (!src) return <Typography variant="body2">---</Typography>;
+    
+    // {
+    //   field: 'profil_resmi',
+    //   headerName: 'Görsel',
+    //   width: 90,
+    //   sortable: false,
+    //   filterable: false,
+    //   align: 'left',
+    //   headerAlign: 'left',
+    //   renderCell: (p: GridRenderCellParams<MaterialRow, string | null>) => {
+    //     const src = (p.value ?? '').trim();
+    //     if (!src) return <Typography variant="body2">---</Typography>;
 
-        return (
-          <CellCenter>
-            <Box
-              component="a"
-              href={src}
-              target="_blank"
-              rel="noopener"
-              onClick={(e) => e.stopPropagation()}
-              // baseline kazığını kapat
-              sx={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
-            >
-              <Box
-                sx={{
-                  width: 56,
-                  height: 36,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                <Image
-                  src={src}
-                  alt={p.row.profil_adi ?? 'Profil görseli'}
-                  fill
-                  sizes="56px"
-                  priority={false}
-                  draggable={false}
-                  unoptimized
-                  style={{
-                    objectFit: 'contain',   // kırpmadan sığdır
-                    objectPosition: 'center',
-                  }}
-                />
-              </Box>
-            </Box>
-          </CellCenter>
-        );
-      },
-    },
+    //     return (
+    //       <CellCenter>
+    //         <Box
+    //           component="a"
+    //           href={src}
+    //           target="_blank"
+    //           rel="noopener"
+    //           onClick={(e) => e.stopPropagation()}
+    //           // baseline kazığını kapat
+    //           sx={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
+    //         >
+    //           <Box
+    //             sx={{
+    //               width: 56,
+    //               height: 36,
+    //               position: 'relative',
+    //               overflow: 'hidden',
+    //             }}
+    //           >
+    //             <Image
+    //               src={src}
+    //               alt={p.row.profil_adi ?? 'Profil görseli'}
+    //               fill
+    //               sizes="56px"
+    //               priority={false}
+    //               draggable={false}
+    //               unoptimized
+    //               style={{
+    //                 objectFit: 'contain',   // kırpmadan sığdır
+    //                 objectPosition: 'center',
+    //               }}
+    //             />
+    //           </Box>
+    //         </Box>
+    //       </CellCenter>
+    //     );
+    //   },
+    // },
+
     {
       field: 'profil_kodu',
       headerName: 'Kod',

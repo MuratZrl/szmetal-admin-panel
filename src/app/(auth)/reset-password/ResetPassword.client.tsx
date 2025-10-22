@@ -20,9 +20,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { supabase } from '@/lib/supabase/supabaseClient';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
-import { glassTextFieldProps } from '../constants/formstyles';
-import type { SxProps, Theme } from '@mui/material/styles';
-import { mergeSx } from '@/utils/mergeSx';
+import { glassTextFieldProps /* veya glassTextFieldPropsFlat */ } from '../constants/formstyles';
 
 type FormState = { password: string; confirmPassword: string };
 type LinkState = 'checking' | 'ok' | 'invalid';
@@ -32,15 +30,14 @@ export default function ResetPasswordForm() {
   const { show } = useSnackbar();
 
   const [linkState, setLinkState] = React.useState<LinkState>('checking');
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState<boolean>(false);
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
   const [form, setForm] = React.useState<FormState>({ password: '', confirmPassword: '' });
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // Şifre kuralları
   const isPasswordValid = (password: string) =>
     password.length >= 8 &&
     /[a-z]/.test(password) &&
@@ -48,7 +45,6 @@ export default function ResetPasswordForm() {
     /\d/.test(password) &&
     /[!@#$%^&*]/.test(password);
 
-  // Supabase callback senaryoları: ?code=... veya #access_token=...&refresh_token=...
   React.useEffect(() => {
     let active = true;
     const run = async () => {
@@ -84,9 +80,7 @@ export default function ResetPasswordForm() {
       }
     };
     void run();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -117,15 +111,8 @@ export default function ResetPasswordForm() {
     }
   };
 
-  // Var olan sx’i güvenle genişlet
-  const baseSx = glassTextFieldProps.InputProps?.sx as SxProps<Theme> | undefined;
-  const extendedSx: SxProps<Theme> = mergeSx(baseSx, { borderRadius: 5 });
-
-  // Aynı düzen: AuthCard zaten page.tsx içinde. Burada sadece içerik var.
   if (linkState === 'checking') {
-    return (
-      <Typography color="text.secondary">Bağlantı doğrulanıyor...</Typography>
-    );
+    return <Typography color="text.secondary">Bağlantı doğrulanıyor...</Typography>;
   }
 
   if (linkState === 'invalid') {
@@ -153,6 +140,14 @@ export default function ResetPasswordForm() {
     );
   }
 
+  const passwordAdornment = (shown: boolean, toggle: () => void) => (
+    <InputAdornment position="end">
+      <IconButton onMouseDown={(e) => e.preventDefault()} onClick={toggle} edge="end">
+        {shown ? <VisibilityOff /> : <Visibility />}
+      </IconButton>
+    </InputAdornment>
+  );
+
   return (
     <Box component="form" noValidate autoComplete="off" onSubmit={onSubmit}>
       <Grid container spacing={2}>
@@ -164,21 +159,10 @@ export default function ResetPasswordForm() {
             value={form.password}
             onChange={onChange}
             required
-            {...glassTextFieldProps}
+            {...glassTextFieldProps /* düz köşe istiyorsan: glassTextFieldPropsFlat */}
             InputProps={{
               ...(glassTextFieldProps.InputProps ?? {}),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setShowPassword((s) => !s)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-              sx: extendedSx,
+              endAdornment: passwordAdornment(showPassword, () => setShowPassword(s => !s)),
             }}
           />
         </Grid>
@@ -191,21 +175,13 @@ export default function ResetPasswordForm() {
             value={form.confirmPassword}
             onChange={onChange}
             required
-            {...glassTextFieldProps}
+            {...glassTextFieldProps /* düz köşe istiyorsan: glassTextFieldPropsFlat */}
             InputProps={{
               ...(glassTextFieldProps.InputProps ?? {}),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setShowConfirmPassword((s) => !s)}
-                    edge="end"
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
+              endAdornment: passwordAdornment(
+                showConfirmPassword,
+                () => setShowConfirmPassword(s => !s)
               ),
-              sx: extendedSx,
             }}
           />
         </Grid>

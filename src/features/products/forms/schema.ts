@@ -5,18 +5,11 @@ import * as yup from 'yup';
 export type CustomerMoldValue = 'Evet' | 'Hayır';
 export type CustomerMoldSelect = '' | CustomerMoldValue;
 
-/** Select alanlarında '' → undefined; boş seçim yakalansın */
+/** Genel: zorunlu select’ler için '' → undefined; required yakalasın */
 const requiredSelect = yup
   .string()
   .transform((_v, orig) => (orig === '' ? undefined : _v))
   .required('Zorunlu');
-
-/** Customer Mold: çekirdek alan (üvey değil) */
-const customerMoldSelect = yup
-  .mixed<CustomerMoldSelect>()
-  .oneOf(['', 'Evet', 'Hayır'] as const)
-  .default('Hayır')
-  .defined();
 
 /** Sayısal alanlar: '' ve NaN → null, min 0 */
 const toNullNumber = () =>
@@ -42,14 +35,18 @@ const optionalIsoDateString = () =>
       if (!v) return true; // '' veya undefined → serbest
       if (typeof v !== 'string') return false;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
-      // Basit geçerlilik kontrolü
       const d = new Date(v);
       return !Number.isNaN(d.getTime());
     })
     .default('')
     .defined();
 
-/** ---- ÇEKİRDEK ÜRÜN FORM ŞEMASI ---- */
+/** ---- ÜRÜN FORM ŞEMASI ----
+ * Zorunlu alanlar: name, code, variant, category, subCategory,
+ * availability, unitWeightG, date
+ * Not: customerMold üç durumlu tutulur ('' | 'Evet' | 'Hayır'),
+ *      zorlamayı UI’da yapabilir ya da submit’te kontrol edebilirsin.
+ */
 export const productSchema = yup
   .object({
     // Zorunlu metinler
@@ -61,23 +58,28 @@ export const productSchema = yup
     category: requiredSelect,
     subCategory: requiredSelect,
 
-    // Çekirdek: Customer Mold
-    customerMold: customerMoldSelect,
+    // Üç durumlu: '' | 'Evet' | 'Hayır' (boş seçime izin veriyoruz)
+    customerMold: yup
+      .mixed<CustomerMoldSelect>()
+      .oneOf(['', 'Evet', 'Hayır'] as const)
+      .defined(),
 
-    availability: yup.boolean().default(true),
+    // Zorunlu: availability (true/false olmalı)
+    availability: yup.boolean().required('Zorunlu').default(true),
 
+    // Opsiyonel açıklama metni
     description: yup.string().default('').defined(),
 
     // gr/m — integer normalize, min 1 ve zorunlu
     unitWeightG: toNullNumber()
-      .transform(v => (typeof v === 'number' ? Math.round(v) : v))
+      .transform((v) => (typeof v === 'number' ? Math.round(v) : v))
       .required('Zorunlu')
       .min(1, 'En az 1 gr'),
 
-    // Ana tarih (zorunlu)
+    // Ana tarih (Zorunlu).
     date: yup.string().required('Zorunlu'),
 
-    // EKLENDİ: Revizyon tarihi (opsiyonel, '' serbest)
+    // Revizyon tarihi (opsiyonel)
     revisionDate: optionalIsoDateString(),
 
     // Düz string alanlar (boş string serbest)
@@ -90,11 +92,10 @@ export const productSchema = yup
     sectionMm2: toNullNumber(),
 
     // Opsiyonel metinler
-    profileCode: emptyToNull(),
     tempCode: emptyToNull(),
     manufacturerCode: emptyToNull(),
 
-    // ← KRİTİK: URL **veya** storage path kabul et
+    // URL **veya** storage path kabul et
     image: yup
       .string()
       .trim()
@@ -118,12 +119,13 @@ export const newProductDefaults: ProductFormValues = {
   name: '',
   code: '',
 
-  variant: '',
+  variant: '',       // requiredSelect: '' → undefined sayılır, validasyonda yakalanır
   category: '',
   subCategory: '',
 
-  // Çekirdek: Customer Mold default
-  customerMold: 'Hayır',
+  // UI’da placeholder göstermek istiyorsan '' bırak.
+  // “Default Hayır olsun” dersen 'Hayır' yap.
+  customerMold: '',
 
   availability: true,
 
@@ -132,7 +134,6 @@ export const newProductDefaults: ProductFormValues = {
   unitWeightG: 0, // gr/m (min 1 validasyonda yakalanır)
   date: today(),
 
-  // EKLENDİ: Revizyon tarihi (opsiyonel)
   revisionDate: '',
 
   drawer: '',
@@ -143,7 +144,6 @@ export const newProductDefaults: ProductFormValues = {
   sectionMm2: null,
 
   tempCode: null,
-  profileCode: null,
   manufacturerCode: null,
 
   image: '',
@@ -160,7 +160,7 @@ export function makeNewProductDefaults(
   };
 }
 
-/** Select → boolean yardımcı (create/update payload’larında işine yarar) */
+/** Select → boolean yardımcı (create/update payload’larında işe yarar) */
 export function customerMoldToBoolean(
   v: CustomerMoldSelect
 ): boolean | undefined {

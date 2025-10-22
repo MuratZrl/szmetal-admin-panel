@@ -37,7 +37,6 @@ export type ProductFormValuesCore = {
 
   // opsiyonel metin alanlar (null serbest)
   tempCode: string | null;
-  profileCode: string | null;
   manufacturerCode: string | null;
 
   // asset public URL; boş string serbest
@@ -111,7 +110,6 @@ export function toInsertPayload(
     section_mm2: v.sectionMm2 ?? null,
 
     temp_code: trimToNull(v.tempCode),
-    profile_code: trimToNull(v.profileCode),
     manufacturer_code: trimToNull(v.manufacturerCode),
 
     image: v.image ? v.image.trim() : null,
@@ -176,7 +174,6 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
   if (v.outerSizeMm !== undefined)        p.outer_size_mm = v.outerSizeMm ?? null;
   if (v.sectionMm2 !== undefined)         p.section_mm2 = v.sectionMm2 ?? null;
   if (v.tempCode !== undefined)           p.temp_code = trimToNull(v.tempCode);
-  if (v.profileCode !== undefined)        p.profile_code = trimToNull(v.profileCode);
   if (v.manufacturerCode !== undefined)   p.manufacturer_code = trimToNull(v.manufacturerCode);
 
   if (v.image !== undefined) {
@@ -231,7 +228,6 @@ export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
     sectionMm2: row.section_mm2 ?? null,
 
     tempCode: row.temp_code ?? null,
-    profileCode: row.profile_code ?? null,
     manufacturerCode: row.manufacturer_code ?? null,
 
     image: row.image ?? '',

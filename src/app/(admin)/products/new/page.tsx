@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 
 import { Box, Grid, Divider, Typography } from '@mui/material';
 
-
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import ProductCreateForm from '@/features/products/components/ProductCreateForm.client';
 
@@ -13,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function ProductCreatePage() {
   // yetkiyi önce kontrol et, boşuna sözlük çekme
   const role = await getSessionRole();
-  if (role !== 'Admin') redirect('/unauthorized');
+  if (role !== 'Admin' && role !== 'Manager') redirect('/unauthorized');
 
   const dicts = await fetchProductDicts();
 

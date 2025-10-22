@@ -42,6 +42,9 @@ export type ProductInfoProps = {
   revisionDate?: string | null;
   id: string;
 
+  /** EKLE: ürün kodu (insan okur) */
+  code?: string | null;
+
   hasCustomerMold?: boolean | null;
   has_customer_mold?: boolean | null;
 
@@ -265,7 +268,6 @@ export default function ProductInfo(props: ProductInfoProps) {
     outerSizeMm,
     sectionMm2,
     tempCode,
-    profileCode,
     manufacturerCode,
     labels,
     hasCustomerMold,
@@ -359,11 +361,10 @@ export default function ProductInfo(props: ProductInfoProps) {
   rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
 
   // Tarih ve Revizyon Tarihi aynı satırda
-  rows.push([make('Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
+  rows.push([make('Yapıldığı Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
 
   const tail: DetailItem[] = [];
   if (tempCode) tail.push(make('Geçici Kod:', tempCode));
-  if (profileCode) tail.push(make('Profil Kodu:', profileCode));
   if (manufacturerCode) tail.push(make('Üretici Kodu:', manufacturerCode));
   if (scale) tail.push(make('Ölçek:', scale));
   if (typeof outerSizeMm === 'number') tail.push(make('Dış Çevre (mm):', nf(outerSizeMm)!));
@@ -379,8 +380,9 @@ export default function ProductInfo(props: ProductInfoProps) {
 
   // ------- Yazdır helper'ı -------
   function handlePrint() {
-    const pid = props.id;
-    const w = window.open(`/products/${encodeURIComponent(pid)}/print`, '_blank', 'noopener,noreferrer');
+    const code = (props as { code?: string | null }).code ?? '';
+    if (!code) return; // ya button'u disabled yap ya da buradan dön
+    const w = window.open(`/products/${encodeURIComponent(code)}/print`, '_blank', 'noopener,noreferrer');
     w?.focus();
   }
 
@@ -403,7 +405,13 @@ export default function ProductInfo(props: ProductInfoProps) {
                   <DownloadIcon fontSize="small" />
                 </IconButton>
 
-                <IconButton onClick={handlePrint} aria-label="Yazdır" size="small">
+                <IconButton
+                  onClick={handlePrint}
+                  aria-label="Yazdır"
+                  size="small"
+                  disabled={!('code' in props) || !props.code}
+                  title={!props.code ? 'Bu ürünün code alanı boş' : 'Yazdır'}
+                >
                   <PrintIcon fontSize="small" />
                 </IconButton>
               </Stack>
