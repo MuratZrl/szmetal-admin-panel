@@ -70,6 +70,7 @@ export default function Header({ logo, maxContentWidth = 1040, showDivider = tru
           display: 'flex',
           alignItems: 'center',
           bgcolor: 'transparent',
+          borderRadius: 0,
           borderBottom: t => (showDivider ? `1px solid ${t.palette.divider}` : 'none'),
         }}
       >

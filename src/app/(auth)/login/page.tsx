@@ -1,6 +1,6 @@
 // app/(auth)/login/page.tsx
-import type { Metadata } from 'next';
 import * as React from 'react';
+import type { Metadata } from 'next';
 import { Box, Grid, Typography } from '@mui/material';
 import AuthCard from '@/app/(auth)/components/layout/AuthCard';
 import LoginForm from '@/app/(auth)/login/LoginForm.client';

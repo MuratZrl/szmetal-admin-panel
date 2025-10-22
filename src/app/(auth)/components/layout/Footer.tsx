@@ -18,7 +18,7 @@ export default function Footer() {
       })}
     >
     
-      <Typography variant="body2" gutterBottom color="text.secondary">
+      <Typography variant="body2" gutterBottom color="text.main">
         © {new Date().getFullYear()} Alutem. Tüm hakları saklıdır.
       </Typography>
     

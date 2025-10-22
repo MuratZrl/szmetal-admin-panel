@@ -35,7 +35,7 @@ export const ROLE_LABELS_TR: Record<AppRole, string> = {
 export const STATUS_LABELS_TR: Record<AppStatus, string> = {
   Active: 'Aktif',
   Inactive: 'İnaktif',
-  Banned: 'Banlanmış',
+  Banned: 'Banlanan',
 };
 
 /* -------------------------------------------------------------------------- */

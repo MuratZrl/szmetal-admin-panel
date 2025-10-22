@@ -359,7 +359,7 @@ export default function ProductInfo(props: ProductInfoProps) {
   rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
 
   // Tarih ve Revizyon Tarihi aynı satırda
-  rows.push([make('Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
+  rows.push([make('Yapıldığı Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
 
   const tail: DetailItem[] = [];
   if (tempCode) tail.push(make('Geçici Kod:', tempCode));
