@@ -216,6 +216,7 @@ export default function RegisterForm(): React.JSX.Element {
       show('Bu kullanıcı adı zaten kullanılıyor.', 'error');
       return;
     }
+    
     if (!emailOk) {
       setError('email', { type: 'manual', message: 'Bu e-posta adresi zaten kayıtlı.' });
       show('Bu e-posta adresi zaten kayıtlı.', 'error');
