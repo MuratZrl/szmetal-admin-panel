@@ -3,15 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-      "types:supabase": "npx supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public > src/types/supabase.ts",
-      "predev": "npm run types:supabase && npm outdated supabase || exit 0",
-      "dev": "next dev --turbopack",
-      "build": "next build",
-      "start": "next start",
-      "lint": "next lint",
-      "typecheck": "tsc --noEmit",
-      "copy:pdf-worker": "node scripts/copy-pdf-worker.mjs",
-      "postbuild": "node scripts/copy-pdf-worker.mjs"
+    "types:ensure": "node -e \"require('fs').mkdirSync('src/types',{recursive:true})\"",
+    "types:supabase": "npm run types:ensure && supabase gen types typescript --project-id zofgtjswwjikwhdirvpa --schema public,storage,graphql_public > src\\types\\supabase.ts",
+    "predev": "npm run types:supabase && npm outdated supabase || exit 0",
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "copy:pdf-worker": "node scripts/copy-pdf-worker.mjs",
+    "postbuild": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -57,7 +58,7 @@
     "eslint-config-next": "15.5.5",
     "pdfjs-dist": "^4.10.38",
     "shx": "^0.4.0",
-    "supabase": "2.51.0",
+    "supabase": "^2.51.0",
     "tailwindcss": "^4",
     "ts-prune": "^0.10.3",
     "typescript": "^5.9.2"
@@ -65,5 +66,7 @@
   "framework": "nextjs",
   "installCommand": "npm ci",
   "buildCommand": "npm run prebuild && npm run build",
-  "engines": { "node": ">=20.19 <23" }
+  "engines": {
+    "node": ">=20.19 <23"
+  }
 }

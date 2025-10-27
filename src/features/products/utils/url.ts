@@ -1,3 +1,4 @@
+// src/features/products/utils/url.ts
 import type { Database } from '@/types/supabase';
 import type { Product } from '@/features/products/types';
 

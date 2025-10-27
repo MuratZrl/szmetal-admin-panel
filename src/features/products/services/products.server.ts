@@ -29,6 +29,9 @@ function asUpdateParam(u: ProductUpdate) {
  * Fetch helpers
  * ---------------------------------------------------------------------------*/
 
+// NOT: productCanonicalPath bu dosyada export edilirse Next “async zorunluluğu” yüzünden şikayet eder.
+// Onu utils/url.ts içinde tut.
+
 export async function fetchProductById(id: string | number): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
   const pid = parseNumericId(id);
@@ -43,20 +46,10 @@ export async function fetchProductById(id: string | number): Promise<ProductsRow
   return (data ?? null) as ProductsRow | null;
 }
 
+// Geriye dönük uyumluluk: profile_code artık yok.
+// Bu fonksiyon çağrılırsa code üzerinden baksın ve sessizce iş görsün.
 export async function fetchProductByProfileCode(profileCode: string): Promise<ProductsRow | null> {
-  const sb = await createSupabaseServerClient();
-
-  const code = profileCode.trim();
-  if (!code) return null;
-
-  const { data, error } = await sb
-    .from('products')
-    .select('*')
-    .eq('profile_code', code)
-    .maybeSingle();
-
-  if (error) return null;
-  return (data ?? null) as ProductsRow | null;
+  return fetchProductByCode(profileCode);
 }
 
 export async function fetchProductByCode(code: string): Promise<ProductsRow | null> {
@@ -77,8 +70,8 @@ export async function fetchProductByCode(code: string): Promise<ProductsRow | nu
 
 /** Tek anahtar üzerinden çöz:
  *  - sayıysa id
- *  - değilse önce profile_code
- *  - bulunamazsa code
+ *  - değilse önce code
+ *  - bulunamazsa manufacturer_code, sonra temp_code
  */
 export async function fetchProductByKey(key: string | number): Promise<ProductsRow | null> {
   if (typeof key === 'number') return fetchProductById(key);
@@ -91,10 +84,25 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
     return fetchProductById(asNumber);
   }
 
-  const byProfile = await fetchProductByProfileCode(raw);
-  if (byProfile) return byProfile;
+  // 1) code
+  const byCode = await fetchProductByCode(raw);
+  if (byCode) return byCode;
 
-  return fetchProductByCode(raw);
+  // 2) manufacturer_code
+  {
+    const sb = await createSupabaseServerClient();
+    const { data } = await sb.from('products').select('*').eq('manufacturer_code', raw).maybeSingle();
+    if (data) return data as ProductsRow;
+  }
+
+  // 3) temp_code
+  {
+    const sb = await createSupabaseServerClient();
+    const { data } = await sb.from('products').select('*').eq('temp_code', raw).maybeSingle();
+    if (data) return data as ProductsRow;
+  }
+
+  return null;
 }
 
 /* -----------------------------------------------------------------------------
@@ -151,8 +159,15 @@ export async function fetchFilteredProducts(
 
   if (filters.q?.trim()) {
     const t = filters.q.trim();
-    // profile_code ve code ikisi de metin aramasında
-    q = q.or(`code.ilike.%${t}%,name.ilike.%${t}%,profile_code.ilike.%${t}%`);
+    // code + name + manufacturer_code + temp_code
+    q = q.or(
+      [
+        `code.ilike.%${t}%`,
+        `name.ilike.%${t}%`,
+        `manufacturer_code.ilike.%${t}%`,
+        `temp_code.ilike.%${t}%`,
+      ].join(',')
+    );
   }
 
   if (filters.categories?.length) {

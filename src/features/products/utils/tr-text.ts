@@ -8,6 +8,8 @@ export const TR_TOKEN_FIXES: Readonly<Record<string, string>> = {
   cam: 'Cam',
   balkon: 'Balkon',
   adaptor: 'Adaptör',
+  kupeste: 'Küpeşte',
+  bazali: 'Bazalı',
   // ihtiyaca göre ekle
 };
 

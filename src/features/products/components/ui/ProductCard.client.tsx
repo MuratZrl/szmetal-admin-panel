@@ -204,9 +204,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 0.5,
           px: { xs: 1, sm: 1.5, md: 1.5 },
-          py: { xs: 0.5, sm: 0.75 },
           borderTop: '1px solid',
           borderColor: 'divider',
           bgcolor: (t) => alpha(t.palette.background.paper, 0.95),
