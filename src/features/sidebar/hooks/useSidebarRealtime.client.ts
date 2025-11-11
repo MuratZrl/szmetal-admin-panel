@@ -134,18 +134,30 @@ export function useSidebarRealtime(
   );
 
   // Visibility handling: we want to pause the channel when hidden (optional)
+  // görünürlük toggle’ına histerezis
   const [isVisible, setIsVisible] = React.useState<boolean>(() => {
     if (typeof document === 'undefined') return true;
     return document.visibilityState !== 'hidden';
   });
+  const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
-    if (!options.pauseWhenHidden) return;
-    if (typeof document === 'undefined') return;
-
-    const handler = () => setIsVisible(document.visibilityState !== 'hidden');
-    document.addEventListener('visibilitychange', handler, { passive: true });
-    return () => document.removeEventListener('visibilitychange', handler);
+    if (!options.pauseWhenHidden || typeof document === 'undefined') return;
+    const onVis = () => {
+      const nowVisible = document.visibilityState !== 'hidden';
+      if (nowVisible) {
+        if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
+        setIsVisible(true);
+      } else {
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => {
+          hideTimer.current = null;
+          setIsVisible(false);
+        }, 15000); // 15 sn gizli kalırsa gerçekten kapat
+      }
+    };
+    document.addEventListener('visibilitychange', onVis, { passive: true });
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, [options.pauseWhenHidden]);
 
   // Subscribe or tear down depending on userId and visibility

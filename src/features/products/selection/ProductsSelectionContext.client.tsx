@@ -1,6 +1,5 @@
 // src/features/products/selection/ProductsSelectionContext.client.tsx
 'use client';
-
 import * as React from 'react';
 
 type Ctx = {

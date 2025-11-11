@@ -19,9 +19,9 @@ import { resolveAvatarUrl } from '@/features/products/comments/services/resolveA
 import { mapRowToProduct } from '@/features/products/types';
 import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 
-import ProductMedia from '@/features/products/components/ProductMedia';
-import ProductInfo from '@/features/products/components/ProductInfo';
-import ProductDetailActions from '@/features/products/components/ProductDetailActions';
+import ProductMedia from '@/features/products/components/ProductMedia.client';
+import ProductInfo from '@/features/products/components/ProductInfo.client';
+import ProductDetailActions from '@/features/products/components/ProductDetailActions.client';
 import CommentSection from '@/features/products/components/CommentSection.client';
 
 import type { Tables } from '@/types/supabase';

@@ -1,7 +1,6 @@
 // src/features/sidebar/components/SidebarNav.tsx
 'use client';
 
-import * as React from 'react';
 import { List, ListItem, ListItemButton, IconButton, CircularProgress } from '@mui/material';
 import { usePathname } from 'next/navigation';
 import SidebarNavItem from './SidebarNavItem';

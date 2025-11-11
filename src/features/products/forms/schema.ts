@@ -5,6 +5,9 @@ import * as yup from 'yup';
 export type CustomerMoldValue = 'Evet' | 'Hayır';
 export type CustomerMoldSelect = '' | CustomerMoldValue;
 
+/** "Varyant" için tek kaynak: UI'da "Yok" */
+export const DEFAULT_VARIANT_KEY = 'none' as const;
+
 /** Genel: zorunlu select’ler için '' → undefined; required yakalasın */
 const requiredSelect = yup
   .string()
@@ -42,10 +45,8 @@ const optionalIsoDateString = () =>
     .defined();
 
 /** ---- ÜRÜN FORM ŞEMASI ----
- * Zorunlu alanlar: name, code, variant, category, subCategory,
- * availability, unitWeightG, date
- * Not: customerMold üç durumlu tutulur ('' | 'Evet' | 'Hayır'),
- *      zorlamayı UI’da yapabilir ya da submit’te kontrol edebilirsin.
+ * Zorunlu alanlar: name, code, category, subCategory, availability, unitWeightG, date
+ * Varyant: boş bırakılırsa otomatik olarak "none" (UI: "Yok") kabul edilir ve geçerlidir.
  */
 export const productSchema = yup
   .object({
@@ -53,15 +54,25 @@ export const productSchema = yup
     name: yup.string().required('Zorunlu'),
     code: yup.string().required('Zorunlu'),
 
+    // Varyant: '' veya undefined gelirse DEFAULT_VARIANT_KEY
+    variant: yup
+      .string()
+      .transform((_v, orig) =>
+        orig === '' || orig == null ? DEFAULT_VARIANT_KEY : _v
+      )
+      .default(DEFAULT_VARIANT_KEY)
+      .defined(),
+
     // Zorunlu selectler
-    variant: requiredSelect,
     category: requiredSelect,
     subCategory: requiredSelect,
 
-    // Üç durumlu: '' | 'Evet' | 'Hayır' (boş seçime izin veriyoruz)
+    // Yeni: boş ya da undefined gelirse otomatik "Hayır" yap ve default'u "Hayır" ayarla
     customerMold: yup
       .mixed<CustomerMoldSelect>()
       .oneOf(['', 'Evet', 'Hayır'] as const)
+      .transform((_v, orig) => (orig === '' || orig == null ? 'Hayır' : _v))
+      .default('Hayır')
       .defined(),
 
     // Zorunlu: availability (true/false olmalı)
@@ -119,13 +130,13 @@ export const newProductDefaults: ProductFormValues = {
   name: '',
   code: '',
 
-  variant: '',       // requiredSelect: '' → undefined sayılır, validasyonda yakalanır
+  // Artık boş değil; doğrudan "Yok"
+  variant: DEFAULT_VARIANT_KEY,
   category: '',
   subCategory: '',
 
-  // UI’da placeholder göstermek istiyorsan '' bırak.
-  // “Default Hayır olsun” dersen 'Hayır' yap.
-  customerMold: '',
+  // Eski: customerMold: '',
+  customerMold: 'Hayır',
 
   availability: true,
 
@@ -166,4 +177,11 @@ export function customerMoldToBoolean(
 ): boolean | undefined {
   if (v === '') return undefined;
   return v === 'Evet';
+}
+
+/** DB normalize: UI'daki "none" değerini veritabanında null'a çevirmek istersen kullan */
+export function normalizeVariantToDb(
+  v: ProductFormValues['variant'] | null | undefined
+): string | null {
+  return v == null || v === DEFAULT_VARIANT_KEY ? null : v;
 }

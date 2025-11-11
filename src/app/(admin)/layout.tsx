@@ -17,14 +17,14 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  
   const initialData = await getSidebarInitialData();
-
   if (!initialData.userId) redirect('/login');
 
   return (
     <>
       {/* Supabase oturum çerezlerini yenilemek için */}
-      <AuthRefresh />
+      <AuthRefresh enabled={process.env.NODE_ENV === 'production'} />
 
       {/* Rol/Status değişirse sayfayı yenilemeden anında yönlendir */}
       <AccessAutoRedirect selfUserId={initialData.userId} />

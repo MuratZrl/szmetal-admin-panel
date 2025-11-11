@@ -1,6 +1,7 @@
 // src/lib/supabase/supabaseClient.ts
 'use client';
 
+import { createBrowserClient, type CookieOptions } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
@@ -15,9 +16,7 @@ export type TypedSupabaseClient = SupabaseClient<Database>;
 function ensureEnv(): { url: string; anon: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) {
-    throw new Error('[supabase] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY eksik.');
-  }
+  if (!url || !anon) throw new Error('[supabase] env eksik');
   return { url, anon };
 }
 
@@ -33,15 +32,12 @@ function ensureEnv(): { url: string; anon: string } {
  *    - Bu client’ı “hafif” işler, realtime, storage, hızlı okuma için kullan.
  *    - RLS kontrollü kritik DB yazmalarını Server Action/Route Handler ile yap.
  */
-export function createSupabaseBrowserClient(): TypedSupabaseClient {
+export function createSupabaseBrowserClient() {
   const { url, anon } = ensureEnv();
-
-  return createClient<Database>(url, anon, {
-    auth: {
-      detectSessionInUrl: true,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
+  // ssr client, session’ı cookie üzerinden senkronlar; gereksiz refresh azalır
+  return createBrowserClient<Database>(url, anon, {
+    // İstersen burada detectSessionInUrl: true bırak, OAuth dönüşlerinde işine yarar
+    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
   });
 }
 
@@ -52,9 +48,5 @@ export function createSupabaseBrowserClient(): TypedSupabaseClient {
  *   global bir referansta tutuyoruz.
  * • Üretimde tek kere yaratılır, dev’de de stabil kalır.
  */
-declare global {
-  var __SB_BROWSER__: TypedSupabaseClient | undefined;
-}
-
-export const supabase: TypedSupabaseClient =
-  globalThis.__SB_BROWSER__ ?? (globalThis.__SB_BROWSER__ = createSupabaseBrowserClient());
+declare global { var __SB_BROWSER__: ReturnType<typeof createSupabaseBrowserClient> | undefined; }
+export const supabase = globalThis.__SB_BROWSER__ ?? (globalThis.__SB_BROWSER__ = createSupabaseBrowserClient());

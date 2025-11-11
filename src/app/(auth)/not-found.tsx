@@ -1,7 +1,7 @@
 // app/(auth)/not-found.tsx
 import * as React from 'react';
 
-import Link from 'next/link';
+import NextLink from 'next/link';
 
 import {
   Box,
@@ -35,18 +35,16 @@ export default function AuthNotFound(): React.JSX.Element {
         color: 'text.primary',
       }}
     >
-
       <Paper
         elevation={0}
         variant="outlined"
-        sx={{ 
+        sx={{
           width: '100%',
           maxWidth: 960,
           p: { xs: 2, md: 4 },
           borderRadius: 3,
         }}
       >
-
         <Grid container spacing={{ xs: 2, md: 3 }} alignItems="center">
           <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={1}>
@@ -60,71 +58,47 @@ export default function AuthNotFound(): React.JSX.Element {
                 Auth bölümünde böyle bir sayfa yok.
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Yanlış bir oturum sayfasına geldin. Aşağıdaki kısayolları
-                kullanabilirsin.
+                Yanlış bir oturum sayfasına geldin. Aşağıdaki kısayolları kullanabilirsin.
               </Typography>
             </Stack>
           </Grid>
 
           <Grid size={{ xs: 12, md: 5 }}>
-            <Paper
-              variant="outlined"
-              sx={{ p: 2, borderRadius: 2, bgcolor: 'var(--rs-surface-2)' }}
-            >
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'var(--rs-surface-2)' }}>
               <Stack spacing={1.25}>
-                <Button
-                  component={Link}
-                  href="/login"
-                  startIcon={<LoginIcon />}
-                  variant="contained"
-                  fullWidth
-                >
-                  Giriş yap
-                </Button>
+                <NextLink href="/login">
+                  <Button component="span" startIcon={<LoginIcon />} variant="contained" fullWidth>
+                    Giriş yap
+                  </Button>
+                </NextLink>
 
-                <Button
-                  component={Link}
-                  href="/register"
-                  startIcon={<PersonAddAlt1Icon />}
-                  variant="outlined"
-                  fullWidth
-                >
-                  Kayıt ol
-                </Button>
+                <NextLink href="/register">
+                  <Button component="span" startIcon={<PersonAddAlt1Icon />} variant="outlined" fullWidth>
+                    Kayıt ol
+                  </Button>
+                </NextLink>
 
                 <Divider flexItem />
 
-                <Button
-                  component={Link}
-                  href="/forgot-password"
-                  startIcon={<LockResetIcon />}
-                  variant="text"
-                  fullWidth
-                >
-                  Şifremi unuttum
-                </Button>
+                <NextLink href="/forgot-password">
+                  <Button component="span" startIcon={<LockResetIcon />} variant="text" fullWidth>
+                    Şifremi unuttum
+                  </Button>
+                </NextLink>
 
                 <Divider flexItem />
 
-                <Button
-                  component={Link}
-                  href="/"
-                  startIcon={<HomeIcon />}
-                  variant="text"
-                  fullWidth
-                >
-                  Ana sayfa
-                </Button>
+                <NextLink href="/">
+                  <Button component="span" startIcon={<HomeIcon />} variant="text" fullWidth>
+                    Ana sayfa
+                  </Button>
+                </NextLink>
 
-                <Button
-                  component={Link}
-                  href="/account"
-                  startIcon={<AccountCircleIcon />}
-                  variant="text"
-                  fullWidth
-                >
-                  Hesabım
-                </Button>
+                <NextLink href="/account">
+                  <Button component="span" startIcon={<AccountCircleIcon />} variant="text" fullWidth>
+                    Hesabım
+                  </Button>
+                </NextLink>
               </Stack>
             </Paper>
           </Grid>

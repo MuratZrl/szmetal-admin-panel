@@ -25,12 +25,20 @@ import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 import {
   type ProductFormValues,
   type CustomerMoldSelect,
+  DEFAULT_VARIANT_KEY,
 } from '@/features/products/forms/schema';
 
-import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
+// Date pickers
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { type Dayjs } from 'dayjs';
+import 'dayjs/locale/tr';
 
 // DİKKAT: Projendeki gerçek path neyse onu kullan.
 import { useProductUpload } from '@/features/products/hooks/useProductUpload';
+
+import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 
 type WithFileFields = { file: File | null };
 type FormType = ProductFormValues & WithFileFields;
@@ -74,46 +82,59 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
   const up = useProductUpload(methods, dir);
 
   const dimPlaceholderSx: SxProps<Theme> = (theme) => ({
-    // Safari/Chromium farkları için hem input hem textarea hedefle
     '& input::placeholder, & textarea::placeholder': {
-      // UA default opaklığını nötralize et
       opacity: 1,
-      // asıl karartmayı renk üzerinden yap (tema uyumlu)
-      color: alpha(theme.palette.text.primary, 0.35), // burayı 0.20–0.50 arası zevkine göre ayarla
+      color: alpha(theme.palette.text.primary, 0.35),
     },
   });
 
   /* ------------------------------ DOSYA PICKER FIX ------------------------------ */
 
-  // 1) Native <input type="file">’ı ref ile kontrol edeceğiz
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // 2) Bazı tarayıcılar aynı dosya seçilince onChange’i çalıştırmıyor.
-  // Her açmadan önce value='' ile sıfırla.
   const openPicker = React.useCallback(() => {
     const el = fileInputRef.current;
     if (!el) return;
-    el.value = ''; // aynı dosyayı tekrar seçebilelim
+    el.value = '';
     el.click();
   }, []);
 
-  // 3) Silme sonrası da güvenli tarafta kalmak için input’u yeniden mount et
   const [pickerKey, bumpPickerKey] = React.useReducer((n: number) => (n + 1) % 1_000_000, 0);
 
   const handleConfirmDelete = React.useCallback(async () => {
     await up.confirmDelete();
-    // native input değerini temizle
     if (fileInputRef.current) {
-      try { fileInputRef.current.value = ''; } catch {}
+      try {
+        fileInputRef.current.value = '';
+      } catch {}
     }
-    // Hala sorun yaşayan tarayıcılar için yeniden mount et
     bumpPickerKey();
   }, [up]);
 
+  const variantLabel = React.useCallback(
+    (key: string): string => {
+      if (key === DEFAULT_VARIANT_KEY) return 'Yok';
+      const found = variants.find((x) => x.key === key);
+      return found ? found.name : key;
+    },
+    [variants],
+  );
+
+  // dayjs <-> string yardımcıları (plugin gerektirmeden ISO parse)
+  const toDayjs = React.useCallback((v: string | null | undefined): Dayjs | null => {
+    if (!v) return null;
+    const d = dayjs(v);
+    return d.isValid() ? d : null;
+  }, []);
+  const toIso = React.useCallback((d: Dayjs | null): string => {
+    return d ? d.format('YYYY-MM-DD') : '';
+  }, []);
+
   return (
-    <>
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
       <Box sx={[{ mt: 0 }, dimPlaceholderSx]}>
         <Grid container spacing={2}>
+          
           {/* 1. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
@@ -231,41 +252,44 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* Varyant: Varsayılan "Yok" */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="variant"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Varyant"
-                  size="small"
-                  fullWidth
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value as string)}
-                  error={!!errors.variant}
-                  helperText={toHelper(errors.variant?.message)}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    renderValue: (v) => {
-                      const val = String(v ?? '');
-                      if (!val) return 'Seçiniz';
-                      return variants.find((x) => x.key === val)?.name ?? val;
-                    },
-                  }}
-                >
-                  <MenuItem value="">
-                    <em>Seçiniz</em>
-                  </MenuItem>
-                  {variants.map((v) => (
-                    <MenuItem key={v.key} value={v.key}>
-                      {v.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
+              render={({ field }) => {
+                const safeValue =
+                  typeof field.value === 'string' && field.value.trim() !== ''
+                    ? field.value
+                    : DEFAULT_VARIANT_KEY;
+
+                return (
+                  <TextField
+                    {...field}
+                    select
+                    label="Varyant"
+                    size="small"
+                    fullWidth
+                    value={safeValue}
+                    onChange={(e) => field.onChange(e.target.value as string)}
+                    error={!!errors.variant}
+                    helperText={toHelper(errors.variant?.message)}
+                    InputLabelProps={{ shrink: true }}
+                    SelectProps={{
+                      renderValue: (v) => variantLabel(String(v)),
+                    }}
+                  >
+                    <MenuItem value={DEFAULT_VARIANT_KEY}>Yok</MenuItem>
+                    {variants
+                      .filter((v) => v.key !== DEFAULT_VARIANT_KEY)
+                      .map((v) => (
+                        <MenuItem key={v.key} value={v.key}>
+                          {v.name}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                );
+              }}
             />
           </Grid>
 
@@ -279,34 +303,60 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* Tarih */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="Tarih"
-              type="date"
-              fullWidth
-              required
-              placeholder="YYYY-MM-DD"
-              {...register('date')}
-              error={!!errors.date}
-              helperText={toHelper(errors.date?.message)}
-              InputLabelProps={{ shrink: true }}
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Oluşturulma Tarihi"
+                  format="DD/MM/YY"
+                  value={toDayjs(field.value as string)}
+                  onChange={(val) => field.onChange(toIso(val))}
+                  slotProps={{
+                    textField: {
+                      required: true,
+                      size: 'small',
+                      fullWidth: true,
+                      InputLabelProps: { shrink: true },
+                      error: !!errors.date,
+                      helperText: toHelper(errors.date?.message),
+                      placeholder: 'YYYY-MM-DD',
+                    },
+                  }}
+                />
+              )}
             />
           </Grid>
 
-          {/* 4. Satır */}
+          {/* Revizyon Tarihi */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="Revizyon Tarihi"
-              type="date"
-              fullWidth
-              placeholder="YYYY-MM-DD"
-              {...register('revisionDate')}
-              error={!!errors.revisionDate}
-              helperText={toHelper(errors.revisionDate?.message)}
-              InputLabelProps={{ shrink: true }}
+            <Controller
+              name="revisionDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Revizyon Tarihi"
+                  format="DD/MM/YY"
+                  value={toDayjs(field.value as string)}
+                  onChange={(val) => field.onChange(toIso(val))}
+                  slotProps={{
+                    textField: {
+                      variant: 'outlined',
+                      size: 'small',
+                      fullWidth: true,
+                      InputLabelProps: { shrink: true },
+                      error: !!errors.revisionDate,
+                      helperText: toHelper(errors.revisionDate?.message),
+                      placeholder: 'YYYY-MM-DD',
+                    },
+                  }}
+                />
+              )}
             />
           </Grid>
-          
+
           {/* 6. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
@@ -351,7 +401,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                     renderValue: (v) => (v === 'true' ? 'Kullanılabilir' : 'Kullanılamaz'),
                   }}
                   error={!!errors.availability}
-                  helperText={errors.availability?.toString()}
+                  helperText={toHelper(errors.availability?.message)}
                 >
                   <MenuItem value="true">Kullanılabilir</MenuItem>
                   <MenuItem value="false">Kullanılamaz</MenuItem>
@@ -449,6 +499,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
                   <Button
                     variant="outlined"
+                    color="contrast"
                     startIcon={up.fileMeta?.kind === 'pdf' ? <PictureAsPdfIcon /> : <ImageIcon />}
                     onClick={openPicker}
                     disabled={up.uploading || isSubmitting}
@@ -459,7 +510,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
 
                   <Button
                     variant="outlined"
-                    color="error"
+                    color="contrast"
                     startIcon={<DeleteOutlineIcon />}
                     onClick={up.openDelete}
                     disabled={(!up.uploadedRef && !watch('image')) || up.uploading || isSubmitting}
@@ -494,8 +545,9 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               onConfirm={handleConfirmDelete}
             />
           </Grid>
+          
         </Grid>
       </Box>
-    </>
+    </LocalizationProvider>
   );
 }

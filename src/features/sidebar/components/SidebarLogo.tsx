@@ -1,6 +1,4 @@
 // src/features/sidebar/components/SidebarLogo.tsx
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Box, GlobalStyles } from '@mui/material';

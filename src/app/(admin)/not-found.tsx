@@ -1,6 +1,6 @@
 // app/(admin)/not-found.tsx
 import * as React from 'react';
-import Link from 'next/link';
+import NextLink from 'next/link';
 
 import {
   Box,
@@ -14,7 +14,6 @@ import {
 
 import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 export const revalidate = 0;
@@ -57,48 +56,33 @@ export default function AdminNotFound(): React.JSX.Element {
                 Admin bölümünde böyle bir sayfa yok.
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Yolunu kaybettin. 
+                Yolunu kaybettin.
               </Typography>
             </Stack>
           </Grid>
 
           <Grid size={{ xs: 12, md: 5 }}>
-            <Paper
-              variant="outlined"
-              sx={{ p: 2, borderRadius: 2, bgcolor: 'var(--rs-surface-2)' }}
-            >
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'var(--rs-surface-2)' }}>
               <Stack spacing={1.25}>
-                <Button
-                  component={Link}
-                  href="/"
-                  startIcon={<HomeIcon />}
-                  variant="outlined"
-                  fullWidth
-                >
-                  Ana sayfa
-                </Button>
+                <NextLink href="/">
+                  <Button component="span" startIcon={<HomeIcon />} variant="outlined" fullWidth>
+                    Ana sayfa
+                  </Button>
+                </NextLink>
 
-                <Button
-                  component={Link}
-                  href="/dashboard"
-                  startIcon={<DashboardIcon />}
-                  variant="contained"
-                  fullWidth
-                >
-                  Kontrol Paneli
-                </Button>
+                <NextLink href="/dashboard">
+                  <Button component="span" startIcon={<DashboardIcon />} variant="contained" fullWidth>
+                    Kontrol Paneli
+                  </Button>
+                </NextLink>
 
                 <Divider flexItem />
 
-                <Button
-                  component={Link}
-                  href="/account"
-                  startIcon={<AccountCircleIcon />}
-                  variant="text"
-                  fullWidth
-                >
-                  Hesabım
-                </Button>
+                <NextLink href="/account">
+                  <Button component="span" startIcon={<AccountCircleIcon />} variant="text" fullWidth>
+                    Hesabım
+                  </Button>
+                </NextLink>
               </Stack>
             </Paper>
           </Grid>

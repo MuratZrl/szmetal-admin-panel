@@ -1,4 +1,4 @@
-// middleware.ts
+// src/app/proxy.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import {
   createServerClient,
@@ -11,27 +11,15 @@ type Role = Tables<'users'>['role'];
 type Status = Tables<'users'>['status'];
 type UserRow = { role: Role; status: Status };
 
-const AUTH_ROUTES = [
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
-] as const;
-
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'] as const;
 const PUBLIC_ROUTES = ['/403', '/unauthorized'] as const;
-
-/** Rol erişimleri (son halinle aynı bıraktım) */
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
   Admin: ['*'],
   Manager: ['/account', '/requests', '/clients', '/orders', '/create_request', '/products'],
   User: ['/account', '/create_request', '/orders', '/products'],
 } as const;
-
-/** Herkes için ortak ana sayfa */
 const HOME_PATH = '/account' as const;
 
-/* -------------------------------------------------------------------------- */
-/* Yardımcılar                                                                */
 /* -------------------------------------------------------------------------- */
 
 function normPath(p: string): string {
@@ -39,17 +27,14 @@ function normPath(p: string): string {
   const q = p.split('?')[0]!.split('#')[0]!;
   return q.endsWith('/') ? q.slice(0, -1) : q;
 }
-
 function isAuthRoute(path: string): boolean {
   const n = normPath(path);
   return AUTH_ROUTES.some((p) => n === p || n.startsWith(`${p}/`));
 }
-
 function isPublicRoute(path: string): boolean {
   const n = normPath(path);
   return PUBLIC_ROUTES.some((p) => n === p || n.startsWith(`${p}/`));
 }
-
 function isAllowedForRole(role: Role, path: string): boolean {
   const n = normPath(path);
   const allowed = ROLE_ACCESS[role];
@@ -57,16 +42,12 @@ function isAllowedForRole(role: Role, path: string): boolean {
   if (allowed.includes('*')) return true;
   return allowed.some((base) => n === base || n.startsWith(`${base}/`));
 }
-
-/** Tarayıcıda Supabase oturum çerezi var mı? Varsa SDK’ya sormaya değer. */
 function hasSupabaseSessionCookies(req: NextRequest): boolean {
   const names = req.cookies.getAll().map(c => c.name);
   const hasLegacy = names.includes('sb-access-token') || names.includes('sb-refresh-token');
   const hasPacked = names.some(n => /^sb-[a-z0-9-]+-auth-token$/i.test(n));
   return hasLegacy || hasPacked;
 }
-
-/** Mevcut istekte görünen tüm Supabase auth cookie adları */
 function getSupabaseCookieNames(req: NextRequest): string[] {
   return req.cookies
     .getAll()
@@ -78,14 +59,28 @@ function getSupabaseCookieNames(req: NextRequest): string[] {
     );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Middleware                                                                 */
+/* Prefetch/HEAD/OPTIONS isteklerini ağır kontrolden çıkar. */
+function isLightweight(req: NextRequest): boolean {
+  const m = req.method.toUpperCase();
+  if (m === 'HEAD' || m === 'OPTIONS') return true;
+  const prefetch = req.headers.get('x-middleware-prefetch') === '1';
+  const purpose = (req.headers.get('purpose') || '').toLowerCase() === 'prefetch';
+  const nextFetch = (req.headers.get('next-router-prefetch') || '').toLowerCase() === '1';
+  return prefetch || purpose || nextFetch;
+}
+
+/* Cache kontrolünü sadece yönlendirmelere uygula. */
+function withNoStore(resp: NextResponse): NextResponse {
+  resp.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  return resp;
+}
+
 /* -------------------------------------------------------------------------- */
 
-export async function middleware(req: NextRequest): Promise<NextResponse> {
+export async function proxy(req: NextRequest): Promise<NextResponse> {
   const npath = normPath(req.nextUrl.pathname);
 
-  // 0) Statik istekleri geç
+  // 0) Statik dosyaları ve açıkça hariç tuttuğumuz yolları geç
   if (
     npath.startsWith('/_next') ||
     npath.startsWith('/assets') ||
@@ -97,13 +92,24 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // Baz yanıt (cookie forward için)
+  // 0.5) Prefetch/HEAD/OPTIONS ise ağır iş yok; sadece temel yönlendirme kuralı uygula
+  if (isLightweight(req)) {
+    const hasSession = hasSupabaseSessionCookies(req);
+    if (!hasSession && !isAuthRoute(npath) && !isPublicRoute(npath)) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
+      return withNoStore(NextResponse.redirect(url));
+    }
+    // hafif istekler geçsin; sayfanın asıl GET isteğinde tam kontrol yapılacak
+    return NextResponse.next();
+  }
+
+  // Yanıta sonradan cookie forward edebilmek için baz response
   const base = NextResponse.next();
-  base.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 
   const written: Array<{ name: string; value: string; options: CookieOptions }> = [];
   const withForwardedCookies = (out: NextResponse): NextResponse => {
-    out.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     for (const { name, value, options } of written) out.cookies.set(name, value, options);
     return out;
   };
@@ -112,22 +118,25 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     base.cookies.set(name, value, options);
   };
 
-  /* 1) ERKEN ÇIKIŞ: Supabase oturum çerezi yoksa SDK’ya hiç sorma.
-        Böylece "Invalid Refresh Token: Refresh Token Not Found" logu gelmez. */
-  const hasSessionCookie = hasSupabaseSessionCookies(req);
-  if (!hasSessionCookie) {
-    // Korumalı rota mı? Auth/public değilse login’e yolla.
+  // 1) Supabase çerezi yoksa SDK çağırma; korumalı rota ise login'e
+  if (!hasSupabaseSessionCookies(req)) {
     if (!isAuthRoute(npath) && !isPublicRoute(npath)) {
       const url = req.nextUrl.clone();
       url.pathname = '/login';
       url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
-      return withForwardedCookies(NextResponse.redirect(url));
+      return withForwardedCookies(withNoStore(NextResponse.redirect(url)));
     }
-    // Auth veya public ise sessiz geç
     return withForwardedCookies(base);
   }
 
-  // 2) Supabase client (cookie bridge ile)
+  // 2) Supabase client (cookie bridge)
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  if (!url || !anon) {
+    // Env bozuksa siteyi göçertme; sessiz geç
+    return withForwardedCookies(base);
+  }
+
   const cookiesAdapter: CookieMethodsServer = {
     getAll: () => req.cookies.getAll(),
     setAll: (list) => {
@@ -137,27 +146,33 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
       }
     },
   };
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-    { cookies: cookiesAdapter }
-  );
+
+  const supabase = createServerClient<Database>(url, anon, {
+    cookies: cookiesAdapter,
+    auth: {
+      // middleware'de URL'den session aramayız
+      detectSessionInUrl: false,
+      // refresh'e izin ver; yoksa token süresi dolduğunda herkes aniden logout olur
+      autoRefreshToken: true,
+      persistSession: true,
+    },
+  });
 
   // 3) Oturumu oku
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // Çerez var ama geçerli user yok: tüm Supabase auth çerezlerini temizle, login’e
+    // Çerez var ama user yok: Supabase auth cookie’lerini sil ve login’e
     for (const name of getSupabaseCookieNames(req)) {
       writeCookie(name, '', { path: '/', maxAge: 0 });
     }
-    const url = req.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
-    return withForwardedCookies(NextResponse.redirect(url));
+    const u = req.nextUrl.clone();
+    u.pathname = '/login';
+    u.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
+    return withForwardedCookies(withNoStore(NextResponse.redirect(u)));
   }
 
-  // 4) Profil
+  // 4) Profil oku (role/status). Not: her istekte DB çağrısı pahalıdır.
   type UserId = Tables<'users'>['id'];
   const profRes = await supabase
     .from('users')
@@ -167,12 +182,11 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   const profile = (profRes.data ?? null) as UserRow | null;
   if (!profile) {
-    // Profil yoksa tüm Supabase auth cookie’lerini temizleyip login’e
+    // Profil yoksa temizle ve login'e
     for (const name of getSupabaseCookieNames(req)) {
       writeCookie(name, '', { path: '/', maxAge: 0 });
     }
-    const url = new URL('/login?error=profile-missing', req.url);
-    return withForwardedCookies(NextResponse.redirect(url));
+    return withForwardedCookies(withNoStore(NextResponse.redirect(new URL('/login?error=profile-missing', req.url))));
   }
 
   // 5) Status kuralları
@@ -180,45 +194,36 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     for (const name of getSupabaseCookieNames(req)) {
       writeCookie(name, '', { path: '/', maxAge: 0 });
     }
-    // ESKİ: /unauthorized?reason=banned
-    // YENİ: direkt login'e at
-    return withForwardedCookies(
-      NextResponse.redirect(new URL('/login?reason=banned', req.url))
-    );
+    return withForwardedCookies(withNoStore(NextResponse.redirect(new URL('/login?reason=banned', req.url))));
   }
 
   if (profile.status === 'Inactive') {
-    const isAccount =
-      npath === '/account' || npath.startsWith('/account/');
+    const isAccount = npath === '/account' || npath.startsWith('/account/');
     if (!isAccount) {
-      const url = new URL('/account?reason=inactive', req.url);
-      return withForwardedCookies(NextResponse.redirect(url));
+      return withForwardedCookies(withNoStore(NextResponse.redirect(new URL('/account?reason=inactive', req.url))));
     }
-    // /account ise devam
   }
 
-  // 6) Login iken auth sayfalarına gitme → HERKES /account
+  // 6) Login iken auth sayfalarına gitme → /account
   if (isAuthRoute(npath)) {
-    return withForwardedCookies(NextResponse.redirect(new URL(HOME_PATH, req.url)));
+    return withForwardedCookies(withNoStore(NextResponse.redirect(new URL(HOME_PATH, req.url))));
   }
 
-  // 7) Root → HERKES /account
+  // 7) Root → /account
   if (npath === '/') {
-    return withForwardedCookies(NextResponse.redirect(new URL(HOME_PATH, req.url)));
+    return withForwardedCookies(withNoStore(NextResponse.redirect(new URL(HOME_PATH, req.url))));
   }
 
   // 8) Rol yetkisi
   if (!isAllowedForRole(profile.role, npath)) {
-    return withForwardedCookies(
-      NextResponse.redirect(new URL('/unauthorized?reason=role', req.url))
-    );
+    return withForwardedCookies(withNoStore(NextResponse.redirect(new URL('/unauthorized?reason=role', req.url))));
   }
 
-  // 9) Yol temiz
-  return withForwardedCookies(base);
+  // 9) Yol temiz: sayfanın kendi cache politikasını bozma
+  // İstersen şunu ekleyebilirsin: base.headers.set('Vary', 'Cookie'); kişiye özel içeriği paylaşmalı cache’lere kaptırmamak için.
+  // base.headers.set('Vary', 'Cookie');
+  return withForwardedCookies(NextResponse.next());
 }
-
-/* -------------------------------------------------------------------------- */
 
 export const config = {
   matcher: [

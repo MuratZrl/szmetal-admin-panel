@@ -1,9 +1,6 @@
 // src/features/products/components/ProductsGrid.client.tsx
-'use client';
-
-import * as React from 'react';
 import { Grid } from '@mui/material';
-import ProductCard from '@/features/products/components/ui/ProductCard.client';
+import ProductCard from '@/features/products/components/ui/ProductCard/ProductCard.client';
 import type { Product } from '@/features/products/types';
 
 type Role = 'Admin' | 'Manager' | 'User';

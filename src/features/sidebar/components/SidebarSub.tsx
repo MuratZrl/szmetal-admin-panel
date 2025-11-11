@@ -1,7 +1,6 @@
 // src/features/sidebar/components/SidebarSub.tsx
 'use client';
 
-import * as React from 'react';
 import { List } from '@mui/material';
 import { usePathname } from 'next/navigation';
 import SidebarNavItem from './SidebarNavItem';

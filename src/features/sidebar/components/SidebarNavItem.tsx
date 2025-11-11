@@ -1,29 +1,30 @@
 // src/features/sidebar/components/SidebarNavItem.tsx
 'use client';
 
-import * as React from 'react';
-import { ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
+import Link from '@/components/Link';
+import { ListItem, ListItemButton, Tooltip, Box, Badge } from '@mui/material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import type { SidebarLink } from '../types';
-import { LinkAdapter } from '@/theme';
-
-type Props = {
-  link: SidebarLink;
-  active: boolean;
-  unreadCount: number;
-  compact?: boolean;
-  onLogout?: () => void;
-};
 
 export default function SidebarNavItem({
   link,
   active,
   compact,
   onLogout,
-}: Props) {
-  const { label, labelTr, href, icon: Icon, disabled } = link;
-  const isLogout = label === 'Logout';
-  const title = labelTr ?? label;
+  unreadCount,
+}: {
+  link: SidebarLink;
+  active: boolean;
+  compact?: boolean;
+  onLogout?: () => void;
+  unreadCount?: number;
+}) {
+  // Yeni tip: ikon komponenti doğrudan link.icon içinde geliyor
+  const Icon = link.icon;
+
+  // Logout algısı artık prop üzerinden
+  const isLogout = Boolean(onLogout);
+  const title = link.labelTr ?? link.label;
 
   const buttonSx: SxProps<Theme> = (theme) => {
     const base = theme.palette.accent?.main ?? theme.palette.primary.main;
@@ -42,63 +43,53 @@ export default function SidebarNavItem({
     };
   };
 
-  const iconEl = (
-    <Box component="span" sx={{ display: 'inline-flex' }}>
-      <Icon fontSize="medium" />
-    </Box>
-  );
-
-  const tooltipCommon = {
-    title,
-    placement: 'right' as const,
-    arrow: true,
-    disableInteractive: true,
-    enterTouchDelay: 0,
-    PopperProps: {
-      modifiers: [
-        { name: 'offset', options: { offset: [0, 8] } },
-        { name: 'flip', options: { fallbackPlacements: [] } },
-      ],
-    },
-    slotProps: {
-      popper: {
-        modifiers: [
-          { name: 'offset', options: { offset: [0, 8] } },
-          { name: 'flip', options: { fallbackPlacements: [] } },
-        ],
-      },
-    },
-  };
-
   const buttonProps = isLogout
-    ? ({
-        component: 'button',
-        type: 'button' as const,
-        onClick: onLogout,
-      })
-    : ({
-        component: LinkAdapter,
-        href,
-        prefetch: false,
-      });
+    ? ({ component: 'button', type: 'button', onClick: onLogout } as const)
+    : ({ component: Link, href: link.href ?? '#', prefetch: false } as const);
 
-  const Button = (
+  // Logout için rozet gösterme; diğerlerinde 0/undefined ise gizle
+  const count = isLogout ? 0 : Math.max(0, unreadCount ?? 0);
+
+  const ButtonEl = (
     <ListItemButton
       {...buttonProps}
-      aria-label={isLogout ? 'Logout' : title}
+      aria-label={title}
       aria-current={active ? 'page' : undefined}
       selected={active}
-      disabled={disabled}
+      disabled={link.disabled}
       draggable={false}
       sx={buttonSx}
     >
-      {iconEl}
+      <Box component="span" sx={{ display: 'inline-flex' }}>
+        {count > 0 ? (
+          <Badge
+            badgeContent={count}
+            max={99}
+            color="error"
+            overlap="circular"
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <Icon fontSize="medium" />
+          </Badge>
+        ) : (
+          <Icon fontSize="medium" />
+        )}
+      </Box>
     </ListItemButton>
   );
 
   return (
-    <ListItem disablePadding sx={{ justifyContent: 'center', width: compact ? 'auto' : '100%' }}>
-      {compact ? <Tooltip {...tooltipCommon}>{Button}</Tooltip> : Button}
+    <ListItem
+      disablePadding
+      sx={{ justifyContent: 'center', width: compact ? 'auto' : '100%' }}
+    >
+      {compact ? (
+        <Tooltip title={title} placement="right" arrow disableInteractive enterTouchDelay={0}>
+          {ButtonEl}
+        </Tooltip>
+      ) : (
+        ButtonEl
+      )}
     </ListItem>
   );
 }

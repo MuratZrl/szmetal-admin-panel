@@ -1,15 +1,13 @@
 // app/(admin)/products/page.tsx
-
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import * as React from 'react';
 import { Box, Grid, Divider } from '@mui/material';
 
 import { ProductsSelectionProvider } from '@/features/products/selection/ProductsSelectionContext.client';
 import ProductsToolbar from '@/features/products/components/ProductsToolbar.client';
-import Filters from '@/features/products/components/Filter.client';
+import Filters from '@/features/products/components/ui/Filter/Filter.client';
 import ProductsGrid from '@/features/products/components/ProductsGrid.client';
 import ProductsPagination from '@/features/products/components/ProductsPagination.client';
 

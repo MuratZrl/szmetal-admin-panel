@@ -358,10 +358,12 @@ export default function ProductInfo(props: ProductInfoProps) {
   rows.push([make('Kategori:', safe(catText)), make('Alt Kategori:', safe(subText))]);
   rows.push([make('Varyant:', safe(variantText)), make('Birim Ağırlık (gr/m):', safe(nf(unit_weight_g_pm)))]);
   rows.push([make('Kullanım Durumu:', safe(usageNode)), make('Müşteri Kalıbı:', safe(moldChip))]);
-  rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
-
+  
   // Tarih ve Revizyon Tarihi aynı satırda
   rows.push([make('Yapıldığı Tarih:', safe(date)), make('Revizyon Tarihi:', safe(revisionDate))]);
+
+  rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
+
 
   const tail: DetailItem[] = [];
   if (tempCode) tail.push(make('Geçici Kod:', tempCode));

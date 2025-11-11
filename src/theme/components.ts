@@ -68,7 +68,7 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: shape.borderRadius,
+          borderRadius: theme.shape.borderRadius,
           fontWeight: 600,
           textTransform: 'none',
         },
@@ -92,6 +92,24 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
           '&:hover': { backgroundColor: alpha(palette.primary.main, 0.06) },
         },
       },
+      // ↓ yeni varyant: outlined + contrast
+      variants: [
+        {
+          props: { variant: 'outlined', color: 'contrast' },
+          style: {
+            borderColor: palette.contrast.main,
+            color: palette.contrast.main,
+            '&:hover': {
+              borderColor: palette.contrast.main,
+              backgroundColor: alpha(palette.contrast.main, 0.08),
+            },
+            '&.Mui-disabled': {
+              borderColor: alpha(palette.contrast.main, 0.24),
+              color: alpha(palette.contrast.main, 0.30),
+            },
+          },
+        },
+      ],
     },
 
     MuiIconButton: {
@@ -193,12 +211,28 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: palette.surface.outline,
           },
+          // HOVER: beyaz kenarlık
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.primary.main,
+            borderColor: palette.common.white,
           },
+          // FOCUS: hâlâ primary, kalın çizgi
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: palette.primary.main,
             borderWidth: 2,
+          },
+          // DISABLED: beyaza dönmesin
+          '&.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.surface.outline,
+          },
+          // ERROR: hata varken hover/focus bile kırmızı kalsın
+          '&.Mui-error .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.error.main,
+          },
+          '&:hover.Mui-error .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.error.main,
+          },
+          '&.Mui-focused.Mui-error .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.error.main,
           },
         },
         input: { paddingTop: 12, paddingBottom: 12 },

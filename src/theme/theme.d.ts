@@ -11,6 +11,7 @@
  * - palette.status: uygulama statü renkleri (Active | Inactive | Banned)
  * - palette.charts.categorical: grafikler için kategorik dizi
  * - background.elevated: ek kâğıt/katman rengi
+ * - palette.contrast: “beyaz outlined” gibi kontrast butonlar için renk ailesi
  */
 
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
@@ -37,6 +38,9 @@ declare module '@mui/material/styles' {
 
     /** Grafikler için kategorik renk paleti */
     charts: { categorical: readonly string[] };
+
+    /** Kontrast renk ailesi (örn. dark’ta beyaz) */
+    contrast: Palette['primary'];
   }
 
   interface PaletteOptions {
@@ -49,11 +53,20 @@ declare module '@mui/material/styles' {
 
     status?: Partial<Record<AppUserStatus, string>>;
     charts?: Partial<{ categorical: readonly string[] }>;
+
+    /** Kontrast renk ailesi (örn. dark’ta beyaz) */
+    contrast?: PaletteOptions['primary'];
   }
 
   /** background.elevated desteği */
   interface TypeBackground {
     elevated?: string;
+  }
+}
+
+declare module '@mui/material/Button' {
+  interface ButtonPropsColorOverrides {
+    contrast: true;
   }
 }
 

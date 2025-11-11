@@ -1,7 +1,6 @@
 // src/features/sidebar/components/SidebarFooter.tsx
 'use client';
 
-import * as React from 'react';
 import { Box } from '@mui/material';
 
 import ThemeToggle from '@/theme/ThemeToggle.client';

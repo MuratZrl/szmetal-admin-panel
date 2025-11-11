@@ -1,3 +1,4 @@
+// src/features/products/components/HoverPreview.client.tsx
 'use client';
 
 import * as React from 'react';

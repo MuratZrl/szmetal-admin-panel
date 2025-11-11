@@ -3,7 +3,13 @@
   "compilerOptions": {
     "baseUrl": "src",
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext", "DOM", "ESNext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext",
+      "DOM",
+      "ESNext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -13,7 +19,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -21,22 +27,38 @@
       }
     ],
     "paths": {
-      "@/*": ["*"],
-      "@/components/*": ["components/*"],
-      "@/lib/*": ["lib/*"],
-      "@/constants/*": ["constants/*"],
-      "@/types/*": ["types/*"],
-      "@/hooks/*": ["hooks/*"]
-    },
+      "@/*": [
+        "*"
+      ],
+      "@/components/*": [
+        "components/*"
+      ],
+      "@/lib/*": [
+        "lib/*"
+      ],
+      "@/constants/*": [
+        "constants/*"
+      ],
+      "@/types/*": [
+        "types/*"
+      ],
+      "@/hooks/*": [
+        "hooks/*"
+      ]
+    }
   },
   "include": [
-    "next-env.d.ts", 
-    "**/*.ts", "**/*.tsx", 
-    ".next/types/**/*.ts", 
-    "types/**/*.d.ts", 
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "types/**/*.d.ts",
     "src/theme/types.d.ts",
     "src/components/ui/charts/RequestsByStatusDonut.client.tsx",
-    "test/**/*"  
+    "test/**/*",
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

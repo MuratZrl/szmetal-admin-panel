@@ -3,7 +3,8 @@ import { alpha, type PaletteOptions } from '@mui/material/styles';
 import { grey } from '@mui/material/colors';
 
 // Koyu, ciddi, kırmızı ağırlıklı palet.
-// Not: surface / accent / requestStatus genişletmeleri theme.d.ts içinde tanımlı.
+// Not: surface / accent / requestStatus / charts genişletmeleri ve "contrast" rengi
+// için src/theme/types.d.ts içinde palette augmentasyonu yapılmış olmalı.
 
 const TEXT = '#F2F4F6';
 const OUTLINE = '#9FA4AA';
@@ -33,7 +34,13 @@ export const darkPalette = {
   success: { main: STATUS.Active,   light: '#7EE8A1', dark: '#155E34', contrastText: '#0B0B0B' },
   warning: { main: STATUS.Inactive, light: '#FCD34D', dark: '#92400E', contrastText: '#0B0B0B' },
   error:   { main: STATUS.Banned,   light: '#F29AA4', dark: '#7A0E1A', contrastText: '#FFFFFF' },
-  info:    { main: '#2F6EE5', light: '#86B0FF', dark: '#1E3F94', contrastText: '#FFFFFF' },
+  info:    { main: '#2F6EE5',       light: '#86B0FF', dark: '#1E3F94', contrastText: '#FFFFFF' },
+
+  // Kontrast: dark’ta beyaz; outlined butonlarda "beyaz" stili için kullanılır
+  contrast: {
+    main: TEXT,
+    contrastText: '#0B0B0B',
+  },
 
   // Requests rozetleri = Users status ile aynı renk ailesi
   requestStatus: {
@@ -71,9 +78,9 @@ export const darkPalette = {
 
   surface: {
     1: '#0E0B0C',
-    2: '#131011',
-    3: '#191517',
-    4: '#201B1D',
+    2: '#0c0c0cff',
+    3: '#161616ff',
+    4: '#302e2eff',
     outline: alpha(OUTLINE, 0.22),
     muted:   alpha(OUTLINE, 0.12),
   },

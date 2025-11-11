@@ -19,10 +19,11 @@ import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
 import { productCanonicalPath, productEditPath } from '@/features/products/utils/url';
 
 // 🔧 DÜZELTME: ProductMedia named export ve doğru path
-import { ProductMedia } from '@/features/products/components/ui/ProductMedia.client';
+import { ProductMedia } from '@/features/products/components/ui/ProductCard/ProductMedia.client';
+
 // 🔧 DÜZELTME: Doğru CategoryChip import’u
-import { CategoryChip } from '@/features/products/components/ui/CategoryTag.client';
-import { ProductActions } from '@/features/products/components/ui/ProductActions.client';
+import { CategoryChip } from '@/features/products/components/ui/ProductCard/CategoryTag.client';
+import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductActions.client';
 
 type Role = 'Admin' | 'Manager' | 'User';
 
@@ -34,10 +35,12 @@ type Props = {
 };
 
 function normalizeRole(r: Props['role']): Role {
+  
   const v = typeof r === 'string' ? r.trim().toLowerCase() : 'user';
   if (v === 'admin') return 'Admin';
   if (v === 'manager' || v === 'yönetici') return 'Manager';
   if (v === 'user' || v === 'kullanıcı') return 'User';
+  
   return 'User';
 }
 

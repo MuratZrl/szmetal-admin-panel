@@ -2,11 +2,17 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
-import {
-  Stack, Button, Typography, Grid, IconButton, Tooltip, useMediaQuery,
-} from '@mui/material';
+import Link from '@/components/Link';
 
+import {
+  Grid,
+  Stack,
+  Button,
+  Typography,
+  IconButton,
+  Tooltip,
+  useMediaQuery,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
 import AddIcon from '@mui/icons-material/Add';
@@ -15,16 +21,13 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import CloseIcon from '@mui/icons-material/Close';
 
 import { useProductsSelection } from '../selection/ProductsSelectionContext.client';
-
 import BulkDeleteDialog from './BulkDeleteDialog.client';
 import BulkDeleteAllDialog from './BulkDeleteAllDialog.client';
 
-// Sadece izinler kalsın
 type Perms = { canCreate: boolean; canBulkDelete: boolean };
 
 type Props = {
   perms: Perms;
-  /** Toplam ürün sayısı (server component'ten geçir). */
   totalCount?: number | null;
 };
 
@@ -40,16 +43,12 @@ export default function ProductsToolbar({ perms, totalCount }: Props) {
 
   const formattedTotal = React.useMemo(() => {
     const n = typeof totalCount === 'number' ? totalCount : Number(totalCount);
-    return Number.isFinite(n) && n >= 0
-      ? new Intl.NumberFormat('tr-TR').format(n)
-      : '0';
+    return Number.isFinite(n) && n >= 0 ? new Intl.NumberFormat('tr-TR').format(n) : '0';
   }, [totalCount]);
 
   return (
     <>
       <Grid container alignItems="center" spacing={1} sx={{ mb: 1 }}>
-        
-        {/* Sol: Başlık */}
         <Grid size={{ xs: 12, sm: 6, md: 6 }}>
           <Stack direction="row" spacing={1} alignItems="baseline">
             <Typography variant="h5" component="h2">
@@ -61,33 +60,59 @@ export default function ProductsToolbar({ perms, totalCount }: Props) {
           </Stack>
         </Grid>
 
-        {/* Sağ: Aksiyonlar */}
         <Grid size={{ xs: 12, sm: 6, md: 6 }}>
           {smUp ? (
-            <Stack direction="row" justifyContent="flex-end" alignItems="center"
-              sx={{ gap: 2, flexWrap: 'wrap', '& > *': { minWidth: 0 } }}>
-              {perms.canBulkDelete && (
+            <Stack
+              direction="row"
+              justifyContent="flex-end"
+              alignItems="center"
+              sx={{ gap: 2, flexWrap: 'wrap', '& > *': { minWidth: 0 } }}
+            >
+              {/* {perms.canBulkDelete && (
                 <>
-                  <Button variant="outlined" startIcon={<CloseIcon />} disabled={!hasSelection}
-                    onClick={clear} draggable={false}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloseIcon />}
+                    disabled={!hasSelection}
+                    onClick={clear}
+                    draggable={false}
+                  >
                     Vazgeç
                   </Button>
 
-                  <Button color="error" variant="contained" startIcon={<DeleteOutlineIcon />}
-                    disabled={!hasSelection} onClick={() => setOpen(true)} draggable={false}>
+                  <Button
+                    color="error"
+                    variant="contained"
+                    startIcon={<DeleteOutlineIcon />}
+                    disabled={!hasSelection}
+                    onClick={() => setOpen(true)}
+                    draggable={false}
+                  >
                     Seçilenleri sil {hasSelection ? `(${count})` : ''}
                   </Button>
 
-                  <Button color="error" variant="outlined" startIcon={<DeleteForeverIcon />}
-                    onClick={() => setOpenAll(true)} draggable={false}>
+                  <Button
+                    color="error"
+                    variant="outlined"
+                    startIcon={<DeleteForeverIcon />}
+                    onClick={() => setOpenAll(true)}
+                    draggable={false}
+                  >
                     Tümünü Sil
                   </Button>
                 </>
-              )}
+              )} */}
 
               {perms.canCreate && (
-                <Button component={Link} href="/products/new" variant="contained"
-                  startIcon={<AddIcon />} draggable={false}>
+                <Button 
+                  component={Link} 
+                  href="/products/new" 
+                  variant="text" 
+                  color='contrast' 
+                  size='small'
+                  startIcon={<AddIcon />}
+                  draggable={false}
+                >
                   Profil Ekle
                 </Button>
               )}

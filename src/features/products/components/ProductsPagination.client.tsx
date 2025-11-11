@@ -2,8 +2,9 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next'; // ⬅️ önemli
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
 import CustomPagination from '@/components/ui/pagination/Pagination';
 
 type Props = { page: number; totalPages: number };

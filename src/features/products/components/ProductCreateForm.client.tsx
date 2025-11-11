@@ -121,10 +121,21 @@ export default function ProductCreateForm({ dicts }: Props) {
           </Grid>
 
           <Stack direction="row" spacing={1} justifyContent="start" sx={{ mt: 2 }}>
-            <Button variant="outlined" onClick={() => router.back()} disabled={isSubmitting}>
+            <Button
+              variant="outlined"
+              color="contrast"
+              onClick={() => router.back()}
+              disabled={isSubmitting}
+            >
               İptal
             </Button>
-            <Button type="submit" variant="contained" disabled={!isDirty || !isValid || isSubmitting}>
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="contrast"
+              disabled={!isDirty || !isValid || isSubmitting}
+            >
               Kaydet
             </Button>
           </Stack>

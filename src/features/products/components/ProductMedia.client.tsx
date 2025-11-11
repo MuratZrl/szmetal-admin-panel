@@ -1,7 +1,8 @@
 // src/features/products/components/ProductMedia.tsx
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/Link';
+
 import { Paper, Box, Stack, Typography, Button } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
@@ -17,19 +18,21 @@ type Props = {
   objectFit?: 'contain' | 'cover';
 };
 
+/** Append query params without accidentally absolutizing a relative URL during SSR. */
 function withQuery(u: string, q: Record<string, string>): string {
-  // SSR'da absolute'e dönmesin diye base veriyoruz
   const url = new URL(u, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
-  Object.entries(q).forEach(([k, v]) => url.searchParams.set(k, v));
-  // Eğer orijinal path relative ise relative döndür
-  return u.startsWith('/') ? (url.pathname + (url.search || '') + (url.hash || '')) : url.toString();
+  for (const [k, v] of Object.entries(q)) url.searchParams.set(k, v);
+  return u.startsWith('/') ? url.pathname + (url.search || '') + (url.hash || '') : url.toString();
 }
 
+/** Force inline disposition for our secure proxy route. */
 function ensureInline(u: string): string {
-  // Sadece kendi secure route’umuzsa inline zorla
-  return u.startsWith('/api/products/storage')
-    ? withQuery(u, { disposition: 'inline' })
-    : u;
+  return u.startsWith('/api/products/storage') ? withQuery(u, { disposition: 'inline' }) : u;
+}
+
+/** True if URL is absolute (http/https or protocol-relative). */
+function isExternalUrl(u: string): boolean {
+  return /^(?:https?:)?\/\//i.test(u);
 }
 
 export default function ProductMedia({
@@ -37,7 +40,7 @@ export default function ProductMedia({
   fileUrl,
   fileExt,
   fileMime,
-  alt = 'Dosya',
+  alt = 'File',
   aspectRatio = 1.25 / Math.sqrt(2),
   objectFit = 'contain',
 }: Props) {
@@ -47,18 +50,15 @@ export default function ProductMedia({
   const srcKind = detectMediaKind({ url: srcUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
   const fbKind  = detectMediaKind({ url: fallbackUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
 
-  // Tercih sırası
   const chosen =
     (srcUrl && srcKind !== 'unknown' && { url: srcUrl, kind: srcKind }) ||
     (fallbackUrl && fbKind !== 'unknown' && { url: fallbackUrl, kind: fbKind }) ||
     ({ url: '', kind: 'unknown' as const });
 
-  // Görüntüleme için URL (inline zorunlu)
   const viewUrl = chosen.url ? ensureInline(chosen.url) : '';
-  // Butonda kullanılacak “aç” linki (o da inline olsun)
   const openHref = viewUrl || (fallbackUrl ? ensureInline(fallbackUrl) : '');
+  const external = openHref ? isExternalUrl(openHref) : false;
 
-  // PDF viewer için hash paramları
   const pdfViewUrl = chosen.kind === 'pdf' && viewUrl
     ? `${viewUrl}#zoom=page-fit&view=FitH&toolbar=0&navpanes=0`
     : '';
@@ -87,18 +87,18 @@ export default function ProductMedia({
           sx={{ width: '100%', height: '100%', border: 0 }}
         >
           <Stack spacing={1} alignItems="center">
-            <Typography variant="body2">PDF önizlenemedi.</Typography>
+            <Typography variant="body2">PDF could not be previewed.</Typography>
             {openHref && (
               <Button
-                component={Link}
+                component={external ? 'a' : Link}
                 href={openHref}
-                target="_blank"
-                rel="noopener noreferrer"
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
                 startIcon={<OpenInNewIcon />}
                 size="small"
                 sx={{ textTransform: 'none' }}
               >
-                PDF’i aç
+                Open PDF
               </Button>
             )}
           </Stack>
@@ -115,7 +115,7 @@ export default function ProductMedia({
             const img = e.currentTarget as HTMLImageElement;
             img.style.display = 'none';
             const parent = img.parentElement;
-            if (parent) parent.innerHTML = '<div style="opacity:.75;font:14px system-ui">Görsel yüklenemedi</div>';
+            if (parent) parent.innerHTML = '<div style="opacity:.75;font:14px system-ui">Image failed to load</div>';
           }}
           sx={{
             width: '100%',
@@ -128,19 +128,19 @@ export default function ProductMedia({
       ) : (
         <Stack spacing={1} alignItems="center">
           <Typography variant="body2" color="text.secondary">
-            Önizleme yok
+            No preview
           </Typography>
           {openHref ? (
             <Button
-              component={Link}
+              component={external ? 'a' : Link}
               href={openHref}
-              target="_blank"
-              rel="noopener noreferrer"
+              target={external ? '_blank' : undefined}
+              rel={external ? 'noopener noreferrer' : undefined}
               startIcon={<OpenInNewIcon />}
               size="small"
               sx={{ textTransform: 'none' }}
             >
-              Bağlantıyı aç
+              Open link
             </Button>
           ) : null}
         </Stack>

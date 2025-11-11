@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import type { PaletteMode } from '@mui/material';
 
@@ -33,7 +33,15 @@ function useResolvedPaletteMode(mode: Mode): PaletteMode {
 function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const { mode } = useThemeMode();
   const paletteMode = useResolvedPaletteMode(mode); // <-- önce çöz
-  const theme = React.useMemo(() => createAppTheme(paletteMode), [paletteMode]);
+  const theme = React.useMemo(() => {
+  const t = createAppTheme(paletteMode);
+    t.components = {
+      ...t.components,
+      MuiLink: { defaultProps: { component: require('@/components/Link').default } },
+      MuiButtonBase: { defaultProps: { LinkComponent: require('@/components/Link').default } },
+    };
+    return t;
+  }, [paletteMode]);
 
   return (
     <MuiThemeProvider theme={theme}>
