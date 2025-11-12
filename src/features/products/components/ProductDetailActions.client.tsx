@@ -62,9 +62,11 @@ export default function ProductDetailActions({ id, canEdit, profileCode, code }:
 
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ width: '100%' }}>
+
       <Button
         onClick={handleBack}
         variant="outlined"
+        color='contrast'
         startIcon={<ArrowBackIcon />}
         draggable={false}
         sx={{ textTransform: 'capitalize' }}
@@ -77,14 +79,16 @@ export default function ProductDetailActions({ id, canEdit, profileCode, code }:
         <Button
           component={Link}
           href={`${baseHref}/edit`}
-          variant="contained"
-          startIcon={<EditIcon />}
+          variant="text"
+          color='contrast'
+          endIcon={<EditIcon />}
           draggable={false}
           sx={{ textTransform: 'capitalize' }}
         >
           Profili Düzenle
         </Button>
       )}
+      
     </Stack>
   );
 }

@@ -21,8 +21,8 @@ import {
 } from '@/features/products/forms/schema';
 
 // DİKKAT: doğru yol products/forms
-import ProductFormFields from '@/features/products/forms/ProductFormFields.client';
-import NotesField from '@/features/products/forms/NotesField';
+import ProductFormFields from '@/features/products/components/form/ProductFormFields.client';
+import NotesField from '@/features/products/components/form/NotesField.client';
 
 type Props = { dicts: ProductDicts };
 

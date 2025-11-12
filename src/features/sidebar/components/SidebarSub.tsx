@@ -24,7 +24,6 @@ export default function SidebarQuickActions({ links, compact = true }: Props) {
           key={link.href ?? link.label}
           link={link}
           active={Boolean(link.href && pathname?.startsWith(link.href))}
-          unreadCount={0}
           compact={compact}
         />
       ))}

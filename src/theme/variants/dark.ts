@@ -27,7 +27,7 @@ export const darkPalette = {
   mode: 'dark',
 
   // Derin bordo-kırmızı ana vurgu
-  primary:   { main: '#B3122F', light: '#E2566C', dark: '#760E21', contrastText: '#FFFFFF' },
+  primary:   { main: '#990d26ff', light: '#E2566C', dark: '#760E21', contrastText: '#FFFFFF' },
   // İkincil: daha kahverengiye yakın koyu kırmızı
   secondary: { main: '#6F272A', light: '#9C4A4F', dark: '#441618', contrastText: '#F8F9FA' },
 
@@ -72,12 +72,12 @@ export const darkPalette = {
   divider: alpha(OUTLINE, 0.24),
 
   background: {
-    default: '#0C0A0B',
+    default: 'rgba(10, 10, 10, 1)',
     paper:   '#100D0E',
   },
 
   surface: {
-    1: '#0E0B0C',
+    1: '#000000ff',
     2: '#0c0c0cff',
     3: '#161616ff',
     4: '#302e2eff',

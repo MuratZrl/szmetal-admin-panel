@@ -28,7 +28,6 @@ export default function SidebarFooter({ logoutLink, unreadCount, onLogout }: Pro
       {logoutLink ? (
         <SidebarNavItem
           link={logoutLink}
-          unreadCount={unreadCount}
           active={false}
           compact
           onLogout={onLogout}

@@ -92,6 +92,7 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
           '&:hover': { backgroundColor: alpha(palette.primary.main, 0.06) },
         },
       },
+
       // ↓ yeni varyant: outlined + contrast
       variants: [
         {
@@ -121,28 +122,101 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
       },
     },
 
-    /* -------------------- Pagination -------------------- */
-    MuiPagination: {
-      defaultProps: { shape: 'rounded', showFirstButton: true, showLastButton: true },
+  /* -------------------- Pagination -------------------- */
+  MuiPagination: {
+    defaultProps: {
+      shape: 'rounded',
+      showFirstButton: true,
+      showLastButton: true,
+      siblingCount: 1,
+      boundaryCount: 1,
     },
+    styleOverrides: {
+      root: ({ theme }) => ({
+        // sıra aralığı ve dokunma hedefi ferahlığı
+        '& .MuiPagination-ul': {
+          gap: 5,
+          padding: 4,
+        },
+      }),
+    },
+  },
 
-    MuiPaginationItem: {
-      styleOverrides: {
-        root: {
-          borderRadius: 5,
-          color: palette.primary.main,
+  MuiPaginationItem: {
+    defaultProps: { shape: 'rounded' },
+    styleOverrides: {
+      root: ({ theme }) => {
+        const { palette, shape, breakpoints, transitions } = theme;
+        return {
+          borderRadius: shape.borderRadius,
+          minWidth: 40,
+          height: 40,
+          padding: '0 2px',
+          fontWeight: 600,
           fontSize: '0.875rem',
-          minWidth: 36,
-          height: 36,
-          [breakpoints.down('sm')]: { fontSize: '0.75rem', minWidth: 28, height: 28 },
+          color: palette.text.primary,
+          backgroundColor: palette.surface[2],
+          border: `1px solid ${palette.surface.outline}`,
+          transition: transitions.create(
+            ['background-color', 'border-color', 'box-shadow', 'color', 'transform'],
+            { duration: transitions.duration.shorter }
+          ),
+
+          // hover: hafif parıltı ve daha belirgin kenar
+          '&:hover': {
+            backgroundColor: alpha(palette.contrast.main, 0.06),
+            borderColor: alpha(palette.contrast.main, 0.28),
+          },
+
+          // seçili: birincil renk üstüne beyaz metin ve yumuşak gölge
           '&.Mui-selected': {
             backgroundColor: palette.primary.main,
+            borderColor: palette.primary.main,
             color: palette.primary.contrastText,
-            '&:hover': { backgroundColor: darken(palette.primary.main, 0.14) },
+            '&:hover': {
+              backgroundColor: darken(palette.primary.main, 0.15),
+              borderColor: darken(palette.primary.main, 0.15),
+            },
           },
-        },
+
+          // disabled: soluk ve dokunma efektsiz
+          '&.Mui-disabled': {
+            opacity: 0.6,
+            borderColor: alpha(palette.text.primary, 0.16),
+            boxShadow: 'none',
+          },
+
+          // ellipsis: düğme gibi görünmesin
+          '&.MuiPaginationItem-ellipsis': {
+            border: 'none',
+            background: 'transparent',
+            color: palette.text.disabled,
+            boxShadow: 'none',
+            minWidth: 24,
+            height: 24,
+            padding: 0,
+          },
+
+          // önceki/sonraki/ilk/son ikon butonları: aynı yükseklik ve hizalama
+          '&.MuiPaginationItem-previousNext, &.MuiPaginationItem-firstLast': {
+            lineHeight: 0,
+          },
+
+          // küçük ekran ayarları
+          [breakpoints.down('sm')]: {
+            minWidth: 32,
+            height: 32,
+            fontSize: '0.75rem',
+          },
+        };
       },
+
+      // ok ikonları biraz daha tutarlı
+      icon: ({
+        fontSize: 20,
+      }),
     },
+  },
 
     /* -------------------- Navigation (AppBar / Tabs) -------------------- */
     MuiAppBar: {
@@ -196,9 +270,22 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
     },
 
     MuiInputLabel: {
-      defaultProps: { shrink: true },
+      defaultProps: { shrink: true }, // zaten vardıysa kalsın
       styleOverrides: {
-        root: { fontWeight: 600 },
+        root: ({ theme }) => ({
+          fontWeight: 600,
+          color: theme.palette.text.secondary,                  // default
+          transition: theme.transitions.create('color'),
+          '&&.Mui-focused:not(.Mui-error)': {                   // FOCUS: beyaz
+            color: theme.palette.contrast.main,
+          },
+          '&.Mui-disabled': {                                   // DISABLED
+            color: theme.palette.text.disabled,
+          },
+          '&.Mui-error': {                                      // ERROR: kırmızı kalsın
+            color: theme.palette.error.main,
+          },
+        }),
       },
     },
 
@@ -211,29 +298,20 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: palette.surface.outline,
           },
-          // HOVER: beyaz kenarlık
+          // HOVER: saf beyaz
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.common.white,
+            borderColor: palette.common,
           },
-          // FOCUS: hâlâ primary, kalın çizgi
+          // FOCUS: “beyazın bir tık koyusu” → contrast.main üzerinden
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.primary.main,
+            borderColor: alpha(palette.contrast.main, 0.92),
             borderWidth: 2,
           },
-          // DISABLED: beyaza dönmesin
-          '&.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.surface.outline,
-          },
-          // ERROR: hata varken hover/focus bile kırmızı kalsın
-          '&.Mui-error .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.error.main,
-          },
-          '&:hover.Mui-error .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.error.main,
-          },
-          '&.Mui-focused.Mui-error .MuiOutlinedInput-notchedOutline': {
-            borderColor: palette.error.main,
-          },
+          // DISABLED ve ERROR aynı kalsın
+          '&.Mui-disabled .MuiOutlinedInput-notchedOutline': { borderColor: palette.surface.outline },
+          '&.Mui-error .MuiOutlinedInput-notchedOutline': { borderColor: palette.error.main },
+          '&:hover.Mui-error .MuiOutlinedInput-notchedOutline': { borderColor: palette.error.main },
+          '&.Mui-focused.Mui-error .MuiOutlinedInput-notchedOutline': { borderColor: palette.error.main },
         },
         input: { paddingTop: 12, paddingBottom: 12 },
       },

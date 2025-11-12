@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { Box, Grid, Divider, Typography } from '@mui/material';
 
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
-import ProductCreateForm from '@/features/products/components/ProductCreateForm.client';
+import ProductCreateForm from '@/features/products/components/form/ProductCreateForm.client';
 
 export const dynamic = 'force-dynamic';
 

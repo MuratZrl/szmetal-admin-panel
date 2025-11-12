@@ -10,7 +10,7 @@ import { Box, Grid, Divider, Typography } from '@mui/material';
 import { requirePageAccess } from '@/lib/supabase/auth/server';
 import { fetchProductByCode } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
-import ProductEditForm from '@/features/products/components/ProductEditForm.client';
+import ProductEditForm from '@/features/products/components/form/ProductEditForm.client';
 import { mapRowToForm } from '@/features/products/forms/mappers';
 import type { Database } from '@/types/supabase';
 

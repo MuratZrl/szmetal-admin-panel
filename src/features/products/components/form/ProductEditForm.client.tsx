@@ -19,8 +19,8 @@ import {
   customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
-import ProductFormFields from '@/features/products/forms/ProductFormFields.client';
-import NotesField from '@/features/products/forms/NotesField';
+import ProductFormFields from '@/features/products/components/form/ProductFormFields.client';
+import NotesField from '@/features/products/components/form/NotesField.client';
 
 import type { Database } from '@/types/supabase';
 

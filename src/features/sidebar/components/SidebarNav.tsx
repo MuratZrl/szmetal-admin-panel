@@ -38,7 +38,6 @@ export default function SidebarNav({ links, unreadCount, loading, compact }: Pro
         <SidebarNavItem
           key={link.href ?? link.label}
           link={link}
-          unreadCount={unreadCount}
           active={Boolean(link.href && pathname?.startsWith(link.href))}
           compact={compact}
         />

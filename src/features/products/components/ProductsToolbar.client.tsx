@@ -113,7 +113,7 @@ export default function ProductsToolbar({ perms, totalCount }: Props) {
                   startIcon={<AddIcon />}
                   draggable={false}
                 >
-                  Profil Ekle
+                  Yeni Profil Ekle
                 </Button>
               )}
             </Stack>

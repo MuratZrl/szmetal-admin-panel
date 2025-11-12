@@ -1,8 +1,7 @@
 // src/features/sidebar/components/SidebarNavItem.tsx
 'use client';
 
-import Link from '@/components/Link';
-import { ListItem, ListItemButton, Tooltip, Box, Badge } from '@mui/material';
+import { ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import type { SidebarLink } from '../types';
 
@@ -11,18 +10,13 @@ export default function SidebarNavItem({
   active,
   compact,
   onLogout,
-  unreadCount,
 }: {
   link: SidebarLink;
   active: boolean;
   compact?: boolean;
   onLogout?: () => void;
-  unreadCount?: number;
 }) {
-  // Yeni tip: ikon komponenti doğrudan link.icon içinde geliyor
   const Icon = link.icon;
-
-  // Logout algısı artık prop üzerinden
   const isLogout = Boolean(onLogout);
   const title = link.labelTr ?? link.label;
 
@@ -45,10 +39,7 @@ export default function SidebarNavItem({
 
   const buttonProps = isLogout
     ? ({ component: 'button', type: 'button', onClick: onLogout } as const)
-    : ({ component: Link, href: link.href ?? '#', prefetch: false } as const);
-
-  // Logout için rozet gösterme; diğerlerinde 0/undefined ise gizle
-  const count = isLogout ? 0 : Math.max(0, unreadCount ?? 0);
+    : ({ href: link.href ?? '#' } as const);
 
   const ButtonEl = (
     <ListItemButton
@@ -61,28 +52,13 @@ export default function SidebarNavItem({
       sx={buttonSx}
     >
       <Box component="span" sx={{ display: 'inline-flex' }}>
-        {count > 0 ? (
-          <Badge
-            badgeContent={count}
-            max={99}
-            color="error"
-            overlap="circular"
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <Icon fontSize="medium" />
-          </Badge>
-        ) : (
-          <Icon fontSize="medium" />
-        )}
+        <Icon fontSize="medium" />
       </Box>
     </ListItemButton>
   );
 
   return (
-    <ListItem
-      disablePadding
-      sx={{ justifyContent: 'center', width: compact ? 'auto' : '100%' }}
-    >
+    <ListItem disablePadding sx={{ justifyContent: 'center', width: compact ? 'auto' : '100%' }}>
       {compact ? (
         <Tooltip title={title} placement="right" arrow disableInteractive enterTouchDelay={0}>
           {ButtonEl}

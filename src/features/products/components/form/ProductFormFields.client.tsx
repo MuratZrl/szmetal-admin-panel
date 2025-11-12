@@ -19,7 +19,7 @@ import { alpha, type Theme, type SxProps } from '@mui/material/styles';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 
 import type { ProductDicts } from '@/features/products/services/dicts.server';
-import NumberField from '@/features/products/components/form/NumberField';
+import NumberField from '@/features/products/components/form/NumberField.client';
 import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 
 import {

@@ -1,6 +1,6 @@
+// src/features/products/components/form/NumberField.tsx
 'use client';
 
-import * as React from 'react';
 import { TextField, InputAdornment, type TextFieldProps } from '@mui/material';
 import {
   Controller,
