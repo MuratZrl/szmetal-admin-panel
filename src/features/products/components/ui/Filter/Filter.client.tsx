@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   Box,
-  Stack,              // ← eklendi
   Grid,
+  Stack,
   TextField,
   MenuItem,
   Typography,
@@ -22,7 +22,7 @@ import {
   Divider,
   InputAdornment,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';   // ← eklendi
+import { alpha, type Theme } from '@mui/material/styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -30,22 +30,23 @@ import SearchIcon from '@mui/icons-material/Search';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/tr';
 
+/** Map: slug -> node */
 export type CategoryTree = Record<
-  string, // slug
+  string,
   { name: string; subs: { slug: string; name: string }[] }
 >;
 
 export type VariantOption = { key: string; name: string };
 
-// Kaç satır görünsün ve bir satır yaklaşık kaç px olsun
+// Görünür varyant satırı sayısı ve satır yüksekliği
 const VISIBLE_VARIANT_ROWS = 7;
 const VARIANT_ROW_H_PX = 40;
 
-// Bölüm görünümü: yumuşak zemin, ince çerçeve, köşe
-const sectionSx = (t: any) => ({
+// Bölüm kutusu stili
+const sectionSx = (t: Theme) => ({
   p: 1.25,
   borderRadius: 1.25,
   border: '1px solid',
@@ -55,43 +56,179 @@ const sectionSx = (t: any) => ({
 });
 
 export default function Filters({
+  topLevelSlugs,
   categoryTree,
   variants,
 }: {
+  /** Sadece kök slug listesi; dicts.categories */
+  topLevelSlugs: string[];
+  /** Her düğüm kendi çocuklarını içerir; dicts.categoryTree */
   categoryTree: CategoryTree;
   variants: VariantOption[];
 }) {
-  // Yardımcılar: slug listesi ve görünen ad
-  const subsOf = React.useCallback(
-    (catSlug: string): string[] => {
-      const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
-      if (Array.isArray(raw)) return raw;
-      const node = raw as CategoryTree[string] | undefined;
-      return node?.subs?.map((s) => s.slug) ?? [];
-    },
-    [categoryTree],
-  );
+  const router = useRouter();
+  const sp = useSearchParams();
 
   const collator = React.useMemo(
     () => new Intl.Collator('tr', { sensitivity: 'base', numeric: false }),
     [],
   );
 
+  // Ad ve çocuk yardımcıları
   const catNameOf = React.useCallback(
-    (catSlug: string): string => {
-      const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
-      if (Array.isArray(raw)) return catSlug;
-      const node = raw as CategoryTree[string] | undefined;
-      return (node?.name ?? catSlug).trim();
-    },
+    (slug: string): string => categoryTree[slug]?.name ?? slug,
     [categoryTree],
   );
 
-  // Sıralı kategori slug'ları:
-  const catSlugsSorted = React.useMemo(() => {
-    return Object.keys(categoryTree).sort((a, b) => collator.compare(catNameOf(a), catNameOf(b)));
-  }, [categoryTree, collator, catNameOf]);
+  const childrenOf = React.useCallback(
+    (slug: string): string[] => (categoryTree[slug]?.subs ?? []).map(s => s.slug),
+    [categoryTree],
+  );
 
+  // child -> parent map (tek adımlı)
+  const parentMap = React.useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [p, node] of Object.entries(categoryTree)) {
+      for (const s of node.subs) m.set(s.slug, p);
+    }
+    return m;
+  }, [categoryTree]);
+
+  // slug'ın kökü
+  const rootOf = React.useCallback(
+    (slug: string): string | null => {
+      let cur: string | undefined = slug;
+      const seen = new Set<string>();
+      while (cur) {
+        if (topLevelSlugs.includes(cur)) return cur;
+        const p = parentMap.get(cur);
+        if (!p || seen.has(p)) return null;
+        seen.add(p);
+        cur = p;
+      }
+      return null;
+    },
+    [parentMap, topLevelSlugs],
+  );
+
+  // slug'ın tüm torunları
+  const descendantsOf = React.useCallback(
+    (slug: string): string[] => {
+      const out: string[] = [];
+      const stack: string[] = [...childrenOf(slug)];
+      while (stack.length) {
+        const s = stack.pop() as string;
+        out.push(s);
+        const kids = childrenOf(s);
+        for (const k of kids) stack.push(k);
+      }
+      return Array.from(new Set(out));
+    },
+    [childrenOf],
+  );
+
+  // Kökleri alfabetik sırala
+  const topLevelSorted = React.useMemo(
+    () => [...topLevelSlugs].sort((a, b) => collator.compare(catNameOf(a), catNameOf(b))),
+    [topLevelSlugs, collator, catNameOf],
+  );
+
+  // URL -> state
+  const [q, setQ] = React.useState(sp.get('q') ?? '');
+
+  const initialCategories = sp.getAll('category');      // kök seçimleri
+  const initialSubCategories = sp.getAll('subCategory'); // kök olmayan tüm seçimler
+
+  const [categories, setCategories] = React.useState<string[]>(initialCategories);
+  const [subCategories, setSubCategories] = React.useState<string[]>(initialSubCategories);
+
+  const rawCM = sp.get('customerMold');
+  const initialMold = rawCM === 'Evet' || rawCM === 'true' || rawCM === '1';
+  const [moldOnly, setMoldOnly] = React.useState<boolean>(initialMold);
+
+  const rawAvail = sp.get('availability');
+  const initialAvail =
+    !!rawAvail && ['1', 'true', 'on', 'yes', 'evet'].includes(rawAvail.toLowerCase());
+  const [availableOnly, setAvailableOnly] = React.useState<boolean>(initialAvail);
+
+  const [variantsSel, setVariantsSel] = React.useState<string[]>(sp.getAll('variants'));
+  const [from, setFrom] = React.useState(sp.get('from') ?? '');
+  const [to, setTo] = React.useState(sp.get('to') ?? '');
+  const [sort, setSort] = React.useState(sp.get('sort') ?? 'date-desc');
+  const [variantQuery, setVariantQuery] = React.useState<string>('');
+
+  // İlk açılışta: URL'de işaretli olan her child'ın tüm atalarını expand et
+  const [expanded, setExpanded] = React.useState<string[]>(() => {
+    const s = new Set<string>(initialCategories);
+    for (const sub of initialSubCategories) {
+      let cur: string | undefined = sub;
+      while (cur && parentMap.has(cur)) {
+        const p = parentMap.get(cur);
+        if (!p) break;
+        s.add(p);
+        cur = p;
+      }
+    }
+    return Array.from(s);
+  });
+
+  // Tarih yardımcıları
+  const toDayjs = React.useCallback((v: string): Dayjs | null => {
+    if (!v) return null;
+    const d = dayjs(v, 'YYYY-MM-DD', true);
+    return d.isValid() ? d : null;
+  }, []);
+  const toIso = React.useCallback((d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : ''), []);
+
+  // Seçim/expand davranışları
+  function toggleExpand(slug: string) {
+    setExpanded((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]));
+  }
+
+  function toggleNode(slug: string) {
+    const isRoot = topLevelSlugs.includes(slug);
+    const branchDesc = descendantsOf(slug);
+    const selectedNonRoots = new Set<string>(subCategories);
+    let nextCategories = [...categories];
+
+    const rootSelected = isRoot && nextCategories.includes(slug);
+    const branchAllSelected =
+      branchDesc.length > 0 && branchDesc.every((d) => selectedNonRoots.has(d));
+
+    const isSelfSelected = isRoot ? rootSelected || branchAllSelected : selectedNonRoots.has(slug);
+
+    if (isSelfSelected) {
+      // dalı komple temizle
+      if (isRoot) nextCategories = nextCategories.filter((c) => c !== slug);
+      selectedNonRoots.delete(slug);
+      for (const d of branchDesc) selectedNonRoots.delete(d);
+    } else {
+      // dalı seç
+      if (isRoot) {
+        if (!nextCategories.includes(slug)) nextCategories.push(slug);
+      } else {
+        selectedNonRoots.add(slug);
+      }
+      for (const d of branchDesc) selectedNonRoots.add(d);
+    }
+
+    // non-root seçimlerinden kökün durumunu türet
+    if (!isRoot) {
+      const root = rootOf(slug);
+      if (root) {
+        const all = descendantsOf(root).every((d) => selectedNonRoots.has(d));
+        nextCategories = all
+          ? Array.from(new Set([...nextCategories, root]))
+          : nextCategories.filter((c) => c !== root);
+      }
+    }
+
+    setCategories(nextCategories);
+    setSubCategories(Array.from(selectedNonRoots));
+    setExpanded((prev) => (prev.includes(slug) ? prev : [...prev, slug]));
+  }
+
+  // Varyant sıralama/filtre
   const variantsSorted = React.useMemo(() => {
     return [...variants].sort((a, b) => {
       const an = (a.name ?? '').trim();
@@ -101,96 +238,6 @@ export default function Filters({
     });
   }, [variants, collator]);
 
-  const router = useRouter();
-  const sp = useSearchParams();
-
-  // URL -> state
-  const initialCategories = sp.getAll('category');
-  const initialSubCategories = sp.getAll('subCategory');
-
-  // Müşteri kalıbı
-  const rawCM = sp.get('customerMold');
-  const initialMold = rawCM === 'Evet' || rawCM === 'true' || rawCM === '1';
-
-  const [q, setQ] = React.useState(sp.get('q') ?? '');
-  const [categories, setCategories] = React.useState<string[]>(initialCategories);
-  const [subCategories, setSubCategories] = React.useState<string[]>(initialSubCategories);
-
-  const [moldOnly, setMoldOnly] = React.useState<boolean>(initialMold);
-
-  // Expand başlangıcı: URL'de seçili olan parent veya child açık gelsin
-  const [expanded, setExpanded] = React.useState<string[]>(() => {
-    const set = new Set<string>(initialCategories);
-    for (const catSlug of Object.keys(categoryTree)) {
-      const subs = subsOf(catSlug);
-      if (subs.some((s) => initialSubCategories.includes(s))) set.add(catSlug);
-    }
-    return Array.from(set);
-  });
-
-  const [variantsSel, setVariantsSel] = React.useState<string[]>(sp.getAll('variants'));
-
-  const [from, setFrom] = React.useState(sp.get('from') ?? '');
-  const [to, setTo] = React.useState(sp.get('to') ?? '');
-  const [sort, setSort] = React.useState(sp.get('sort') ?? 'date-desc');
-
-  // Varyant arama (yalnızca yerel state; URL’e koymuyoruz)
-  const [variantQuery, setVariantQuery] = React.useState<string>('');
-
-  // dayjs <-> string yardımcıları
-  const toDayjs = React.useCallback((v: string): Dayjs | null => {
-    if (!v) return null;
-    const d = dayjs(v, 'YYYY-MM-DD', true);
-    return d.isValid() ? d : null;
-  }, []);
-
-  const toIso = React.useCallback((d: Dayjs | null): string => {
-    return d ? d.format('YYYY-MM-DD') : '';
-  }, []);
-
-  // Kullanılabilir (true) filtresi
-  const rawAvail = sp.get('availability');
-  const initialAvail =
-    !!rawAvail && ['1', 'true', 'on', 'yes', 'evet'].includes(rawAvail.toLowerCase());
-  const [availableOnly, setAvailableOnly] = React.useState<boolean>(initialAvail);
-
-  function toggleExpand(cat: string) {
-    setExpanded((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
-  }
-
-  function toggleCategory(cat: string) {
-    const subs = subsOf(cat);
-    setCategories((prev) => {
-      const exists = prev.includes(cat);
-      if (exists) {
-        setSubCategories((scs) => scs.filter((s) => !subs.includes(s)));
-        return prev.filter((c) => c !== cat);
-      } else {
-        setSubCategories((scs) => Array.from(new Set([...scs, ...subs])));
-        setExpanded((exp) => (exp.includes(cat) ? exp : [...exp, cat]));
-        return [...prev, cat];
-      }
-    });
-  }
-
-  function toggleSubCategory(cat: string, sub: string) {
-    const subs = subsOf(cat);
-    setSubCategories((prev) => {
-      const next = prev.includes(sub) ? prev.filter((s) => s !== sub) : [...prev, sub];
-      const allSelected = subs.every((s) => next.includes(s));
-      setCategories((prevCats) =>
-        allSelected ? (prevCats.includes(cat) ? prevCats : [...prevCats, cat]) : prevCats.filter((c) => c !== cat),
-      );
-      setExpanded((exp) => (exp.includes(cat) ? exp : [...exp, cat]));
-      return next;
-    });
-  }
-
-  function toggleVariant(key: string) {
-    setVariantsSel((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
-  }
-
-  // Varyant listesi filtreleme (TR/küçük-büyük duyarsız)
   const variantsFiltered = React.useMemo(() => {
     const needle = variantQuery.trim().toLocaleLowerCase('tr');
     if (!needle) return variantsSorted;
@@ -201,21 +248,18 @@ export default function Filters({
     });
   }, [variantQuery, variantsSorted]);
 
+  // URL yaz
   function apply() {
     const params = new URLSearchParams();
     if (q.trim()) params.set('q', q.trim());
     categories.forEach((c) => params.append('category', c));
     subCategories.forEach((s) => params.append('subCategory', s));
     variantsSel.forEach((key) => params.append('variants', key));
-
     if (from) params.set('from', from);
     if (to) params.set('to', to);
     if (sort) params.set('sort', sort);
-
     if (moldOnly) params.append('customerMold', 'Evet');
-
     if (availableOnly) params.set('availability', '1');
-
     router.replace(`?${params.toString()}`);
   }
 
@@ -234,14 +278,88 @@ export default function Filters({
     router.replace(`?`);
   }
 
+  // Bir düğümü (ve çocuklarını) çizen recursive renderer
+  function renderNode(slug: string, depth: number) {
+    const name = catNameOf(slug);
+    const kids = childrenOf(slug);
+    const hasKids = kids.length > 0;
+
+    const selected = new Set<string>([...categories, ...subCategories]);
+    const desc = descendantsOf(slug);
+    const allSelected = desc.length > 0 && desc.every((d) => selected.has(d));
+    const someSelected = desc.some((d) => selected.has(d)) && !allSelected;
+
+    const isRoot = topLevelSlugs.includes(slug);
+    const checked = selected.has(slug) || (isRoot && allSelected);
+
+    const open =
+      expanded.includes(slug) ||
+      kids.some((k) => selected.has(k));
+
+    return (
+      <Box key={slug}>
+        <ListItemButton
+          disableRipple
+          disableTouchRipple
+          onClick={() => toggleExpand(slug)}
+          sx={{
+            pl: 1.25 + depth * 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            borderRadius: 1,
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={checked}
+                indeterminate={!checked && someSelected}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  toggleNode(slug);
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            }
+            label={<ListItemText primary={name} />}
+          />
+
+          <KeyboardArrowDownIcon
+            aria-hidden
+            sx={{
+              transition: 'transform 0.2s ease',
+              transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+              opacity: hasKids ? 1 : 0,
+              pointerEvents: 'none',
+            }}
+          />
+        </ListItemButton>
+
+        {/* Parent → Children arası çizgi (sadece açıkken ve çocuğu varsa) */}
+        {open && hasKids ? <Divider sx={{ my: 0.75 /* istersen hizalı: , ml: 1.25 + depth * 2 */ }} /> : null}
+
+        <Collapse in={open} timeout="auto" unmountOnExit>
+          <List disablePadding dense>
+            {kids.map((child, idx) => (
+              <React.Fragment key={child}>
+                {renderNode(child, depth + 1)}
+                {/* Kardeşler arası çizgi; sonuncuda yok */}
+                {idx < kids.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}
+              </React.Fragment>
+            ))}
+          </List>
+        </Collapse>
+      </Box>
+    );
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
-      {/* Bölümler arası boşluğu Stack yönetiyor */}
       <Stack spacing={2.25} sx={{ position: 'sticky', top: 16 }}>
         
         {/* Arama */}
         <Box component="section" sx={(t) => sectionSx(t)}>
-          <Typography variant="overline" sx={{ opacity: 0.8 }}>Genel Arama</Typography>
+          <Typography variant="overline" gutterBottom sx={{ opacity: 0.75 }}>Genel Arama</Typography>
           <TextField
             fullWidth
             label="Ara (ad veya kod)"
@@ -255,14 +373,14 @@ export default function Filters({
               }
             }}
             inputProps={{ enterKeyHint: 'search' }}
-            sx={{ mt: 1 }}
+            sx={{ mt: 1.5 }}
           />
         </Box>
 
         {/* Basit checkbox filtreleri */}
         <Box component="section" sx={(t) => sectionSx(t)}>
-          <Typography variant="overline" sx={{ opacity: 0.8 }}>Durumlar</Typography>
-          <Box >
+          <Typography variant="overline" sx={{ opacity: 0.75 }}>Durumlar</Typography>
+          <Box>
             <FormControlLabel
               control={<Checkbox checked={moldOnly} onChange={() => setMoldOnly((p) => !p)} />}
               label="Müşteri Kalıbı"
@@ -276,103 +394,22 @@ export default function Filters({
           </Box>
         </Box>
 
-        {/* Kategori */}
+        {/* Kategoriler (recursive) */}
         <Box component="section" sx={(t) => sectionSx(t)}>
-          <Typography variant="overline" sx={{ opacity: 0.8 }}>Kategoriler</Typography>
-          <List dense disablePadding sx={{}}>
-            {catSlugsSorted.map((catSlug) => {
-              const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
-              const node = Array.isArray(raw)
-                ? { name: catSlug, subs: raw.map((sl) => ({ slug: sl, name: sl })) }
-                : ((raw as CategoryTree[string] | undefined) ?? { name: catSlug, subs: [] });
-              const { name, subs } = node;
-
-              const subSlugs = subs.map((s) => s.slug);
-              const hasSubs = subSlugs.length > 0;
-
-              const open =
-                expanded.includes(catSlug) ||
-                categories.includes(catSlug) ||
-                subSlugs.some((s) => subCategories.includes(s));
-
-              const allSelected = hasSubs && subSlugs.every((s) => subCategories.includes(s));
-              const someSelected = hasSubs && subSlugs.some((s) => subCategories.includes(s));
-
-              const catChecked = categories.includes(catSlug) || allSelected;
-
-              return (
-                <Box key={catSlug}>
-                  <ListItemButton
-                    disableRipple
-                    disableTouchRipple
-                    onClick={() => toggleExpand(catSlug)}
-                    sx={{ display: 'flex', justifyContent: 'space-between', borderRadius: 1 }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={catChecked}
-                          indeterminate={!allSelected && someSelected}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleCategory(catSlug);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      }
-                      label={<ListItemText primary={name} />}
-                    />
-
-                    <KeyboardArrowDownIcon
-                      aria-hidden
-                      sx={{
-                        transition: 'transform 0.2s ease',
-                        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                        opacity: subs.length ? 1 : 0,
-                        pointerEvents: 'none',
-                      }}
-                    />
-                  </ListItemButton>
-
-                  <Collapse in={open} timeout="auto" unmountOnExit>
-                    <List disablePadding dense sx={{ pl: 3 }}>
-                      {subs.map(({ slug: subSlug, name: subLabel }) => (
-                        <ListItemButton
-                          key={subSlug}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSubCategory(catSlug, subSlug);
-                          }}
-                          sx={{ borderRadius: 1 }}
-                        >
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                checked={subCategories.includes(subSlug)}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  toggleSubCategory(catSlug, subSlug);
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            }
-                            label={<ListItemText primary={subLabel} />}
-                          />
-                        </ListItemButton>
-                      ))}
-                    </List>
-                  </Collapse>
-                  <Divider sx={{ my: 0.75 }} />
-                </Box>
-              );
-            })}
+          <Typography variant="overline" sx={{ opacity: 0.75 }} >Kategoriler</Typography>
+          <List dense disablePadding>
+            {topLevelSorted.map((slug, idx) => (
+              <React.Fragment key={slug}>
+                {renderNode(slug, 0)}
+                {idx < topLevelSorted.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}
+              </React.Fragment>
+            ))}
           </List>
         </Box>
 
         {/* Varyant + arama */}
         <Box component="section" sx={(t) => sectionSx(t)}>
-          <Typography variant="overline" sx={{ opacity: 0.8 }}>Profil Çeşidi</Typography>
-
+          <Typography variant="overline" sx={{ opacity: 0.75 }} >Profil Çeşidi</Typography>
           <Grid container spacing={1} alignItems="center" sx={{ mt: 1, mb: 1 }}>
             <Grid size={{ xs: 12 }}>
               <TextField
@@ -414,7 +451,11 @@ export default function Filters({
                     control={
                       <Checkbox
                         checked={variantsSel.includes(v.key)}
-                        onChange={() => toggleVariant(v.key)}
+                        onChange={() =>
+                          setVariantsSel((prev) =>
+                            prev.includes(v.key) ? prev.filter((x) => x !== v.key) : [...prev, v.key],
+                          )
+                        }
                       />
                     }
                     label={v.name}
@@ -448,7 +489,6 @@ export default function Filters({
                 }}
               />
             </Grid>
-
             <Grid size={{ xs: 6 }}>
               <DatePicker
                 label="Tarih bitiş"
@@ -469,7 +509,7 @@ export default function Filters({
 
         {/* Sıralama */}
         <Box component="section" sx={(t) => sectionSx(t)}>
-          <Typography variant="overline" sx={{ opacity: 0.8 }}>Sıralama</Typography>
+          <Typography variant="overline" sx={{ opacity: 0.75 }}>Sıralama</Typography>
           <TextField
             label="Sırala"
             select
@@ -502,7 +542,6 @@ export default function Filters({
                 Uygula
               </Button>
             </Grid>
-
             <Grid size={{ xs: 6 }}>
               <Button
                 fullWidth

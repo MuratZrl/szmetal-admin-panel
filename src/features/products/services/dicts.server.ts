@@ -24,31 +24,36 @@ export type ProductDicts = {
 type CategoryRow = Database['public']['Tables']['categories']['Row'];
 type VariantRow  = Database['public']['Tables']['variants']['Row'];
 
+// dicts.server.ts içindeki buildCategoryTree'yi bununla değiştir
 function buildCategoryTree(
   rows: readonly Pick<CategoryRow, 'id' | 'slug' | 'name' | 'parent_id' | 'is_active' | 'sort'>[]
 ): { categories: string[]; categoryTree: CategoryTree } {
   const ok = rows.filter(r => r.is_active !== false && !!r.slug && !!r.name);
 
-  const byId   = new Map(ok.map(r => [r.id, r]));
-  const roots  = ok.filter(r => !r.parent_id);
-  const childs = ok.filter(r => !!r.parent_id);
+  const collator = new Intl.Collator('tr', { sensitivity: 'base' });
+  const byOrder = (a: typeof ok[number], b: typeof ok[number]) =>
+    (a.sort ?? 0) - (b.sort ?? 0) || collator.compare(a.name, b.name);
 
-  const categories = roots.map(r => r.slug);
+  const roots = ok.filter(r => !r.parent_id).sort(byOrder);
+  const categories = roots.map(r => r.slug); // yalnızca kök slug listesi (UI isterse kullanır)
 
-  const categoryTree: CategoryTree = Object.fromEntries(
-    roots.map(r => [r.slug, { name: r.name, subs: [] }])
-  );
-
-  for (const c of childs) {
-    const p = c.parent_id ? byId.get(c.parent_id) : undefined;
-    if (p && categoryTree[p.slug]) {
-      categoryTree[p.slug].subs.push({ slug: c.slug, name: c.name });
-    }
+  // parent_id -> children
+  const childrenMap = new Map<string | null, typeof ok>();
+  for (const r of ok) {
+    const key = r.parent_id ?? null;
+    const arr = childrenMap.get(key);
+    if (arr) arr.push(r);
+    else childrenMap.set(key, [r]);
   }
 
-  // Altları alfabetik sırala (TR yerelleştirmesiyle)
-  for (const node of Object.values(categoryTree)) {
-    node.subs.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  // HER kategori bir anahtar; subs sadece kendi çocukları
+  const categoryTree: CategoryTree = {};
+  for (const r of ok) {
+    const kids = (childrenMap.get(r.id) ?? []).slice().sort(byOrder);
+    categoryTree[r.slug] = {
+      name: r.name,
+      subs: kids.map(k => ({ slug: k.slug, name: k.name })),
+    };
   }
 
   return { categories, categoryTree };

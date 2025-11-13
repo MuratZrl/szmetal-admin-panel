@@ -80,7 +80,7 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 3 }}>
-            <Filters categoryTree={dicts.categoryTree} variants={dicts.variants} />
+            <Filters topLevelSlugs={dicts.categories} categoryTree={dicts.categoryTree} variants={dicts.variants} />
           </Grid>
 
           <Grid size={{ xs: 12, md: 9 }}>
