@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+
 import type { Route } from 'next'; // ⬅️ önemli
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 

@@ -14,13 +14,12 @@ const requiredSelect = yup
   .transform((_v, orig) => (orig === '' ? undefined : _v))
   .required('Zorunlu');
 
-/** Sayısal alanlar: '' ve NaN → null, min 0 */
+/** Sayısal alanlar: '' ve NaN → null */
 const toNullNumber = () =>
   yup
     .number()
     .transform((val, orig) => (orig === '' || Number.isNaN(val) ? null : val))
-    .nullable()
-    .min(0, '0 veya daha büyük olmalı');
+    .nullable();
 
 /** Opsiyonel metin: '' → null */
 const emptyToNull = () =>
@@ -35,7 +34,7 @@ const optionalIsoDateString = () =>
   yup
     .string()
     .test('iso-or-empty', 'Geçersiz tarih', (v) => {
-      if (!v) return true; // '' veya undefined → serbest
+      if (!v) return true;
       if (typeof v !== 'string') return false;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
       const d = new Date(v);
@@ -45,7 +44,7 @@ const optionalIsoDateString = () =>
     .defined();
 
 /** ---- ÜRÜN FORM ŞEMASI ----
- * Zorunlu alanlar: name, code, category, subCategory, availability, unitWeightG, date
+ * Zorunlu alanlar: name, code, category, subCategory, availability, unitWeightKg, date
  * Varyant: boş bırakılırsa otomatik olarak "none" (UI: "Yok") kabul edilir ve geçerlidir.
  */
 export const productSchema = yup
@@ -67,7 +66,7 @@ export const productSchema = yup
     category: requiredSelect,
     subCategory: requiredSelect,
 
-    // Yeni: boş ya da undefined gelirse otomatik "Hayır" yap ve default'u "Hayır" ayarla
+    // Yeni: boş ya da undefined gelirse otomatik "Hayır" yap
     customerMold: yup
       .mixed<CustomerMoldSelect>()
       .oneOf(['', 'Evet', 'Hayır'] as const)
@@ -81,11 +80,10 @@ export const productSchema = yup
     // Opsiyonel açıklama metni
     description: yup.string().default('').defined(),
 
-    // gr/m — integer normalize, min 1 ve zorunlu
-    unitWeightG: toNullNumber()
-      .transform((v) => (typeof v === 'number' ? Math.round(v) : v))
+    // KG/M — ondalık serbest, 0'dan büyük olmalı, zorunlu
+    unitWeightKg: toNullNumber()
       .required('Zorunlu')
-      .min(1, 'En az 1 gr'),
+      .moreThan(0, '0’dan büyük olmalı'),
 
     // Ana tarih (Zorunlu).
     date: yup.string().required('Zorunlu'),
@@ -99,8 +97,8 @@ export const productSchema = yup
     scale: yup.string().default('').defined(),
 
     // Opsiyonel sayısal alanlar
-    outerSizeMm: toNullNumber(),
-    sectionMm2: toNullNumber(),
+    outerSizeMm: toNullNumber().min(0, '0 veya daha büyük olmalı'),
+    sectionMm2: toNullNumber().min(0, '0 veya daha büyük olmalı'),
 
     // Opsiyonel metinler
     tempCode: emptyToNull(),
@@ -110,7 +108,6 @@ export const productSchema = yup
     image: yup
       .string()
       .trim()
-      // boş | http(s) URL | storage path (images/... veya pdf/..., products/...)
       .test('url-or-path', 'Geçersiz URL', (v) => {
         if (!v) return true;
         if (/^https?:\/\//i.test(v)) return true;
@@ -129,34 +126,25 @@ const today = (): string => new Date().toISOString().slice(0, 10);
 export const newProductDefaults: ProductFormValues = {
   name: '',
   code: '',
-
-  // Artık boş değil; doğrudan "Yok"
   variant: DEFAULT_VARIANT_KEY,
   category: '',
   subCategory: '',
-
-  // Eski: customerMold: '',
   customerMold: 'Hayır',
-
   availability: true,
-
   description: '',
 
-  unitWeightG: 0, // gr/m (min 1 validasyonda yakalanır)
+  // KG/M için başlangıçta boş bırakalım; validasyon submit’te yakalar.
+  unitWeightKg: 0,
+
   date: today(),
-
   revisionDate: '',
-
   drawer: '',
   control: '',
   scale: '',
-
   outerSizeMm: null,
   sectionMm2: null,
-
   tempCode: null,
   manufacturerCode: null,
-
   image: '',
 };
 
@@ -171,7 +159,7 @@ export function makeNewProductDefaults(
   };
 }
 
-/** Select → boolean yardımcı (create/update payload’larında işe yarar) */
+/** Select → boolean yardımcı */
 export function customerMoldToBoolean(
   v: CustomerMoldSelect
 ): boolean | undefined {

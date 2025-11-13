@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   Box,
+  Stack,              // ← eklendi
   Grid,
   TextField,
   MenuItem,
@@ -19,8 +20,11 @@ import {
   ListItemText,
   Collapse,
   Divider,
+  InputAdornment,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';   // ← eklendi
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import SearchIcon from '@mui/icons-material/Search';
 
 // MUI X Date Pickers + dayjs
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -40,6 +44,16 @@ export type VariantOption = { key: string; name: string };
 const VISIBLE_VARIANT_ROWS = 7;
 const VARIANT_ROW_H_PX = 40;
 
+// Bölüm görünümü: yumuşak zemin, ince çerçeve, köşe
+const sectionSx = (t: any) => ({
+  p: 1.25,
+  borderRadius: 1.25,
+  border: '1px solid',
+  borderColor: 'divider',
+  backgroundColor: alpha(t.palette.background.paper, 0.6),
+  backdropFilter: 'saturate(120%) blur(2px)',
+});
+
 export default function Filters({
   categoryTree,
   variants,
@@ -50,10 +64,9 @@ export default function Filters({
   // Yardımcılar: slug listesi ve görünen ad
   const subsOf = React.useCallback(
     (catSlug: string): string[] => {
-      // runtime compat: eski şema (string[]) mı, yeni şema mı?
       const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
-      if (Array.isArray(raw)) return raw; // eski: ['katlanir-cam', ...]
-      const node = raw as CategoryTree[string] | undefined; // yeni: { name, subs: [...] }
+      if (Array.isArray(raw)) return raw;
+      const node = raw as CategoryTree[string] | undefined;
       return node?.subs?.map((s) => s.slug) ?? [];
     },
     [categoryTree],
@@ -67,8 +80,8 @@ export default function Filters({
   const catNameOf = React.useCallback(
     (catSlug: string): string => {
       const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
-      if (Array.isArray(raw)) return catSlug; // eski şema: ad = slug
-      const node = raw as CategoryTree[string] | undefined; // yeni şema
+      if (Array.isArray(raw)) return catSlug;
+      const node = raw as CategoryTree[string] | undefined;
       return (node?.name ?? catSlug).trim();
     },
     [categoryTree],
@@ -103,7 +116,6 @@ export default function Filters({
   const [categories, setCategories] = React.useState<string[]>(initialCategories);
   const [subCategories, setSubCategories] = React.useState<string[]>(initialSubCategories);
 
-  // Müşteri kalıbı state'i
   const [moldOnly, setMoldOnly] = React.useState<boolean>(initialMold);
 
   // Expand başlangıcı: URL'de seçili olan parent veya child açık gelsin
@@ -121,6 +133,9 @@ export default function Filters({
   const [from, setFrom] = React.useState(sp.get('from') ?? '');
   const [to, setTo] = React.useState(sp.get('to') ?? '');
   const [sort, setSort] = React.useState(sp.get('sort') ?? 'date-desc');
+
+  // Varyant arama (yalnızca yerel state; URL’e koymuyoruz)
+  const [variantQuery, setVariantQuery] = React.useState<string>('');
 
   // dayjs <-> string yardımcıları
   const toDayjs = React.useCallback((v: string): Dayjs | null => {
@@ -146,7 +161,7 @@ export default function Filters({
   function toggleCategory(cat: string) {
     const subs = subsOf(cat);
     setCategories((prev) => {
-      const exists = prev.includes(cat);  
+      const exists = prev.includes(cat);
       if (exists) {
         setSubCategories((scs) => scs.filter((s) => !subs.includes(s)));
         return prev.filter((c) => c !== cat);
@@ -174,6 +189,17 @@ export default function Filters({
   function toggleVariant(key: string) {
     setVariantsSel((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
   }
+
+  // Varyant listesi filtreleme (TR/küçük-büyük duyarsız)
+  const variantsFiltered = React.useMemo(() => {
+    const needle = variantQuery.trim().toLocaleLowerCase('tr');
+    if (!needle) return variantsSorted;
+    return variantsSorted.filter((v) => {
+      const name = (v.name ?? '').toLocaleLowerCase('tr');
+      const key = v.key.toLocaleLowerCase('tr');
+      return name.includes(needle) || key.includes(needle);
+    });
+  }, [variantQuery, variantsSorted]);
 
   function apply() {
     const params = new URLSearchParams();
@@ -204,47 +230,56 @@ export default function Filters({
     setSort('date-desc');
     setMoldOnly(false);
     setAvailableOnly(false);
+    setVariantQuery('');
     router.replace(`?`);
   }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
-      <Box className="space-y-4" sx={{ position: 'sticky', top: 16 }}>
-        <TextField
-          fullWidth
-          label="Ara (ad veya kod)"
-          size="small"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              apply();
-            }
-          }}
-          inputProps={{ enterKeyHint: 'search' }}
-        />
-
-        <Box mt={1}>
-          <FormControlLabel
-            control={<Checkbox checked={moldOnly} onChange={() => setMoldOnly((p) => !p)} />}
-            label="Müşteri Kalıbı"
+      {/* Bölümler arası boşluğu Stack yönetiyor */}
+      <Stack spacing={2.25} sx={{ position: 'sticky', top: 16 }}>
+        
+        {/* Arama */}
+        <Box component="section" sx={(t) => sectionSx(t)}>
+          <Typography variant="overline" sx={{ opacity: 0.8 }}>Genel Arama</Typography>
+          <TextField
+            fullWidth
+            label="Ara (ad veya kod)"
+            size="small"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                apply();
+              }
+            }}
+            inputProps={{ enterKeyHint: 'search' }}
+            sx={{ mt: 1 }}
           />
         </Box>
 
-        <Box>
-          <FormControlLabel
-            control={<Checkbox checked={availableOnly} onChange={() => setAvailableOnly((p) => !p)} />}
-            label="Kullanılabilir"
-          />
+        {/* Basit checkbox filtreleri */}
+        <Box component="section" sx={(t) => sectionSx(t)}>
+          <Typography variant="overline" sx={{ opacity: 0.8 }}>Durumlar</Typography>
+          <Box >
+            <FormControlLabel
+              control={<Checkbox checked={moldOnly} onChange={() => setMoldOnly((p) => !p)} />}
+              label="Müşteri Kalıbı"
+            />
+          </Box>
+          <Box>
+            <FormControlLabel
+              control={<Checkbox checked={availableOnly} onChange={() => setAvailableOnly((p) => !p)} />}
+              label="Kullanılabilir"
+            />
+          </Box>
         </Box>
 
-        <Box>
-          <Typography variant="body2" gutterBottom mt={2}>
-            Kategoriler
-          </Typography>
-
-          <List dense disablePadding>
+        {/* Kategori */}
+        <Box component="section" sx={(t) => sectionSx(t)}>
+          <Typography variant="overline" sx={{ opacity: 0.8 }}>Kategoriler</Typography>
+          <List dense disablePadding sx={{}}>
             {catSlugsSorted.map((catSlug) => {
               const raw = (categoryTree as unknown as Record<string, unknown>)[catSlug];
               const node = Array.isArray(raw)
@@ -274,7 +309,6 @@ export default function Filters({
                     sx={{ display: 'flex', justifyContent: 'space-between', borderRadius: 1 }}
                   >
                     <FormControlLabel
-                      sx={{ m: 0 }}
                       control={
                         <Checkbox
                           checked={catChecked}
@@ -312,7 +346,6 @@ export default function Filters({
                           sx={{ borderRadius: 1 }}
                         >
                           <FormControlLabel
-                            sx={{ m: 0 }}
                             control={
                               <Checkbox
                                 checked={subCategories.includes(subSlug)}
@@ -329,17 +362,41 @@ export default function Filters({
                       ))}
                     </List>
                   </Collapse>
-                  <Divider sx={{ my: 0.5 }} />
+                  <Divider sx={{ my: 0.75 }} />
                 </Box>
               );
             })}
           </List>
         </Box>
 
-        <Box>
-          <Typography variant="body2" gutterBottom mt={2}>
-            Varyant
-          </Typography>
+        {/* Varyant + arama */}
+        <Box component="section" sx={(t) => sectionSx(t)}>
+          <Typography variant="overline" sx={{ opacity: 0.8 }}>Profil Çeşidi</Typography>
+
+          <Grid container spacing={1} alignItems="center" sx={{ mt: 1, mb: 1 }}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Ara"
+                value={variantQuery}
+                onChange={(e) => setVariantQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    height: 32,
+                    '& .MuiInputBase-input': { py: 0.25, fontSize: 12.5 },
+                    '& .MuiInputAdornment-root': { mr: 0.25 },
+                    '& .MuiSvgIcon-root': { fontSize: 18 },
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
 
           <Box
             sx={{
@@ -347,104 +404,119 @@ export default function Filters({
               overflowY: 'auto',
               pr: 1,
             }}
-            aria-label="Varyant filtreleri"
+            aria-label="Profil Çeşidi"
           >
-            <FormGroup>
-              {variantsSorted.map((v) => (
-                <FormControlLabel
-                  key={v.key}
-                  control={
-                    <Checkbox
-                      checked={variantsSel.includes(v.key)}
-                      onChange={() => toggleVariant(v.key)}
-                    />
-                  }
-                  label={v.name}
-                />
-              ))}
-            </FormGroup>
+            {variantsFiltered.length > 0 ? (
+              <FormGroup>
+                {variantsFiltered.map((v) => (
+                  <FormControlLabel
+                    key={v.key}
+                    control={
+                      <Checkbox
+                        checked={variantsSel.includes(v.key)}
+                        onChange={() => toggleVariant(v.key)}
+                      />
+                    }
+                    label={v.name}
+                  />
+                ))}
+              </FormGroup>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                Sonuç yok
+              </Typography>
+            )}
           </Box>
         </Box>
 
-        <Grid container spacing={1} my={3}>
-          <Grid size={{ xs: 6 }}>
-            <DatePicker
-              label="Tarih baş."
-              format="DD/MM/YY"
-              value={toDayjs(from)}
-              onChange={(val) => setFrom(toIso(val))}
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  fullWidth: true,
-                  InputLabelProps: { shrink: true },
-                },
-              }}
-            />
+        {/* Tarih aralığı */}
+        <Box component="section" sx={(t) => sectionSx(t)}>
+          <Typography variant="overline" sx={{ marginBottom: 2, opacity: 0.8 }}>Tarih</Typography>
+          <Grid container spacing={1} mt={1}>
+            <Grid size={{ xs: 6 }}>
+              <DatePicker
+                label="Tarih baş."
+                format="DD/MM/YY"
+                value={toDayjs(from)}
+                onChange={(val) => setFrom(toIso(val))}
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    fullWidth: true,
+                    InputLabelProps: { shrink: true },
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <DatePicker
+                label="Tarih bitiş"
+                format="DD/MM/YY"
+                value={toDayjs(to)}
+                onChange={(val) => setTo(toIso(val))}
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    fullWidth: true,
+                    InputLabelProps: { shrink: true },
+                  },
+                }}
+              />
+            </Grid>
           </Grid>
+        </Box>
 
-          <Grid size={{ xs: 6 }}>
-            <DatePicker
-              label="Tarih bitiş"
-              format="DD/MM/YY"
-              value={toDayjs(to)}
-              onChange={(val) => setTo(toIso(val))}
-              slotProps={{
-                textField: {
-                  size: 'small',
-                  fullWidth: true,
-                  InputLabelProps: { shrink: true },
-                },
-              }}
-            />
+        {/* Sıralama */}
+        <Box component="section" sx={(t) => sectionSx(t)}>
+          <Typography variant="overline" sx={{ opacity: 0.8 }}>Sıralama</Typography>
+          <TextField
+            label="Sırala"
+            select
+            size="small"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            fullWidth
+            sx={{ mt: 1 }}
+          >
+            <MenuItem value="date-desc">Tarih yeni → eski</MenuItem>
+            <MenuItem value="date-asc">Tarih eski → yeni</MenuItem>
+            <MenuItem value="weight-asc">Ağırlık artan</MenuItem>
+            <MenuItem value="weight-desc">Ağırlık azalan</MenuItem>
+            <MenuItem value="code-asc">Kod A → Z</MenuItem>
+            <MenuItem value="code-desc">Kod Z → A</MenuItem>
+          </TextField>
+        </Box>
+
+        {/* Aksiyonlar */}
+        <Box component="section" sx={(t) => ({ ...sectionSx(t), p: 1 })}>
+          <Grid container spacing={1}>
+            <Grid size={{ xs: 6 }}>
+              <Button
+                fullWidth
+                onClick={apply}
+                variant="contained"
+                color="contrast"
+                sx={{ textTransform: 'capitalize' }}
+              >
+                Uygula
+              </Button>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <Button
+                fullWidth
+                onClick={reset}
+                variant="outlined"
+                color="contrast"
+                sx={{ textTransform: 'capitalize' }}
+              >
+                Sıfırla
+              </Button>
+            </Grid>
           </Grid>
-        </Grid>
-
-        <TextField
-          label="Sırala"
-          select
-          size="small"
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          fullWidth
-          sx={{ mb: 3 }}
-        >
-          <MenuItem value="date-desc">Tarih yeni → eski</MenuItem>
-          <MenuItem value="date-asc">Tarih eski → yeni</MenuItem>
-          <MenuItem value="weight-asc">Ağırlık artan</MenuItem>
-          <MenuItem value="weight-desc">Ağırlık azalan</MenuItem>
-          <MenuItem value="code-asc">Kod A → Z</MenuItem>
-          <MenuItem value="code-desc">Kod Z → A</MenuItem>
-        </TextField>
-
-        <Grid container spacing={1}>
-
-          <Grid size={{ xs: 6 }}>
-            <Button 
-              fullWidth 
-              onClick={apply} 
-              variant="contained" 
-              color='contrast' 
-              sx={{ textTransform: 'capitalize' }}
-            >
-              Uygula
-            </Button>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Button 
-              fullWidth 
-              onClick={reset} 
-              variant="outlined" 
-              color='contrast'
-              sx={{ textTransform: 'capitalize' }
-            }>
-              Sıfırla
-            </Button>
-          </Grid>
-
-        </Grid>
-      </Box>
+        </Box>
+      </Stack>
     </LocalizationProvider>
   );
 }

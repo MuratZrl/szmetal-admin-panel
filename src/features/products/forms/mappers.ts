@@ -1,5 +1,4 @@
 // features/products/forms/mapper.ts
-
 import type { Database } from '@/types/supabase';
 import type { CustomerMoldSelect } from './schema'; // <-- select tipi ('' | 'Evet' | 'Hayır')
 

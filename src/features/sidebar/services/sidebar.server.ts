@@ -1,5 +1,6 @@
 // src/features/sidebar/services/sidebar.server.ts
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
+
 import type { Role } from '../types';
 import type { Tables } from '@/types/supabase';
 

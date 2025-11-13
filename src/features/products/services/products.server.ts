@@ -47,7 +47,6 @@ export async function fetchProductById(id: string | number): Promise<ProductsRow
 }
 
 // Geriye dönük uyumluluk: profile_code artık yok.
-// Bu fonksiyon çağrılırsa code üzerinden baksın ve sessizce iş görsün.
 export async function fetchProductByProfileCode(profileCode: string): Promise<ProductsRow | null> {
   return fetchProductByCode(profileCode);
 }
@@ -108,7 +107,6 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
 /* -----------------------------------------------------------------------------
  * Update
  * ---------------------------------------------------------------------------*/
-
 export async function updateProduct(
   id: number | string,
   patch: Parameters<typeof mapProductPatchToRow>[0]
@@ -116,12 +114,12 @@ export async function updateProduct(
   const sb  = await createSupabaseRouteClient();
   const pid = parseNumericId(id);
 
-  // UI -> DB patch
+  // UI -> DB patch (hala g/m bekler)
   const dbPatch: ProductUpdate = mapProductPatchToRow(patch) as ProductUpdate;
 
   const { data, error } = await sb
     .from('products')
-    .update(asUpdateParam(dbPatch))   // ← burada 'never' cast ile derleyiciyi susturuyoruz
+    .update(asUpdateParam(dbPatch))
     .eq('id', pid)
     .select('*')
     .maybeSingle();
@@ -135,7 +133,6 @@ export async function updateProduct(
 /* -----------------------------------------------------------------------------
  * Pagination + filters
  * ---------------------------------------------------------------------------*/
-
 export type ProductPage = {
   items: ReturnType<typeof mapRowToProduct>[];
   total: number;

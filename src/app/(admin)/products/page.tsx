@@ -19,7 +19,7 @@ import { withVersion } from '@/features/products/utils/url';
 
 import { requirePageAccess, loadAuthState } from '@/lib/supabase/auth/guards.server';
 
-const DEFAULT_PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 16;
 const MAX_PAGE_SIZE = 48;
 
 type SP = Record<string, string | string[] | undefined>;

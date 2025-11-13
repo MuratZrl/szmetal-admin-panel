@@ -78,7 +78,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
   const variants = dicts?.variants ?? [];
   const watchedCategory = watch('category');
 
-  // Upload hook: BURASI ÖNEMLİ — dir veriyoruz ki server imzalı URL'i bu klasör için üretsin
+  // Upload hook
   const up = useProductUpload(methods, dir);
 
   const dimPlaceholderSx: SxProps<Theme> = (theme) => ({
@@ -120,7 +120,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
     [variants],
   );
 
-  // dayjs <-> string yardımcıları (plugin gerektirmeden ISO parse)
+  // dayjs <-> string yardımcıları
   const toDayjs = React.useCallback((v: string | null | undefined): Dayjs | null => {
     if (!v) return null;
     const d = dayjs(v);
@@ -293,13 +293,13 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* KG/M GİRİŞİ */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'unitWeightG'>
-              name="unitWeightG"
-              label="Birim Ağırlık"
-              integer
+            <NumberField<FormType, 'unitWeightKg'>
+              name="unitWeightKg"
+              label="Birim Ağırlık (kg/m)"
               required
-              endAdornmentText="gr/m"
+              endAdornmentText="kg/m"
             />
           </Grid>
 
@@ -483,7 +483,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
-          {/* 10. Satır: Dosya Alanı (tek satır tam genişlik) */}
+          {/* 10. Satır: Dosya Alanı */}
           {showFileSection && (
             <Grid size={{ xs: 12 }}>
               <Box>

@@ -13,7 +13,7 @@ const OUTLINE = '#4B5563'; // nötr kontur üretmek için koyu gri (slate-ish)
 const STATUS = {
   Active:   '#22C55E', // success.main
   Inactive: '#F59E0B', // warning.main
-  Banned:   '#D0182C', // error.main  
+  Banned:   '#D0182C', // error.main
 } as const;
 
 // Light rozetler: açık zeminde daha hafif dolgu + daha düşük kenar opaklığı

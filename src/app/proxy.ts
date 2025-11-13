@@ -1,10 +1,6 @@
-// src/app/proxy.ts
+// src/proxy.ts  ← Next 16 için doğru yer
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-  createServerClient,
-  type CookieMethodsServer,
-  type CookieOptions,
-} from '@supabase/ssr';
+import { createServerClient, type CookieMethodsServer, type CookieOptions } from '@supabase/ssr';
 import type { Database, Tables } from '@/types/supabase';
 
 type Role = Tables<'users'>['role'];
@@ -101,7 +97,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search);
       return withNoStore(NextResponse.redirect(url));
     }
-    // hafif istekler geçsin; sayfanın asıl GET isteğinde tam kontrol yapılacak
     return NextResponse.next();
   }
 
@@ -133,7 +128,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
   if (!url || !anon) {
-    // Env bozuksa siteyi göçertme; sessiz geç
     return withForwardedCookies(base);
   }
 
@@ -150,9 +144,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const supabase = createServerClient<Database>(url, anon, {
     cookies: cookiesAdapter,
     auth: {
-      // middleware'de URL'den session aramayız
       detectSessionInUrl: false,
-      // refresh'e izin ver; yoksa token süresi dolduğunda herkes aniden logout olur
       autoRefreshToken: true,
       persistSession: true,
     },
@@ -162,7 +154,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // Çerez var ama user yok: Supabase auth cookie’lerini sil ve login’e
     for (const name of getSupabaseCookieNames(req)) {
       writeCookie(name, '', { path: '/', maxAge: 0 });
     }
@@ -172,7 +163,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return withForwardedCookies(withNoStore(NextResponse.redirect(u)));
   }
 
-  // 4) Profil oku (role/status). Not: her istekte DB çağrısı pahalıdır.
+  // 4) Profil oku (role/status)
   type UserId = Tables<'users'>['id'];
   const profRes = await supabase
     .from('users')
@@ -182,7 +173,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const profile = (profRes.data ?? null) as UserRow | null;
   if (!profile) {
-    // Profil yoksa temizle ve login'e
     for (const name of getSupabaseCookieNames(req)) {
       writeCookie(name, '', { path: '/', maxAge: 0 });
     }
@@ -219,12 +209,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return withForwardedCookies(withNoStore(NextResponse.redirect(new URL('/unauthorized?reason=role', req.url))));
   }
 
-  // 9) Yol temiz: sayfanın kendi cache politikasını bozma
-  // İstersen şunu ekleyebilirsin: base.headers.set('Vary', 'Cookie'); kişiye özel içeriği paylaşmalı cache’lere kaptırmamak için.
-  // base.headers.set('Vary', 'Cookie');
+  // 9) Yol temiz
   return withForwardedCookies(NextResponse.next());
 }
 
+// Bu matcher artık proxy.ts içinde olmalı
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|assets/|.*\\.(?:css|js|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$).*)',

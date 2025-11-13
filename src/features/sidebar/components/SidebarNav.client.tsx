@@ -1,9 +1,12 @@
 // src/features/sidebar/components/SidebarNav.tsx
 'use client';
 
-import { List, ListItem, ListItemButton, IconButton, CircularProgress } from '@mui/material';
 import { usePathname } from 'next/navigation';
+
+import { List, ListItem, ListItemButton, IconButton, CircularProgress } from '@mui/material';
+
 import SidebarNavItem from './SidebarNavItem';
+
 import type { SidebarLink } from '../types';
 
 type Props = {
@@ -13,12 +16,12 @@ type Props = {
   compact?: boolean;
 };
 
-export default function SidebarNav({ links, unreadCount, loading, compact }: Props) {
+export default function SidebarNav({ links, loading, compact }: Props) {
   const pathname = usePathname();
 
   if (loading) {
     return (
-      <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      <List sx={{ display: 'flex', flexDirection: 'column', alignItems: compact ? 'center' : 'stretch', gap: 0.5, width: '100%' }}>
         <ListItem disablePadding sx={{ justifyContent: 'center' }}>
           <ListItemButton sx={{ justifyContent: 'center' }}>
             <IconButton size="small" disabled>
@@ -33,7 +36,7 @@ export default function SidebarNav({ links, unreadCount, loading, compact }: Pro
   const main = links.filter(l => (l.section ?? 'main') === 'main');
 
   return (
-    <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+    <List sx={{ display: 'flex', flexDirection: 'column', alignItems: compact ? 'center' : 'stretch', gap: 0.75, width: '100%' }}>
       {main.map(link => (
         <SidebarNavItem
           key={link.href ?? link.label}

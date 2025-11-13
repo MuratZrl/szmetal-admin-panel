@@ -3,21 +3,20 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Drawer } from '@mui/material';
+import { Box, Drawer, Stack, Grid, Skeleton } from '@mui/material';
+import { type Theme } from '@mui/material/styles';
 import { SIDEBAR_WIDTH } from '@/constants/layout';
 import SidebarLogo from './SidebarLogo';
-import SidebarNav from './SidebarNav';
-import SidebarQuickActions from './SidebarSub';
-import SidebarFooter from './SidebarFooter';
+import SidebarNav from './SidebarNav.client';
+import SidebarQuickActions from './SidebarSub.client';
+import SidebarFooter from './SidebarFooter.client';
 import { filterLinksByRole } from '../utils/filterLinks';
 import type { SidebarLink, Role } from '../types';
 import { useSidebarRealtime } from '@/features/sidebar/hooks/useSidebarRealtime.client';
-
 import type { Tables } from '@/types/supabase';
 
 type StatusUI = 'Active' | 'Inactive' | 'Banned' | null;
 
-// DB'den gelen serbest metni UI union'a çevir
 function toStatusUI(s: Tables<'users'>['status'] | null): StatusUI {
   const x = String(s ?? '').toLowerCase();
   if (x === 'active') return 'Active';
@@ -28,11 +27,16 @@ function toStatusUI(s: Tables<'users'>['status'] | null): StatusUI {
 
 type Props = {
   initialRole: Role | null;
-  initialStatus: Tables<'users'>['status'] | null; // ← DB string | null gelsin
+  initialStatus: Tables<'users'>['status'] | null;
   initialUnread: number;
   userId: string | null;
   mainLinks: SidebarLink[];
+  loading?: boolean;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 };
+
+const MOBILE_SIDEBAR_WIDTH = 280; // hamburger çekmecede tam metinli genişlik
 
 export default function SidebarRoot({
   initialRole,
@@ -40,86 +44,166 @@ export default function SidebarRoot({
   initialUnread,
   userId,
   mainLinks,
+  loading = false,
+  mobileOpen = false,
+  onCloseMobile,
 }: Props) {
+  const router = useRouter();
+
   const roleResolved: Role = initialRole ?? 'User';
   const statusUI = React.useMemo(() => toStatusUI(initialStatus), [initialStatus]);
-  const loading = false;
 
   const [unread, setUnread] = React.useState<number>(initialUnread);
   React.useEffect(() => setUnread(initialUnread), [initialUnread]);
 
-  const router = useRouter();
   useSidebarRealtime(userId, () => setUnread(p => p + 1));
 
+  const isLoading =
+    loading || initialRole === null || initialStatus === null || mainLinks.length === 0;
+
   const filtered = React.useMemo(
-    // Inactive ise /create_request’i saklayabilsin diye statusUI’yi geçir
-    () => filterLinksByRole(mainLinks, roleResolved, loading, statusUI ?? 'Active'),
-    [mainLinks, roleResolved, loading, statusUI]
+    () => filterLinksByRole(mainLinks, roleResolved, isLoading, statusUI ?? 'Active'),
+    [mainLinks, roleResolved, isLoading, statusUI]
   );
 
   const logoutLink = React.useMemo(
     () =>
       mainLinks.find(l => (l.section ?? 'main') === 'footer') ??
-      mainLinks.find(l => l.label === 'Logout') ?? null,
+      mainLinks.find(l => l.label === 'Logout') ??
+      null,
     [mainLinks]
   );
 
-  const compact = true;
-  const logoHref = (statusUI === 'Inactive' ? '/account' as const : '/create_request' as const);
+  const logoHref = statusUI === 'Inactive' ? ('/account' as const) : ('/create_request' as const);
 
-  return (
-    <Drawer
-      variant="permanent"
-      anchor="left"
-      sx={{
-        display: { xs: 'none', sm: 'flex' },
-        width: SIDEBAR_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': (theme) => {
-          const bg = theme.palette.mode === 'dark'
-            ? theme.palette.background.default
-            : theme.palette.background.paper;
-          return {
-            width: SIDEBAR_WIDTH,
-            boxSizing: 'border-box',
-            backgroundColor: bg,
-            borderRight: `1px solid ${theme.palette.divider}`,
-            padding: 0,
-            display: 'grid',
-            gridTemplateRows: 'auto 1fr auto 1fr auto',
-            minHeight: '100dvh',
-          };
-        },
-      }}
-    >
+  // Drawer kağıdı: genişliği parametreyle veren fabrika
+  const paperSx =
+    (w: number) =>
+    (theme: Theme) => {
+      const bg =
+        theme.palette.mode === 'dark'
+          ? theme.palette.background.default
+          : theme.palette.background.paper;
+      return {
+        width: w,
+        boxSizing: 'border-box',
+        backgroundColor: bg,
+        borderRight: `1px solid ${theme.palette.divider}`,
+        padding: 0,
+        display: 'grid',
+        gridTemplateRows: 'auto 1fr auto 1fr auto',
+        minHeight: '100dvh',
+      };
+    };
+
+  const renderSkeleton = () => (
+    <>
       <Box sx={{ display: 'flex', justifyContent: 'center', pt: 3.5 }}>
-        <SidebarLogo href={logoHref} />
+        <Skeleton variant="rounded" width={60} height={40} />
       </Box>
 
       <Box aria-hidden />
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', px: 1 }}>
-        <SidebarNav links={filtered} unreadCount={unread} loading={loading} compact={compact} />
+      <Box sx={{ px: 1, pt: 1, pb: 1 }}>
+        <Grid container spacing={0.5}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Grid key={i} size={{ xs: 12 }} >
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 0.5, py: 0.5 }}>
+                <Skeleton variant="circular" width={20} height={20} />
+                <Skeleton variant="rounded" width={180} height={14} />
+              </Stack>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
 
       <Box sx={{ display: 'grid', gridTemplateRows: '1fr auto 1fr', px: 1, minHeight: 0 }}>
         <Box aria-hidden />
-        <SidebarQuickActions links={filtered} compact />
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 0.5, py: 1 }}>
+          <Skeleton variant="circular" width={18} height={18} />
+          <Skeleton variant="rounded" width={140} height={14} />
+        </Stack>
         <Box aria-hidden />
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', pb: 3.5 }}>
-        <SidebarFooter
-          logoutLink={logoutLink}
-          unreadCount={unread}
-          onLogout={() => {
-            fetch('/api/logout', { method: 'POST', credentials: 'include' })
-              .finally(() => {
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Skeleton variant="circular" width={24} height={24} />
+          <Skeleton variant="circular" width={24} height={24} />
+          <Skeleton variant="circular" width={24} height={24} />
+        </Stack>
+      </Box>
+    </>
+  );
+
+  const renderContent = (compact: boolean) => {
+    if (isLoading) return renderSkeleton();
+
+    return (
+      <>
+        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 3.5 }}>
+          <SidebarLogo
+            href={logoHref}
+            variant={compact ? 'compact' : 'expanded'} // ← fark burada
+          />
+        </Box>
+
+        <Box aria-hidden />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: compact ? 'center' : 'stretch', px: 1, width: '100%' }}>
+          <SidebarNav links={filtered} unreadCount={unread} loading={false} compact={compact} />
+        </Box>
+
+        <Box sx={{ display: 'grid', gridTemplateRows: '1fr auto 1fr', px: 1, minHeight: 0 }}>
+          <Box aria-hidden />
+          <SidebarQuickActions links={filtered} compact={compact} />
+          <Box aria-hidden />
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', pb: 3.5 }}>
+          <SidebarFooter
+            logoutLink={logoutLink}
+            unreadCount={unread}
+            compact={compact}
+            onLogout={() => {
+              fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
                 router.replace('/login');
                 router.refresh();
               });
-          }}
-        />
-      </Box>
-    </Drawer>
+            }}
+          />
+        </Box>
+      </>
+    );
+  };
+
+  return (
+    <>
+      {/* Mobil: geniş (metinli) */}
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={mobileOpen}
+        onClose={onCloseMobile}
+        ModalProps={{ keepMounted: true, disableScrollLock: true }}  // ← body scroll lock KAPALI
+        sx={{
+          display: { xs: 'block', sm: 'none' },
+          '& .MuiDrawer-paper': paperSx(MOBILE_SIDEBAR_WIDTH),
+        }}
+      >
+        {renderContent(false)}
+      </Drawer>
+
+      {/* Masaüstü: kompakt ikon-only */}
+      <Drawer
+        variant="permanent"
+        anchor="left"
+        sx={{
+          display: { xs: 'none', sm: 'block' },
+          flexShrink: 0,
+          '& .MuiDrawer-paper': paperSx(SIDEBAR_WIDTH),
+        }}
+      >
+        {renderContent(true)}
+      </Drawer>
+    </>
   );
 }

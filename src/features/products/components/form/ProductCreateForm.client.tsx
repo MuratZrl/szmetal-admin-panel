@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Paper, Box, Stack, Button, Grid } from '@mui/material'; // ← Grid eklendi
+import { Paper, Box, Stack, Button, Grid } from '@mui/material';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -20,21 +20,17 @@ import {
   customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
-// DİKKAT: doğru yol products/forms
 import ProductFormFields from '@/features/products/components/form/ProductFormFields.client';
 import NotesField from '@/features/products/components/form/NotesField.client';
 
 type Props = { dicts: ProductDicts };
-
 type CreateValues = ProductFormValues & { file: File | null };
 
 // Güvenli, tekrar kullanılabilir geçici klasör ismi
 function makeDraftDir(): string {
   try {
-    // Tarayıcı destekli ise
     return `draft-${crypto.randomUUID()}`;
   } catch {
-    // Geriye uyumlu fallback
     const ts = Date.now().toString(36);
     const rnd = Math.random().toString(36).slice(2, 10);
     return `draft-${ts}-${rnd}`;
@@ -45,8 +41,6 @@ export default function ProductCreateForm({ dicts }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
 
-  // 1) Create aşamasında ürün ID yok. Yüklemeler bu geçici klasöre gidecek.
-  // useRef ile değer sabit kalır, yeniden render’da değişmez.
   const draftDirRef = React.useRef<string>(makeDraftDir());
 
   const methods = useForm<CreateValues>({
@@ -63,13 +57,18 @@ export default function ProductCreateForm({ dicts }: Props) {
 
   async function onSubmit(v: CreateValues): Promise<void> {
     try {
-      await createProduct({
+      // kg/m öncelik; geriye uyumluluk için g/m’yi de ver
+      const payload = {
         name: v.name,
         code: v.code,
         variant: v.variant,
         category: v.category,
         subCategory: v.subCategory,
-        unitWeightG: v.unitWeightG,
+
+        unitWeightKg: v.unitWeightKg,
+        unitWeightG:
+          v.unitWeightKg == null ? null : Math.round(Number(v.unitWeightKg) * 1000),
+
         date: v.date,
         drawer: v.drawer || undefined,
         control: v.control || undefined,
@@ -82,10 +81,10 @@ export default function ProductCreateForm({ dicts }: Props) {
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability ?? true,
         file: v.file ?? null,
+        description: v.description || null,
+      } as unknown as Parameters<typeof createProduct>[0];
 
-        // ↓↓↓ Yeni alan
-        description: v.description || null, // products.client.ts'te tipini eklemeyi unutma
-      });
+      await createProduct(payload);
 
       show('Ürün oluşturuldu.', 'success');
       router.push('/products');
@@ -98,21 +97,16 @@ export default function ProductCreateForm({ dicts }: Props) {
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-
       <FormProvider {...methods}>
-
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
-
               <ProductFormFields
                 methods={methods}
                 dicts={dicts}
                 showFileSection
                 dir={draftDirRef.current}
               />
-
             </Grid>
 
             <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
@@ -139,11 +133,8 @@ export default function ProductCreateForm({ dicts }: Props) {
               Kaydet
             </Button>
           </Stack>
-
         </Box>
-
       </FormProvider>
-
     </Paper>
   );
 }

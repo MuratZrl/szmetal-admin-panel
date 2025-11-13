@@ -1,8 +1,9 @@
 // src/features/sidebar/components/SidebarNavItem.tsx
 'use client';
 
-import { ListItem, ListItemButton, Tooltip, Box } from '@mui/material';
+import { ListItem, ListItemButton, Tooltip, Box, Typography } from '@mui/material';
 import { alpha, type SxProps, type Theme } from '@mui/material/styles';
+
 import type { SidebarLink } from '../types';
 
 export default function SidebarNavItem({
@@ -23,11 +24,12 @@ export default function SidebarNavItem({
   const buttonSx: SxProps<Theme> = (theme) => {
     const base = theme.palette.accent?.main ?? theme.palette.primary.main;
     return {
-      justifyContent: compact ? 'center' : undefined,
-      width: compact ? 44 : undefined,
-      height: compact ? 44 : undefined,
+      justifyContent: compact ? 'center' : 'flex-start',
+      gap: compact ? 0 : 10,
+      width: compact ? 44 : '100%',
+      height: 44,
       minWidth: compact ? 44 : undefined,
-      px: compact ? 0 : undefined,
+      px: compact ? 0 : 1.25,
       borderRadius: compact ? '50%' : theme.shape.borderRadius,
       '&:hover': { backgroundColor: alpha(base, 0.10) },
       '&.Mui-selected': { backgroundColor: alpha(base, 0.18) },
@@ -54,6 +56,22 @@ export default function SidebarNavItem({
       <Box component="span" sx={{ display: 'inline-flex' }}>
         <Icon fontSize="medium" />
       </Box>
+
+      {!compact && (
+        <Typography
+          variant="body2"
+          component="span"
+          sx={{
+            fontWeight: active ? 600 : 500,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            flex: 1,
+          }}
+        >
+          {title}
+        </Typography>
+      )}
     </ListItemButton>
   );
 

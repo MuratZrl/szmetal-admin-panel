@@ -1,9 +1,9 @@
+// src/features/products/types.ts
 import type { Database } from '@/types/supabase';
 
 /* -----------------------------------------------------------------------------
  * 1) Ortak sözlük tipleri
  * ---------------------------------------------------------------------------*/
-
 export type CategoryTree = Record<string, { name: string; subs: { slug: string; name: string }[] }>;
 
 export type VariantOption = { key: string; name: string };
@@ -12,13 +12,11 @@ export type VariantOption = { key: string; name: string };
 export type ProductDicts = {
   categoryTree: CategoryTree;
   variants: VariantOption[];
-  // Gerekirse ileride başka sözlük alanları ekleyebilirsiniz.
 };
 
 /* -----------------------------------------------------------------------------
  * 2) Filter tipleri (NOT: ağırlık filtresi kaldırıldı)
  * ---------------------------------------------------------------------------*/
-
 export type CustomerMoldValue = 'Evet' | 'Hayır';
 
 export type ProductSort =
@@ -37,10 +35,7 @@ export type ProductFilters = {
   from?: string;                // yyyy-mm-dd
   to?: string;                  // yyyy-mm-dd
   sort?: ProductSort;
-
-  /** Çoklu seçim kalsın (UI tek seçenek kullansa bile ileride esner) */
   customerMold?: CustomerMoldValue[];
-
   availability?: boolean; // true=Kullanılabilir, false=Kullanılamaz
 };
 
@@ -52,7 +47,6 @@ export type Pagination = {
 /* -----------------------------------------------------------------------------
  * 3) Product tipleri (UI modeli + DB alias'ları)
  * ---------------------------------------------------------------------------*/
-
 export type ProductRow    = Database['public']['Tables']['products']['Row'];
 export type ProductInsert = Database['public']['Tables']['products']['Insert'];
 export type ProductUpdate = Database['public']['Tables']['products']['Update'];
@@ -69,7 +63,7 @@ export type Product = {
   /** DB'de null olabilir; UI'da '' ile normalize ediyoruz */
   date: string;
 
-  /** EKLENDİ: Revizyon tarihi (DB null ise UI tarafında '') */
+  /** Revizyon tarihi (DB null ise UI tarafında '') */
   revisionDate: string;
 
   /** Kartta görsel/PDF thumbnail vb. için: public URL veya null */
@@ -80,10 +74,10 @@ export type Product = {
 
   availability: boolean;
 
-  // Teknik alanlar
+  // Teknik alanlar (DB ham değerleri)
   drawer: string | null;
   control: string | null;
-  unit_weight_g_pm: number | 0;
+  unit_weight_g_pm: number | 0;     // DB’de g/m
   scale: string | null;
   outerSizeMm: number | null;
   sectionMm2: number | null;
@@ -103,7 +97,7 @@ export type Product = {
 
   // cache-busting için
   updatedAt?: string | null;
-  createdAt?: string | null; // istersen fallback için
+  createdAt?: string | null;
 
   description?: string | null;
 };
@@ -124,18 +118,15 @@ export function mapRowToProduct(r: ProductRow): Product {
     variant: r.variant,
     category: r.category,
     subCategory: r.sub_category,
-
     date: r.date ?? '',
     revisionDate: rdx,
-
     image: r.image ?? null,
-
     hasCustomerMold: r.has_customer_mold,
     availability: r.availability === true,
 
     drawer: r.drawer ?? null,
     control: r.control ?? null,
-    unit_weight_g_pm: r.unit_weight_g_pm ?? 0,
+    unit_weight_g_pm: r.unit_weight_g_pm ?? 0,  // g/m olarak saklıyoruz
     scale: r.scale ?? null,
     outerSizeMm: r.outer_size_mm ?? null,
     sectionMm2: r.section_mm2 ?? null,
@@ -174,9 +165,7 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   }
 
   if (patch.image !== undefined) out.image = patch.image;
-
   if (patch.hasCustomerMold !== undefined) out.has_customer_mold = patch.hasCustomerMold;
-
   if (patch.availability !== undefined) out.availability = patch.availability;
 
   if (patch.drawer !== undefined) out.drawer = patch.drawer;
@@ -203,7 +192,6 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
 /* -----------------------------------------------------------------------------
  * 5) Listeleme cevap tipleri
  * ---------------------------------------------------------------------------*/
-
 export type ProductListResponse = {
   items: Product[];
   pageCount: number;

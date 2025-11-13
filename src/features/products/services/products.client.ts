@@ -21,10 +21,12 @@ export type CreateProductInput = {
 
   date: string;
 
-  /** EKLENDİ: Revizyon tarihi (opsiyonel, boşsa null) */
+  /** Revizyon tarihi (opsiyonel, boşsa null) */
   revisionDate?: string | null;
 
-  unitWeightG: number | null;
+  /** UI tarafı kg/m girsin — geriye uyumluluk için unitWeightG de kabul */
+  unitWeightKg?: number | null;
+  unitWeightG?: number | null;
 
   hasCustomerMold?: boolean;
   availability?: boolean;
@@ -37,7 +39,7 @@ export type CreateProductInput = {
   sectionMm2?: number | null;
 
   tempCode?: string | null;
-  profileCode?: string | null;
+  profileCode?: string | null; // geriye uyumluluk
   manufacturerCode?: string | null;
 
   /** Eski kodu kırmamak için duruyor; servis bunu artık kullanmaz. */
@@ -61,10 +63,20 @@ function toNull(v?: string | null) {
   return s ? s : null;
 }
 
+function kgToGrSafe(v: number | null | undefined): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 1000) : null;
+}
+
 /* -------------------------------------------------------
  * CREATE: sadece DB insert — upload işi dışarıda (signed upload)
  * ----------------------------------------------------- */
 export async function createProduct(v: CreateProductInput) {
+  // Kg/m öncelikli, yoksa geriye uyumluluk için G/m
+  const gpmFromKg = kgToGrSafe(v.unitWeightKg);
+  const gpm = gpmFromKg ?? (v.unitWeightG == null ? null : Math.round(Number(v.unitWeightG)));
+
   const payload: ProductsInsert = {
     name: v.name,
     code: v.code,
@@ -77,12 +89,10 @@ export async function createProduct(v: CreateProductInput) {
 
     date: v.date,
 
-    // EKLENDİ: Revizyon tarihi
+    // Revizyon tarihi
     revision_date: toNull(v.revisionDate ?? null),
 
-    ...(v.unitWeightG != null
-      ? { unit_weight_g_pm: Math.round(Number(v.unitWeightG)) }
-      : {}),
+    ...(gpm != null ? { unit_weight_g_pm: gpm } : {}),
 
     drawer: toNull(v.drawer),
     control: toNull(v.control),
@@ -165,15 +175,16 @@ export async function updateProduct(id: number, v: UpdateProductInput): Promise<
 
   if (v.date !== undefined) payload.date = v.date;
 
-  // EKLENDİ: Revizyon tarihi (tipler henüz kolon içermiyorsa güvenli cast ile yaz)
   if (v.revisionDate !== undefined) {
     (payload as unknown as { revision_date?: string | null }).revision_date = toNull(v.revisionDate);
   }
 
-  if (v.unitWeightG !== undefined) {
-    payload.unit_weight_g_pm = v.unitWeightG == null
-      ? 0
-      : Math.round(Number(v.unitWeightG));
+  // Kg/m öncelikli, yoksa G/m (geriye uyumluluk)
+  if (v.unitWeightKg !== undefined) {
+    const gpm = kgToGrSafe(v.unitWeightKg);
+    payload.unit_weight_g_pm = gpm == null ? 0 : gpm;
+  } else if (v.unitWeightG !== undefined) {
+    payload.unit_weight_g_pm = v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG));
   }
 
   if (v.drawer !== undefined)           payload.drawer = toNull(v.drawer);

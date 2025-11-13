@@ -40,7 +40,10 @@ type Props = {
     variant: string | null;
     category: string | null;
     subCategory: string | null;
+
+    // DB g/m geliyor
     unitWeightG: number | null;
+
     date: string | null;
 
     hasCustomerMold?: boolean | null;
@@ -59,6 +62,7 @@ type Props = {
     image?: string | null;
 
     description?: string | null;
+    revisionDate?: string | null;
   };
 };
 
@@ -78,7 +82,6 @@ async function uploadProductFile(
   file: File,
   supabase: SupabaseClient<Database>
 ): Promise<string> {
-  // 1) Server'dan imzalı upload URL iste
   const extHint = file.name.split('.').pop()?.toLowerCase() ?? '';
   const res = await fetch('/api/products/upload-url', {
     method: 'POST',
@@ -93,15 +96,12 @@ async function uploadProductFile(
 
   const { bucket, path, token } = (await res.json()) as { bucket: string; path: string; token: string };
 
-  // 2) İmzalı URL ile Storage'a yükle (RLS umrumuzda değil)
   const { error } = await supabase.storage
     .from(bucket)
     .uploadToSignedUrl(path, token, file, { contentType: file.type, upsert: true });
 
   if (error) throw new Error(error.message);
-
-  // 3) DB'ye yazacağın şey sadece path (bucket adı yok)
-  return path; // ör: "6580.../1759...pdf"
+  return path;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -110,7 +110,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
 
-  // Client Supabase (anon) — sadece uploadToSignedUrl için
   const supabase = React.useMemo(
     () => createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -125,15 +124,21 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     variant: initial.variant ?? '',
     category: initial.category ?? '',
     subCategory: initial.subCategory ?? '',
-    unitWeightG: typeof initial.unitWeightG === 'number' ? Math.round(initial.unitWeightG) : 0,
+
+    // g/m → kg/m
+    unitWeightKg:
+      typeof initial.unitWeightG === 'number'
+        ? Number(initial.unitWeightG) / 1000
+        : 0,
+
     customerMold:
       (initial.customerMold as CustomerMoldSelect | undefined) ??
       fromBoolToSelect(initial.hasCustomerMold ?? null),
+
     availability: initial.availability ?? true,
 
     date: initial.date ?? new Date().toISOString().slice(0, 10),
-    // ← EKLENDİ: tip güvenli okuma (Props.initial'da alan tanımlı değilse '')
-    revisionDate: (initial as unknown as { revisionDate?: string | null }).revisionDate ?? '',
+    revisionDate: initial.revisionDate ?? '',
 
     drawer: initial.drawer ?? '',
     control: initial.control ?? '',
@@ -175,14 +180,18 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         nextImagePath = await uploadProductFile(initial.id, v.file, supabase);
       }
 
-      // 2) Update payload
-      const payload: UpdateProductInput = {
+      // 2) Update payload — kg/m öncelik, geriye uyumluluk için g/m’yi de gönder
+      const payload = {
         name: v.name,
         code: v.code,
         variant: v.variant,
         category: v.category,
         subCategory: v.subCategory,
-        unitWeightG: v.unitWeightG,
+
+        unitWeightKg: v.unitWeightKg,
+        unitWeightG:
+          v.unitWeightKg == null ? null : Math.round(Number(v.unitWeightKg) * 1000),
+
         date: v.date,
         drawer: v.drawer || null,
         control: v.control || null,
@@ -191,11 +200,14 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         sectionMm2: v.sectionMm2 ?? null,
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
-        image: nextImagePath, // ← DB'ye sadece path
+        image: nextImagePath,
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability,
         description: v.description || null,
-      };
+
+        // revizyon tarihi
+        revisionDate: v.revisionDate ?? '',
+      } as unknown as UpdateProductInput;
 
       // 3) Ürünü güncelle
       await updateProduct(Number(initial.id), payload);
@@ -215,8 +227,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
-              {/* ProductFormFields içinde "file" alanını set eden bölüm olduğundan emin ol. showFileSection bunu görünür yapıyor. */}
-              {/* Dosya seçildiğinde useProductUpload hemen yükler ve image path'ini yazar */}
               <ProductFormFields methods={methods} dicts={dicts} showFileSection dir={initial.id} />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>

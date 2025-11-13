@@ -49,14 +49,6 @@ function getGreetInTR(timeZone: string = 'Europe/Istanbul'): string {
   }
 }
 
-// İsimden baş harf(ler)
-function initials(name: string): string {
-  const n = (name || 'Kullanıcı').trim();
-  const parts = n.split(/\s+/).slice(0, 2);
-  const letters = parts.map(p => p.charAt(0)).join('');
-  return letters.toUpperCase();
-}
-
 /* ---------------------- Component ---------------------- */
 
 export default function DashboardHeaderClient({
@@ -76,17 +68,17 @@ export default function DashboardHeaderClient({
   // Arka plan
   const borderColor = alpha(theme.palette.divider, isDark ? 0.6 : 0.7);
 
-  const neutralA = alpha(theme.palette.grey[500], isDark ? 0.1 : 0.06);
+  const neutralA = alpha(theme.palette.grey[500], isDark ? 0.05 : 0.06);
   const neutralB = alpha(theme.palette.grey[900], isDark ? 0.05 : 0.08);
   const neutralGradient = `linear-gradient(135deg, ${neutralA}, ${neutralB})`;
 
-  const glowMain   = alpha(theme.palette.common.white, isDark ? 0.10 : 0.14);
-  const glowSecondary = alpha(theme.palette.grey[300], isDark ? 0.07 : 0.10);
+  const glowMain   = alpha(theme.palette.common.white, isDark ? 0.25 : 0.14);
+  const glowSecondary = alpha(theme.palette.grey[300], isDark ? 0.5 : 0.20);
 
   const blendMode = 'soft-light';
 
   // Avatar
-  const avatarBg = alpha(theme.palette.primary.main, isDark ? 0.24 : 0.18);
+  const avatarBg = alpha(theme.palette.primary.main, isDark ? 0.15 : 0.18);
   const statusDot = theme.palette.success.main;
 
   // Rol görselleri: stil util'den, ikon lokal
@@ -101,7 +93,6 @@ export default function DashboardHeaderClient({
     <Paper
       component="header"
       role="banner"
-      elevation={0}
       sx={{
         position: 'relative',
         overflow: 'hidden',
@@ -110,7 +101,7 @@ export default function DashboardHeaderClient({
         borderRadius: 2.5,
         bgcolor: alpha(theme.palette.background.paper, 0.9),
         border: `1px solid ${borderColor}`,
-        backdropFilter: 'blur(4px)',
+        backdropFilter: 'blur(7px)',
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -132,24 +123,27 @@ export default function DashboardHeaderClient({
       }}
     >
       <Grid container spacing={{ xs: 1.25, sm: 2 }} alignItems="center" sx={{ position: 'relative', zIndex: 1 }}>
+
         {/* Sol */}
         <Grid size={{ xs: 12, sm: 8, md: 8 }} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={dense ? 1 : 1.5} alignItems="center" sx={{ minWidth: 0 }}>
             <Box position="relative" sx={{ flex: '0 0 auto' }}>
+              
               <Avatar
                 src={image ?? undefined}
                 alt={username || 'Kullanıcı'}
-                sx={{
-                  width: avatarSize,
-                  height: avatarSize,
-                  bgcolor: avatarBg,
-                  color: theme.palette.primary.contrastText,
-                  fontWeight: 700,
-                }}
+                sx={(t) => ({
+                  width: { xs: 56, sm: 64, md: 72 },
+                  height: { xs: 56, sm: 64, md: 72 },
+                  bgcolor:
+                    t.palette.mode === 'dark'
+                      ? alpha(t.palette.primary.main, 0.2)
+                      : alpha(t.palette.primary.main, 0.08),
+                  color: t.palette.primary.main,
+                  flex: '0 0 auto',
+                })}
                 imgProps={{ referrerPolicy: 'no-referrer' }}
-              >
-                {initials(username)}
-              </Avatar>
+              />
 
               {/* online indicator */}
               <Box
@@ -159,11 +153,11 @@ export default function DashboardHeaderClient({
                   position: 'absolute',
                   right: 2,
                   bottom: 2,
-                  width: 10,
-                  height: 10,
+                  width: 6,
+                  height: 6,
                   borderRadius: '50%',
                   bgcolor: statusDot,
-                  border: `2px solid ${theme.palette.background.paper}`,
+                  border: `1px solid ${theme.palette.background.paper}`,
                 }}
               />
             </Box>
