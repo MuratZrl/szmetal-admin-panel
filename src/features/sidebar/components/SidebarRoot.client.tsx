@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Box, Drawer, Stack, Grid, Skeleton } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import { SIDEBAR_WIDTH } from '@/constants/layout';
@@ -12,7 +13,9 @@ import SidebarQuickActions from './SidebarSub.client';
 import SidebarFooter from './SidebarFooter.client';
 import { filterLinksByRole } from '../utils/filterLinks';
 import type { SidebarLink, Role } from '../types';
+
 import { useSidebarRealtime } from '@/features/sidebar/hooks/useSidebarRealtime.client';
+
 import type { Tables } from '@/types/supabase';
 
 type StatusUI = 'Active' | 'Inactive' | 'Banned' | null;

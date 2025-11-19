@@ -123,7 +123,7 @@ export default function GroupBarChart({
 
   const resolvedColors =
     tone === 'soft'
-      ? baseColors.map((c) => alpha(c, theme.palette.mode === 'dark' ? 0.6 : 0.25))
+      ? baseColors.map((c) => alpha(c, theme.palette.mode === 'dark' ? 0.95 : 0.75))
       : baseColors;
 
   return (
@@ -158,7 +158,7 @@ export default function GroupBarChart({
           },
           '.MuiChartsAxis-line': { stroke: theme.palette.divider },
           '.MuiBarElement-root': {
-            rx: 4,
+            rx: 1,
             transition: 'opacity 120ms ease, transform 120ms ease',
           },
           '.MuiBarElement-root:hover': {

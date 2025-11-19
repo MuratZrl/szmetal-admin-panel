@@ -122,101 +122,128 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
       },
     },
 
-  /* -------------------- Pagination -------------------- */
-  MuiPagination: {
-    defaultProps: {
-      shape: 'rounded',
-      showFirstButton: true,
-      showLastButton: true,
-      siblingCount: 1,
-      boundaryCount: 1,
-    },
-    styleOverrides: {
-      root: ({ theme }) => ({
-        // sıra aralığı ve dokunma hedefi ferahlığı
-        '& .MuiPagination-ul': {
-          gap: 5,
-          padding: 4,
-        },
-      }),
-    },
+/* -------------------- Pagination -------------------- */
+MuiPagination: {
+  defaultProps: {
+    shape: 'rounded',
+    showFirstButton: true,
+    showLastButton: true,
+    siblingCount: 1,
+    boundaryCount: 1,
   },
-
-  MuiPaginationItem: {
-    defaultProps: { shape: 'rounded' },
-    styleOverrides: {
-      root: ({ theme }) => {
-        const { palette, shape, breakpoints, transitions } = theme;
-        return {
-          borderRadius: shape.borderRadius,
-          minWidth: 40,
-          height: 40,
-          padding: '0 2px',
-          fontWeight: 600,
-          fontSize: '0.875rem',
-          color: palette.text.primary,
-          backgroundColor: palette.surface[2],
-          border: `1px solid ${palette.surface.outline}`,
-          transition: transitions.create(
-            ['background-color', 'border-color', 'box-shadow', 'color', 'transform'],
-            { duration: transitions.duration.shorter }
-          ),
-
-          // hover: hafif parıltı ve daha belirgin kenar
-          '&:hover': {
-            backgroundColor: alpha(palette.contrast.main, 0.06),
-            borderColor: alpha(palette.contrast.main, 0.28),
-          },
-
-          // seçili: birincil renk üstüne beyaz metin ve yumuşak gölge
-          '&.Mui-selected': {
-            backgroundColor: palette.primary.main,
-            borderColor: palette.primary.main,
-            color: palette.primary.contrastText,
-            '&:hover': {
-              backgroundColor: darken(palette.primary.main, 0.15),
-              borderColor: darken(palette.primary.main, 0.15),
-            },
-          },
-
-          // disabled: soluk ve dokunma efektsiz
-          '&.Mui-disabled': {
-            opacity: 0.6,
-            borderColor: alpha(palette.text.primary, 0.16),
-            boxShadow: 'none',
-          },
-
-          // ellipsis: düğme gibi görünmesin
-          '&.MuiPaginationItem-ellipsis': {
-            border: 'none',
-            background: 'transparent',
-            color: palette.text.disabled,
-            boxShadow: 'none',
-            minWidth: 24,
-            height: 24,
-            padding: 0,
-          },
-
-          // önceki/sonraki/ilk/son ikon butonları: aynı yükseklik ve hizalama
-          '&.MuiPaginationItem-previousNext, &.MuiPaginationItem-firstLast': {
-            lineHeight: 0,
-          },
-
-          // küçük ekran ayarları
-          [breakpoints.down('sm')]: {
-            minWidth: 32,
-            height: 32,
-            fontSize: '0.75rem',
-          },
-        };
+  styleOverrides: {
+    root: ({ theme }) => ({
+      '& .MuiPagination-ul': {
+        gap: 5,
+        padding: 4,
       },
+    }),
+  },
+},
 
-      // ok ikonları biraz daha tutarlı
-      icon: ({
-        fontSize: 20,
-      }),
+MuiPaginationItem: {
+  defaultProps: { shape: 'rounded' },
+  styleOverrides: {
+    root: ({ theme }) => {
+      const { palette, shape, breakpoints, transitions } = theme;
+      const accent = palette.accent?.main ?? palette.primary.main;
+
+      return {
+        borderRadius: shape.borderRadius,
+        minWidth: 40,
+        height: 40,
+        padding: '0 2px',
+        fontWeight: 600,
+        fontSize: '0.875rem',
+        color: palette.text.primary,
+        backgroundColor: palette.surface[2],
+        border: `1px solid ${palette.surface.outline}`,
+
+        // her buton için temel outline
+        outline: `1px solid ${alpha(palette.surface.outline, 0.9)}`,
+        outlineOffset: 1,
+
+        transition: transitions.create(
+          [
+            'background-color',
+            'border-color',
+            'box-shadow',
+            'color',
+            'transform',
+            'outline-color',
+            'outline-offset',
+          ],
+          { duration: transitions.duration.shorter }
+        ),
+
+        // hover: hafif parıltı ve aksana yaslanan kenar + outline
+        '&:hover': {
+          backgroundColor: alpha(palette.contrast.main, 0.06),
+          borderColor: alpha(accent, 0.4),
+          outlineColor: alpha(accent, 0.8),
+        },
+
+        // seçili: primary üstü, daha güçlü outline
+        '&.Mui-selected': {
+          backgroundColor: palette.primary.main,
+          borderColor: palette.primary.main,
+          color: palette.primary.contrastText,
+          outlineColor: alpha(palette.primary.main, 0.95),
+          outlineWidth: 2,
+          outlineOffset: 1,
+          '&:hover': {
+            backgroundColor: darken(palette.primary.main, 0.15),
+            borderColor: darken(palette.primary.main, 0.15),
+          },
+        },
+
+        // klavye focus: outline’ı biraz daha dışarı it
+        '&.Mui-focusVisible, &:focus-visible': {
+          outlineColor: alpha(accent, 0.95),
+          outlineWidth: 2,
+          outlineOffset: 2,
+        },
+
+        // disabled: soluk, outline da sönük
+        '&.Mui-disabled': {
+          opacity: 0.6,
+          borderColor: alpha(palette.text.primary, 0.16),
+          outlineColor: alpha(palette.text.primary, 0.16),
+          boxShadow: 'none',
+        },
+
+        // ellipsis: düğme gibi görünmesin, outline yok
+        '&.MuiPaginationItem-ellipsis': {
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          color: palette.text.disabled,
+          boxShadow: 'none',
+          minWidth: 24,
+          height: 24,
+          padding: 0,
+        },
+
+        // önceki/sonraki/ilk/son ikon butonları: aynı yükseklik ve hizalama
+        '&.MuiPaginationItem-previousNext, &.MuiPaginationItem-firstLast': {
+          lineHeight: 0,
+        },
+
+        // küçük ekran ayarları
+        [breakpoints.down('sm')]: {
+          minWidth: 32,
+          height: 32,
+          fontSize: '0.75rem',
+        },
+      };
+    },
+
+    icon: {
+      fontSize: 20,
     },
   },
+},
+
 
     /* -------------------- Navigation (AppBar / Tabs) -------------------- */
     MuiAppBar: {

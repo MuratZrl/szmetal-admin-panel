@@ -37,14 +37,28 @@ export default function SidebarNav({ links, loading, compact }: Props) {
 
   return (
     <List sx={{ display: 'flex', flexDirection: 'column', alignItems: compact ? 'center' : 'stretch', gap: 0.75, width: '100%' }}>
-      {main.map(link => (
-        <SidebarNavItem
-          key={link.href ?? link.label}
-          link={link}
-          active={Boolean(link.href && pathname?.startsWith(link.href))}
-          compact={compact}
-        />
-      ))}
+      {main.map(link => {
+        const href = link.href;
+        const isActive =
+          Boolean(
+            href &&
+              pathname &&
+              (
+                pathname === href ||
+                pathname.startsWith(`${href}/`) ||
+                pathname.startsWith(`${href}?`)
+              ),
+          );
+
+        return (
+          <SidebarNavItem
+            key={href ?? link.label}
+            link={link}
+            active={isActive}
+            compact={compact}
+          />
+        );
+      })}
     </List>
   );
 }

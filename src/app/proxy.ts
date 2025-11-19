@@ -11,7 +11,7 @@ const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password
 const PUBLIC_ROUTES = ['/403', '/unauthorized'] as const;
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
   Admin: ['*'],
-  Manager: ['/account', '/requests', '/clients', '/orders', '/create_request', '/products'],
+  Manager: ['/account', '/requests', '/clients', '/orders', '/create_request', '/products_analytics', '/products'],
   User: ['/account', '/create_request', '/orders', '/products'],
 } as const;
 const HOME_PATH = '/account' as const;

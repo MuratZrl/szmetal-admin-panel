@@ -22,14 +22,28 @@ export default function SidebarQuickActions({ links, compact = true }: Props) {
 
   return (
     <List sx={{ display: 'flex', flexDirection: 'column', alignItems: compact ? 'center' : 'stretch', gap: 0.75, width: '100%' }}>
-      {quick.map(link => (
-        <SidebarNavItem
-          key={link.href ?? link.label}
-          link={link}
-          active={Boolean(link.href && pathname?.startsWith(link.href))}
-          compact={compact}
-        />
-      ))}
+      {quick.map(link => {
+        const href = link.href;
+        const isActive =
+          Boolean(
+            href &&
+              pathname &&
+              (
+                pathname === href ||
+                pathname.startsWith(`${href}/`) ||
+                pathname.startsWith(`${href}?`)
+              ),
+          );
+
+        return (
+          <SidebarNavItem
+            key={href ?? link.label}
+            link={link}
+            active={isActive}
+            compact={compact}
+          />
+        );
+      })}
     </List>
   );
 }

@@ -15,13 +15,13 @@ import type { Product } from '@/features/products/types';
 import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
 import type { LabelMaps } from '@/features/products/services/labelMaps.server';
 
-import { prettyTr } from '@/features/products/utils/tr-text';
+// BUNU bırakıyoruz
 import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
 import { productCanonicalPath, productEditPath } from '@/features/products/utils/url';
 
-import { ProductMedia } from '@/features/products/components/ui/ProductCard/ProductMedia.client';
-import { CategoryChip } from '@/features/products/components/ui/ProductCard/CategoryTag.client';
-import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductActions.client';
+import { ProductMedia } from '@/features/products/components/ui/ProductCard/ProductCardMedia.client';
+import { CategoryChip } from '@/features/products/components/ui/ProductCard/ProductCardCategoryTag.client';
+import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductCardActions.client';
 
 type Role = 'Admin' | 'Manager' | 'User';
 
@@ -40,18 +40,30 @@ function normalizeRole(r: Props['role']): Role {
   return 'User';
 }
 
-function prettifyLabel(
+/** Ortak: DB value + labelMap → gösterilecek etiket */
+function resolveLabelFromMap(
   value: string | null | undefined,
-  map?: Record<string, string> | undefined
+  map?: Record<string, string>,
 ): string {
-  const raw = prettyTr(value ?? '', map);
-  return isSlugLike(raw) ? humanizeSystemSlug(raw) : raw;
+  const key = (value ?? '').trim();
+  if (!key) return '';
+
+  const fromMap = map?.[key];
+  if (fromMap && fromMap.trim()) {
+    return fromMap.trim();
+  }
+
+  // Map'te yoksa slug'ı insanileştir, o da değilse raw göster
+  if (isSlugLike(key)) {
+    return humanizeSystemSlug(key);
+  }
+
+  return key;
 }
 
 function formatKgPerMeter(gPerMeter: number | 0): string {
   const kg = Number(gPerMeter) / 1000;
   if (!Number.isFinite(kg)) return '0 kg/m';
-  // 0.0, 1.0 gibi trailing .0 at
   const s = kg.toFixed(3);
   const trimmed = s.replace(/\.?0+$/, '');
   return `${trimmed} kg/m`;
@@ -67,18 +79,18 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const canSelect = normalizedRole !== 'User';
   const canEdit = normalizedRole === 'Admin' || normalizedRole === 'Manager';
 
-  // YENİ:
-  const variantLabel = prettifyLabel(product.variant, labels?.variant).trim();
+  // Varyant: products.variant = key, labels.variant[key] = name
+  const variantLabel = resolveLabelFromMap(product.variant, labels?.variant).trim();
   const showVariantCaption = React.useMemo(() => {
     const raw = String(product.variant ?? '').trim().toLowerCase();
-    if (!raw || raw === 'none' || raw === 'yok') return false;      // slug bazlı gizle
+    if (!raw || raw === 'none' || raw === 'yok') return false;
     const lbl = variantLabel.toLowerCase();
-    if (!lbl || lbl === 'none' || lbl === 'yok') return false;       // etiket bazlı gizle
+    if (!lbl || lbl === 'none' || lbl === 'yok') return false;
     return true;
   }, [product.variant, variantLabel]);
 
-  const categoryLabel = prettifyLabel(product.category, labels?.category);
-  const subLabel      = prettifyLabel(product.subCategory, labels?.subcategory);
+  const categoryLabel = resolveLabelFromMap(product.category, labels?.category);
+  const subLabel      = resolveLabelFromMap(product.subCategory, labels?.subcategory);
 
   const categoryLine = React.useMemo(() => {
     return [categoryLabel, subLabel].filter(Boolean).join(' / ');
@@ -166,13 +178,13 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               overflowWrap: 'break-word',
               wordBreak: 'break-word',
               hyphens: 'auto',
-              '&': { wordBreak: 'break-word' },
             }}
           >
             {product.code} — {product.name}
           </Typography>
 
           <Stack direction="column" my={0.25}>
+            
             <Typography
               variant="subtitle2"
               color="text.secondary"
@@ -180,9 +192,11 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             >
               Birim Ağırlık: {formatKgPerMeter(product.unit_weight_g_pm)}
             </Typography>
+            
             <Typography variant="caption" color="text.secondary">
               Yapıldığı Tarih: {product.date}
             </Typography>
+
           </Stack>
 
           {(categoryLabel || subLabel) && (
@@ -194,7 +208,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             />
           )}
 
-          {/* YENİ: */}
           {showVariantCaption && (
             <Typography
               variant="caption"
@@ -212,7 +225,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               {`${variantLabel} Profilleri`}
             </Typography>
           )}
-          
         </CardContent>
       </CardActionArea>
 

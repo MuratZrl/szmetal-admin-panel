@@ -29,6 +29,7 @@ export function ProductActions({
 }: ProductActionsProps): React.JSX.Element {
   const theme = useTheme();
   const accent = theme.palette.accent?.main ?? theme.palette.primary.main;
+  const danger = theme.palette.error.main;
   const S = theme.palette.surface;
 
   const softBg  = alpha(accent, theme.palette.mode === 'dark' ? 0.16 : 0.06);
@@ -53,47 +54,77 @@ export function ProductActions({
     borderColor: outline,
     color: theme.palette.text.primary,
     backgroundColor: softBg,
+
     transition: theme.transitions.create(
       ['background-color', 'border-color', 'box-shadow', 'transform'],
       { duration: theme.transitions.duration.shorter }
     ),
+    
     '& .MuiButton-endIcon': { ml: 0.5, mr: 0 },
+    
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
       fontSize: { xs: 16, sm: 18, md: 20 },
       transition: theme.transitions.create('transform', {
         duration: theme.transitions.duration.shorter,
       }),
+
       willChange: 'transform',
     },
+    
     '&:hover': {
       backgroundColor: hoverBg,
       borderColor: accent,
       boxShadow: `0 0 0 1px ${alpha(accent, 0.16)} inset, 0 2px 10px ${alpha(accent, 0.14)}`,
     },
+    
     '&:active': {
       backgroundColor: pressBg,
       borderColor: accent,
       transform: 'translateY(0.5px)',
       boxShadow: `0 0 0 1px ${alpha(accent, 0.20)} inset`,
     },
+
     '&:focus-visible': {
       outline: `2px solid ${alpha(accent, 0.6)}`,
       outlineOffset: 2,
     },
+    
   } as const;
 
   const editBtnSx = {
     ...commonBtnSx,
+    transform: 'skewX(-3deg)',
+
     backgroundColor: theme.palette.mode === 'dark' ? alpha(S[2], 0.3) : alpha(S[1], 0.4),
     borderColor: alpha(accent, 0.5),
     display: { xs: 'none', sm: 'inline-flex' },
+
+    // dış kırmızı çerçeve (tema error renginden)
+    outline: `1px solid ${alpha(danger, 0.9)}`,
+    outlineOffset: 2,
+
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
       transition: theme.transitions.create('transform', {
         duration: theme.transitions.duration.shorter,
       }),
     },
-    '&:hover .MuiButton-endIcon .MuiSvgIcon-root, &:focus-visible .MuiButton-endIcon .MuiSvgIcon-root': {
-      transform: 'rotate(15deg)',
+
+    '&:hover': {
+      backgroundColor: hoverBg,
+      borderColor: accent,
+      boxShadow: `0 0 0 1px ${alpha(accent, 0.16)} inset, 0 2px 10px ${alpha(accent, 0.14)}`,
+    },
+
+    '&:active': {
+      backgroundColor: pressBg,
+      borderColor: accent,
+      transform: 'skewX(-5deg) translateY(0.5px)',
+      boxShadow: `0 0 0 1px ${alpha(accent, 0.20)} inset`,
+    },
+
+    '&:focus-visible': {
+      outline: `2px solid ${danger}`,
+      outlineOffset: 2,
     },
   } as const;
 
@@ -118,6 +149,7 @@ export function ProductActions({
         spacing={{ xs: 1, sm: 1.25 }}
         sx={{ minHeight: 42 }}
       >
+
         {canEdit && (
           <Button
             LinkComponent={Link}
@@ -149,7 +181,6 @@ export function ProductActions({
         </Button>
       </Stack>
 
-      {/* Seçim kontrolü (devre dışı). Yorum yerine ölü koşul: lint ve tipler mutlu. */}
       {false && canSelect && (
         <Box
           sx={{

@@ -2,17 +2,18 @@
 import { Grid } from '@mui/material';
 import ProductCard from '@/features/products/components/ui/ProductCard/ProductCard.client';
 import type { Product } from '@/features/products/types';
+import type { LabelMaps } from '@/features/products/services/labelMaps.server';
 
 type Role = 'Admin' | 'Manager' | 'User';
 
 type Props = {
   products: Product[];
   mediaUrlsById: Record<string, string | null>;
-  /** Kullanıcının rolü; DB’den farklı casing gelebilir diye string | null da kabul ediyoruz. */
+  labels?: LabelMaps;               // ← ekle
   role?: Role | string | null;
 };
 
-export default function ProductsGrid({ products, mediaUrlsById, role }: Props) {
+export default function ProductsGrid({ products, mediaUrlsById, labels, role }: Props) {
   return (
     <Grid container spacing={2}>
       {products.map((p) => {
@@ -23,6 +24,7 @@ export default function ProductsGrid({ products, mediaUrlsById, role }: Props) {
               product={p}
               resolvedImageUrl={url}
               role={role ?? null}
+              labels={labels}      // ← buradan geçir
             />
           </Grid>
         );

@@ -6,7 +6,7 @@ export type CustomerMoldValue = 'Evet' | 'Hayır';
 export type CustomerMoldSelect = '' | CustomerMoldValue;
 
 /** "Varyant" için tek kaynak: UI'da "Yok" */
-export const DEFAULT_VARIANT_KEY = 'none' as const;
+export const DEFAULT_VARIANT_KEY = 'yok' as const;
 
 /** Genel: zorunlu select’ler için '' → undefined; required yakalasın */
 const requiredSelect = yup
@@ -170,6 +170,14 @@ export function customerMoldToBoolean(
 /** DB normalize: UI'daki "none" değerini veritabanında null'a çevirmek istersen kullan */
 export function normalizeVariantToDb(
   v: ProductFormValues['variant'] | null | undefined
-): string | null {
-  return v == null || v === DEFAULT_VARIANT_KEY ? null : v;
+): string {
+  const raw = (v ?? '').trim();
+
+  // Boş, null veya UI'daki DEFAULT_VARIANT_KEY ("none") geldiyse
+  // DB'de her zaman "yok" key'ini yazalım.
+  if (!raw || raw === DEFAULT_VARIANT_KEY) {
+    return 'yok';
+  }
+
+  return raw;
 }

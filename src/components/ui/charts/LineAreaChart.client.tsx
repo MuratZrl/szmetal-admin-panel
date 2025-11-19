@@ -149,7 +149,7 @@ export default function LineAreaChart({
     theme.palette.success.main,
     theme.palette.warning.main,
     theme.palette.error.main,
-    theme.palette.secondary?.main ?? theme.palette.text.primary,
+    theme.palette.secondary?.main ?? theme.palette.text.primary,    
   ];
 
   // Etiket → renk çözümü

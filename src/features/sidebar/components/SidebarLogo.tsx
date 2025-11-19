@@ -3,8 +3,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Box, GlobalStyles } from '@mui/material';
 import type { Route } from 'next';
+
+import { Box, GlobalStyles } from '@mui/material';
 
 type Variant = 'compact' | 'expanded';
 type Size = { width: number; height: number };

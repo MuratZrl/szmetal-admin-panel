@@ -1,37 +1,78 @@
 // src/features/products/services/products.server.ts
 'use server';
 
+/**
+ * Bu modül, ürünlere ilişkin tüm server-side operasyonları toplar:
+ *   - Tekil ürün fetch (id, code, manufacturer_code, temp_code)
+ *   - Ürün güncelleme (updateProduct)
+ *   - Listeleme + filtre + sayfalama (fetchFilteredProducts)
+ *
+ * Buradaki fonksiyonlar sadece server ortamında çalışır ve Supabase
+ * server client'ları ile konuşur. UI tarafı doğrudan Supabase'i değil,
+ * bu servis katmanını kullanır.
+ */
+
 import {
-  createSupabaseServerClient,   // read-only
-  createSupabaseRouteClient,    // yazabilir
+  createSupabaseServerClient,   // sadece okuma (read-only) için kullanılır
+  createSupabaseRouteClient,    // yazma/güncelleme (mutasyon) için kullanılır
 } from '@/lib/supabase/supabaseServer';
 
 import type { ProductFilters } from '@/features/products/types';
 import { mapRowToProduct, mapProductPatchToRow } from '@/features/products/types';
 import type { Database } from '@/types/supabase';
 
+// Supabase şemasından tipleri türetiyoruz. Böylece kolon yapısı değişirse
+// derleme aşamasında uyarı alırız.
 type ProductsRow   = Database['public']['Tables']['products']['Row'];
 type ProductUpdate = Database['public']['Tables']['products']['Update'];
 
+/**
+ * clampPage:
+ *   Sayfa numarasını normalize eder.
+ *   - Geçerli bir sayı ve 0'dan büyükse aşağı yuvarlayarak kullan
+ *   - Değilse 1. sayfaya düş
+ *
+ * Hatalı query paramları (ör. page=abc) nedeniyle Supabase range indekslerinin
+ * patlamamasını sağlar.
+ */
 const clampPage = (v: number) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 1);
 
+/**
+ * parseNumericId:
+ *   ID kimi yerlerde string, kimi yerlerde number olarak gelebilir.
+ *   Bu yardımcı her durumda number'a çevirip tek formatta kullanmayı sağlar.
+ */
 function parseNumericId(id: string | number): number {
   return typeof id === 'string' ? Number(id) : id;
 }
 
-// --- küçük yardımcı: Update=never ise çağrıyı sakinleştir ---
+/**
+ * asUpdateParam:
+ *   Supabase update çağrısına verilecek patch objesini,
+ *   "Update" tipinin Supabase infer'ları ile uyuşmadığı durumlarda
+ *   TypeScript'i susturmak için kullanılan küçücük bir yardımcı.
+ *
+ *   Amaç: 'any' kullanmadan, gerekirse 'never' üzerinden cast yaparak
+ *   tip sistemini mutasyon tarafında sakinleştirmek.
+ */
 function asUpdateParam(u: ProductUpdate) {
   // Not: 'any' yok. 'never' TS için kabul edilebilir bir cast.
   return (u as unknown) as never;
 }
 
 /* -----------------------------------------------------------------------------
- * Fetch helpers
+ * Fetch helpers (tekil ürün okuma)
  * ---------------------------------------------------------------------------*/
 
-// NOT: productCanonicalPath bu dosyada export edilirse Next “async zorunluluğu” yüzünden şikayet eder.
-// Onu utils/url.ts içinde tut.
-
+/**
+ * fetchProductById:
+ *   Verilen id'ye sahip ürünü döndürür.
+ *   - Bulunamazsa null
+ *   - Supabase hatasında da null
+ *
+ * Kullanım: Detay sayfası, düzenleme formu gibi yerlerde,
+ * sadece id üzerinden ürün çekmek için.
+ */
 export async function fetchProductById(id: string | number): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
   const pid = parseNumericId(id);
@@ -46,11 +87,22 @@ export async function fetchProductById(id: string | number): Promise<ProductsRow
   return (data ?? null) as ProductsRow | null;
 }
 
-// Geriye dönük uyumluluk: profile_code artık yok.
+/**
+ * fetchProductByProfileCode:
+ *   Eski API ile geriye dönük uyumluluk için bırakılmış bir alias.
+ *   profile_code alanı kaldırıldığı için artık doğrudan code üzerinden
+ *   çalışan fetchProductByCode'a delegasyon yapıyor.
+ */
 export async function fetchProductByProfileCode(profileCode: string): Promise<ProductsRow | null> {
   return fetchProductByCode(profileCode);
 }
 
+/**
+ * fetchProductByCode:
+ *   "code" alanı benzersiz kabul edilerek, tekil ürün döndürür.
+ *   - Boş/whitespace code gelirse direkt null
+ *   - Bulunamazsa null
+ */
 export async function fetchProductByCode(code: string): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
 
@@ -67,10 +119,18 @@ export async function fetchProductByCode(code: string): Promise<ProductsRow | nu
   return (data ?? null) as ProductsRow | null;
 }
 
-/** Tek anahtar üzerinden çöz:
- *  - sayıysa id
- *  - değilse önce code
- *  - bulunamazsa manufacturer_code, sonra temp_code
+/**
+ * fetchProductByKey:
+ *   Tek bir "key" üzerinden ürünü çözmeye çalışan çok amaçlı helper.
+ *
+ * Çözüm sırası:
+ *   1) key number ise doğrudan id
+ *   2) key string ise, sayıya parse edilebiliyorsa id olarak denenir
+ *   3) code kolonu üzerinden arama
+ *   4) manufacturer_code kolonu üzerinden arama
+ *   5) temp_code kolonu üzerinden arama
+ *
+ * Kısaca: kullanıcının elindeki tek bilgi ile ürünü bulmaya çalışır.
  */
 export async function fetchProductByKey(key: string | number): Promise<ProductsRow | null> {
   if (typeof key === 'number') return fetchProductById(key);
@@ -78,6 +138,7 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
   const raw = key.trim();
   if (!raw) return null;
 
+  // "123" gibi saf sayısal string'ler önce id olarak denenir
   const asNumber = Number(raw);
   if (Number.isFinite(asNumber) && String(asNumber) === raw) {
     return fetchProductById(asNumber);
@@ -90,31 +151,54 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
   // 2) manufacturer_code
   {
     const sb = await createSupabaseServerClient();
-    const { data } = await sb.from('products').select('*').eq('manufacturer_code', raw).maybeSingle();
+    const { data } = await sb
+      .from('products')
+      .select('*')
+      .eq('manufacturer_code', raw)
+      .maybeSingle();
     if (data) return data as ProductsRow;
   }
 
   // 3) temp_code
   {
     const sb = await createSupabaseServerClient();
-    const { data } = await sb.from('products').select('*').eq('temp_code', raw).maybeSingle();
+    const { data } = await sb
+      .from('products')
+      .select('*')
+      .eq('temp_code', raw)
+      .maybeSingle();
     if (data) return data as ProductsRow;
   }
 
+  // Hiçbir yerde bulunamazsa null
   return null;
 }
 
 /* -----------------------------------------------------------------------------
- * Update
+ * Update (ürün güncelleme)
  * ---------------------------------------------------------------------------*/
+
+/**
+ * updateProduct:
+ *   Verilen id'li ürünü, UI'den gelen patch ile günceller.
+ *
+ * Akış:
+ *   1) UI patch -> mapProductPatchToRow ile DB patch'e çevrilir
+ *   2) Supabase update çağrısı yapılır
+ *   3) Güncel satır mapRowToProduct ile domain tipine çevrilir ve döndürülür
+ *
+ * Hata durumları:
+ *   - Supabase hata mesajı varsa Error fırlatılır
+ *   - Kayıt bulunamazsa "Product not found" hatası fırlatılır
+ */
 export async function updateProduct(
   id: number | string,
-  patch: Parameters<typeof mapProductPatchToRow>[0]
+  patch: Parameters<typeof mapProductPatchToRow>[0],
 ) {
-  const sb  = await createSupabaseRouteClient();
+  const sb = await createSupabaseRouteClient();
   const pid = parseNumericId(id);
 
-  // UI -> DB patch (hala g/m bekler)
+  // UI -> DB patch (hala g/m cinsinden gibi alan dönüşümleri burada yapılır)
   const dbPatch: ProductUpdate = mapProductPatchToRow(patch) as ProductUpdate;
 
   const { data, error } = await sb
@@ -127,12 +211,24 @@ export async function updateProduct(
   if (error) throw new Error(error.message);
   if (!data) throw new Error('Product not found');
 
+  // Güncel satırı tekrar domain modeli tipine map'leyip döndür
   return mapRowToProduct(data as ProductsRow);
 }
 
 /* -----------------------------------------------------------------------------
- * Pagination + filters
+ * Pagination + filters (listeleme)
  * ---------------------------------------------------------------------------*/
+
+/**
+ * ProductPage:
+ *   fetchFilteredProducts fonksiyonunun döndürdüğü sayfalı sonuç yapısı.
+ *
+ *  - items: mapRowToProduct ile dönüştürülmüş ürünler
+ *  - total: toplam kayıt sayısı
+ *  - page: mevcut sayfa numarası
+ *  - pageSize: sayfa başına kayıt sayısı
+ *  - pageCount: toplam sayfa sayısı
+ */
 export type ProductPage = {
   items: ReturnType<typeof mapRowToProduct>[];
   total: number;
@@ -141,19 +237,42 @@ export type ProductPage = {
   pageCount: number;
 };
 
+/**
+ * fetchFilteredProducts:
+ *   /products sayfasındaki tüm filtreler ve sıralama kuralları ile
+ *   birlikte Supabase üzerinden ürün listesini çeker.
+ *
+ * Girdi:
+ *   - filters: parseProductFilters ile URL'den türetilen ProductFilters
+ *   - opts: page ve pageSize bilgileri
+ *
+ * Çıktı:
+ *   - ProductPage: sayfalama ve filtrelenmiş ürün listesi
+ */
 export async function fetchFilteredProducts(
   filters: ProductFilters,
-  opts: { page: number; pageSize: number }
+  opts: { page: number; pageSize: number },
 ): Promise<ProductPage> {
   const sb = await createSupabaseServerClient();
 
+  // Sayfa boyutu ve sayfa numarasını güvenli aralığa çek
   const pageSize = Math.max(1, opts.pageSize);
   const page = clampPage(opts.page);
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  // count: 'exact' ile total kayıt sayısını da istiyoruz
   let q = sb.from('products').select('*', { count: 'exact' });
 
+  /**
+   * Serbest metin arama (q):
+   *   - code
+   *   - name
+   *   - manufacturer_code
+   *   - temp_code
+   *
+   * Postgrest "or" ifadesi ile birden fazla kolonda ilike uygulanır.
+   */
   if (filters.q?.trim()) {
     const t = filters.q.trim();
     // code + name + manufacturer_code + temp_code
@@ -163,48 +282,193 @@ export async function fetchFilteredProducts(
         `name.ilike.%${t}%`,
         `manufacturer_code.ilike.%${t}%`,
         `temp_code.ilike.%${t}%`,
-      ].join(',')
+      ].join(','),
     );
   }
 
-  if (filters.categories?.length) {
-    q = q.in('category', filters.categories as ProductsRow['category'][]);
+  /**
+   * Kategori filtresi:
+   *   UI tarafında hem root hem leaf (subCategory) slug'ları tutuluyor.
+   *
+   *   - filters.categories     => root slug'lar
+   *   - filters.subCategories  => leaf slug'lar (ve root seçilince tüm torunlar)
+   *
+   * Burada ikisini tek bir slug kümesinde birleştiriyoruz ve:
+   *   category.in.(...) VEYA sub_category.in.(...)
+   * şeklinde OR'lu bir filtre uyguluyoruz.
+   *
+   * Böylece ürün sadece category'de ya da sadece sub_category'de işaretli olsa bile
+   * doğru şekilde yakalanıyor.
+   */
+  const catSlugs = Array.from(
+    new Set([...(filters.categories ?? []), ...(filters.subCategories ?? [])]),
+  );
+
+  if (catSlugs.length > 0) {
+    // Postgrest "or" ifadesi ile category.in(...) VEYA sub_category.in(...)
+    // Format: category.in.("slug1","slug2"),sub_category.in.("slug1","slug2")
+    const inList = catSlugs.map((s) => `"${s}"`).join(',');
+    q = q.or(`category.in.(${inList}),sub_category.in.(${inList})`);
   }
-  if (filters.subCategories?.length) {
-    q = q.in('sub_category', filters.subCategories as ProductsRow['sub_category'][]);
-  }
+
+  /**
+   * Varyant filtresi:
+   *   filters.variants içinde gelen key'leri doğrudan variant kolonu
+   *   üzerinde .in ile uygularız.
+   */
   if (filters.variants?.length) {
     q = q.in('variant', filters.variants as ProductsRow['variant'][]);
   }
 
-  // customerMold, UI çoklu bıraktı
+  /**
+   * Müşteri kalıbı filtresi:
+   *   Burada filters içinde doğrudan tanımlı olmayan, ancak parseProductFilters
+   *   tarafından runtime'da eklenmiş olabilen customerMold alanını okuyoruz.
+   *
+   *   Eski UI'den kalan "Evet" string değeriyle uyumlu kalmak için:
+   *     - true
+   *     - 'Evet'
+   *     - ['Evet'] (tek elemanlı dizi)
+   *   gibi varyantları "aktif" kabul ediyoruz.
+   */
   const cm = (filters as unknown as { customerMold?: unknown }).customerMold;
   const moldOn =
     cm === true || cm === 'Evet' || (Array.isArray(cm) && cm.length === 1 && cm[0] === 'Evet');
   if (moldOn) q = q.eq('has_customer_mold', true);
 
-  if (typeof filters.availability === 'boolean') q = q.eq('availability', filters.availability);
-  if (filters.from) q = q.gte('date', filters.from);
-  if (filters.to)   q = q.lte('date', filters.to);
-
-  switch (filters.sort) {
-    case 'date-desc':   q = q.order('date', { ascending: false }); break;
-    case 'date-asc':    q = q.order('date', { ascending: true });  break;
-    case 'weight-asc':  q = q.order('unit_weight_g_pm', { ascending: true });  break;
-    case 'weight-desc': q = q.order('unit_weight_g_pm', { ascending: false }); break;
-    case 'code-asc':    q = q.order('code', { ascending: true });  break;
-    case 'code-desc':   q = q.order('code', { ascending: false }); break;
-    default:            q = q.order('created_at', { ascending: false });       break;
+  /**
+   * Kullanılabilirlik filtresi:
+   *   parseProductFilters tarafında availability boolean ise
+   *   burada availability = true olan ürünleri filtreleriz.
+   *
+   *   availability undefined ise filtre uygulanmaz.
+   */
+  if (typeof filters.availability === 'boolean') {
+    q = q.eq('availability', filters.availability);
   }
 
+  /**
+   * Tarih filtresi:
+   *   filters.from ve filters.to, UI'de YYYY-MM-DD formatında set ediliyor.
+   *
+   *   Burada "date" kolonu üzerinden aralık filtresi uygulanıyor.
+   *   (Şemanızda created_at kullanıyorsanız burayı ona göre uyarlaman gerekir.)
+   */
+  if (filters.from) q = q.gte('date', filters.from);
+  if (filters.to) q = q.lte('date', filters.to);
+
+  /**
+   * Sıralama:
+   *   ProductSort union'ına göre sıralama stratejisi seçilir.
+   *   - date-asc/desc       -> date kolonu
+   *   - weight-asc/desc     -> unit_weight_g_pm
+   *   - code-asc/desc       -> code
+   *   - default             -> created_at (en yeni ürünler önce)
+   */
+  switch (filters.sort) {
+    case 'date-desc':
+      q = q.order('date', { ascending: false });
+      break;
+    case 'date-asc':
+      q = q.order('date', { ascending: true });
+      break;
+    case 'weight-asc':
+      q = q.order('unit_weight_g_pm', { ascending: true });
+      break;
+    case 'weight-desc':
+      q = q.order('unit_weight_g_pm', { ascending: false });
+      break;
+    case 'code-asc':
+      q = q.order('code', { ascending: true });
+      break;
+    case 'code-desc':
+      q = q.order('code', { ascending: false });
+      break;
+    default:
+      q = q.order('created_at', { ascending: false });
+      break;
+  }
+
+  // Supabase range ile sayfaya ait satırları ve toplam sayıyı çek
   const { data, error, count } = await q.range(from, to);
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as ProductsRow[];
+
+  // Her satırı domain tipi olan Product'a map'liyoruz
   const items = rows.map(mapRowToProduct);
 
+  // Toplam kayıt sayısı; Supabase count null dönerse en azından 0 varsayılır
   const total = count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return { items, total, page, pageSize, pageCount };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// *************** FORMATLI DOSYALARI SUPABASE'E ENTEGRE ETME KODU (PYTHON) ***************
+
+// from supabase import create_client, Client
+// import os
+
+// SUPABASE_URL = "https://proje-id.supabase.co"
+// SUPABASE_KEY = "service_role_key"
+
+// supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+// PDF_FOLDER = r"C:\pdf_klasoru"
+// BUCKET_NAME = "products-media"
+
+// for filename in os.listdir(PDF_FOLDER):
+
+//     if filename.endswith(".pdf"):
+//         filepath = os.path.join(PDF_FOLDER, filename)
+
+//         # Dosya adından verileri alma
+//         name = filename.replace(".pdf", "")
+//         parts = [p.strip() for p in name.split(" - ")]
+
+//         try:
+//             kod, ad, varyant, kategori, alt_kategori = parts
+//         except ValueError:
+//             print("Format hatalı:", filename)
+//             continue
+        
+//         # Storage'a yükleme
+//         storage_path = f"{kod}.pdf"
+//         with open(filepath, "rb") as f:
+//             supabase.storage.from_(BUCKET_NAME).upload(storage_path, f)
+
+//         # Public URL oluşturma
+//         public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+
+//         # Database insert
+//         data = {
+//             "kod": kod,
+//             "ad": ad,
+//             "varyant": varyant,
+//             "kategori": kategori,
+//             "alt_kategori": alt_kategori,
+//             "image": public_url
+//         }
+
+//         supabase.table("profiller").insert(data).execute()
+//         print("Eklendi:", kod)

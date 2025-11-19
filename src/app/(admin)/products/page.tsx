@@ -7,7 +7,7 @@ import { Box, Grid, Divider } from '@mui/material';
 
 import { ProductsSelectionProvider } from '@/features/products/selection/ProductsSelectionContext.client';
 import ProductsToolbar from '@/features/products/components/ProductsToolbar.client';
-import Filters from '@/features/products/components/ui/Filter/Filter.client';
+import Filters from '@/features/products/components/ui/Filter/Filters.client';
 import ProductsGrid from '@/features/products/components/ProductsGrid.client';
 import ProductsPagination from '@/features/products/components/ProductsPagination.client';
 
@@ -39,10 +39,8 @@ function toInt(
 }
 
 export default async function ProductsPage({ searchParams: spPromise }: PageProps) {
-  // Statü önce, rol sonra
   await requirePageAccess('/products');
 
-  // Toolbar ve Grid için rol bilgisi
   const { profile } = await loadAuthState();
   const role = profile?.role ?? null;
 
@@ -63,8 +61,9 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
       const signed = await resolveStorageUrl(raw);
       const withVer = withVersion(signed, p.updatedAt ?? p.createdAt ?? null);
       return [String(p.id), withVer] as const;
-    })
+    }),
   );
+  
   const mediaUrlsById: Record<string, string | null> = Object.fromEntries(mediaUrlsByIdEntries);
 
   const perms = {
@@ -72,23 +71,64 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
     canBulkDelete: role === 'Admin',
   };
 
+  // Burada kategori + alt kategori + varyant için label map'lerini üret
+  const variantLabelMap: Record<string, string> = {};
+  for (const v of dicts.variants ?? []) {
+    const key = String(v.key ?? '').trim();
+    if (!key) continue;
+    const name = typeof v.name === 'string' && v.name.trim().length > 0 ? v.name.trim() : key;
+    variantLabelMap[key] = name;
+  }
+
+  const categoryLabelMap: Record<string, string> = {};
+  const subcategoryLabelMap: Record<string, string> = {};
+
+  const tree = (dicts.categoryTree ??
+    {}) as Record<string, { name: string; subs: { slug: string; name: string }[] }>;
+
+  for (const [slug, node] of Object.entries(tree)) {
+    if (!slug) continue;
+    categoryLabelMap[slug] = node.name;
+    for (const sub of node.subs) {
+      if (!sub.slug) continue;
+      subcategoryLabelMap[sub.slug] = sub.name;
+    }
+  }
+
+  const labelMaps = {
+    variant: variantLabelMap,
+    category: categoryLabelMap,
+    subcategory: subcategoryLabelMap,
+  };
+
   return (
     <Box px={1} py={1}>
+      
       <ProductsSelectionProvider>
         <ProductsToolbar perms={perms} totalCount={total} />
         <Divider sx={{ mb: 2 }} />
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 3 }}>
-            <Filters topLevelSlugs={dicts.categories} categoryTree={dicts.categoryTree} variants={dicts.variants} />
+            <Filters
+              topLevelSlugs={dicts.categories}
+              categoryTree={dicts.categoryTree}
+              variants={dicts.variants}
+            />
           </Grid>
 
           <Grid size={{ xs: 12, md: 9 }}>
-            <ProductsGrid products={items} mediaUrlsById={mediaUrlsById} role={role} />
+            <ProductsGrid
+              products={items}
+              mediaUrlsById={mediaUrlsById}
+              role={role}
+              labels={labelMaps}   // asıl sihir burada
+            />
             <ProductsPagination page={page} totalPages={pageCount} />
           </Grid>
         </Grid>
       </ProductsSelectionProvider>
+      
     </Box>
   );
 }

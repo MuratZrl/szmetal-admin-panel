@@ -1,6 +1,10 @@
 // features/products/forms/mapper.ts
 import type { Database } from '@/types/supabase';
-import type { CustomerMoldSelect } from './schema'; // <-- select tipi ('' | 'Evet' | 'Hayır')
+import {
+  type CustomerMoldSelect,
+  normalizeVariantToDb,
+  DEFAULT_VARIANT_KEY,
+} from './schema';
 
 type ProductsInsert = Database['public']['Tables']['products']['Insert'];
 type ProductsUpdate = Database['public']['Tables']['products']['Update'];
@@ -78,7 +82,8 @@ export function toInsertPayload(
   const payload: ProductsInsert = {
     name: v.name,
     code: v.code,
-    variant: v.variant,
+    // UI'daki 'none' vb. değerleri DB formatına çevir
+    variant: normalizeVariantToDb(v.variant),
 
     // text alanlar
     category: v.category ?? null,
@@ -138,7 +143,10 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
 
   if (v.name !== undefined) p.name = v.name;
   if (v.code !== undefined) p.code = v.code;
-  if (v.variant !== undefined) p.variant = v.variant;
+  if (v.variant !== undefined) {
+    // yine normalize et: 'none' → DB formatı
+    p.variant = normalizeVariantToDb(v.variant);
+  }
 
   if (v.category !== undefined)        p.category = v.category ?? null;
   if (v.subCategory !== undefined)     p.sub_category = v.subCategory ?? null;
@@ -196,10 +204,17 @@ export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
 export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
   const revision = (row as unknown as { revision_date?: string | null }).revision_date ?? '';
 
+  // DB'de null / boş / saçma değer varsa UI tarafında DEFAULT_VARIANT_KEY ile aç
+  const rawVariant = row.variant;
+  const variant: string =
+    rawVariant == null || String(rawVariant).trim().length === 0
+      ? DEFAULT_VARIANT_KEY
+      : String(rawVariant);
+
   return {
     name: row.name ?? '',
     code: row.code ?? '',
-    variant: row.variant ?? '',
+    variant,
 
     category: row.category ?? '',
     subCategory: row.sub_category ?? '',

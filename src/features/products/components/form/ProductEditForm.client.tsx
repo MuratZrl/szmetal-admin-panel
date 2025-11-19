@@ -19,7 +19,7 @@ import {
   customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
-import ProductFormFields from '@/features/products/components/form/ProductFormFields.client';
+import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
 import NotesField from '@/features/products/components/form/NotesField.client';
 
 import type { Database } from '@/types/supabase';
