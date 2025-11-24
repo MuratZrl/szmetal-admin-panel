@@ -20,11 +20,8 @@ export type CreateProductInput = {
   subCategoryId?: string | null;
 
   date: string;
-
-  /** Revizyon tarihi (opsiyonel, boşsa null) */
   revisionDate?: string | null;
 
-  /** UI tarafı kg/m girsin — geriye uyumluluk için unitWeightG de kabul */
   unitWeightKg?: number | null;
   unitWeightG?: number | null;
 
@@ -38,17 +35,19 @@ export type CreateProductInput = {
   outerSizeMm?: number | null;
   sectionMm2?: number | null;
 
+  // YENİ: et kalınlığı (mm)
+  wallThicknessMm?: number | null;
+
   tempCode?: string | null;
   profileCode?: string | null; // geriye uyumluluk
   manufacturerCode?: string | null;
 
-  /** Eski kodu kırmamak için duruyor; servis bunu artık kullanmaz. */
+  // Eski kodu kırmamak için duruyor; servis bunu artık kullanmaz.
   file?: File | null;
 
-  /** useProductUpload’tan gelen public URL */
   image?: string | null;
 
-  /** useProductUpload’tan opsiyonel metadata (istersen DB’de sakla) */
+  // upload metadatası
   fileBucket?: string | null;
   filePath?: string | null;
   fileName?: string | null;
@@ -72,12 +71,11 @@ function kgToGrSafe(v: number | null | undefined): number | null {
 /* -------------------------------------------------------
  * CREATE: sadece DB insert — upload işi dışarıda (signed upload)
  * ----------------------------------------------------- */
-export async function createProduct(v: CreateProductInput) {
-  // Kg/m öncelikli, yoksa geriye uyumluluk için G/m
-  const gpmFromKg = kgToGrSafe(v.unitWeightKg);
+export async function createProduct(v: CreateProductInput): Promise<string | undefined> {
+  const gpmFromKg = kgToGrSafe(v.unitWeightKg ?? null);
   const gpm = gpmFromKg ?? (v.unitWeightG == null ? null : Math.round(Number(v.unitWeightG)));
 
-  const payload: ProductsInsert = {
+  const payload = {
     name: v.name,
     code: v.code,
     variant: v.variant,
@@ -89,7 +87,6 @@ export async function createProduct(v: CreateProductInput) {
 
     date: v.date,
 
-    // Revizyon tarihi
     revision_date: toNull(v.revisionDate ?? null),
 
     ...(gpm != null ? { unit_weight_g_pm: gpm } : {}),
@@ -112,7 +109,6 @@ export async function createProduct(v: CreateProductInput) {
 
     availability: v.availability,
 
-    // Signed upload metadata (opsiyonel)
     file_bucket: v.fileBucket ?? null,
     file_path:   v.filePath   ?? null,
     file_name:   v.fileName   ?? null,
@@ -121,7 +117,11 @@ export async function createProduct(v: CreateProductInput) {
     file_size:   v.fileSize   ?? null,
 
     description: toNull(v.description ?? null),
-  } satisfies ProductsInsert;
+  } as ProductsInsert;
+
+  // YENİ: wall_thickness_mm kolonu
+  (payload as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
+    v.wallThicknessMm ?? null;
 
   const { data, error } = await supabase
     .from('products')
@@ -130,7 +130,7 @@ export async function createProduct(v: CreateProductInput) {
     .single();
 
   if (error) throw new Error(error.message);
-  return data?.id as number | undefined;
+  return data?.id as string | undefined;
 }
 
 /* -------------------------------------------------------
@@ -144,12 +144,12 @@ export async function deleteAllProducts(): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function deleteProductById(id: number) {
+export async function deleteProductById(id: string): Promise<void> {
   const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw new Error(error.message);
 }
 
-export async function deleteProductsByIds(ids: number[]) {
+export async function deleteProductsByIds(ids: string[]): Promise<void> {
   if (!ids.length) return;
   const { error } = await supabase.from('products').delete().in('id', ids);
   if (error) throw new Error(error.message);
@@ -161,7 +161,7 @@ export async function deleteProductsByIds(ids: number[]) {
 export type UpdateProductInput =
   Partial<Omit<CreateProductInput, 'file'>> & { file?: File | null };
 
-export async function updateProduct(id: number, v: UpdateProductInput): Promise<ProductsRow> {
+export async function updateProduct(id: string, v: UpdateProductInput): Promise<ProductsRow> {
   const payload: ProductsUpdate = {};
 
   if (v.name !== undefined) payload.name = v.name;
@@ -176,39 +176,46 @@ export async function updateProduct(id: number, v: UpdateProductInput): Promise<
   if (v.date !== undefined) payload.date = v.date;
 
   if (v.revisionDate !== undefined) {
-    (payload as unknown as { revision_date?: string | null }).revision_date = toNull(v.revisionDate);
+    (payload as unknown as { revision_date?: string | null }).revision_date =
+      toNull(v.revisionDate);
   }
 
-  // Kg/m öncelikli, yoksa G/m (geriye uyumluluk)
   if (v.unitWeightKg !== undefined) {
-    const gpm = kgToGrSafe(v.unitWeightKg);
-    payload.unit_weight_g_pm = gpm == null ? 0 : gpm;
+    const gpm = kgToGrSafe(v.unitWeightKg ?? null);
+    (payload as any).unit_weight_g_pm = gpm == null ? 0 : gpm;
   } else if (v.unitWeightG !== undefined) {
-    payload.unit_weight_g_pm = v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG));
+    (payload as any).unit_weight_g_pm =
+      v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG));
   }
 
-  if (v.drawer !== undefined)           payload.drawer = toNull(v.drawer);
-  if (v.control !== undefined)          payload.control = toNull(v.control);
-  if (v.scale !== undefined)            payload.scale = toNull(v.scale);
-  if (v.outerSizeMm !== undefined)      payload.outer_size_mm = v.outerSizeMm ?? null;
-  if (v.sectionMm2 !== undefined)       payload.section_mm2 = v.sectionMm2 ?? null;
+  if (v.drawer !== undefined)      payload.drawer = toNull(v.drawer);
+  if (v.control !== undefined)     payload.control = toNull(v.control);
+  if (v.scale !== undefined)       payload.scale = toNull(v.scale);
+  if (v.outerSizeMm !== undefined) payload.outer_size_mm = v.outerSizeMm ?? null;
+  if (v.sectionMm2 !== undefined)  payload.section_mm2 = v.sectionMm2 ?? null;
+
+  // YENİ: et kalınlığı güncelle
+  if (v.wallThicknessMm !== undefined) {
+    (payload as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
+      v.wallThicknessMm ?? null;
+  }
+
   if (v.tempCode !== undefined)         payload.temp_code = toNull(v.tempCode);
   if (v.manufacturerCode !== undefined) payload.manufacturer_code = toNull(v.manufacturerCode);
 
   if (v.image !== undefined) payload.image = v.image ?? null;
 
   if (v.hasCustomerMold !== undefined) {
-    payload.has_customer_mold = v.hasCustomerMold;
+    (payload as any).has_customer_mold = v.hasCustomerMold;
   }
 
   if (v.availability !== undefined) payload.availability = v.availability;
 
-  // Signed upload metadata geldiyse güncelle
-  if (v.fileBucket !== undefined) payload.file_bucket = v.fileBucket;
-  if (v.filePath !== undefined)   payload.file_path   = v.filePath;
-  if (v.fileName !== undefined)   payload.file_name   = v.fileName;
-  if (v.fileMime !== undefined)   payload.file_mime   = v.fileMime;
-  if (v.fileSize !== undefined)   payload.file_size   = v.fileSize;
+  if (v.fileBucket !== undefined) payload.file_bucket = v.fileBucket ?? null;
+  if (v.filePath !== undefined)   payload.file_path   = v.filePath ?? null;
+  if (v.fileName !== undefined)   payload.file_name   = v.fileName ?? null;
+  if (v.fileMime !== undefined)   payload.file_mime   = v.fileMime ?? null;
+  if (v.fileSize !== undefined)   payload.file_size   = v.fileSize ?? null;
 
   if (v.description !== undefined) payload.description = toNull(v.description);
 

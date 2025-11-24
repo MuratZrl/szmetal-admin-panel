@@ -23,6 +23,13 @@ type WithFileFields = {
   code: string;         // formunda varsa
   image: string;        // DB’ye yazacağın storage path
   file: File | null;    // seçilen dosya
+
+  // metadata alanları
+  fileBucket?: string | null;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileMime?: string | null;
+  fileSize?: number | null;
 };
 
 type SignedUploadRes = {
@@ -68,7 +75,7 @@ function getSB(): SupabaseClient<Database> {
     __sb__ = createClient<Database>(url, anon, {
       auth: {
         detectSessionInUrl: false,
-        persistSession: true,    // JWT sakla, gerekirse RLS görsün
+        persistSession: true,
         autoRefreshToken: true,
       },
     });
@@ -130,7 +137,7 @@ async function uploadWithSignedUrl(file: File, dir: string): Promise<{
 
 export function useProductUpload<T extends WithFileFields & FieldValues>(
   methods: UseFormReturn<T>,
-  dir: string // ← ürün klasörü (örn: ürün id)
+  dir: string
 ) {
   const { show } = useSnackbar();
   const { setValue } = methods;
@@ -153,7 +160,7 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
         shouldValidate: validate,
       });
     },
-    [setValue]
+    [setValue],
   );
 
   const setFile = React.useCallback(
@@ -162,8 +169,16 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
         shouldDirty: true,
       });
     },
-    [setValue]
+    [setValue],
   );
+
+  const clearMeta = React.useCallback(() => {
+    setValue('fileBucket' as FieldPath<T>, null as any, { shouldDirty: true });
+    setValue('filePath' as FieldPath<T>, null as any, { shouldDirty: true });
+    setValue('fileName' as FieldPath<T>, null as any, { shouldDirty: true });
+    setValue('fileMime' as FieldPath<T>, null as any, { shouldDirty: true });
+    setValue('fileSize' as FieldPath<T>, null as any, { shouldDirty: true });
+  }, [setValue]);
 
   const pick = React.useCallback(
     async (file?: File | null) => {
@@ -184,20 +199,24 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
 
       setUploading(true);
       try {
-        // Önce önceki yükleme varsa temizle
         if (uploadedRef) {
-          try { await removeUploaded(uploadedRef); } catch {}
+          try {
+            await removeUploaded(uploadedRef);
+          } catch {}
           setUploadedRef(null);
         }
 
-        // Server’dan token al ve yükle
         const { bucket, path, kind: resolvedKind } = await uploadWithSignedUrl(file, dir);
 
-        // Form alanlarını güncelle
-        setImage(path, true); // DB’ye yazılacak değer
+        setImage(path, true);
         setFile(file);
 
-        // UI state
+        setValue('fileBucket' as FieldPath<T>, bucket as any, { shouldDirty: true });
+        setValue('filePath' as FieldPath<T>, path as any, { shouldDirty: true });
+        setValue('fileName' as FieldPath<T>, file.name as any, { shouldDirty: true });
+        setValue('fileMime' as FieldPath<T>, (file.type || null) as any, { shouldDirty: true });
+        setValue('fileSize' as FieldPath<T>, (file.size ?? null) as any, { shouldDirty: true });
+
         setFileMeta({ name: file.name, kind: resolvedKind });
         setUploadedRef({ bucket, path });
 
@@ -209,7 +228,7 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
         setUploading(false);
       }
     },
-    [classify, uploadedRef, setImage, setFile, show, dir]
+    [classify, uploadedRef, setImage, setFile, setValue, show, dir],
   );
 
   const openDelete = React.useCallback(() => setConfirmOpen(true), []);
@@ -221,6 +240,7 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
       setUploadedRef(null);
       setFileMeta(null);
       setFile(null);
+      clearMeta();
       setImage('', true);
       show('Dosya silindi.', 'success');
     } catch (err) {
@@ -229,7 +249,7 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
     } finally {
       setConfirmOpen(false);
     }
-  }, [uploadedRef, setFile, setImage, show]);
+  }, [uploadedRef, setFile, clearMeta, setImage, show]);
 
   return {
     uploading,
@@ -243,5 +263,4 @@ export function useProductUpload<T extends WithFileFields & FieldValues>(
   };
 }
 
-/* Default export: isim esnekliği için */
 export default useProductUpload;

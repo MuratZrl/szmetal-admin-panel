@@ -40,6 +40,7 @@ export default function ProductsToolbar({ perms, totalCount }: Props) {
           <Typography variant="h5" component="h2">
             Profilleri Listele
           </Typography>
+          
           <Typography
             variant="subtitle2"
             color="text.secondary"

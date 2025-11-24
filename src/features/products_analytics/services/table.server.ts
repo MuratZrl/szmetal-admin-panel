@@ -39,7 +39,7 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
           availability
         `,
       )
-      .order('id', { ascending: true }),
+      .order('code', { ascending: true }),
     fetchProductDicts(),
   ]);
 
@@ -98,71 +98,68 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
     }
   }
 
-  const mapped: ProductAnalyticsRow[] = rows
-    .filter((row) => typeof row.id === 'number')
-    .map((row) => {
-      const variantKey =
-        typeof row.variant === 'string'
-          ? row.variant.trim()
-          : row.variant != null
-          ? String(row.variant)
-          : '';
+  const mapped: ProductAnalyticsRow[] = rows.map((row) => {
+    const variantKey =
+      typeof row.variant === 'string'
+        ? row.variant.trim()
+        : row.variant != null
+        ? String(row.variant)
+        : '';
 
-      const categoryKeyRaw =
-        typeof row.category === 'string'
-          ? row.category.trim()
-          : row.category != null
-          ? String(row.category)
-          : '';
+    const categoryKeyRaw =
+      typeof row.category === 'string'
+        ? row.category.trim()
+        : row.category != null
+        ? String(row.category)
+        : '';
 
-      const subCategoryKeyRaw =
-        typeof row.sub_category === 'string'
-          ? row.sub_category.trim()
-          : row.sub_category != null
-          ? String(row.sub_category)
-          : '';
+    const subCategoryKeyRaw =
+      typeof row.sub_category === 'string'
+        ? row.sub_category.trim()
+        : row.sub_category != null
+        ? String(row.sub_category)
+        : '';
 
-      // "_" -> "-" normalize et, hem normalize hem raw ile map dene
-      const categoryKeyNorm = categoryKeyRaw.replace(/_/g, '-');
-      const subCategoryKeyNorm = subCategoryKeyRaw.replace(/_/g, '-');
+    const categoryKeyNorm = categoryKeyRaw.replace(/_/g, '-');
+    const subCategoryKeyNorm = subCategoryKeyRaw.replace(/_/g, '-');
 
-      const variantLabel =
-        (variantKey && variantLabelByKey[variantKey]) ||
-        humanizeFallback(variantKey);
+    const variantLabel =
+      (variantKey && variantLabelByKey[variantKey]) ||
+      humanizeFallback(variantKey);
 
-      const categoryLabel =
-        (categoryKeyNorm && categoryLabelBySlug[categoryKeyNorm]) ||
-        (categoryKeyRaw && categoryLabelBySlug[categoryKeyRaw]) ||
-        humanizeFallback(categoryKeyRaw);
+    const categoryLabel =
+      (categoryKeyNorm && categoryLabelBySlug[categoryKeyNorm]) ||
+      (categoryKeyRaw && categoryLabelBySlug[categoryKeyRaw]) ||
+      humanizeFallback(categoryKeyRaw);
 
-      const subCategoryLabel =
-        (subCategoryKeyNorm &&
-          subcategoryLabelBySlug[subCategoryKeyNorm]) ||
-        (subCategoryKeyRaw &&
-          subcategoryLabelBySlug[subCategoryKeyRaw]) ||
-        humanizeFallback(subCategoryKeyRaw);
+    const subCategoryLabel =
+      (subCategoryKeyNorm &&
+        subcategoryLabelBySlug[subCategoryKeyNorm]) ||
+      (subCategoryKeyRaw &&
+        subcategoryLabelBySlug[subCategoryKeyRaw]) ||
+      humanizeFallback(subCategoryKeyRaw);
 
-      return {
-        id: row.id as number,
-        code: row.code ?? '',
-        name: row.name ?? '',
-        variant: variantLabel,
-        category: categoryLabel,
-        sub_category: subCategoryLabel,
-        unit_weight_g_pm:
-          typeof row.unit_weight_g_pm === 'number'
-            ? row.unit_weight_g_pm
-            : null,
-        has_customer_mold:
-          typeof row.has_customer_mold === 'boolean'
-            ? row.has_customer_mold
-            : null,
-        availability:
-          typeof row.availability === 'boolean'
-            ? row.availability
-            : null,
-      };
-    });
+    return {
+      id: row.id, // uuid string
+      code: row.code ?? '',
+      name: row.name ?? '',
+      variant: variantLabel,
+      category: categoryLabel,
+      sub_category: subCategoryLabel,
+      unit_weight_g_pm:
+        typeof row.unit_weight_g_pm === 'number'
+          ? row.unit_weight_g_pm
+          : null,
+      has_customer_mold:
+        typeof row.has_customer_mold === 'boolean'
+          ? row.has_customer_mold
+          : null,
+      availability:
+        typeof row.availability === 'boolean'
+          ? row.availability
+          : null,
+    };
+  });
 
   return mapped;
 }

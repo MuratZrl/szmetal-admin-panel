@@ -4,7 +4,10 @@ import type { Database } from '@/types/supabase';
 /* -----------------------------------------------------------------------------
  * 1) Ortak sözlük tipleri
  * ---------------------------------------------------------------------------*/
-export type CategoryTree = Record<string, { name: string; subs: { slug: string; name: string }[] }>;
+export type CategoryTree = Record<
+  string,
+  { name: string; subs: { slug: string; name: string }[] }
+>;
 
 export type VariantOption = { key: string; name: string };
 
@@ -36,7 +39,7 @@ export type ProductFilters = {
   to?: string;                  // yyyy-mm-dd
   sort?: ProductSort;
   customerMold?: CustomerMoldValue[];
-  availability?: boolean; // true=Kullanılabilir, false=Kullanılamaz
+  availability?: boolean;       // true=Kullanılabilir, false=Kullanılamaz
 };
 
 export type Pagination = {
@@ -53,7 +56,8 @@ export type ProductUpdate = Database['public']['Tables']['products']['Update'];
 
 /** UI tarafında kullanılan normalize edilmiş ürün modeli */
 export type Product = {
-  id: number;
+  /** Artık uuid (string) */
+  id: string;
   code: string;
   name: string;
   variant: ProductRow['variant'];
@@ -81,6 +85,10 @@ export type Product = {
   scale: string | null;
   outerSizeMm: number | null;
   sectionMm2: number | null;
+
+  /** Et kalınlığı (mm cinsinden, örn: 4, 5) */
+  wallThicknessMm: number | null;
+
   tempCode: string | null;
   manufacturerCode: string | null;
 
@@ -109,10 +117,15 @@ export type Product = {
 /** Supabase Row -> UI Product */
 export function mapRowToProduct(r: ProductRow): Product {
   // DB tipleri henüz 'revision_date' içermeyebilir; güvenli okuma:
-  const rdx = (r as unknown as { revision_date?: string | null }).revision_date ?? '';
+  const rdx =
+    (r as unknown as { revision_date?: string | null }).revision_date ?? '';
+
+  // DB tipleri henüz 'wall_thickness_mm' içermeyebilir; güvenli okuma:
+  const wallThickness =
+    (r as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm ?? null;
 
   return {
-    id: r.id,
+    id: String(r.id),
     code: r.code,
     name: r.name,
     variant: r.variant,
@@ -130,6 +143,8 @@ export function mapRowToProduct(r: ProductRow): Product {
     scale: r.scale ?? null,
     outerSizeMm: r.outer_size_mm ?? null,
     sectionMm2: r.section_mm2 ?? null,
+    wallThicknessMm: wallThickness,
+
     tempCode: r.temp_code ?? null,
     manufacturerCode: r.manufacturer_code ?? null,
 
@@ -161,7 +176,8 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
 
   // DB tipleri henüz 'revision_date' içermese bile sorunsuz set edelim:
   if (patch.revisionDate !== undefined) {
-    (out as unknown as { revision_date?: string | null }).revision_date = patch.revisionDate;
+    (out as unknown as { revision_date?: string | null }).revision_date =
+      patch.revisionDate;
   }
 
   if (patch.image !== undefined) out.image = patch.image;
@@ -174,6 +190,12 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   if (patch.scale !== undefined) out.scale = patch.scale;
   if (patch.outerSizeMm !== undefined) out.outer_size_mm = patch.outerSizeMm;
   if (patch.sectionMm2 !== undefined) out.section_mm2 = patch.sectionMm2;
+
+  if (patch.wallThicknessMm !== undefined) {
+    (out as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
+      patch.wallThicknessMm;
+  }
+
   if (patch.tempCode !== undefined) out.temp_code = patch.tempCode;
   if (patch.manufacturerCode !== undefined) out.manufacturer_code = patch.manufacturerCode;
 

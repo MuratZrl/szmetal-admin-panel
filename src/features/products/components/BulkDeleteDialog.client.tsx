@@ -12,23 +12,19 @@ type Props = { open: boolean; onClose: () => void };
 export default function BulkDeleteDialog({ open, onClose }: Props) {
   const router = useRouter();
   const { selected, clear } = useProductsSelection();
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loading, setLoading] = React.useState(false);
 
-  // Eğer selected: Set<number> ise bu satır yeterli:
-  const ids = React.useMemo<number[]>(() => Array.from(selected), [selected]);
-
-  // Eğer selected aslında Set<string> ise yukarıdakini şuna değiştir:
-  // const ids = React.useMemo<number[]>(
-  //   () => Array.from(selected).map((v) => Number(v)).filter(Number.isFinite),
-  //   [selected]
-  // );
+  // selected: Set<string> (uuid) olduğu için string[] olarak çıkarıyoruz
+  const ids = React.useMemo<string[]>(() => Array.from(selected), [selected]);
 
   const count = ids.length;
 
   const handleConfirm = async () => {
+    if (count === 0) return;
+
     setLoading(true);
     try {
-      await deleteProductsByIds(ids); // deleteProductsByIds: number[] bekliyor
+      await deleteProductsByIds(ids); // deleteProductsByIds artık string[] almalı
       clear();
       onClose();
       router.refresh();

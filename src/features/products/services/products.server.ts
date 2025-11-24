@@ -38,15 +38,6 @@ type ProductUpdate = Database['public']['Tables']['products']['Update'];
 const clampPage = (v: number) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 1);
 
 /**
- * parseNumericId:
- *   ID kimi yerlerde string, kimi yerlerde number olarak gelebilir.
- *   Bu yardımcı her durumda number'a çevirip tek formatta kullanmayı sağlar.
- */
-function parseNumericId(id: string | number): number {
-  return typeof id === 'string' ? Number(id) : id;
-}
-
-/**
  * asUpdateParam:
  *   Supabase update çağrısına verilecek patch objesini,
  *   "Update" tipinin Supabase infer'ları ile uyuşmadığı durumlarda
@@ -66,21 +57,20 @@ function asUpdateParam(u: ProductUpdate) {
 
 /**
  * fetchProductById:
- *   Verilen id'ye sahip ürünü döndürür.
+ *   Verilen uuid id'ye sahip ürünü döndürür.
  *   - Bulunamazsa null
  *   - Supabase hatasında da null
- *
- * Kullanım: Detay sayfası, düzenleme formu gibi yerlerde,
- * sadece id üzerinden ürün çekmek için.
  */
-export async function fetchProductById(id: string | number): Promise<ProductsRow | null> {
+export async function fetchProductById(id: string): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
-  const pid = parseNumericId(id);
+
+  const val = id.trim();
+  if (!val) return null;
 
   const { data, error } = await sb
     .from('products')
     .select('*')
-    .eq('id', pid)
+    .eq('id', val)
     .maybeSingle();
 
   if (error) return null;
@@ -123,34 +113,30 @@ export async function fetchProductByCode(code: string): Promise<ProductsRow | nu
  * fetchProductByKey:
  *   Tek bir "key" üzerinden ürünü çözmeye çalışan çok amaçlı helper.
  *
- * Çözüm sırası:
- *   1) key number ise doğrudan id
- *   2) key string ise, sayıya parse edilebiliyorsa id olarak denenir
- *   3) code kolonu üzerinden arama
- *   4) manufacturer_code kolonu üzerinden arama
- *   5) temp_code kolonu üzerinden arama
+ * Çözüm sırası (uuid'e göre güncellendi):
+ *   1) key string'e çevrilip id (uuid) olarak denenir
+ *   2) code kolonu üzerinden arama
+ *   3) manufacturer_code kolonu üzerinden arama
+ *   4) temp_code kolonu üzerinden arama
  *
  * Kısaca: kullanıcının elindeki tek bilgi ile ürünü bulmaya çalışır.
  */
 export async function fetchProductByKey(key: string | number): Promise<ProductsRow | null> {
-  if (typeof key === 'number') return fetchProductById(key);
-
-  const raw = key.trim();
+  const raw = String(key).trim();
   if (!raw) return null;
 
-  // "123" gibi saf sayısal string'ler önce id olarak denenir
-  const asNumber = Number(raw);
-  if (Number.isFinite(asNumber) && String(asNumber) === raw) {
-    return fetchProductById(asNumber);
-  }
+  // 1) id (uuid) olarak dene
+  const byId = await fetchProductById(raw);
+  if (byId) return byId;
 
-  // 1) code
+  // 2) code
   const byCode = await fetchProductByCode(raw);
   if (byCode) return byCode;
 
-  // 2) manufacturer_code
+  const sb = await createSupabaseServerClient();
+
+  // 3) manufacturer_code
   {
-    const sb = await createSupabaseServerClient();
     const { data } = await sb
       .from('products')
       .select('*')
@@ -159,9 +145,8 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
     if (data) return data as ProductsRow;
   }
 
-  // 3) temp_code
+  // 4) temp_code
   {
-    const sb = await createSupabaseServerClient();
     const { data } = await sb
       .from('products')
       .select('*')
@@ -180,7 +165,7 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
 
 /**
  * updateProduct:
- *   Verilen id'li ürünü, UI'den gelen patch ile günceller.
+ *   Verilen uuid id'li ürünü, UI'den gelen patch ile günceller.
  *
  * Akış:
  *   1) UI patch -> mapProductPatchToRow ile DB patch'e çevrilir
@@ -192,11 +177,10 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
  *   - Kayıt bulunamazsa "Product not found" hatası fırlatılır
  */
 export async function updateProduct(
-  id: number | string,
+  id: string,
   patch: Parameters<typeof mapProductPatchToRow>[0],
 ) {
   const sb = await createSupabaseRouteClient();
-  const pid = parseNumericId(id);
 
   // UI -> DB patch (hala g/m cinsinden gibi alan dönüşümleri burada yapılır)
   const dbPatch: ProductUpdate = mapProductPatchToRow(patch) as ProductUpdate;
@@ -204,7 +188,7 @@ export async function updateProduct(
   const { data, error } = await sb
     .from('products')
     .update(asUpdateParam(dbPatch))
-    .eq('id', pid)
+    .eq('id', id)
     .select('*')
     .maybeSingle();
 
@@ -404,10 +388,6 @@ export async function fetchFilteredProducts(
 
   return { items, total, page, pageSize, pageCount };
 }
-
-
-
-
 
 
 

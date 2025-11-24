@@ -24,7 +24,16 @@ import ProductFormFields from '@/features/products/components/form/GeneralProduc
 import NotesField from '@/features/products/components/form/NotesField.client';
 
 type Props = { dicts: ProductDicts };
-type CreateValues = ProductFormValues & { file: File | null };
+
+// Form tipi: file + metadata alanları
+type CreateValues = ProductFormValues & {
+  file: File | null;
+  fileBucket?: string | null;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileMime?: string | null;
+  fileSize?: number | null;
+};
 
 // Güvenli, tekrar kullanılabilir geçici klasör ismi
 function makeDraftDir(): string {
@@ -47,7 +56,15 @@ export default function ProductCreateForm({ dicts }: Props) {
     resolver: yupResolver(productSchema) as unknown as Resolver<CreateValues>,
     mode: 'onSubmit',
     reValidateMode: 'onChange',
-    defaultValues: { ...newProductDefaults, file: null },
+    defaultValues: {
+      ...newProductDefaults,
+      file: null,
+      fileBucket: null,
+      filePath: null,
+      fileName: null,
+      fileMime: null,
+      fileSize: null,
+    },
   });
 
   const {
@@ -57,17 +74,19 @@ export default function ProductCreateForm({ dicts }: Props) {
 
   async function onSubmit(v: CreateValues): Promise<void> {
     try {
-      // kg/m öncelik; geriye uyumluluk için g/m’yi de ver
-      const payload = {
+      const payload: Parameters<typeof createProduct>[0] = {
         name: v.name,
         code: v.code,
         variant: v.variant,
         category: v.category,
         subCategory: v.subCategory,
 
+        // kg/m → g/m de geriye uyumluluk için
         unitWeightKg: v.unitWeightKg,
         unitWeightG:
-          v.unitWeightKg == null ? null : Math.round(Number(v.unitWeightKg) * 1000),
+          v.unitWeightKg == null
+            ? null
+            : Math.round(Number(v.unitWeightKg) * 1000),
 
         date: v.date,
         drawer: v.drawer || undefined,
@@ -75,14 +94,26 @@ export default function ProductCreateForm({ dicts }: Props) {
         scale: v.scale || undefined,
         outerSizeMm: v.outerSizeMm ?? undefined,
         sectionMm2: v.sectionMm2 ?? undefined,
+        // YENİ: et kalınlığı create’e de gönder
+        wallThicknessMm: v.wallThicknessMm ?? undefined,
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
+
+        // useProductUpload image alanına storage path yazıyor
         image: v.image || null,
+
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability ?? true,
-        file: v.file ?? null,
+
+        // Metadata: useProductUpload’tan gelenler
+        fileBucket: v.fileBucket ?? null,
+        filePath: v.filePath ?? null,
+        fileName: v.fileName ?? null,
+        fileMime: v.fileMime ?? null,
+        fileSize: v.fileSize ?? null,
+
         description: v.description || null,
-      } as unknown as Parameters<typeof createProduct>[0];
+      };
 
       await createProduct(payload);
 

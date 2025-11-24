@@ -2,7 +2,7 @@
 import type { GridColDef } from '@mui/x-data-grid';
 
 export type ProductAnalyticsRow = {
-  id: number;
+  id: string;
   code: string;
   name: string;
   variant: string | null;

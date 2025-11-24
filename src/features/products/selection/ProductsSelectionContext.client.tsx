@@ -1,21 +1,28 @@
 // src/features/products/selection/ProductsSelectionContext.client.tsx
 'use client';
+
 import * as React from 'react';
 
-type Ctx = {
-  selected: Set<number>;
-  isSelected: (id: number) => boolean;
-  toggle: (id: number) => void;
+type ProductId = string;
+
+type ProductsSelectionContextValue = {
+  selected: Set<ProductId>;
+  isSelected: (id: ProductId) => boolean;
+  toggle: (id: ProductId) => void;
   clear: () => void;
   count: number;
 };
 
-const Ctx = React.createContext<Ctx | null>(null);
+const ProductsSelectionContext = React.createContext<ProductsSelectionContextValue | null>(null);
 
-export function ProductsSelectionProvider({ children }: { children: React.ReactNode }) {
-  const [selected, setSelected] = React.useState<Set<number>>(new Set());
+type ProviderProps = {
+  children: React.ReactNode;
+};
 
-  const toggle = React.useCallback((id: number) => {
+export function ProductsSelectionProvider({ children }: ProviderProps): React.JSX.Element {
+  const [selected, setSelected] = React.useState<Set<ProductId>>(new Set());
+
+  const toggle = React.useCallback((id: ProductId): void => {
     setSelected(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -27,19 +34,37 @@ export function ProductsSelectionProvider({ children }: { children: React.ReactN
     });
   }, []);
 
-  const clear = React.useCallback(() => setSelected(new Set()), []);
+  const clear = React.useCallback((): void => {
+    setSelected(new Set());
+  }, []);
 
-  const isSelected = React.useCallback((id: number) => selected.has(id), [selected]);
+  const isSelected = React.useCallback(
+    (id: ProductId): boolean => selected.has(id),
+    [selected],
+  );
 
-  const value = React.useMemo<Ctx>(() => ({
-    selected, isSelected, toggle, clear, count: selected.size,
-  }), [selected, toggle, clear, isSelected]);
+  const value = React.useMemo<ProductsSelectionContextValue>(
+    () => ({
+      selected,
+      isSelected,
+      toggle,
+      clear,
+      count: selected.size,
+    }),
+    [selected, isSelected, toggle, clear],
+  );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <ProductsSelectionContext.Provider value={value}>
+      {children}
+    </ProductsSelectionContext.Provider>
+  );
 }
 
-export function useProductsSelection() {
-  const v = React.useContext(Ctx);
-  if (!v) throw new Error('useProductsSelection must be used within ProductsSelectionProvider');
+export function useProductsSelection(): ProductsSelectionContextValue {
+  const v = React.useContext(ProductsSelectionContext);
+  if (!v) {
+    throw new Error('useProductsSelection must be used within ProductsSelectionProvider');
+  }
   return v;
 }

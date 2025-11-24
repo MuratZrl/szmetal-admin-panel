@@ -137,6 +137,7 @@ function DetailsTable({ rows }: { rows: Array<[DetailItem, DetailItem | null]> }
 
             return (
               <TableRow key={idx}>
+                
                 {/* Sol etiket */}
                 <TableCell
                   component="th"
@@ -424,7 +425,7 @@ export default function ProductInfo(props: ProductInfoProps) {
           <DetailsTable rows={rows} />
 
           {/* Notlar (chip kutusu görünümü) — HER ZAMAN GÖRÜNÜR, boşsa “Yok” */}
-          <NotesMessageBox text={description} />
+          {/* <NotesMessageBox text={description} /> */}
 
           {children ? <Box sx={{ pt: 1 }}>{children}</Box> : null}
         </Stack>

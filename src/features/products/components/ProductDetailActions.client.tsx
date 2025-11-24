@@ -2,18 +2,18 @@
 'use client';
 
 import React from 'react';
+import type { Route } from 'next';
 import Link from '@/components/Link';
+
 import { Stack, Button } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { productCanonicalPath } from '@/features/products/utils/url';
-import type { Route } from 'next';
 
 type Props = {
   id: string;
   canEdit: boolean;
-  /** Prefer profileCode; else code; else id. */
+  // İstersen gösterimde kullanırsın, routing için artık gerekmiyor
   profileCode?: string | null;
   code?: string | null;
 };
@@ -31,12 +31,12 @@ function safeInternalPath(input: string | null): string | null {
   if (/^(https?:)?\/\//i.test(p)) return null;
   if (!p.startsWith('/')) return null;
   const ok = ALLOWED_PREFIXES.some(base =>
-    p === base || p.startsWith(base + '/') || p.startsWith(base + '?')
+    p === base || p.startsWith(base + '/') || p.startsWith(base + '?'),
   );
   return ok ? p : null;
 }
 
-export default function ProductDetailActions({ id, canEdit, profileCode, code }: Props) {
+export default function ProductDetailActions({ id, canEdit }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -44,11 +44,10 @@ export default function ProductDetailActions({ id, canEdit, profileCode, code }:
   const safeFrom = safeInternalPath(rawFrom);
   const fallbackHref = (safeFrom ?? '/products') as unknown as Route;
 
-  const baseHref = productCanonicalPath({
-    id: Number.isFinite(Number(id)) ? Number(id) : 0,
-    profileCode: profileCode ?? null,
-    code: code ?? '',
-  });
+  // Routing her zaman uuid id üzerinden
+  const cleanId = id.trim();
+  const baseHref = `/products/${encodeURIComponent(cleanId)}` as `/products/${string}`;
+  const editHref = `${baseHref}/edit` as Route;
 
   const handleBack = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -61,12 +60,17 @@ export default function ProductDetailActions({ id, canEdit, profileCode, code }:
   };
 
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ width: '100%' }}>
-
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      spacing={1}
+      sx={{ width: '100%' }}
+    >
       <Button
         onClick={handleBack}
         variant="outlined"
-        color='contrast'
+        color="contrast"
         startIcon={<ArrowBackIcon />}
         draggable={false}
         sx={{ textTransform: 'capitalize' }}
@@ -78,9 +82,9 @@ export default function ProductDetailActions({ id, canEdit, profileCode, code }:
       {canEdit && (
         <Button
           component={Link}
-          href={`${baseHref}/edit`}
+          href={editHref}
           variant="text"
-          color='contrast'
+          color="contrast"
           endIcon={<EditIcon />}
           draggable={false}
           sx={{ textTransform: 'capitalize' }}
@@ -88,7 +92,6 @@ export default function ProductDetailActions({ id, canEdit, profileCode, code }:
           Profili Düzenle
         </Button>
       )}
-      
     </Stack>
   );
 }

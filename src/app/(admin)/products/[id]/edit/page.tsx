@@ -1,26 +1,29 @@
-// app/(admin)/products/[code]/edit/page.tsx
+// app/(admin)/products/[id]/edit/page.tsx
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+
 import { Box, Grid, Divider, Typography } from '@mui/material';
 
 import { requirePageAccess } from '@/lib/supabase/auth/server';
-import { fetchProductByCode } from '@/features/products/services/products.server';
+import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import ProductEditForm from '@/features/products/components/form/ProductEditForm.client';
 import { mapRowToForm } from '@/features/products/forms/mappers';
+
 import type { Database } from '@/types/supabase';
 
 type ProductsRow = Database['public']['Tables']['products']['Row'];
-type Props = { params: Promise<{ code: string }> };
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await requirePageAccess('products');
-  const { code } = await params;
-  const row = await fetchProductByCode(code);
+  
+  const { id } = await params;
+  const row = await fetchProductById(id);
   return { title: row ? `${row.code} — Düzenle` : 'Ürün bulunamadı' };
 }
 
@@ -30,18 +33,18 @@ export default async function EditProductPage({ params }: Props) {
     redirect('/unauthorized');
   }
 
-  const { code } = await params;
+  const { id } = await params;
 
   const [row, dicts] = await Promise.all([
-    fetchProductByCode(code),
+    fetchProductById(id),
     fetchProductDicts(),
   ]);
 
   if (!row) notFound();
 
-  // KANONİK ZORLAMA: /products/{code}/edit
-  const canonical = `/products/${encodeURIComponent(row.code)}` as const;
-  const here = `/products/${code}/edit`;
+  // KANONİK ZORLAMA: /products/{id}/edit
+  const canonical = `/products/${encodeURIComponent(String(row.id))}` as const;
+  const here = `/products/${id}/edit`;
   const want = `${canonical}/edit` as `/products/${string}/edit`;
   if (here !== want) {
     redirect(want);

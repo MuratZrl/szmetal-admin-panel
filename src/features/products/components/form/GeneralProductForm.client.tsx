@@ -1,4 +1,4 @@
-// src/features/products/components/form/ProductFormFields.tsx
+// src/features/products/components/form/GeneralProductForm.tsx
 'use client';
 
 import * as React from 'react';
@@ -89,7 +89,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
   });
 
   /* ------------------------------ DOSYA PICKER FIX ------------------------------ */
-
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const openPicker = React.useCallback(() => {
@@ -99,14 +98,19 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
     el.click();
   }, []);
 
-  const [pickerKey, bumpPickerKey] = React.useReducer((n: number) => (n + 1) % 1_000_000, 0);
+  const [pickerKey, bumpPickerKey] = React.useReducer(
+    (n: number) => (n + 1) % 1_000_000,
+    0,
+  );
 
   const handleConfirmDelete = React.useCallback(async () => {
     await up.confirmDelete();
     if (fileInputRef.current) {
       try {
         fileInputRef.current.value = '';
-      } catch {}
+      } catch {
+        // boş
+      }
     }
     bumpPickerKey();
   }, [up]);
@@ -126,6 +130,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
     const d = dayjs(v);
     return d.isValid() ? d : null;
   }, []);
+
   const toIso = React.useCallback((d: Dayjs | null): string => {
     return d ? d.format('YYYY-MM-DD') : '';
   }, []);
@@ -134,7 +139,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
       <Box sx={[{ mt: 0 }, dimPlaceholderSx]}>
         <Grid container spacing={2}>
-          
+
           {/* 1. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
@@ -177,7 +182,10 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                     const prev = (field.value as string | undefined) ?? '';
                     field.onChange(next);
                     if (prev !== next) {
-                      setValue('subCategory', '', { shouldValidate: true, shouldDirty: true });
+                      setValue('subCategory', '', {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      });
                     }
                   }}
                   InputLabelProps={{ shrink: true }}
@@ -202,8 +210,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               )}
             />
           </Grid>
-
-          {/* 3. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="subCategory"
@@ -232,7 +238,10 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                     if (!cat && val) {
                       const owner = findOwnerCategory(val);
                       if (owner) {
-                        setValue('category', owner, { shouldValidate: true, shouldDirty: true });
+                        setValue('category', owner, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
                       }
                     }
                   }}
@@ -252,7 +261,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
-          {/* Varyant: Varsayılan "Yok" */}
+          {/* 3. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="variant"
@@ -292,8 +301,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               }}
             />
           </Grid>
-
-          {/* KG/M GİRİŞİ */}
           <Grid size={{ xs: 12, md: 6 }}>
             <NumberField<FormType, 'unitWeightKg'>
               name="unitWeightKg"
@@ -303,7 +310,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
-          {/* Tarih */}
+          {/* 4. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="date"
@@ -329,8 +336,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               )}
             />
           </Grid>
-
-          {/* Revizyon Tarihi */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="revisionDate"
@@ -357,7 +362,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
-          {/* 6. Satır */}
+          {/* 5. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="customerMold"
@@ -371,7 +376,9 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   fullWidth
                   required
                   value={(field.value ?? 'Hayır') as CustomerMoldSelect}
-                  onChange={(e) => field.onChange(e.target.value as CustomerMoldSelect)}
+                  onChange={(e) =>
+                    field.onChange(e.target.value as CustomerMoldSelect)
+                  }
                   InputLabelProps={{ shrink: true }}
                   error={!!errors.customerMold}
                   helperText={toHelper(errors.customerMold?.message)}
@@ -382,7 +389,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               )}
             />
           </Grid>
-
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="availability"
@@ -398,7 +404,8 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   onChange={(e) => field.onChange(e.target.value === 'true')}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{
-                    renderValue: (v) => (v === 'true' ? 'Kullanılabilir' : 'Kullanılamaz'),
+                    renderValue: (v) =>
+                      v === 'true' ? 'Kullanılabilir' : 'Kullanılamaz',
                   }}
                   error={!!errors.availability}
                   helperText={toHelper(errors.availability?.message)}
@@ -410,6 +417,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* 6. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Çizen"
@@ -420,8 +428,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               error={!!errors.drawer}
             />
           </Grid>
-
-          {/* 5. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Kontrol"
@@ -433,6 +439,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
 
+          {/* 7. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Ölçek"
@@ -443,8 +450,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               error={!!errors.scale}
             />
           </Grid>
-
-          {/* 7. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <NumberField<FormType, 'outerSizeMm'>
               name="outerSizeMm"
@@ -462,6 +467,15 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
+            <NumberField<FormType, 'wallThicknessMm'>
+              name="wallThicknessMm"
+              label="Et Kalınlığı"
+              endAdornmentText="mm"
+            />
+          </Grid>
+
+          {/* 9. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Üretici Kodu"
               fullWidth
@@ -471,7 +485,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               error={!!errors.manufacturerCode}
             />
           </Grid>
-
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Geçici Kod"
@@ -496,11 +509,22 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   onChange={(e) => up.pick(e.currentTarget.files?.[0] ?? null)}
                 />
 
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  justifyContent="flex-start"
+                >
                   <Button
                     variant="outlined"
                     color="contrast"
-                    startIcon={up.fileMeta?.kind === 'pdf' ? <PictureAsPdfIcon /> : <ImageIcon />}
+                    startIcon={
+                      up.fileMeta?.kind === 'pdf' ? (
+                        <PictureAsPdfIcon />
+                      ) : (
+                        <ImageIcon />
+                      )
+                    }
                     onClick={openPicker}
                     disabled={up.uploading || isSubmitting}
                     sx={{ textTransform: 'capitalize' }}
@@ -513,7 +537,11 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                     color="contrast"
                     startIcon={<DeleteOutlineIcon />}
                     onClick={up.openDelete}
-                    disabled={(!up.uploadedRef && !watch('image')) || up.uploading || isSubmitting}
+                    disabled={
+                      (!up.uploadedRef && !watch('image')) ||
+                      up.uploading ||
+                      isSubmitting
+                    }
                     sx={{ textTransform: 'capitalize' }}
                   >
                     Sil
@@ -528,7 +556,11 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   </Box>
                 </Stack>
 
-                {errors.image && <FormHelperText error>{toHelper(errors.image.message)}</FormHelperText>}
+                {errors.image && (
+                  <FormHelperText error>
+                    {toHelper(errors.image.message)}
+                  </FormHelperText>
+                )}
               </Box>
             </Grid>
           )}
@@ -545,7 +577,7 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               onConfirm={handleConfirmDelete}
             />
           </Grid>
-          
+
         </Grid>
       </Box>
     </LocalizationProvider>

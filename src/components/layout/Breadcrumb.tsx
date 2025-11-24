@@ -4,11 +4,15 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
 import { Breadcrumbs, Typography } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
-import { mainLinks } from '@/constants/mainlinks';
-import type { UrlObject } from 'url';
 import { alpha } from '@mui/material/styles';
+import HomeIcon from '@mui/icons-material/Home';
+
+import type { UrlObject } from 'url';
+
+import { mainLinks } from '@/constants/mainlinks';
+import { supabase } from '@/lib/supabase/supabaseClient';
 
 const formatBreadcrumb = (str: string) =>
   str
@@ -33,7 +37,7 @@ const getLabelFromMainLinks = (href: string, segmentRaw: string): string => {
   if (special) return special;
 
   // DİKKAT: /products/* altında ilk yaprak segment için "Detay" kullanmıyoruz.
-  // Buradaki fonksiyon genel; /products özelini forEach içinde ele alacağız.
+  // Buradaki fonksiyon genel; /products özelini forEach içinde ele alıyoruz.
   if (/^[a-zA-Z0-9_-]{6,}$/.test(segment)) return 'Detay';
 
   if (segment === 'step2') return 'Adım 2';
@@ -42,9 +46,56 @@ const getLabelFromMainLinks = (href: string, segmentRaw: string): string => {
   return formatBreadcrumb(segment);
 };
 
-export default function Breadcrumb() {
+export default function Breadcrumb(): React.JSX.Element {
   const pathname = usePathname();
-  const pathParts = React.useMemo(() => pathname.split('/').filter(Boolean), [pathname]);
+
+  const [productCode, setProductCode] = React.useState<string | null>(null);
+
+  // /products/:id veya /products/:id/edit için kodu çek
+  React.useEffect(() => {
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts[0] !== 'products' || parts.length < 2) {
+      setProductCode(null);
+      return;
+    }
+
+    const idSegment = parts[1];
+    const lower = idSegment.toLowerCase();
+
+    // /products/new, /products/create vs için fetch yapma
+    if (lower === 'new' || lower === 'create') {
+      setProductCode(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('code')
+        .eq('id', idSegment)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error || !data?.code) {
+        setProductCode(null);
+        return;
+      }
+
+      setProductCode(data.code);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const pathParts = React.useMemo(
+    () => pathname.split('/').filter(Boolean),
+    [pathname],
+  );
 
   const homeHref: UrlObject = { pathname: '/account' };
 
@@ -62,13 +113,13 @@ export default function Breadcrumb() {
     const hrefObj: UrlObject = { pathname: hrefStr };
     const isLast = index === pathParts.length - 1;
 
-    // /products/{leaf} durumunda leaf'i olduğu gibi göster
+    // /products/{id} durumunda, uuid yerine ürün kodunu göster
     const isProductsLeaf =
       parentHrefStr === '/products' &&
       !['new', 'create'].includes(part.toLowerCase());
 
     const label = isProductsLeaf
-      ? decodeURIComponent(part) // gerçek profileCode/kod göster
+      ? productCode ?? 'Ürün Detayı'
       : getLabelFromMainLinks(hrefStr, part);
 
     if (label === previousLabel) return;
@@ -107,9 +158,10 @@ export default function Breadcrumb() {
           textDecorationColor: alpha(theme.palette.primary.main, 0.5),
         }),
         '& a:active': theme => ({
-          color: theme.palette.mode === 'dark'
-            ? alpha(theme.palette.primary.main, 0.85)
-            : alpha(theme.palette.primary.main, 0.9),
+          color:
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.main, 0.85)
+              : alpha(theme.palette.primary.main, 0.9),
         }),
         '& a:focus-visible': theme => ({
           outline: 'none',

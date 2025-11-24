@@ -1,4 +1,4 @@
-// app/(admin)/products/[code]/page.tsx
+// app/(admin)/products/[id]/page.tsx
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -11,7 +11,7 @@ import { Box, Grid, Stack } from '@mui/material';
 import { requirePageAccess } from '@/lib/supabase/auth/server';
 import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
 
-import { fetchProductByCode } from '@/features/products/services/products.server';
+import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
 
@@ -29,18 +29,22 @@ import type { Tables } from '@/types/supabase';
 const PRODUCT_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET ?? 'product-media';
 
-type Props = { params: Promise<{ code: string }> };
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   await requirePageAccess('products');
-  const { code } = await params;
-  const row = await fetchProductByCode(code);
+
+  const { id } = await params;
+  const row = await fetchProductById(id);
   if (!row) return { title: 'Ürün bulunamadı' };
   const p = mapRowToProduct(row);
   return { title: `${p.code} — ${p.name}` };
 }
 
-type UserSlim = Pick<Tables<'users'>, 'role' | 'username' | 'email' | 'image' | 'updated_at'>;
+type UserSlim = Pick<
+  Tables<'users'>,
+  'role' | 'username' | 'email' | 'image' | 'updated_at'
+>;
 
 async function getSessionInfo(): Promise<{
   role: 'Admin' | 'Manager' | 'User' | null;
@@ -85,25 +89,26 @@ function toSecureUrl(storageKey: string | null | undefined): string | null {
   const key = storageKey.startsWith(PRODUCT_BUCKET + '/')
     ? storageKey.slice(PRODUCT_BUCKET.length + 1)
     : storageKey;
-  return `/api/products/storage?bucket=${encodeURIComponent(PRODUCT_BUCKET)}&path=${encodeURIComponent(key)}`;
+  return `/api/products/storage?bucket=${encodeURIComponent(
+    PRODUCT_BUCKET,
+  )}&path=${encodeURIComponent(key)}`;
 }
 
 export default async function ProductDetailPage({ params }: Props) {
   const { profile } = await requirePageAccess('products');
-  const { code } = await params;
+  const { id } = await params;
 
   const [{ userId, username, email, avatarUrl }, row, dicts] = await Promise.all([
     getSessionInfo(),
-    fetchProductByCode(code),
+    fetchProductById(id),
     fetchProductDicts(),
   ]);
 
   if (!row) notFound();
 
-  // Kanonik rota: /products/{code}
-  const canonicalPath = `/products/${encodeURIComponent(code)}` as const;
-  if (canonicalPath !== `/products/${code}`) {
-    // Next'in "RouteImpl" mızmızlanmasını susturmak için template-literal cast:
+  // Kanonik rota: /products/{id}
+  const canonicalPath = `/products/${encodeURIComponent(id)}` as const;
+  if (canonicalPath !== `/products/${id}`) {
     redirect(canonicalPath as `/products/${string}`);
   }
 
@@ -112,10 +117,15 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const product = mapRowToProduct(row);
 
-  const { categoryLabelMap, subLabelMap } = buildCategoryHelpers(dicts.categoryTree);
-  const variantLabelMap = Object.fromEntries(dicts.variants.map(v => [v.key, v.name] as const));
+  const { categoryLabelMap, subLabelMap } = buildCategoryHelpers(
+    dicts.categoryTree,
+  );
+  const variantLabelMap = Object.fromEntries(
+    dicts.variants.map(v => [v.key, v.name] as const),
+  );
 
-  const preferPdf = (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
+  const preferPdf =
+    (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
   const rawPrimary = preferPdf ? product.filePath : product.image;
   const rawSecondary = preferPdf ? product.image : product.filePath;
 
@@ -125,7 +135,9 @@ export default async function ProductDetailPage({ params }: Props) {
   const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
   type AllowedExt = (typeof allowed)[number];
   const extLower = (product.fileExt ?? '').toLowerCase();
-  const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
+  const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(
+    extLower,
+  )
     ? (extLower as AllowedExt)
     : null;
 
@@ -162,7 +174,9 @@ export default async function ProductDetailPage({ params }: Props) {
               outerSizeMm={product.outerSizeMm}
               sectionMm2={product.sectionMm2}
               unit_weight_g_pm={
-                typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined
+                typeof product.unit_weight_g_pm === 'number'
+                  ? product.unit_weight_g_pm
+                  : undefined
               }
               has_customer_mold={row.has_customer_mold}
               availability={product.availability}

@@ -45,7 +45,7 @@ const optionalIsoDateString = () =>
 
 /** ---- ÜRÜN FORM ŞEMASI ----
  * Zorunlu alanlar: name, code, category, subCategory, availability, unitWeightKg, date
- * Varyant: boş bırakılırsa otomatik olarak "none" (UI: "Yok") kabul edilir ve geçerlidir.
+ * Varyant: boş bırakılırsa otomatik olarak "yok" kabul edilir ve geçerlidir.
  */
 export const productSchema = yup
   .object({
@@ -57,7 +57,7 @@ export const productSchema = yup
     variant: yup
       .string()
       .transform((_v, orig) =>
-        orig === '' || orig == null ? DEFAULT_VARIANT_KEY : _v
+        orig === '' || orig == null ? DEFAULT_VARIANT_KEY : _v,
       )
       .default(DEFAULT_VARIANT_KEY)
       .defined(),
@@ -99,6 +99,9 @@ export const productSchema = yup
     // Opsiyonel sayısal alanlar
     outerSizeMm: toNullNumber().min(0, '0 veya daha büyük olmalı'),
     sectionMm2: toNullNumber().min(0, '0 veya daha büyük olmalı'),
+
+    // Et kalınlığı (mm) — opsiyonel, girilirse 0’dan büyük olmalı
+    wallThicknessMm: toNullNumber().moreThan(0, '0’dan büyük olmalı'),
 
     // Opsiyonel metinler
     tempCode: emptyToNull(),
@@ -143,6 +146,7 @@ export const newProductDefaults: ProductFormValues = {
   scale: '',
   outerSizeMm: null,
   sectionMm2: null,
+  wallThicknessMm: null,
   tempCode: null,
   manufacturerCode: null,
   image: '',
@@ -150,7 +154,7 @@ export const newProductDefaults: ProductFormValues = {
 
 /** İsteğe bağlı override ile yeni default üret (date’i bugüne sabitler) */
 export function makeNewProductDefaults(
-  override?: Partial<ProductFormValues>
+  override?: Partial<ProductFormValues>,
 ): ProductFormValues {
   return {
     ...newProductDefaults,
@@ -161,7 +165,7 @@ export function makeNewProductDefaults(
 
 /** Select → boolean yardımcı */
 export function customerMoldToBoolean(
-  v: CustomerMoldSelect
+  v: CustomerMoldSelect,
 ): boolean | undefined {
   if (v === '') return undefined;
   return v === 'Evet';
@@ -169,11 +173,11 @@ export function customerMoldToBoolean(
 
 /** DB normalize: UI'daki "none" değerini veritabanında null'a çevirmek istersen kullan */
 export function normalizeVariantToDb(
-  v: ProductFormValues['variant'] | null | undefined
+  v: ProductFormValues['variant'] | null | undefined,
 ): string {
   const raw = (v ?? '').trim();
 
-  // Boş, null veya UI'daki DEFAULT_VARIANT_KEY ("none") geldiyse
+  // Boş, null veya UI'daki DEFAULT_VARIANT_KEY ("yok") geldiyse
   // DB'de her zaman "yok" key'ini yazalım.
   if (!raw || raw === DEFAULT_VARIANT_KEY) {
     return 'yok';

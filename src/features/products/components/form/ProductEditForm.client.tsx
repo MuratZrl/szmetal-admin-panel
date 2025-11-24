@@ -3,14 +3,19 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Paper, Box, Stack, Button, Grid } from '@mui/material';
+
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+import {
+  updateProduct,
+  type UpdateProductInput,
+} from '@/features/products/services/products.client';
+
 import type { ProductDicts } from '@/features/products/services/dicts.server';
-import { updateProduct, type UpdateProductInput } from '@/features/products/services/products.client';
 
 import {
   productSchema,
@@ -22,14 +27,18 @@ import {
 import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
 import NotesField from '@/features/products/components/form/NotesField.client';
 
-import type { Database } from '@/types/supabase';
-
 /* -------------------------------------------------------------------------- */
 /* Tipler                                                                      */
 /* -------------------------------------------------------------------------- */
 
-// id formda değil; file var.
-type EditValues = ProductFormValues & { file: File | null };
+type EditValues = ProductFormValues & {
+  file: File | null;
+  fileBucket?: string | null;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileMime?: string | null;
+  fileSize?: number | null;
+};
 
 type Props = {
   dicts: ProductDicts;
@@ -41,7 +50,6 @@ type Props = {
     category: string | null;
     subCategory: string | null;
 
-    // DB g/m geliyor
     unitWeightG: number | null;
 
     date: string | null;
@@ -56,6 +64,9 @@ type Props = {
     scale?: string | null;
     outerSizeMm?: number | null;
     sectionMm2?: number | null;
+
+    wallThicknessMm?: number | null;
+
     tempCode?: string | null;
     profileCode?: string | null;
     manufacturerCode?: string | null;
@@ -66,42 +77,10 @@ type Props = {
   };
 };
 
-// boolean|null|undefined → '' | 'Evet' | 'Hayır'
 function fromBoolToSelect(v: boolean | null | undefined): CustomerMoldSelect {
   if (v === true) return 'Evet';
   if (v === false) return 'Hayır';
   return '';
-}
-
-/* -------------------------------------------------------------------------- */
-/* Upload helper: server'dan signed upload URL al ve yükle                     */
-/* -------------------------------------------------------------------------- */
-
-async function uploadProductFile(
-  productId: string,
-  file: File,
-  supabase: SupabaseClient<Database>
-): Promise<string> {
-  const extHint = file.name.split('.').pop()?.toLowerCase() ?? '';
-  const res = await fetch('/api/products/upload-url', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dir: productId, originalName: file.name, extHint }),
-  });
-
-  if (!res.ok) {
-    const msg = (await res.json().catch(() => null))?.error ?? 'Upload URL alınamadı';
-    throw new Error(msg);
-  }
-
-  const { bucket, path, token } = (await res.json()) as { bucket: string; path: string; token: string };
-
-  const { error } = await supabase.storage
-    .from(bucket)
-    .uploadToSignedUrl(path, token, file, { contentType: file.type, upsert: true });
-
-  if (error) throw new Error(error.message);
-  return path;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -110,14 +89,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
 
-  const supabase = React.useMemo(
-    () => createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ),
-    []
-  );
-
   const defaultValues: EditValues = {
     name: initial.name ?? '',
     code: initial.code ?? '',
@@ -125,7 +96,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     category: initial.category ?? '',
     subCategory: initial.subCategory ?? '',
 
-    // g/m → kg/m
     unitWeightKg:
       typeof initial.unitWeightG === 'number'
         ? Number(initial.unitWeightG) / 1000
@@ -145,11 +115,21 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     scale: initial.scale ?? '',
     outerSizeMm: initial.outerSizeMm ?? null,
     sectionMm2: initial.sectionMm2 ?? null,
+
+    wallThicknessMm: initial.wallThicknessMm ?? null,
+
     tempCode: initial.tempCode ?? null,
     manufacturerCode: initial.manufacturerCode ?? null,
     image: initial.image ?? '',
     description: initial.description ?? '',
     file: null,
+
+    // metadata defaultları; edit’te eski değerleri korumak için
+    fileBucket: undefined,
+    filePath: undefined,
+    fileName: undefined,
+    fileMime: undefined,
+    fileSize: undefined,
   };
 
   const methods = useForm<EditValues>({
@@ -172,16 +152,12 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   async function onSubmit(v: EditValues): Promise<void> {
     try {
-      // 1) Dosya seçilmiş ise önce yükle, path'i al
-      let nextImagePath: string | null =
-        typeof v.image === 'string' && v.image.trim().length > 0 ? v.image.trim() : null;
+      const nextImagePath =
+        typeof v.image === 'string' && v.image.trim().length > 0
+          ? v.image.trim()
+          : null;
 
-      if (v.file instanceof File) {
-        nextImagePath = await uploadProductFile(initial.id, v.file, supabase);
-      }
-
-      // 2) Update payload — kg/m öncelik, geriye uyumluluk için g/m’yi de gönder
-      const payload = {
+      const payload: UpdateProductInput = {
         name: v.name,
         code: v.code,
         variant: v.variant,
@@ -190,7 +166,9 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
         unitWeightKg: v.unitWeightKg,
         unitWeightG:
-          v.unitWeightKg == null ? null : Math.round(Number(v.unitWeightKg) * 1000),
+          v.unitWeightKg == null
+            ? null
+            : Math.round(Number(v.unitWeightKg) * 1000),
 
         date: v.date,
         drawer: v.drawer || null,
@@ -198,19 +176,24 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         scale: v.scale || null,
         outerSizeMm: v.outerSizeMm ?? null,
         sectionMm2: v.sectionMm2 ?? null,
+        wallThicknessMm: v.wallThicknessMm ?? null,
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
         image: nextImagePath,
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability,
         description: v.description || null,
-
-        // revizyon tarihi
         revisionDate: v.revisionDate ?? '',
-      } as unknown as UpdateProductInput;
 
-      // 3) Ürünü güncelle
-      await updateProduct(Number(initial.id), payload);
+        // metadata: sadece kullanıcı yeni dosya yüklediyse dolmuş olacak
+        fileBucket: v.fileBucket,
+        filePath: v.filePath,
+        fileName: v.fileName,
+        fileMime: v.fileMime,
+        fileSize: v.fileSize,
+      };
+
+      await updateProduct(initial.id, payload);
 
       show('Ürün güncellendi.', 'success');
       router.push('/products');
@@ -227,14 +210,24 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
-              <ProductFormFields methods={methods} dicts={dicts} showFileSection dir={initial.id} />
+              <ProductFormFields
+                methods={methods}
+                dicts={dicts}
+                showFileSection
+                dir={initial.id}
+              />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
               <NotesField disabled={methods.formState.isSubmitting} />
             </Grid>
           </Grid>
 
-          <Stack direction="row" spacing={1} justifyContent="start" sx={{ mt: 2 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            justifyContent="start"
+            sx={{ mt: 2 }}
+          >
             <Button
               variant="outlined"
               color="contrast"
@@ -253,7 +246,6 @@ export default function ProductEditForm({ dicts, initial }: Props) {
               Kaydet
             </Button>
           </Stack>
-
         </Box>
       </FormProvider>
     </Paper>

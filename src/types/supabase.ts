@@ -75,13 +75,6 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "categories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "category_stats"
-            referencedColumns: ["id"]
-          },
         ]
       }
       orders: {
@@ -159,19 +152,22 @@ export type Database = {
           comment_id: number
           pinned_at: string
           pinned_by: string | null
-          product_id: number
+          product_id: number | null
+          product_uuid: string
         }
         Insert: {
           comment_id: number
           pinned_at?: string
           pinned_by?: string | null
-          product_id: number
+          product_id?: number | null
+          product_uuid: string
         }
         Update: {
           comment_id?: number
           pinned_at?: string
           pinned_by?: string | null
-          product_id?: number
+          product_id?: number | null
+          product_uuid?: string
         }
         Relationships: [
           {
@@ -182,8 +178,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "product_comment_pins_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "product_comment_pins_product_uuid_fkey"
+            columns: ["product_uuid"]
             isOneToOne: true
             referencedRelation: "products"
             referencedColumns: ["id"]
@@ -229,7 +225,8 @@ export type Database = {
           content: string
           created_at: string
           id: number
-          product_id: number
+          product_id: number | null
+          product_uuid: string
           updated_at: string | null
         }
         Insert: {
@@ -238,7 +235,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: number
-          product_id: number
+          product_id?: number | null
+          product_uuid: string
           updated_at?: string | null
         }
         Update: {
@@ -247,13 +245,14 @@ export type Database = {
           content?: string
           created_at?: string
           id?: number
-          product_id?: number
+          product_id?: number | null
+          product_uuid?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "product_comments_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "product_comments_product_uuid_fkey"
+            columns: ["product_uuid"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
@@ -262,7 +261,6 @@ export type Database = {
       }
       products: {
         Row: {
-          archived_at: string | null
           availability: boolean
           category: string
           category_id: string | null
@@ -279,7 +277,7 @@ export type Database = {
           file_path: string | null
           file_size: number | null
           has_customer_mold: boolean
-          id: number
+          id: string
           image: string | null
           manufacturer_code: string | null
           name: string
@@ -293,9 +291,9 @@ export type Database = {
           unit_weight_g_pm: number
           updated_at: string
           variant: string
+          wall_thickness_mm: number | null
         }
         Insert: {
-          archived_at?: string | null
           availability?: boolean
           category: string
           category_id?: string | null
@@ -312,7 +310,7 @@ export type Database = {
           file_path?: string | null
           file_size?: number | null
           has_customer_mold?: boolean
-          id?: number
+          id?: string
           image?: string | null
           manufacturer_code?: string | null
           name: string
@@ -326,9 +324,9 @@ export type Database = {
           unit_weight_g_pm?: number
           updated_at?: string
           variant: string
+          wall_thickness_mm?: number | null
         }
         Update: {
-          archived_at?: string | null
           availability?: boolean
           category?: string
           category_id?: string | null
@@ -345,7 +343,7 @@ export type Database = {
           file_path?: string | null
           file_size?: number | null
           has_customer_mold?: boolean
-          id?: number
+          id?: string
           image?: string | null
           manufacturer_code?: string | null
           name?: string
@@ -359,6 +357,7 @@ export type Database = {
           unit_weight_g_pm?: number
           updated_at?: string
           variant?: string
+          wall_thickness_mm?: number | null
         }
         Relationships: [
           {
@@ -369,24 +368,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_products_category"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "category_stats"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_products_subcategory"
             columns: ["subcategory_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_products_subcategory"
-            columns: ["subcategory_id"]
-            isOneToOne: false
-            referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
           {
@@ -397,24 +382,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "products_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "category_stats"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "products_subcategory_id_fkey"
             columns: ["subcategory_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_subcategory_id_fkey"
-            columns: ["subcategory_id"]
-            isOneToOne: false
-            referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
         ]
@@ -680,11 +651,8 @@ export type Database = {
     Views: {
       category_stats: {
         Row: {
-          id: string | null
-          name: string | null
           parent_id: string | null
           product_count: number | null
-          slug: string | null
         }
         Relationships: [
           {
@@ -692,13 +660,6 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "categories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
         ]

@@ -5,23 +5,31 @@ import * as React from 'react';
 import Link from 'next/link';
 
 import {
-  Card, CardActionArea, CardContent, Typography, Stack, Box,
+  Card,
+  CardActionArea,
+  CardContent,
+  Typography,
+  Stack,
+  Box,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 
-import HoverPreview from '@/features/products/components/HoverPreview.client';
 import { detectMediaKind } from '@/features/products/utils/media';
-import type { Product } from '@/features/products/types';
-import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
+
 import type { LabelMaps } from '@/features/products/services/labelMaps.server';
+
+import HoverPreview from '@/features/products/components/HoverPreview.client';
 
 // BUNU bırakıyoruz
 import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
-import { productCanonicalPath, productEditPath } from '@/features/products/utils/url';
 
 import { ProductMedia } from '@/features/products/components/ui/ProductCard/ProductCardMedia.client';
 import { CategoryChip } from '@/features/products/components/ui/ProductCard/ProductCardCategoryTag.client';
 import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductCardActions.client';
+
+import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
+
+import type { Product } from '@/features/products/types';
 
 type Role = 'Admin' | 'Manager' | 'User';
 
@@ -90,7 +98,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   }, [product.variant, variantLabel]);
 
   const categoryLabel = resolveLabelFromMap(product.category, labels?.category);
-  const subLabel      = resolveLabelFromMap(product.subCategory, labels?.subcategory);
+  const subLabel = resolveLabelFromMap(product.subCategory, labels?.subcategory);
 
   const categoryLine = React.useMemo(() => {
     return [categoryLabel, subLabel].filter(Boolean).join(' / ');
@@ -98,7 +106,9 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
 
   const displayUrl =
     resolvedImageUrl ??
-    (typeof product.image === 'string' && /^https?:\/\//i.test(product.image) ? product.image : null);
+    (typeof product.image === 'string' && /^https?:\/\//i.test(product.image)
+      ? product.image
+      : null);
 
   const kind = detectMediaKind({
     url: displayUrl ?? undefined,
@@ -106,11 +116,12 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     extHint: product.fileExt ?? undefined,
   });
 
-  const isPdf   = kind === 'pdf';
+  const isPdf = kind === 'pdf';
   const isImage = kind === 'image';
 
-  const detailHref = productCanonicalPath(product);
-  const editHref   = productEditPath(product);
+  // Artık uuid id üzerinden routing
+  const detailHref = `/products/${encodeURIComponent(product.id)}` as `/products/${string}`;
+  const editHref = `/products/${encodeURIComponent(product.id)}/edit` as `/products/${string}`;
 
   return (
     <Card
@@ -180,11 +191,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               hyphens: 'auto',
             }}
           >
-            {product.code} — {product.name}
+            {product.code} {product.name}
           </Typography>
 
           <Stack direction="column" my={0.25}>
-            
             <Typography
               variant="subtitle2"
               color="text.secondary"
@@ -192,11 +202,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             >
               Birim Ağırlık: {formatKgPerMeter(product.unit_weight_g_pm)}
             </Typography>
-            
+
             <Typography variant="caption" color="text.secondary">
               Yapıldığı Tarih: {product.date}
             </Typography>
-
           </Stack>
 
           {(categoryLabel || subLabel) && (

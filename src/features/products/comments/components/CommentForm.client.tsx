@@ -2,10 +2,14 @@
 'use client';
 
 import * as React from 'react';
+
+import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material';
+
 import { useForm, type SubmitHandler } from 'react-hook-form';
+
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material';
+
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 
 const DEFAULT_MAX_LEN = 2000;
