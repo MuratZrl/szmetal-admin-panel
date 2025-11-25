@@ -67,8 +67,7 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
   const rawVariants = sp.getAll('variants');
 
   const initialMold = rawCM === 'Evet' || rawCM === 'true' || rawCM === '1';
-  const initialAvail =
-    !!rawAvail && ['1', 'true', 'on', 'yes', 'evet'].includes(rawAvail.toLowerCase());
+  const initialAvail = rawAvail === '0';
 
   const [q, setQ] = React.useState<string>(rawQ);
   const [categories, setCategories] = React.useState<string[]>(initialCategories);
@@ -118,7 +117,7 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
     if (sort) params.set('sort', sort);
 
     if (moldOnly) params.append('customerMold', 'Evet');
-    if (availableOnly) params.set('availability', '1');
+    if (availableOnly) params.set('availability', '0');
 
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '?');

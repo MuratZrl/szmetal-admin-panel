@@ -108,12 +108,28 @@ export function parseProductFilters(sp: RawParams): ProductFilters {
   const rawSort = typeof sp.sort === 'string' ? sp.sort : undefined;
   const sort = normalizeSort(rawSort);
 
-  // Checkbox "Kullanılabilir" seçiliyse URL'e availability=1 yazılıyor.
-  // Bunu backend'in beklediği şekle çeviriyoruz:
-  //   true  -> availability: true
-  //   false -> availability: undefined (filtre uygulanmaz)
-  const availabilityOn = toBoolParam(sp.availability);
-  const availability = availabilityOn ? true : undefined;
+  // Checkbox "Kullanılamaz" seçiliyse URL'e availability=0 yazıyoruz.
+  // ProductFilters.availability anlamı:
+  //   true  -> sadece kullanılabilir ürünler (şu an UI bunu kullanmıyor)
+  //   false -> sadece kullanılamaz ürünler
+  //   undefined -> availability'e göre filtre yok, hepsi gelsin
+  let availability: boolean | undefined = undefined;
+
+  const rawAvail = sp.availability;
+  const rawAvailStr =
+    typeof rawAvail === 'string'
+      ? rawAvail.trim()
+      : Array.isArray(rawAvail) && rawAvail[0]
+      ? rawAvail[0].trim()
+      : '';
+
+  if (rawAvailStr === '0') {
+    availability = false;
+  }
+  // İleride istersen:
+  // if (rawAvailStr === '1') {
+  //   availability = true;
+  // }
 
   // "Müşteri Kalıbı" checkbox'ı seçiliyse URL'e customerMold=Evet yazılıyor.
   // Backend tarafında (products.server.ts) bu alan cast ile okunuyor,

@@ -308,8 +308,18 @@ export default function ProductInfo(props: ProductInfoProps) {
       <Chip
         size="small"
         label={mold ? 'Evet' : 'Hayır'}
-        variant="outlined"
-        sx={{ fontWeight: 600 }}
+        variant={mold ? 'filled' : 'outlined'}
+        color={mold ? 'warning' : 'default'}
+        sx={(theme) => ({
+          fontWeight: 700,
+          letterSpacing: 0.3,
+          ...(mold
+            ? {
+              bgcolor: theme.palette.getContrastText(theme.palette.warning.main),
+              color: theme.palette.warning.main,
+              }
+            : {}),
+        })}
       />
     ) : null;
 

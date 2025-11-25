@@ -1,7 +1,7 @@
 // src/features/products/utils/resolveStorageUrl.server.ts
 'use server';
-
 import 'server-only';
+
 import { createSupabaseAdminClient } from '@/lib/supabase/supabaseAdmin';
 
 const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET || 'product-media';

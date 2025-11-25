@@ -32,7 +32,7 @@ export function StatusFilterSection({
       <Box>
         <FormControlLabel
           control={<Checkbox checked={availableOnly} onChange={onToggleAvailable} />}
-          label="Kullanılabilir"
+          label="Kullanılamaz"
         />
       </Box>
     </Box>
