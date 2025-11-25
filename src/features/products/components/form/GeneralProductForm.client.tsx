@@ -57,7 +57,15 @@ function toHelper(m: unknown): string | undefined {
   return typeof m === 'string' ? m : undefined;
 }
 
-export default function ProductFormFields({ methods, dicts, showFileSection = true, dir }: Props) {
+const ITEM_HEIGHT = 40;           // 1 satır yüksekliği (px)
+const MAX_VISIBLE_ITEMS = 7;      // maksimum görünen satır
+
+export default function ProductFormFields({
+  methods,
+  dicts,
+  showFileSection = true,
+  dir,
+}: Props) {
   const {
     control,
     register,
@@ -76,7 +84,50 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
   } = React.useMemo(() => buildCategoryHelpers(dicts?.categoryTree), [dicts]);
 
   const variants = dicts?.variants ?? [];
+
   const watchedCategory = watch('category');
+  const watchedCustomerMold = watch('customerMold');
+  const isCustomerMold = watchedCustomerMold === 'Evet';
+
+  // Kategori değiştiğinde, eğer alt kategorisi yoksa subCategory'yi otomatik kategoriye eşitle
+  React.useEffect(() => {
+    if (!watchedCategory) return;
+    const subs = getSubCatsFor(watchedCategory);
+    if (subs.length === 0) {
+      setValue('subCategory', watchedCategory, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [watchedCategory, getSubCatsFor, setValue]);
+
+  // MÜŞTERİ KALIBI: Evet → kategori ve alt kategori temizle
+  React.useEffect(() => {
+    if (!isCustomerMold) return;
+    setValue('category', '', {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue('subCategory', '', {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [isCustomerMold, setValue]);
+
+  // SADECE parent kategorileri göster: child slug’ları CategoryTree.subs içinden toplayıp filtreden atıyoruz
+  const rootCategoryOptions = React.useMemo(() => {
+    const tree = dicts?.categoryTree;
+    if (!tree) return categoryOptions;
+
+    const childSlugs = new Set<string>();
+    Object.values(tree).forEach((node) => {
+      node.subs.forEach((sub) => {
+        childSlugs.add(sub.slug);
+      });
+    });
+
+    return categoryOptions.filter((opt) => !childSlugs.has(opt.slug));
+  }, [dicts, categoryOptions]);
 
   // Upload hook
   const up = useProductUpload(methods, dir);
@@ -135,6 +186,17 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
     return d ? d.format('YYYY-MM-DD') : '';
   }, []);
 
+  // Seçili kategoriye göre alt kategori listesi
+  const subCategoryOptions = React.useMemo(
+    () => getSubCatsFor(watchedCategory),
+    [getSubCatsFor, watchedCategory],
+  );
+
+  const hasRealSubCategories = subCategoryOptions.length > 0;
+  const selectedCategoryLabel = watchedCategory
+    ? categoryLabelMap.get(watchedCategory) ?? watchedCategory
+    : '';
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
       <Box sx={[{ mt: 0 }, dimPlaceholderSx]}>
@@ -165,204 +227,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
           </Grid>
 
           {/* 2. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="category"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  label="Kategori"
-                  fullWidth
-                  required
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const next = (e.target as HTMLInputElement).value;
-                    const prev = (field.value as string | undefined) ?? '';
-                    field.onChange(next);
-                    if (prev !== next) {
-                      setValue('subCategory', '', {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                    }
-                  }}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    renderValue: (v) => {
-                      const slug = String(v ?? '');
-                      if (!slug) return 'Seçiniz';
-                      return categoryLabelMap.get(slug) ?? slug;
-                    },
-                  }}
-                  error={!!errors.category}
-                  helperText={toHelper(errors.category?.message)}
-                >
-                  <MenuItem value="">Seçiniz</MenuItem>
-                  {categoryOptions.map((c) => (
-                    <MenuItem key={c.slug} value={c.slug}>
-                      {c.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="subCategory"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  label="Alt Kategori"
-                  fullWidth
-                  required
-                  {...field}
-                  value={field.value ?? ''}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    renderValue: (v) => {
-                      const slug = String(v ?? '');
-                      if (!slug) return 'Seçiniz';
-                      return subLabelMap.get(slug) ?? slug;
-                    },
-                  }}
-                  onChange={(e) => {
-                    const val = e.target.value as string;
-                    field.onChange(val);
-                    const cat = getValues('category');
-                    if (!cat && val) {
-                      const owner = findOwnerCategory(val);
-                      if (owner) {
-                        setValue('category', owner, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                        });
-                      }
-                    }
-                  }}
-                  error={!!errors.subCategory}
-                  helperText={toHelper(errors.subCategory?.message)}
-                >
-                  <MenuItem value="">
-                    {watchedCategory ? 'Seçiniz' : 'Bir alt kategori seçin'}
-                  </MenuItem>
-                  {getSubCatsFor(watchedCategory).map((sc) => (
-                    <MenuItem key={sc.slug} value={sc.slug}>
-                      {sc.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          </Grid>
-
-          {/* 3. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="variant"
-              control={control}
-              render={({ field }) => {
-                const safeValue =
-                  typeof field.value === 'string' && field.value.trim() !== ''
-                    ? field.value
-                    : DEFAULT_VARIANT_KEY;
-
-                return (
-                  <TextField
-                    {...field}
-                    select
-                    label="Varyant"
-                    size="small"
-                    fullWidth
-                    value={safeValue}
-                    onChange={(e) => field.onChange(e.target.value as string)}
-                    error={!!errors.variant}
-                    helperText={toHelper(errors.variant?.message)}
-                    InputLabelProps={{ shrink: true }}
-                    SelectProps={{
-                      renderValue: (v) => variantLabel(String(v)),
-                    }}
-                  >
-                    <MenuItem value={DEFAULT_VARIANT_KEY}>Yok</MenuItem>
-                    {variants
-                      .filter((v) => v.key !== DEFAULT_VARIANT_KEY)
-                      .map((v) => (
-                        <MenuItem key={v.key} value={v.key}>
-                          {v.name}
-                        </MenuItem>
-                      ))}
-                  </TextField>
-                );
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'unitWeightKg'>
-              name="unitWeightKg"
-              label="Birim Ağırlık (kg/m)"
-              required
-              endAdornmentText="kg/m"
-            />
-          </Grid>
-
-          {/* 4. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="date"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  label="Oluşturulma Tarihi"
-                  format="DD/MM/YY"
-                  value={toDayjs(field.value as string)}
-                  onChange={(val) => field.onChange(toIso(val))}
-                  slotProps={{
-                    textField: {
-                      required: true,
-                      size: 'small',
-                      fullWidth: true,
-                      InputLabelProps: { shrink: true },
-                      error: !!errors.date,
-                      helperText: toHelper(errors.date?.message),
-                      placeholder: 'YYYY-MM-DD',
-                    },
-                  }}
-                />
-              )}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="revisionDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  label="Revizyon Tarihi"
-                  format="DD/MM/YY"
-                  value={toDayjs(field.value as string)}
-                  onChange={(val) => field.onChange(toIso(val))}
-                  slotProps={{
-                    textField: {
-                      variant: 'outlined',
-                      size: 'small',
-                      fullWidth: true,
-                      InputLabelProps: { shrink: true },
-                      error: !!errors.revisionDate,
-                      helperText: toHelper(errors.revisionDate?.message),
-                      placeholder: 'YYYY-MM-DD',
-                    },
-                  }}
-                />
-              )}
-            />
-          </Grid>
-
-          {/* 5. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="customerMold"
@@ -413,6 +277,258 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
                   <MenuItem value="true">Kullanılabilir</MenuItem>
                   <MenuItem value="false">Kullanılamaz</MenuItem>
                 </TextField>
+              )}
+            />
+          </Grid>
+
+
+          {/* 3. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="category"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  label="Kategori"
+                  fullWidth
+                  required={!isCustomerMold}
+                  disabled={isCustomerMold}
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => {
+                    const next = (e.target as HTMLInputElement).value;
+                    const prev = (field.value as string | undefined) ?? '';
+                    field.onChange(next);
+
+                    const subs = getSubCatsFor(next);
+
+                    if (prev !== next) {
+                      if (subs.length > 0) {
+                        setValue('subCategory', '', {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                      } else if (next) {
+                        setValue('subCategory', next, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                      }
+                    }
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    MenuProps: {
+                      PaperProps: {
+                        sx: {
+                          maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS,
+                        },
+                      },
+                    },
+                    renderValue: (v) => {
+                      const slug = String(v ?? '');
+                      if (!slug) {
+                        // Müşteri kalıbıysa boş gözüksün
+                        if (isCustomerMold) return 'Kategori yok (Müşteri Kalıbı)';
+                        return 'Seçiniz';
+                      }
+                      return categoryLabelMap.get(slug) ?? slug;
+                    },
+                  }}
+                  error={!isCustomerMold && !!errors.category}
+                  helperText={!isCustomerMold ? toHelper(errors.category?.message) : undefined}
+                >
+                  <MenuItem value="">Seçiniz</MenuItem>
+                  {rootCategoryOptions.map((c) => (
+                    <MenuItem key={c.slug} value={c.slug}>
+                      {c.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="subCategory"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  label="Alt Kategori"
+                  fullWidth
+                  required={!isCustomerMold}
+                  disabled={isCustomerMold}
+                  {...field}
+                  value={field.value ?? ''}
+                  InputLabelProps={{ shrink: true }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    MenuProps: {
+                      PaperProps: {
+                        sx: {
+                          maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS,
+                        },
+                      },
+                    },
+                    renderValue: (v) => {
+                      const slug = String(v ?? '');
+                      if (!slug) {
+                        if (isCustomerMold) return 'Alt kategori yok (Müşteri Kalıbı)';
+                        return watchedCategory ? 'Seçiniz' : 'Bir alt kategori seçin';
+                      }
+                      if (!hasRealSubCategories && watchedCategory && slug === watchedCategory) {
+                        return selectedCategoryLabel;
+                      }
+                      return subLabelMap.get(slug) ?? slug;
+                    },
+                  }}
+                  onChange={(e) => {
+                    const val = e.target.value as string;
+                    field.onChange(val);
+                    const cat = getValues('category');
+                    if (!cat && val) {
+                      const owner = findOwnerCategory(val);
+                      if (owner) {
+                        setValue('category', owner, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                      }
+                    }
+                  }}
+                  error={!isCustomerMold && !!errors.subCategory}
+                  helperText={!isCustomerMold ? toHelper(errors.subCategory?.message) : undefined}
+                >
+                  <MenuItem value="">
+                    {watchedCategory
+                      ? hasRealSubCategories
+                        ? 'Seçiniz'
+                        : 'Kategori ile aynı'
+                      : 'Bir alt kategori seçin'}
+                  </MenuItem>
+
+                  {hasRealSubCategories &&
+                    subCategoryOptions.map((sc) => (
+                      <MenuItem key={sc.slug} value={sc.slug}>
+                        {sc.name}
+                      </MenuItem>
+                    ))}
+
+                  {!hasRealSubCategories && watchedCategory && (
+                    <MenuItem value={watchedCategory}>{selectedCategoryLabel}</MenuItem>
+                  )}
+                </TextField>
+              )}
+            />
+          </Grid>
+
+          {/* 4. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="variant"
+              control={control}
+              render={({ field }) => {
+                const safeValue =
+                  typeof field.value === 'string' && field.value.trim() !== ''
+                    ? field.value
+                    : DEFAULT_VARIANT_KEY;
+
+                return (
+                  <TextField
+                    {...field}
+                    select
+                    label="Varyant"
+                    size="small"
+                    fullWidth
+                    value={safeValue}
+                    onChange={(e) => field.onChange(e.target.value as string)}
+                    error={!!errors.variant}
+                    helperText={toHelper(errors.variant?.message)}
+                    InputLabelProps={{ shrink: true }}
+                    SelectProps={{
+                      renderValue: (v) => variantLabel(String(v)),
+                      MenuProps: {
+                      PaperProps: {
+                        sx: {
+                          maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS,
+                        },
+                      },
+                    },
+                    }}
+                  >
+                    <MenuItem value={DEFAULT_VARIANT_KEY}>Yok</MenuItem>
+                    {variants
+                      .filter((v) => v.key !== DEFAULT_VARIANT_KEY)
+                      .map((v) => (
+                        <MenuItem key={v.key} value={v.key}>
+                          {v.name}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                );
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <NumberField<FormType, 'unitWeightG'>
+              name="unitWeightG"
+              label="Birim Ağırlık (gr/m)"
+              required
+              endAdornmentText="gr/m"
+            />
+          </Grid>
+
+          {/* 5. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Çizim Tarihi"
+                  format="DD/MM/YY"
+                  value={toDayjs(field.value as string)}
+                  onChange={(val) => field.onChange(toIso(val))}
+                  slotProps={{
+                    textField: {
+                      required: true,
+                      size: 'small',
+                      fullWidth: true,
+                      InputLabelProps: { shrink: true },
+                      error: !!errors.date,
+                      helperText: toHelper(errors.date?.message),
+                      placeholder: 'YYYY-MM-DD',
+                    },
+                  }}
+                />
+              )}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="revisionDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Revizyon Tarihi"
+                  format="DD/MM/YY"
+                  value={toDayjs(field.value as string)}
+                  onChange={(val) => field.onChange(toIso(val))}
+                  slotProps={{
+                    textField: {
+                      variant: 'outlined',
+                      size: 'small',
+                      fullWidth: true,
+                      InputLabelProps: { shrink: true },
+                      error: !!errors.revisionDate,
+                      helperText: toHelper(errors.revisionDate?.message),
+                      placeholder: 'YYYY-MM-DD',
+                    },
+                  }}
+                />
               )}
             />
           </Grid>
@@ -577,7 +693,6 @@ export default function ProductFormFields({ methods, dicts, showFileSection = tr
               onConfirm={handleConfirmDelete}
             />
           </Grid>
-
         </Grid>
       </Box>
     </LocalizationProvider>

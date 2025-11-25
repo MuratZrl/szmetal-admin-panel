@@ -262,7 +262,7 @@ export type Database = {
       products: {
         Row: {
           availability: boolean
-          category: string
+          category: string | null
           category_id: string | null
           code: string
           control: string | null
@@ -285,7 +285,7 @@ export type Database = {
           revision_date: string | null
           scale: string | null
           section_mm2: number | null
-          sub_category: string
+          sub_category: string | null
           subcategory_id: string | null
           temp_code: string | null
           unit_weight_g_pm: number
@@ -295,7 +295,7 @@ export type Database = {
         }
         Insert: {
           availability?: boolean
-          category: string
+          category?: string | null
           category_id?: string | null
           code: string
           control?: string | null
@@ -318,7 +318,7 @@ export type Database = {
           revision_date?: string | null
           scale?: string | null
           section_mm2?: number | null
-          sub_category: string
+          sub_category?: string | null
           subcategory_id?: string | null
           temp_code?: string | null
           unit_weight_g_pm?: number
@@ -328,7 +328,7 @@ export type Database = {
         }
         Update: {
           availability?: boolean
-          category?: string
+          category?: string | null
           category_id?: string | null
           code?: string
           control?: string | null
@@ -351,7 +351,7 @@ export type Database = {
           revision_date?: string | null
           scale?: string | null
           section_mm2?: number | null
-          sub_category?: string
+          sub_category?: string | null
           subcategory_id?: string | null
           temp_code?: string | null
           unit_weight_g_pm?: number

@@ -22,7 +22,7 @@ export type CreateProductInput = {
   date: string;
   revisionDate?: string | null;
 
-  unitWeightKg?: number | null;
+  // Artık tek kaynak: gr/m
   unitWeightG?: number | null;
 
   hasCustomerMold?: boolean;
@@ -62,18 +62,19 @@ function toNull(v?: string | null) {
   return s ? s : null;
 }
 
-function kgToGrSafe(v: number | null | undefined): number | null {
+// gr/m değerini güvenli şekilde integer'a yuvarla
+function normalizeGpm(v: number | null | undefined): number | null {
   if (v == null) return null;
   const n = Number(v);
-  return Number.isFinite(n) ? Math.round(n * 1000) : null;
+  return Number.isFinite(n) ? Math.round(n) : null;
 }
 
 /* -------------------------------------------------------
  * CREATE: sadece DB insert — upload işi dışarıda (signed upload)
  * ----------------------------------------------------- */
 export async function createProduct(v: CreateProductInput): Promise<string | undefined> {
-  const gpmFromKg = kgToGrSafe(v.unitWeightKg ?? null);
-  const gpm = gpmFromKg ?? (v.unitWeightG == null ? null : Math.round(Number(v.unitWeightG)));
+  // Tek kaynak: unitWeightG (gr/m)
+  const gpm = normalizeGpm(v.unitWeightG ?? null);
 
   const payload = {
     name: v.name,
@@ -162,7 +163,11 @@ export type UpdateProductInput =
   Partial<Omit<CreateProductInput, 'file'>> & { file?: File | null };
 
 export async function updateProduct(id: string, v: UpdateProductInput): Promise<ProductsRow> {
-  const payload: ProductsUpdate = {};
+  type ProductsUpdateWithWeight = ProductsUpdate & {
+    unit_weight_g_pm?: number | null;
+  };
+
+  const payload: ProductsUpdateWithWeight = {} as ProductsUpdateWithWeight;
 
   if (v.name !== undefined) payload.name = v.name;
   if (v.code !== undefined) payload.code = v.code;
@@ -180,12 +185,10 @@ export async function updateProduct(id: string, v: UpdateProductInput): Promise<
       toNull(v.revisionDate);
   }
 
-  if (v.unitWeightKg !== undefined) {
-    const gpm = kgToGrSafe(v.unitWeightKg ?? null);
-    (payload as any).unit_weight_g_pm = gpm == null ? 0 : gpm;
-  } else if (v.unitWeightG !== undefined) {
-    (payload as any).unit_weight_g_pm =
-      v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG));
+  // Tek kaynak: unitWeightG (gr/m)
+  if (v.unitWeightG !== undefined) {
+    const gpm = normalizeGpm(v.unitWeightG ?? null);
+    payload.unit_weight_g_pm = gpm == null ? 0 : gpm;
   }
 
   if (v.drawer !== undefined)      payload.drawer = toNull(v.drawer);
@@ -194,7 +197,6 @@ export async function updateProduct(id: string, v: UpdateProductInput): Promise<
   if (v.outerSizeMm !== undefined) payload.outer_size_mm = v.outerSizeMm ?? null;
   if (v.sectionMm2 !== undefined)  payload.section_mm2 = v.sectionMm2 ?? null;
 
-  // YENİ: et kalınlığı güncelle
   if (v.wallThicknessMm !== undefined) {
     (payload as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
       v.wallThicknessMm ?? null;
@@ -206,16 +208,17 @@ export async function updateProduct(id: string, v: UpdateProductInput): Promise<
   if (v.image !== undefined) payload.image = v.image ?? null;
 
   if (v.hasCustomerMold !== undefined) {
-    (payload as any).has_customer_mold = v.hasCustomerMold;
+    (payload as unknown as { has_customer_mold?: boolean | null }).has_customer_mold =
+      v.hasCustomerMold;
   }
 
   if (v.availability !== undefined) payload.availability = v.availability;
 
   if (v.fileBucket !== undefined) payload.file_bucket = v.fileBucket ?? null;
-  if (v.filePath !== undefined)   payload.file_path   = v.filePath ?? null;
-  if (v.fileName !== undefined)   payload.file_name   = v.fileName ?? null;
-  if (v.fileMime !== undefined)   payload.file_mime   = v.fileMime ?? null;
-  if (v.fileSize !== undefined)   payload.file_size   = v.fileSize ?? null;
+  if (v.filePath !== undefined)   payload.file_path   = v.filePath   ?? null;
+  if (v.fileName !== undefined)   payload.file_name   = v.fileName   ?? null;
+  if (v.fileMime !== undefined)   payload.file_mime   = v.fileMime   ?? null;
+  if (v.fileSize !== undefined)   payload.file_size   = v.fileSize   ?? null;
 
   if (v.description !== undefined) payload.description = toNull(v.description);
 

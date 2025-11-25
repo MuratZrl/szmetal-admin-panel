@@ -146,6 +146,7 @@ export default async function ProductDetailPage({ params }: Props) {
   return (
     <Box px={1} py={1}>
       <Grid container spacing={2}>
+        
         <Grid size={{ xs: 12, md: 6 }}>
           <ProductMedia
             src={basePrimary}

@@ -81,7 +81,7 @@ export const productSchema = yup
     description: yup.string().default('').defined(),
 
     // KG/M — ondalık serbest, 0'dan büyük olmalı, zorunlu
-    unitWeightKg: toNullNumber()
+    unitWeightG: toNullNumber()
       .required('Zorunlu')
       .moreThan(0, '0’dan büyük olmalı'),
 
@@ -137,7 +137,7 @@ export const newProductDefaults: ProductFormValues = {
   description: '',
 
   // KG/M için başlangıçta boş bırakalım; validasyon submit’te yakalar.
-  unitWeightKg: 0,
+  unitWeightG: 0,
 
   date: today(),
   revisionDate: '',

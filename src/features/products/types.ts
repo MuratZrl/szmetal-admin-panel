@@ -62,7 +62,7 @@ export type Product = {
   name: string;
   variant: ProductRow['variant'];
   category: ProductRow['category'];
-  subCategory: string;
+  subCategory: ProductRow['sub_category'];   // <– değişiklik burada
 
   /** DB'de null olabilir; UI'da '' ile normalize ediyoruz */
   date: string;

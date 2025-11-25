@@ -81,12 +81,8 @@ export default function ProductCreateForm({ dicts }: Props) {
         category: v.category,
         subCategory: v.subCategory,
 
-        // kg/m → g/m de geriye uyumluluk için
-        unitWeightKg: v.unitWeightKg,
-        unitWeightG:
-          v.unitWeightKg == null
-            ? null
-            : Math.round(Number(v.unitWeightKg) * 1000),
+        // Artık tek kaynak: gr/m
+        unitWeightG: v.unitWeightG ?? null,
 
         date: v.date,
         drawer: v.drawer || undefined,
@@ -94,18 +90,15 @@ export default function ProductCreateForm({ dicts }: Props) {
         scale: v.scale || undefined,
         outerSizeMm: v.outerSizeMm ?? undefined,
         sectionMm2: v.sectionMm2 ?? undefined,
-        // YENİ: et kalınlığı create’e de gönder
         wallThicknessMm: v.wallThicknessMm ?? undefined,
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
 
-        // useProductUpload image alanına storage path yazıyor
         image: v.image || null,
 
         hasCustomerMold: customerMoldToBoolean(v.customerMold),
         availability: v.availability ?? true,
 
-        // Metadata: useProductUpload’tan gelenler
         fileBucket: v.fileBucket ?? null,
         filePath: v.filePath ?? null,
         fileName: v.fileName ?? null,

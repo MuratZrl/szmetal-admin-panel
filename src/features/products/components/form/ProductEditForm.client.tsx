@@ -96,9 +96,9 @@ export default function ProductEditForm({ dicts, initial }: Props) {
     category: initial.category ?? '',
     subCategory: initial.subCategory ?? '',
 
-    unitWeightKg:
+    unitWeightG:
       typeof initial.unitWeightG === 'number'
-        ? Number(initial.unitWeightG) / 1000
+        ? Number(initial.unitWeightG)   // gr/m'yi direkt yaz
         : 0,
 
     customerMold:
@@ -164,11 +164,7 @@ export default function ProductEditForm({ dicts, initial }: Props) {
         category: v.category,
         subCategory: v.subCategory,
 
-        unitWeightKg: v.unitWeightKg,
-        unitWeightG:
-          v.unitWeightKg == null
-            ? null
-            : Math.round(Number(v.unitWeightKg) * 1000),
+        unitWeightG: v.unitWeightG,
 
         date: v.date,
         drawer: v.drawer || null,

@@ -69,12 +69,11 @@ function resolveLabelFromMap(
   return key;
 }
 
-function formatKgPerMeter(gPerMeter: number | 0): string {
-  const kg = Number(gPerMeter) / 1000;
-  if (!Number.isFinite(kg)) return '0 kg/m';
-  const s = kg.toFixed(3);
-  const trimmed = s.replace(/\.?0+$/, '');
-  return `${trimmed} kg/m`;
+function formatGrPerMeter(gPerMeter: number | 0): string {
+  const n = Number(gPerMeter);
+  if (!Number.isFinite(n) || n <= 0) return '0 gr/m';
+  const int = Math.round(n);
+  return `${int} gr/m`;
 }
 
 export default function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
@@ -87,6 +86,8 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const canSelect = normalizedRole !== 'User';
   const canEdit = normalizedRole === 'Admin' || normalizedRole === 'Manager';
 
+  const isCustomerMold = product.hasCustomerMold === true;
+
   // Varyant: products.variant = key, labels.variant[key] = name
   const variantLabel = resolveLabelFromMap(product.variant, labels?.variant).trim();
   const showVariantCaption = React.useMemo(() => {
@@ -96,6 +97,11 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     if (!lbl || lbl === 'none' || lbl === 'yok') return false;
     return true;
   }, [product.variant, variantLabel]);
+
+  const createdDate =
+    typeof product.createdAt === 'string' && product.createdAt
+      ? product.createdAt.slice(0, 10)
+      : null;
 
   const categoryLabel = resolveLabelFromMap(product.category, labels?.category);
   const subLabel = resolveLabelFromMap(product.subCategory, labels?.subcategory);
@@ -128,12 +134,14 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
       variant="elevation"
       data-role={normalizedRole}
       data-can-select={canSelect ? 'true' : 'false'}
+      data-customer-mold={isCustomerMold ? 'true' : 'false'}
       sx={{
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         borderRadius: 1.75,
         height: { xs: 'auto', md: '100%' },
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
       }}
     >
       <CardActionArea
@@ -147,8 +155,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           alignItems: 'stretch',
           minHeight: 0,
           borderRadius: 0,
+          position: 'relative',
         }}
       >
+
         <ProductMedia
           isPdf={isPdf}
           isImage={isImage}
@@ -194,18 +204,37 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             {product.code} {product.name}
           </Typography>
 
+          {isCustomerMold && (
+            <Typography
+              variant="caption"
+              color="warning.main"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: 0.3,
+              }}
+            >
+              Müşteri Kalıbı Profili
+            </Typography>
+          )}
+
           <Stack direction="column" my={0.25}>
             <Typography
               variant="subtitle2"
               color="text.secondary"
               sx={{ fontWeight: (t) => t.typography.fontWeightBold }}
             >
-              Birim Ağırlık: {formatKgPerMeter(product.unit_weight_g_pm)}
+              Birim Ağırlık: {formatGrPerMeter(product.unit_weight_g_pm)}
             </Typography>
 
             <Typography variant="caption" color="text.secondary">
-              Yapıldığı Tarih: {product.date}
+              Çizildiği Tarih: {product.date}
             </Typography>
+
+            {createdDate && (
+              <Typography variant="caption" color="text.secondary">
+                Eklenme Tarihi: {createdDate}
+              </Typography>
+            )}
           </Stack>
 
           {(categoryLabel || subLabel) && (
