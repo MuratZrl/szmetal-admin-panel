@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 
-import { Box, Stack, Button, Checkbox } from '@mui/material';
+import { Box, Stack, Button } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import EditIcon from '@mui/icons-material/Edit';
@@ -18,20 +18,32 @@ type ProductActionsProps = {
   detailHref: string;
 };
 
+type SurfacePalette = {
+  0?: string;
+  1?: string;
+  2?: string;
+  outline?: string;
+};
+
 export function ProductActions({
   canEdit,
   editHref,
   detailHref,
 }: ProductActionsProps): React.JSX.Element {
   const theme = useTheme();
+
   const accent = theme.palette.accent?.main ?? theme.palette.primary.main;
   const danger = theme.palette.error.main;
-  const S = theme.palette.surface;
+
+  const S = theme.palette.surface as SurfacePalette | undefined;
+
+  const outline = S?.outline ?? theme.palette.divider;
+  const surface1 = S?.[1] ?? theme.palette.background.paper;
+  const surface2 = S?.[2] ?? theme.palette.background.default;
 
   const softBg = alpha(accent, theme.palette.mode === 'dark' ? 0.16 : 0.06);
   const hoverBg = alpha(accent, theme.palette.mode === 'dark' ? 0.22 : 0.1);
   const pressBg = alpha(accent, theme.palette.mode === 'dark' ? 0.28 : 0.14);
-  const outline = S.outline;
 
   const commonBtnSx = {
     flex: 1,
@@ -85,13 +97,15 @@ export function ProductActions({
       outline: `2px solid ${alpha(accent, 0.6)}`,
       outlineOffset: 2,
     },
-
   } as const;
 
   const editBtnSx = {
     ...commonBtnSx,
 
-    backgroundColor: theme.palette.mode === 'dark' ? alpha(S[2], 0.3) : alpha(S[1], 0.4),
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? alpha(surface2, 0.3)
+        : alpha(surface1, 0.4),
     borderColor: alpha(accent, 0.5),
     display: { xs: 'none', sm: 'inline-flex' },
 
@@ -144,7 +158,6 @@ export function ProductActions({
         e.stopPropagation();
       }}
     >
-
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         alignItems="center"
@@ -152,7 +165,6 @@ export function ProductActions({
         spacing={{ xs: 1, sm: 1.25 }}
         sx={{ minHeight: 42 }}
       >
-
         {canEdit && (
           <Button
             LinkComponent={Link}
@@ -182,9 +194,7 @@ export function ProductActions({
             Profili İncele
           </Box>
         </Button>
-        
       </Stack>
-
     </Box>
   );
 }

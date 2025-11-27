@@ -168,6 +168,7 @@ export default async function ProductDetailPage({ params }: Props) {
               subCategory={product.subCategory ?? undefined}
               date={product.date}
               revisionDate={product.revisionDate || ''}
+              createdAt={row.created_at ?? null}    // <-- EKLENEN SATIR
               id={String(product.id)}
               drawer={product.drawer}
               control={product.control}

@@ -39,6 +39,8 @@ export type ProductInfoProps = {
   subCategory?: string | null;
   date: string;
   revisionDate?: string | null;
+  /** created_at sütunundan gelecek, Eklenme Tarihi için */
+  createdAt?: string | null;
   id: string;
   code?: string | null;
   hasCustomerMold?: boolean | null;
@@ -277,6 +279,7 @@ export default function ProductInfo(props: ProductInfoProps) {
     unit_weight_g_pm,
     date,
     revisionDate,
+    createdAt,
     drawer,
     control,
     scale,
@@ -344,6 +347,12 @@ export default function ProductInfo(props: ProductInfoProps) {
   const subText = subCategory
     ? labels?.subCategory?.[subCategory] ?? subCategory
     : '';
+
+  // created_at genelde ISO datetime, sadece tarihi göstermek için ilk 10 karakteri alalım
+  const createdDate =
+    typeof createdAt === 'string' && createdAt
+      ? createdAt.slice(0, 10)
+      : '';
 
   const srcUrl = (mediaSrc ?? '').trim();
   const fbUrl = (mediaFileUrl ?? '').trim();
@@ -429,21 +438,24 @@ export default function ProductInfo(props: ProductInfoProps) {
   ]);
 
   rows.push([
-    make('Yapıldığı Tarih:', safe(date)),
+    make('Çizildiği Tarih:', safe(date)),
     make('Revizyon Tarihi:', safe(revisionDate)),
+  ]);
+
+  // Burada ekstra satır: Eklenme Tarihi (created_at)
+  rows.push([
+    make('Eklenme Tarihi:', safe(createdDate)),
+    null,
   ]);
 
   rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
 
   const tail: DetailItem[] = [];
   if (tempCode) tail.push(make('Geçici Kod:', tempCode));
-  if (manufacturerCode)
-    tail.push(make('Üretici Kodu:', manufacturerCode));
+  if (manufacturerCode) tail.push(make('Üretici Kodu:', manufacturerCode));
   if (scale) tail.push(make('Ölçek:', scale));
-  if (typeof outerSizeMm === 'number')
-    tail.push(make('Dış Çevre (mm):', formatInt(outerSizeMm)!));
-  if (typeof sectionMm2 === 'number')
-    tail.push(make('Kesit (mm²):', formatInt(sectionMm2)!));
+  if (typeof outerSizeMm === 'number') tail.push(make('Dış Çevre (mm):', formatInt(outerSizeMm)!));
+  if (typeof sectionMm2 === 'number') tail.push(make('Kesit (mm²):', formatInt(sectionMm2)!));
 
   for (let i = 0; i < tail.length; i += 2) {
     const left = tail[i]!;

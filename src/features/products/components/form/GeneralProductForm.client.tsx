@@ -331,7 +331,7 @@ export default function ProductFormFields({
                       const slug = String(v ?? '');
                       if (!slug) {
                         // Müşteri kalıbıysa boş gözüksün
-                        if (isCustomerMold) return 'Kategori yok (Müşteri Kalıbı)';
+                        if (isCustomerMold) return 'Kategori Yok (Müşteri Kalıbı)';
                         return 'Seçiniz';
                       }
                       return categoryLabelMap.get(slug) ?? slug;
@@ -376,7 +376,7 @@ export default function ProductFormFields({
                     renderValue: (v) => {
                       const slug = String(v ?? '');
                       if (!slug) {
-                        if (isCustomerMold) return 'Alt kategori yok (Müşteri Kalıbı)';
+                        if (isCustomerMold) return 'Alt Kategori Yok (Müşteri Kalıbı)';
                         return watchedCategory ? 'Seçiniz' : 'Bir alt kategori seçin';
                       }
                       if (!hasRealSubCategories && watchedCategory && slug === watchedCategory) {
@@ -488,7 +488,7 @@ export default function ProductFormFields({
               control={control}
               render={({ field }) => (
                 <DatePicker
-                  label="Çizim Tarihi"
+                  label="Çizildiği Tarih"
                   format="DD/MM/YY"
                   value={toDayjs(field.value as string)}
                   onChange={(val) => field.onChange(toIso(val))}

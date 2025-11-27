@@ -32,7 +32,7 @@ export const darkPalette = {
   secondary: { main: '#6F272A', light: '#9C4A4F', dark: '#441618', contrastText: '#F8F9FA' },
 
   success: { main: STATUS.Active,   light: '#7EE8A1', dark: '#155E34', contrastText: '#0B0B0B' },
-  warning: { main: STATUS.Inactive, light: '#FCD34D', dark: '#92400E', contrastText: '#0B0B0B' },
+  warning: { main: STATUS.Inactive, light: '#fab30dff', dark: '#92400E', contrastText: '#0B0B0B' },
   error:   { main: STATUS.Banned,   light: '#F29AA4', dark: '#7A0E1A', contrastText: '#FFFFFF' },
   info:    { main: '#2F6EE5',       light: '#86B0FF', dark: '#1E3F94', contrastText: '#FFFFFF' },
 

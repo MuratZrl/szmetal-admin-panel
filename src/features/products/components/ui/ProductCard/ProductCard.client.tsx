@@ -88,6 +88,8 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
 
   const isCustomerMold = product.hasCustomerMold === true;
 
+  const customerMoldColor = theme.palette.mode === 'dark' ? theme.palette.warning.light : theme.palette.warning.dark;
+
   // Varyant: products.variant = key, labels.variant[key] = name
   const variantLabel = resolveLabelFromMap(product.variant, labels?.variant).trim();
   const showVariantCaption = React.useMemo(() => {
@@ -207,10 +209,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           {isCustomerMold && (
             <Typography
               variant="caption"
-              color="warning.main"
               sx={{
                 fontWeight: 700,
                 letterSpacing: 0.3,
+                color: customerMoldColor,
               }}
             >
               Müşteri Kalıbı Profili

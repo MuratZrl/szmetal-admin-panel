@@ -78,8 +78,9 @@ export default function ProductCreateForm({ dicts }: Props) {
         name: v.name,
         code: v.code,
         variant: v.variant,
-        category: v.category,
-        subCategory: v.subCategory,
+        
+        category: v.category ?? null,
+        subCategory: v.subCategory ?? null,
 
         // Artık tek kaynak: gr/m
         unitWeightG: v.unitWeightG ?? null,

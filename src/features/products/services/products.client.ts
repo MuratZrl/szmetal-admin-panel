@@ -13,8 +13,9 @@ export type CreateProductInput = {
   code: string;
   variant: string;
 
-  category: string;
-  subCategory: string;
+  // Müşteri kalıbı ise boş bırakılabilsin
+  category?: string | null;
+  subCategory?: string | null;
 
   categoryId?: string | null;
   subCategoryId?: string | null;
@@ -82,7 +83,8 @@ export async function createProduct(v: CreateProductInput): Promise<string | und
     variant: v.variant,
 
     category: v.category ?? null,
-    sub_category: v.subCategory,
+    sub_category: v.subCategory ?? null,
+    
     category_id: v.categoryId ?? null,
     subcategory_id: v.subCategoryId ?? null,
 

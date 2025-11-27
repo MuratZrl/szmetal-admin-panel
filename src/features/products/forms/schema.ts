@@ -8,12 +8,6 @@ export type CustomerMoldSelect = '' | CustomerMoldValue;
 /** "Varyant" için tek kaynak: UI'da "Yok" */
 export const DEFAULT_VARIANT_KEY = 'yok' as const;
 
-/** Genel: zorunlu select’ler için '' → undefined; required yakalasın */
-const requiredSelect = yup
-  .string()
-  .transform((_v, orig) => (orig === '' ? undefined : _v))
-  .required('Zorunlu');
-
 /** Sayısal alanlar: '' ve NaN → null */
 const toNullNumber = () =>
   yup
@@ -62,9 +56,26 @@ export const productSchema = yup
       .default(DEFAULT_VARIANT_KEY)
       .defined(),
 
-    // Zorunlu selectler
-    category: requiredSelect,
-    subCategory: requiredSelect,
+    // Kategori / Alt kategori:
+    //   - Müşteri Kalıbı = 'Evet' ise zorunlu değil
+    //   - Diğer durumda zorunlu
+    category: yup
+      .string()
+      .transform((_v, orig) => (orig === '' ? undefined : _v))
+      .when('customerMold', {
+        is: (cm: CustomerMoldSelect) => cm === 'Evet',
+        then: (schema) => schema.optional(),
+        otherwise: (schema) => schema.required('Zorunlu'),
+      }),
+
+    subCategory: yup
+      .string()
+      .transform((_v, orig) => (orig === '' ? undefined : _v))
+      .when('customerMold', {
+        is: (cm: CustomerMoldSelect) => cm === 'Evet',
+        then: (schema) => schema.optional(),
+        otherwise: (schema) => schema.required('Zorunlu'),
+      }),
 
     // Yeni: boş ya da undefined gelirse otomatik "Hayır" yap
     customerMold: yup

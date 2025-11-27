@@ -31,7 +31,7 @@ export const lightPalette = {
   secondary: { main: '#7A3A3D', light: '#A35C61', dark: '#532528', contrastText: '#FFFFFF' },
 
   success: { main: STATUS.Active,   light: '#86E9A6', dark: '#187945', contrastText: '#0B0B0B' },
-  warning: { main: STATUS.Inactive, light: '#FCD34D', dark: '#92400E', contrastText: '#0B0B0B' },
+  warning: { main: STATUS.Inactive, light: '#FCD34D', dark: '#ff5512ff', contrastText: '#0B0B0B' },
   error:   { main: STATUS.Banned,   light: '#F29AA4', dark: '#7A0E1A', contrastText: '#FFFFFF' },
   info:    { main: '#2F6EE5',       light: '#86B0FF', dark: '#1E3F94', contrastText: '#FFFFFF' },
 

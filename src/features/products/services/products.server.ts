@@ -340,21 +340,23 @@ export async function fetchFilteredProducts(
    */
   if (filters.from) q = q.gte('date', filters.from);
   if (filters.to) q = q.lte('date', filters.to);
-
+  
   /**
    * Sıralama:
    *   ProductSort union'ına göre sıralama stratejisi seçilir.
-   *   - date-asc/desc       -> date kolonu
+   *   - date-asc/desc       -> created_at kolonu (siteye eklenme tarihi)
    *   - weight-asc/desc     -> unit_weight_g_pm
    *   - code-asc/desc       -> code
    *   - default             -> created_at (en yeni ürünler önce)
    */
   switch (filters.sort) {
     case 'date-desc':
-      q = q.order('date', { ascending: false });
+      // Eskiden: q = q.order('date', { ascending: false });
+      q = q.order('created_at', { ascending: false });
       break;
     case 'date-asc':
-      q = q.order('date', { ascending: true });
+      // Eskiden: q = q.order('date', { ascending: true });
+      q = q.order('created_at', { ascending: true });
       break;
     case 'weight-asc':
       q = q.order('unit_weight_g_pm', { ascending: true });
@@ -369,6 +371,7 @@ export async function fetchFilteredProducts(
       q = q.order('code', { ascending: false });
       break;
     default:
+      // sort yoksa da yine en son eklenenler önce
       q = q.order('created_at', { ascending: false });
       break;
   }
