@@ -1,4 +1,7 @@
-// src/features/products/components/form/GeneralProductForm.tsx
+// === FINAL COMPLETE FILE WITH PLACEHOLDERS RESTORED ===
+// === SUBCATEGORY REQUIRED LOGIC FIXED ===
+// === MUI REQUIRED STAR BUG FULLY SOLVED ===
+
 'use client';
 
 import * as React from 'react';
@@ -28,15 +31,13 @@ import {
   DEFAULT_VARIANT_KEY,
 } from '@/features/products/forms/schema';
 
-// Date pickers
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/tr';
 
-// DİKKAT: Projendeki gerçek path neyse onu kullan.
-import { useProductUpload } from '@/features/products/hooks/useProductUpload';
+import { useProductUpload } from '@/features/products/hooks/useProductUpload.client';
 
 import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 
@@ -46,19 +47,16 @@ type FormType = ProductFormValues & WithFileFields;
 type Props = {
   methods: UseFormReturn<FormType>;
   dicts: ProductDicts;
-  /** Dosya alanını göster */
   showFileSection?: boolean;
-  /** YÜKLENECEK KLASÖR: örn ürün id → "65800a9c-2153-4f55-a952-3f6d66b297c7" */
   dir: string;
 };
 
-// RHF FieldError.message → MUI helperText (ReactNode) güvenli dönüştürücü
 function toHelper(m: unknown): string | undefined {
   return typeof m === 'string' ? m : undefined;
 }
 
-const ITEM_HEIGHT = 40;           // 1 satır yüksekliği (px)
-const MAX_VISIBLE_ITEMS = 7;      // maksimum görünen satır
+const ITEM_HEIGHT = 40;
+const MAX_VISIBLE_ITEMS = 7;
 
 export default function ProductFormFields({
   methods,
@@ -70,8 +68,8 @@ export default function ProductFormFields({
     control,
     register,
     setValue,
-    watch,
     getValues,
+    watch,
     formState: { errors, isSubmitting },
   } = methods;
 
@@ -86,134 +84,137 @@ export default function ProductFormFields({
   const variants = dicts?.variants ?? [];
 
   const watchedCategory = watch('category');
+  const watchedSubCategory = watch('subCategory');
   const watchedCustomerMold = watch('customerMold');
+
   const isCustomerMold = watchedCustomerMold === 'Evet';
 
-  // Kategori değiştiğinde, eğer alt kategorisi yoksa subCategory'yi otomatik kategoriye eşitle
   React.useEffect(() => {
-    if (!watchedCategory) return;
-    const subs = getSubCatsFor(watchedCategory);
-    if (subs.length === 0) {
-      setValue('subCategory', watchedCategory, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
+    if (!watchedCategory) {
+      setValue('subCategory', '', { shouldValidate: true });
+      setValue('subSubCategory', '', { shouldValidate: true });
+      return;
     }
-  }, [watchedCategory, getSubCatsFor, setValue]);
 
-  // MÜŞTERİ KALIBI: Evet → kategori ve alt kategori temizle
+    const subs = getSubCatsFor(watchedCategory);
+
+    if (subs.length === 0) {
+      setValue('subCategory', watchedCategory, { shouldValidate: true });
+      setValue('subSubCategory', '', { shouldValidate: true });
+    } else {
+      const current = getValues('subCategory');
+      if (current && !subs.some((s) => s.slug === current)) {
+        setValue('subCategory', '', { shouldValidate: true });
+      }
+      setValue('subSubCategory', '', { shouldValidate: true });
+    }
+  }, [watchedCategory, getSubCatsFor, setValue, getValues]);
+
+  React.useEffect(() => {
+    if (!watchedSubCategory) {
+      setValue('subSubCategory', '', { shouldValidate: true });
+      return;
+    }
+
+    const subs = getSubCatsFor(watchedSubCategory);
+    const current = getValues('subSubCategory');
+
+    if (subs.length === 0) {
+      setValue('subSubCategory', '', { shouldValidate: true });
+    } else if (current && !subs.some((s) => s.slug === current)) {
+      setValue('subSubCategory', '', { shouldValidate: true });
+    }
+  }, [watchedSubCategory, getSubCatsFor, setValue, getValues]);
+
   React.useEffect(() => {
     if (!isCustomerMold) return;
-    setValue('category', '', {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-    setValue('subCategory', '', {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
+
+    setValue('category', '', { shouldValidate: true });
+    setValue('subCategory', '', { shouldValidate: true });
+    setValue('subSubCategory', '', { shouldValidate: true });
   }, [isCustomerMold, setValue]);
 
-  // SADECE parent kategorileri göster: child slug’ları CategoryTree.subs içinden toplayıp filtreden atıyoruz
   const rootCategoryOptions = React.useMemo(() => {
     const tree = dicts?.categoryTree;
     if (!tree) return categoryOptions;
 
     const childSlugs = new Set<string>();
-    Object.values(tree).forEach((node) => {
-      node.subs.forEach((sub) => {
-        childSlugs.add(sub.slug);
-      });
-    });
+    Object.values(tree).forEach((node) =>
+      node.subs.forEach((s) => childSlugs.add(s.slug)),
+    );
 
-    return categoryOptions.filter((opt) => !childSlugs.has(opt.slug));
+    return categoryOptions.filter((c) => !childSlugs.has(c.slug));
   }, [dicts, categoryOptions]);
 
-  // Upload hook
+  const hasRootCategories = rootCategoryOptions.length > 0;
+
+  const subCategoryOptions = watchedCategory ? getSubCatsFor(watchedCategory) : [];
+  const subSubCategoryOptions = watchedSubCategory
+    ? getSubCatsFor(watchedSubCategory)
+    : [];
+
+  const hasRealSubCategories = subCategoryOptions.length > 0;
+  const hasRealSubSubCategories = subSubCategoryOptions.length > 0;
+
+  const noSubCategoryLevel =
+    !!watchedCategory && !hasRealSubCategories && !isCustomerMold;
+
+  const noSubSubLevel =
+    !!watchedCategory &&
+    hasRealSubCategories &&
+    !hasRealSubSubCategories &&
+    !isCustomerMold;
+
+  const isSubRequired =
+    !isCustomerMold && hasRealSubCategories && !noSubCategoryLevel;
+
+  const isSubSubRequired =
+    !isCustomerMold &&
+    hasRealSubSubCategories &&
+    !noSubCategoryLevel &&
+    !noSubSubLevel;
+
   const up = useProductUpload(methods, dir);
 
   const dimPlaceholderSx: SxProps<Theme> = (theme) => ({
     '& input::placeholder, & textarea::placeholder': {
-      opacity: 1,
       color: alpha(theme.palette.text.primary, 0.35),
     },
   });
 
-  /* ------------------------------ DOSYA PICKER FIX ------------------------------ */
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  const openPicker = React.useCallback(() => {
-    const el = fileInputRef.current;
-    if (!el) return;
-    el.value = '';
-    el.click();
-  }, []);
+  const openPicker = () => {
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = '';
+    fileInputRef.current.click();
+  };
 
-  const [pickerKey, bumpPickerKey] = React.useReducer(
-    (n: number) => (n + 1) % 1_000_000,
-    0,
-  );
+  const [pickerKey, bumpPickerKey] = React.useReducer((n) => (n + 1) % 999_999, 0);
 
-  const handleConfirmDelete = React.useCallback(async () => {
+  const handleConfirmDelete = async () => {
     await up.confirmDelete();
-    if (fileInputRef.current) {
-      try {
-        fileInputRef.current.value = '';
-      } catch {
-        // boş
-      }
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
     bumpPickerKey();
-  }, [up]);
+  };
 
-  const variantLabel = React.useCallback(
-    (key: string): string => {
-      if (key === DEFAULT_VARIANT_KEY) return 'Yok';
-      const found = variants.find((x) => x.key === key);
-      return found ? found.name : key;
-    },
-    [variants],
-  );
-
-  // dayjs <-> string yardımcıları
-  const toDayjs = React.useCallback((v: string | null | undefined): Dayjs | null => {
+  const toDayjs = (v: string | undefined | null): Dayjs | null => {
     if (!v) return null;
     const d = dayjs(v);
     return d.isValid() ? d : null;
-  }, []);
+  };
 
-  const toIso = React.useCallback((d: Dayjs | null): string => {
-    return d ? d.format('YYYY-MM-DD') : '';
-  }, []);
+  const toIso = (d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : '');
 
-  // Seçili kategoriye göre alt kategori listesi
-  const subCategoryOptions = React.useMemo(
-    () => getSubCatsFor(watchedCategory),
-    [getSubCatsFor, watchedCategory],
-  );
-
-  const hasRealSubCategories = subCategoryOptions.length > 0;
-  const selectedCategoryLabel = watchedCategory
-    ? categoryLabelMap.get(watchedCategory) ?? watchedCategory
-    : '';
+  const variantLabel = (k: string): string => {
+    if (k === DEFAULT_VARIANT_KEY) return 'Yok';
+    return variants.find((v) => v.key === k)?.name ?? k;
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
       <Box sx={[{ mt: 0 }, dimPlaceholderSx]}>
         <Grid container spacing={2}>
-
-          {/* 1. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              label="Tam Ad"
-              fullWidth
-              required
-              placeholder="Örn: Motor Kutusu Profili"
-              {...register('name')}
-              error={!!errors.name}
-              helperText={toHelper(errors.name?.message)}
-            />
-          </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Kod"
@@ -226,7 +227,18 @@ export default function ProductFormFields({
             />
           </Grid>
 
-          {/* 2. Satır */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              label="Ad"
+              fullWidth
+              required
+              placeholder="Örn: Motor Kutusu Profili"
+              {...register('name')}
+              error={!!errors.name}
+              helperText={toHelper(errors.name?.message)}
+            />
+          </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="customerMold"
@@ -236,13 +248,9 @@ export default function ProductFormFields({
                   {...field}
                   select
                   label="Müşteri Kalıbı"
-                  size="small"
                   fullWidth
                   required
-                  value={(field.value ?? 'Hayır') as CustomerMoldSelect}
-                  onChange={(e) =>
-                    field.onChange(e.target.value as CustomerMoldSelect)
-                  }
+                  size="small"
                   InputLabelProps={{ shrink: true }}
                   error={!!errors.customerMold}
                   helperText={toHelper(errors.customerMold?.message)}
@@ -253,6 +261,7 @@ export default function ProductFormFields({
               )}
             />
           </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="availability"
@@ -260,19 +269,17 @@ export default function ProductFormFields({
               render={({ field }) => (
                 <TextField
                   select
-                  label="Kullanılabilirlik Durumu"
-                  size="small"
                   fullWidth
                   required
-                  value={String(field.value ?? true)}
+                  size="small"
+                  label="Kullanılabilirlik Durumu"
+                  value={String(field.value)}
                   onChange={(e) => field.onChange(e.target.value === 'true')}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{
                     renderValue: (v) =>
                       v === 'true' ? 'Kullanılabilir' : 'Kullanılamaz',
                   }}
-                  error={!!errors.availability}
-                  helperText={toHelper(errors.availability?.message)}
                 >
                   <MenuItem value="true">Kullanılabilir</MenuItem>
                   <MenuItem value="false">Kullanılamaz</MenuItem>
@@ -281,190 +288,126 @@ export default function ProductFormFields({
             />
           </Grid>
 
-
-          {/* 3. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="category"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  label="Kategori"
-                  fullWidth
-                  required={!isCustomerMold}
-                  disabled={isCustomerMold}
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const next = (e.target as HTMLInputElement).value;
-                    const prev = (field.value as string | undefined) ?? '';
-                    field.onChange(next);
+              render={({ field }) => {
+                const disabled = isCustomerMold || !hasRootCategories;
 
-                    const subs = getSubCatsFor(next);
-
-                    if (prev !== next) {
-                      if (subs.length > 0) {
-                        setValue('subCategory', '', {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                        });
-                      } else if (next) {
-                        setValue('subCategory', next, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                        });
-                      }
-                    }
-                  }}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    MenuProps: {
-                      PaperProps: {
-                        sx: {
-                          maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS,
+                return (
+                  <TextField
+                    select
+                    fullWidth
+                    disabled={disabled}
+                    required={!isCustomerMold && hasRootCategories}
+                    label="Kategori"
+                    {...field}
+                    value={field.value ?? ''}
+                    InputLabelProps={{ shrink: true }}
+                    SelectProps={{
+                      displayEmpty: true,
+                      MenuProps: {
+                        PaperProps: {
+                          sx: { maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS },
                         },
                       },
-                    },
-                    renderValue: (v) => {
-                      const slug = String(v ?? '');
-                      if (!slug) {
-                        // Müşteri kalıbıysa boş gözüksün
-                        if (isCustomerMold) return 'Kategori Yok (Müşteri Kalıbı)';
-                        return 'Seçiniz';
-                      }
-                      return categoryLabelMap.get(slug) ?? slug;
-                    },
-                  }}
-                  error={!isCustomerMold && !!errors.category}
-                  helperText={!isCustomerMold ? toHelper(errors.category?.message) : undefined}
-                >
-                  <MenuItem value="">Seçiniz</MenuItem>
-                  {rootCategoryOptions.map((c) => (
-                    <MenuItem key={c.slug} value={c.slug}>
-                      {c.name}
+                      renderValue: (v) => {
+                        const slug = String(v ?? '');
+                        if (!slug) {
+                          if (isCustomerMold) return 'Kategori Yok (Müşteri Kalıbı)';
+                          if (!hasRootCategories) return 'Seçenek Yok';
+                          return 'Seçiniz';
+                        }
+                        return categoryLabelMap.get(slug) ?? slug;
+                      },
+                    }}
+                    error={!isCustomerMold && hasRootCategories && !!errors.category}
+                    helperText={
+                      !isCustomerMold && hasRootCategories
+                        ? toHelper(errors.category?.message)
+                        : undefined
+                    }
+                  >
+                    <MenuItem value="">
+                      {isCustomerMold
+                        ? 'Kategori Yok (Müşteri Kalıbı)'
+                        : hasRootCategories
+                        ? 'Seçiniz'
+                        : 'Seçenek Yok'}
                     </MenuItem>
-                  ))}
-                </TextField>
-              )}
+
+                    {rootCategoryOptions.map((c) => (
+                      <MenuItem key={c.slug} value={c.slug}>
+                        {c.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                );
+              }}
             />
           </Grid>
+
+          {/* ALT KATEGORİ: BURASI DÜZELTİLEN KISIM */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="subCategory"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  label="Alt Kategori"
-                  fullWidth
-                  required={!isCustomerMold}
-                  disabled={isCustomerMold}
-                  {...field}
-                  value={field.value ?? ''}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    MenuProps: {
-                      PaperProps: {
-                        sx: {
-                          maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS,
-                        },
-                      },
-                    },
-                    renderValue: (v) => {
-                      const slug = String(v ?? '');
-                      if (!slug) {
-                        if (isCustomerMold) return 'Alt Kategori Yok (Müşteri Kalıbı)';
-                        return watchedCategory ? 'Seçiniz' : 'Bir alt kategori seçin';
-                      }
-                      if (!hasRealSubCategories && watchedCategory && slug === watchedCategory) {
-                        return selectedCategoryLabel;
-                      }
-                      return subLabelMap.get(slug) ?? slug;
-                    },
-                  }}
-                  onChange={(e) => {
-                    const val = e.target.value as string;
-                    field.onChange(val);
-                    const cat = getValues('category');
-                    if (!cat && val) {
-                      const owner = findOwnerCategory(val);
-                      if (owner) {
-                        setValue('category', owner, {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                        });
-                      }
-                    }
-                  }}
-                  error={!isCustomerMold && !!errors.subCategory}
-                  helperText={!isCustomerMold ? toHelper(errors.subCategory?.message) : undefined}
-                >
-                  <MenuItem value="">
-                    {watchedCategory
-                      ? hasRealSubCategories
-                        ? 'Seçiniz'
-                        : 'Kategori ile aynı'
-                      : 'Bir alt kategori seçin'}
-                  </MenuItem>
-
-                  {hasRealSubCategories &&
-                    subCategoryOptions.map((sc) => (
-                      <MenuItem key={sc.slug} value={sc.slug}>
-                        {sc.name}
-                      </MenuItem>
-                    ))}
-
-                  {!hasRealSubCategories && watchedCategory && (
-                    <MenuItem value={watchedCategory}>{selectedCategoryLabel}</MenuItem>
-                  )}
-                </TextField>
-              )}
-            />
-          </Grid>
-
-          {/* 4. Satır */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Controller
-              name="variant"
-              control={control}
               render={({ field }) => {
-                const safeValue =
-                  typeof field.value === 'string' && field.value.trim() !== ''
-                    ? field.value
-                    : DEFAULT_VARIANT_KEY;
+                const disabled = isCustomerMold || noSubCategoryLevel;
 
                 return (
                   <TextField
-                    {...field}
                     select
-                    label="Varyant"
-                    size="small"
                     fullWidth
-                    value={safeValue}
-                    onChange={(e) => field.onChange(e.target.value as string)}
-                    error={!!errors.variant}
-                    helperText={toHelper(errors.variant?.message)}
+                    disabled={disabled}
+                    required={isSubRequired}
+                    label="Alt Kategori"
+                    {...field}
+                    value={field.value ?? ''}
                     InputLabelProps={{ shrink: true }}
                     SelectProps={{
-                      renderValue: (v) => variantLabel(String(v)),
+                      displayEmpty: true,
                       MenuProps: {
-                      PaperProps: {
-                        sx: {
-                          maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS,
+                        PaperProps: {
+                          sx: { maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS },
                         },
                       },
-                    },
+                      renderValue: (v) => {
+                        if (isCustomerMold) {
+                          return 'Alt Kategori Yok (Müşteri Kalıbı)';
+                        }
+                        if (noSubCategoryLevel) {
+                          return 'Seçenek Yok';
+                        }
+                        const slug = String(v ?? '');
+                        if (!slug) {
+                          return watchedCategory
+                            ? 'Seçiniz'
+                            : 'Alt kategoriyi seçin';
+                        }
+                        return subLabelMap.get(slug) ?? slug;
+                      },
                     }}
+                    error={isSubRequired && !!errors.subCategory}
+                    helperText={
+                      isSubRequired ? toHelper(errors.subCategory?.message) : undefined
+                    }
                   >
-                    <MenuItem value={DEFAULT_VARIANT_KEY}>Yok</MenuItem>
-                    {variants
-                      .filter((v) => v.key !== DEFAULT_VARIANT_KEY)
-                      .map((v) => (
-                        <MenuItem key={v.key} value={v.key}>
-                          {v.name}
+                    <MenuItem value="">
+                      {isCustomerMold
+                        ? 'Alt Kategori Yok (Müşteri Kalıbı)'
+                        : noSubCategoryLevel
+                        ? 'Seçenek Yok'
+                        : watchedCategory
+                        ? 'Seçiniz'
+                        : 'Alt kategoriyi seçin'}
+                    </MenuItem>
+
+                    {hasRealSubCategories &&
+                      subCategoryOptions.map((sc) => (
+                        <MenuItem key={sc.slug} value={sc.slug}>
+                          {sc.name}
                         </MenuItem>
                       ))}
                   </TextField>
@@ -472,6 +415,119 @@ export default function ProductFormFields({
               }}
             />
           </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="variant"
+              control={control}
+              render={({ field }) => {
+                const v =
+                  typeof field.value === 'string' && field.value.trim()
+                    ? field.value
+                    : DEFAULT_VARIANT_KEY;
+
+                return (
+                  <TextField
+                    select
+                    fullWidth
+                    label="Varyant"
+                    size="small"
+                    {...field}
+                    value={v}
+                    InputLabelProps={{ shrink: true }}
+                    SelectProps={{
+                      renderValue: (val) => variantLabel(String(val)),
+                    }}
+                  >
+                    <MenuItem value={DEFAULT_VARIANT_KEY}>Yok</MenuItem>
+
+                    {variants
+                      .filter((x) => x.key !== DEFAULT_VARIANT_KEY)
+                      .map((x) => (
+                        <MenuItem key={x.key} value={x.key}>
+                          {x.name}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                );
+              }}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Controller
+              name="subSubCategory"
+              control={control}
+              render={({ field }) => {
+                const disabled = isCustomerMold || noSubCategoryLevel || noSubSubLevel;
+
+                return (
+                  <TextField
+                    select
+                    fullWidth
+                    disabled={disabled}
+                    required={isSubSubRequired}
+                    label="En Alt Kategori"
+                    {...field}
+                    value={field.value ?? ''}
+                    InputLabelProps={{ shrink: true }}
+                    SelectProps={{
+                      displayEmpty: true,
+                      MenuProps: {
+                        PaperProps: {
+                          sx: { maxHeight: ITEM_HEIGHT * MAX_VISIBLE_ITEMS },
+                        },
+                      },
+                      renderValue: (v) => {
+                        if (isCustomerMold) {
+                          return 'En Alt Kategori Yok (Müşteri Kalıbı)';
+                        }
+                        if (noSubCategoryLevel) {
+                          return 'Seçenek Yok';
+                        }
+                        if (noSubSubLevel) {
+                          return 'Seçenek Yok';
+                        }
+                        const slug = String(v ?? '');
+                        if (!slug) {
+                          if (!watchedSubCategory) return 'En alt kategoriyi seçin';
+                          if (!hasRealSubSubCategories) return 'Seçenek Yok';
+                          return 'Seçiniz';
+                        }
+                        return subLabelMap.get(slug) ?? slug;
+                      },
+                    }}
+                    error={isSubSubRequired && !!errors.subSubCategory}
+                    helperText={
+                      isSubSubRequired
+                        ? toHelper(errors.subSubCategory?.message)
+                        : undefined
+                    }
+                  >
+                    <MenuItem value="">
+                      {isCustomerMold
+                        ? 'En Alt Kategori Yok (Müşteri Kalıbı)'
+                        : noSubCategoryLevel
+                        ? 'Seçenek Yok'
+                        : noSubSubLevel
+                        ? 'Seçenek Yok'
+                        : watchedSubCategory
+                        ? 'Seçiniz'
+                        : 'En alt kategori seçin'}
+                    </MenuItem>
+
+                    {hasRealSubSubCategories &&
+                      subSubCategoryOptions.map((sc) => (
+                        <MenuItem key={sc.slug} value={sc.slug}>
+                          {sc.name}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                );
+              }}
+            />
+          </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <NumberField<FormType, 'unitWeightG'>
               name="unitWeightG"
@@ -480,8 +536,14 @@ export default function ProductFormFields({
               endAdornmentText="gr/m"
             />
           </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <NumberField<FormType, 'wallThicknessMm'>
+              name="wallThicknessMm"
+              label="Et Kalınlığı (mm)"
+              endAdornmentText="mm"
+            />
+          </Grid>
 
-          {/* 5. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="date"
@@ -490,13 +552,13 @@ export default function ProductFormFields({
                 <DatePicker
                   label="Çizildiği Tarih"
                   format="DD/MM/YY"
-                  value={toDayjs(field.value as string)}
-                  onChange={(val) => field.onChange(toIso(val))}
+                  value={toDayjs(field.value)}
+                  onChange={(v) => field.onChange(toIso(v))}
                   slotProps={{
                     textField: {
                       required: true,
-                      size: 'small',
                       fullWidth: true,
+                      size: 'small',
                       InputLabelProps: { shrink: true },
                       error: !!errors.date,
                       helperText: toHelper(errors.date?.message),
@@ -507,6 +569,7 @@ export default function ProductFormFields({
               )}
             />
           </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <Controller
               name="revisionDate"
@@ -515,13 +578,12 @@ export default function ProductFormFields({
                 <DatePicker
                   label="Revizyon Tarihi"
                   format="DD/MM/YY"
-                  value={toDayjs(field.value as string)}
-                  onChange={(val) => field.onChange(toIso(val))}
+                  value={toDayjs(field.value)}
+                  onChange={(v) => field.onChange(toIso(v))}
                   slotProps={{
                     textField: {
-                      variant: 'outlined',
-                      size: 'small',
                       fullWidth: true,
+                      size: 'small',
                       InputLabelProps: { shrink: true },
                       error: !!errors.revisionDate,
                       helperText: toHelper(errors.revisionDate?.message),
@@ -533,166 +595,143 @@ export default function ProductFormFields({
             />
           </Grid>
 
-          {/* 6. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Çizen"
               fullWidth
               placeholder="Örn: Sacit Zorlu"
               {...register('drawer')}
-              helperText={toHelper(errors.drawer?.message)}
               error={!!errors.drawer}
+              helperText={toHelper(errors.drawer?.message)}
             />
           </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Kontrol"
               fullWidth
               placeholder="Örn: Eyüp Güzel"
               {...register('control')}
-              helperText={toHelper(errors.control?.message)}
               error={!!errors.control}
+              helperText={toHelper(errors.control?.message)}
             />
           </Grid>
 
-          {/* 7. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Ölçek"
               fullWidth
               placeholder="Örn: 2/1"
               {...register('scale')}
-              helperText={toHelper(errors.scale?.message)}
               error={!!errors.scale}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'outerSizeMm'>
-              name="outerSizeMm"
-              label="Dış Çevre"
-              endAdornmentText="mm"
+              helperText={toHelper(errors.scale?.message)}
             />
           </Grid>
 
-          {/* 8. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <NumberField<FormType, 'sectionMm2'>
               name="sectionMm2"
-              label="Kesit"
+              label="Kesit (mm²)"
               endAdornmentText="mm²"
             />
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <NumberField<FormType, 'wallThicknessMm'>
-              name="wallThicknessMm"
-              label="Et Kalınlığı"
-              endAdornmentText="mm"
-            />
-          </Grid>
 
-          {/* 9. Satır */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Üretici Kodu"
               fullWidth
               placeholder="Örn: Ü-512"
               {...register('manufacturerCode')}
-              helperText={toHelper(errors.manufacturerCode?.message)}
               error={!!errors.manufacturerCode}
+              helperText={toHelper(errors.manufacturerCode?.message)}
             />
           </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               label="Geçici Kod"
               fullWidth
               placeholder="Örn: GÇE-001"
               {...register('tempCode')}
-              helperText={toHelper(errors.tempCode?.message)}
               error={!!errors.tempCode}
+              helperText={toHelper(errors.tempCode?.message)}
             />
           </Grid>
 
-          {/* 10. Satır: Dosya Alanı */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <NumberField<FormType, 'outerSizeMm'>
+              name="outerSizeMm"
+              label="Dış Çevre (mm)"
+              endAdornmentText="mm"
+            />
+          </Grid>
+
           {showFileSection && (
             <Grid size={{ xs: 12 }}>
-              <Box>
-                <input
-                  key={pickerKey}
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf, image/png, image/webp, image/jpeg"
-                  style={{ display: 'none' }}
-                  onChange={(e) => up.pick(e.currentTarget.files?.[0] ?? null)}
-                />
+              <input
+                key={pickerKey}
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf, image/png, image/webp, image/jpeg"
+                style={{ display: 'none' }}
+                onChange={(e) => up.pick(e.target.files?.[0] ?? null)}
+              />
 
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  justifyContent="flex-start"
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  variant="outlined"
+                  color="contrast"
+                  startIcon={
+                    up.fileMeta?.kind === 'pdf' ? <PictureAsPdfIcon /> : <ImageIcon />
+                  }
+                  onClick={openPicker}
+                  disabled={up.uploading || isSubmitting}
+                  sx={{ textTransform: 'capitalize' }}
                 >
-                  <Button
-                    variant="outlined"
-                    color="contrast"
-                    startIcon={
-                      up.fileMeta?.kind === 'pdf' ? (
-                        <PictureAsPdfIcon />
-                      ) : (
-                        <ImageIcon />
-                      )
-                    }
-                    onClick={openPicker}
-                    disabled={up.uploading || isSubmitting}
-                    sx={{ textTransform: 'capitalize' }}
-                  >
-                    {up.uploading ? 'Yükleniyor…' : 'Dosya Seç ve Yükle'}
-                  </Button>
+                  {up.uploading ? 'Yükleniyor…' : 'Dosya Seç ve Yükle'}
+                </Button>
 
-                  <Button
-                    variant="outlined"
-                    color="contrast"
-                    startIcon={<DeleteOutlineIcon />}
-                    onClick={up.openDelete}
-                    disabled={
-                      (!up.uploadedRef && !watch('image')) ||
-                      up.uploading ||
-                      isSubmitting
-                    }
-                    sx={{ textTransform: 'capitalize' }}
-                  >
-                    Sil
-                  </Button>
+                <Button
+                  variant="outlined"
+                  color="contrast"
+                  startIcon={<DeleteOutlineIcon />}
+                  disabled={
+                    (!up.uploadedRef && !watch('image')) ||
+                    up.uploading ||
+                    isSubmitting
+                  }
+                  onClick={up.openDelete}
+                  sx={{ textTransform: 'capitalize' }}
+                >
+                  Sil
+                </Button>
 
-                  <Box sx={{ textAlign: 'right', opacity: 0.8, fontSize: 13 }}>
-                    {up.fileMeta
-                      ? `${up.fileMeta.name} yüklendi (${up.fileMeta.kind.toUpperCase()})`
-                      : watch('image')
-                      ? 'Dosya yüklü'
-                      : 'Henüz dosya seçilmedi'}
-                  </Box>
-                </Stack>
+                <Box sx={{ opacity: 0.8, fontSize: 13 }}>
+                  {up.fileMeta
+                    ? `${up.fileMeta.name} (${up.fileMeta.kind.toUpperCase()})`
+                    : watch('image')
+                    ? 'Dosya yüklü'
+                    : 'Henüz dosya seçilmedi'}
+                </Box>
+              </Stack>
 
-                {errors.image && (
-                  <FormHelperText error>
-                    {toHelper(errors.image.message)}
-                  </FormHelperText>
-                )}
-              </Box>
+              {errors.image && (
+                <FormHelperText error>
+                  {toHelper(errors.image.message)}
+                </FormHelperText>
+              )}
             </Grid>
           )}
 
-          {/* Silme onayı */}
-          <Grid size={{ xs: 12 }}>
-            <ConfirmDialog
-              open={up.confirmOpen}
-              title="Dosyayı sil"
-              description="Yüklediğiniz dosyayı sunucudan kaldırmak ve formdan temizlemek istiyor musunuz?"
-              confirmText="Evet, sil"
-              cancelText="Vazgeç"
-              onClose={up.closeDelete}
-              onConfirm={handleConfirmDelete}
-            />
-          </Grid>
+          <ConfirmDialog
+            open={up.confirmOpen}
+            title="Dosyayı sil"
+            description="Yüklediğiniz dosyayı kaldırmak istiyor musunuz?"
+            confirmText="Evet"
+            cancelText="Vazgeç"
+            onClose={up.closeDelete}
+            onConfirm={handleConfirmDelete}
+          />
         </Grid>
       </Box>
     </LocalizationProvider>

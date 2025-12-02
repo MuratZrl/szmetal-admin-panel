@@ -4,11 +4,11 @@ import 'server-only';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 import type { ProductAnalyticsRow } from '@/features/products_analytics/components/datagrid/columns';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
-import type { CategoryTree } from '@/features/products/forms/helpers';
 import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
 import type { Database } from '@/types/supabase';
 
-type ProductsRow = Database['public']['Tables']['products']['Row'];
+type ProductsRow  = Database['public']['Tables']['products']['Row'];
+type CategoryRow  = Database['public']['Tables']['categories']['Row'];
 
 function humanizeFallback(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -23,7 +23,7 @@ function humanizeFallback(value: string | null | undefined): string | null {
 export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> {
   const supabase = await createSupabaseServerClient();
 
-  const [{ data, error }, dicts] = await Promise.all([
+  const [productsRes, dicts, categoriesRes] = await Promise.all([
     supabase
       .from('products')
       .select(
@@ -32,8 +32,7 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
           code,
           name,
           variant,
-          category,
-          sub_category,
+          category_id,
           unit_weight_g_pm,
           has_customer_mold,
           availability
@@ -41,13 +40,59 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
       )
       .order('code', { ascending: true }),
     fetchProductDicts(),
+    supabase
+      .from('categories')
+      .select(
+        `
+          id,
+          slug,
+          name,
+          parent_id
+        `,
+      ),
   ]);
 
-  if (error || !data) {
+  if (productsRes.error || !productsRes.data) {
     return [];
   }
 
-  const rows = data as ProductsRow[];
+  const rows = productsRes.data as ProductsRow[];
+  const categoryRows = (categoriesRes.data ?? []) as CategoryRow[];
+
+  // ---- Kategori: id -> row map’i ----
+  const categoriesById = new Map<string, CategoryRow>();
+  for (const c of categoryRows) {
+    if (!c.id) continue;
+    categoriesById.set(String(c.id), c);
+  }
+
+  // Bir leaf category_id’den yukarı doğru zincir: [root, child, ...leaf]
+  function getCategoryChain(catId: string | null): CategoryRow[] {
+    if (!catId) return [];
+    const chain: CategoryRow[] = [];
+    let current = categoriesById.get(String(catId));
+    let guard = 0;
+
+    while (current && guard < 10) {
+      chain.unshift(current);
+      if (!current.parent_id) break;
+      current = categoriesById.get(String(current.parent_id));
+      guard += 1;
+    }
+
+    return chain;
+  }
+
+  function categoryLabelFromRow(cat: CategoryRow | undefined | null): string | null {
+    if (!cat) return null;
+    return (
+      humanizeFallback(cat.name) ??
+      humanizeFallback(cat.slug) ??
+      cat.name ??
+      cat.slug ??
+      null
+    );
+  }
 
   // ---- Varyant: key -> label map’i ----
   const variantLabelByKey: Record<string, string> = {};
@@ -69,36 +114,8 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
     variantLabelByKey[key] = name;
   }
 
-  // ---- Kategori & alt kategori: slug -> label map’i ----
-  const categoryLabelBySlug: Record<string, string> = {};
-  const subcategoryLabelBySlug: Record<string, string> = {};
-  const tree = (dicts.categoryTree ?? {}) as CategoryTree;
-
-  for (const [slug, node] of Object.entries(tree)) {
-    if (!slug) continue;
-
-    const rawCatName = typeof node.name === 'string' ? node.name.trim() : '';
-    const categoryName =
-      rawCatName && !isSlugLike(rawCatName)
-        ? rawCatName
-        : humanizeSystemSlug(slug);
-
-    categoryLabelBySlug[slug] = categoryName;
-
-    for (const sub of node.subs) {
-      if (!sub.slug) continue;
-
-      const rawSubName = typeof sub.name === 'string' ? sub.name.trim() : '';
-      const subName =
-        rawSubName && !isSlugLike(rawSubName)
-          ? rawSubName
-          : humanizeSystemSlug(sub.slug);
-
-      subcategoryLabelBySlug[sub.slug] = subName;
-    }
-  }
-
   const mapped: ProductAnalyticsRow[] = rows.map((row) => {
+    // Varyant label
     const variantKey =
       typeof row.variant === 'string'
         ? row.variant.trim()
@@ -106,38 +123,18 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
         ? String(row.variant)
         : '';
 
-    const categoryKeyRaw =
-      typeof row.category === 'string'
-        ? row.category.trim()
-        : row.category != null
-        ? String(row.category)
-        : '';
-
-    const subCategoryKeyRaw =
-      typeof row.sub_category === 'string'
-        ? row.sub_category.trim()
-        : row.sub_category != null
-        ? String(row.sub_category)
-        : '';
-
-    const categoryKeyNorm = categoryKeyRaw.replace(/_/g, '-');
-    const subCategoryKeyNorm = subCategoryKeyRaw.replace(/_/g, '-');
-
     const variantLabel =
       (variantKey && variantLabelByKey[variantKey]) ||
-      humanizeFallback(variantKey);
+      humanizeFallback(variantKey) ||
+      '';
 
-    const categoryLabel =
-      (categoryKeyNorm && categoryLabelBySlug[categoryKeyNorm]) ||
-      (categoryKeyRaw && categoryLabelBySlug[categoryKeyRaw]) ||
-      humanizeFallback(categoryKeyRaw);
+    // Kategori zinciri: [root, child, ...]
+    const chain = getCategoryChain(row.category_id ?? null);
+    const root = chain[0];
+    const child = chain[1];
 
-    const subCategoryLabel =
-      (subCategoryKeyNorm &&
-        subcategoryLabelBySlug[subCategoryKeyNorm]) ||
-      (subCategoryKeyRaw &&
-        subcategoryLabelBySlug[subCategoryKeyRaw]) ||
-      humanizeFallback(subCategoryKeyRaw);
+    const categoryLabel    = categoryLabelFromRow(root);
+    const subCategoryLabel = categoryLabelFromRow(child);
 
     return {
       id: row.id, // uuid string

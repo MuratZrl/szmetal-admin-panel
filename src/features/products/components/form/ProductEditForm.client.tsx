@@ -47,12 +47,14 @@ type Props = {
     name: string | null;
     code: string | null;
     variant: string | null;
+
     category: string | null;
     subCategory: string | null;
 
     unitWeightG: number | null;
 
     date: string | null;
+    revisionDate?: string | null;
 
     hasCustomerMold?: boolean | null;
     customerMold?: CustomerMoldSelect;
@@ -70,10 +72,9 @@ type Props = {
     tempCode?: string | null;
     profileCode?: string | null;
     manufacturerCode?: string | null;
-    image?: string | null;
 
+    image?: string | null;
     description?: string | null;
-    revisionDate?: string | null;
   };
 };
 
@@ -90,41 +91,54 @@ export default function ProductEditForm({ dicts, initial }: Props) {
   const { show } = useSnackbar();
 
   const defaultValues: EditValues = {
+    // 1) Temel metinler
     name: initial.name ?? '',
     code: initial.code ?? '',
-    variant: initial.variant ?? '',
-    category: initial.category ?? '',
-    subCategory: initial.subCategory ?? '',
 
-    unitWeightG:
-      typeof initial.unitWeightG === 'number'
-        ? Number(initial.unitWeightG)   // gr/m'yi direkt yaz
-        : 0,
-
+    // 2) Müşteri kalıbı + availability
     customerMold:
       (initial.customerMold as CustomerMoldSelect | undefined) ??
       fromBoolToSelect(initial.hasCustomerMold ?? null),
-
     availability: initial.availability ?? true,
 
-    date: initial.date ?? new Date().toISOString().slice(0, 10),
-    revisionDate: initial.revisionDate ?? '',
+    // 3) Kategori alanları (UI slug’lar)
+    category: initial.category ?? '',
+    subCategory: initial.subCategory ?? '',
+    subSubCategory: '',
 
-    drawer: initial.drawer ?? '',
-    control: initial.control ?? '',
-    scale: initial.scale ?? '',
+    // 4) Varyant
+    variant: initial.variant ?? '',
+
+    // 5) Ağırlık / ölçü
+    unitWeightG:
+      typeof initial.unitWeightG === 'number'
+        ? Number(initial.unitWeightG)
+        : 0,
+    wallThicknessMm: initial.wallThicknessMm ?? null,
     outerSizeMm: initial.outerSizeMm ?? null,
     sectionMm2: initial.sectionMm2 ?? null,
 
-    wallThicknessMm: initial.wallThicknessMm ?? null,
+    // 6) Tarihler
+    date: initial.date ?? new Date().toISOString().slice(0, 10),
+    revisionDate: initial.revisionDate ?? '',
 
+    // 7) Teknik / çizim
+    drawer: initial.drawer ?? '',
+    control: initial.control ?? '',
+    scale: initial.scale ?? '',
+
+    // 8) Kod alanları
     tempCode: initial.tempCode ?? null,
     manufacturerCode: initial.manufacturerCode ?? null,
-    image: initial.image ?? '',
-    description: initial.description ?? '',
-    file: null,
 
-    // metadata defaultları; edit’te eski değerleri korumak için
+    // 9) Açıklama
+    description: initial.description ?? '',
+
+    // 10) Görsel
+    image: initial.image ?? '',
+
+    // 11) Dosya alanı + metadata
+    file: null,
     fileBucket: undefined,
     filePath: undefined,
     fileName: undefined,
@@ -152,36 +166,65 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   async function onSubmit(v: EditValues): Promise<void> {
     try {
+      const slugToId = dicts.categoryIdBySlug || {};
+
+      const chosenSlug =
+        v.subSubCategory ||
+        v.subCategory ||
+        v.category ||
+        null;
+
+      const categoryId =
+        chosenSlug && slugToId[chosenSlug]
+          ? slugToId[chosenSlug]
+          : null;
+
       const nextImagePath =
         typeof v.image === 'string' && v.image.trim().length > 0
           ? v.image.trim()
           : null;
 
       const payload: UpdateProductInput = {
+        // 1) Temel metinler
         name: v.name,
         code: v.code,
+
+        // 2) Müşteri kalıbı + availability
+        hasCustomerMold: customerMoldToBoolean(v.customerMold),
+        availability: v.availability,
+
+        // 3) Kategori ilişkisi (UI category/subCategory/SubSubCategory’yi göndermiyoruz)
+        categoryId,
+
+        // 4) Varyant
         variant: v.variant,
-        category: v.category,
-        subCategory: v.subCategory,
 
+        // 5) Ağırlık / ölçü
         unitWeightG: v.unitWeightG,
+        wallThicknessMm: v.wallThicknessMm ?? null,
+        outerSizeMm: v.outerSizeMm ?? null,
+        sectionMm2: v.sectionMm2 ?? null,
 
+        // 6) Tarihler
         date: v.date,
+        revisionDate: v.revisionDate ?? '',
+
+        // 7) Teknik / çizim
         drawer: v.drawer || null,
         control: v.control || null,
         scale: v.scale || null,
-        outerSizeMm: v.outerSizeMm ?? null,
-        sectionMm2: v.sectionMm2 ?? null,
-        wallThicknessMm: v.wallThicknessMm ?? null,
+
+        // 8) Kod alanları
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
-        image: nextImagePath,
-        hasCustomerMold: customerMoldToBoolean(v.customerMold),
-        availability: v.availability,
-        description: v.description || null,
-        revisionDate: v.revisionDate ?? '',
 
-        // metadata: sadece kullanıcı yeni dosya yüklediyse dolmuş olacak
+        // 9) Açıklama
+        description: v.description || null,
+
+        // 10) Görsel
+        image: nextImagePath,
+
+        // 11) Dosya metadata
         fileBucket: v.fileBucket,
         filePath: v.filePath,
         fileName: v.fileName,

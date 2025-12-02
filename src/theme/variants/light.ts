@@ -12,7 +12,7 @@ const OUTLINE = '#4B5563'; // nötr kontur üretmek için koyu gri (slate-ish)
 // Tek kaynak: kullanıcı statü renkleri (dark ile aynı seti koruyoruz)
 const STATUS = {
   Active:   '#22C55E', // success.main
-  Inactive: '#F59E0B', // warning.main
+  Inactive: '#ff4d0cff', // warning.main
   Banned:   '#D0182C', // error.main
 } as const;
 

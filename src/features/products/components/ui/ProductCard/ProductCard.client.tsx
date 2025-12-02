@@ -88,7 +88,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
 
   const isCustomerMold = product.hasCustomerMold === true;
 
-  const customerMoldColor = theme.palette.mode === 'dark' ? theme.palette.warning.light : theme.palette.warning.dark;
+  const customerMoldColor =
+    theme.palette.mode === 'dark'
+      ? theme.palette.warning.light
+      : theme.palette.warning.dark;
 
   // Varyant: products.variant = key, labels.variant[key] = name
   const variantLabel = resolveLabelFromMap(product.variant, labels?.variant).trim();
@@ -105,12 +108,33 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
       ? product.createdAt.slice(0, 10)
       : null;
 
-  const categoryLabel = resolveLabelFromMap(product.category, labels?.category);
-  const subLabel = resolveLabelFromMap(product.subCategory, labels?.subcategory);
+  /**
+   * Kategori breadcrumb:
+   *   - Biz leaf slug’ı product.subCategory’de tutuyoruz (products.server.ts’te override ettin).
+   *   - LabelMaps.categoryPathBySlug[leafSlug] -> ['Root', 'Alt', 'Leaf'] veriyor.
+   *   - Eğer map’te yoksa, en azından tek label üretmeye çalışıyoruz.
+   */
+  const categoryPathLabels = React.useMemo(() => {
+    const leafSlug = String(product.subCategory ?? product.category ?? '').trim();
+    if (!leafSlug) return [] as string[];
 
-  const categoryLine = React.useMemo(() => {
-    return [categoryLabel, subLabel].filter(Boolean).join(' / ');
-  }, [categoryLabel, subLabel]);
+    // Öncelik: hazır path map’i
+    const path = labels?.categoryPathBySlug?.[leafSlug];
+    if (path && path.length > 0) {
+      return path;
+    }
+
+    // Fallback: hiç bulamazsak tek label üret
+    const mergedMap: Record<string, string> = {
+      ...(labels?.category ?? {}),
+      ...(labels?.subcategory ?? {}),
+    };
+    const single = resolveLabelFromMap(leafSlug, mergedMap);
+    return single ? [single] : [];
+  }, [labels, product.category, product.subCategory]);
+
+  const categoryTitle =
+    categoryPathLabels.length > 0 ? categoryPathLabels.join(' / ') : undefined;
 
   const displayUrl =
     resolvedImageUrl ??
@@ -128,8 +152,12 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const isImage = kind === 'image';
 
   // Artık uuid id üzerinden routing
-  const detailHref = `/products/${encodeURIComponent(product.id)}` as `/products/${string}`;
-  const editHref = `/products/${encodeURIComponent(product.id)}/edit` as `/products/${string}`;
+  const detailHref = `/products/${encodeURIComponent(
+    product.id,
+  )}` as `/products/${string}`;
+  const editHref = `/products/${encodeURIComponent(
+    product.id,
+  )}/edit` as `/products/${string}`;
 
   return (
     <Card
@@ -143,7 +171,8 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         position: 'relative',
         borderRadius: 1.75,
         height: { xs: 'auto', md: '100%' },
-        transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+        transition:
+          'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
       }}
     >
       <CardActionArea
@@ -160,7 +189,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           position: 'relative',
         }}
       >
-
         <ProductMedia
           isPdf={isPdf}
           isImage={isImage}
@@ -239,11 +267,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
             )}
           </Stack>
 
-          {(categoryLabel || subLabel) && (
+          {categoryPathLabels.length > 0 && (
             <CategoryChip
-              category={categoryLabel}
-              subcategory={subLabel}
-              title={categoryLine}
+              segments={categoryPathLabels}
+              title={categoryTitle}
               maxWidth={{ xs: '100%', sm: 280 }}
             />
           )}

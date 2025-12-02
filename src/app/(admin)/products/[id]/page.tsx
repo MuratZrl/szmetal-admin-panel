@@ -196,11 +196,13 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
+
               <ProductDetailActions
                 id={String(product.id)}
                 canEdit={canEdit}
                 code={product.code}
               />
+              
             </ProductInfo>
 
             <CommentSection

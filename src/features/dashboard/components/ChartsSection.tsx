@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Grid } from '@mui/material';
 
-import ChartCard from '@/components/ui/cards/ChartCard.client';
+import ChartCard from '@/components/ui/cards/ChartCard';
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 import PieDonutChart from '@/components/ui/charts/PieChart.client';

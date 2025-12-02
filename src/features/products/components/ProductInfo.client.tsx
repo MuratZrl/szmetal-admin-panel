@@ -1,4 +1,4 @@
-// src/features/products/components/ProductInfo.tsx
+// src/features/products/components/ProductInfo.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -77,6 +77,7 @@ const sectionHeaderBg = (t: Theme): string =>
 const fmtInt = new Intl.NumberFormat('tr-TR', {
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
+  useGrouping: false, // <-- binlik ayraç yok, direkt 1202
 });
 
 const formatInt = (n?: number | null) =>
@@ -311,14 +312,14 @@ export default function ProductInfo(props: ProductInfoProps) {
       <Chip
         size="small"
         label={mold ? 'Evet' : 'Hayır'}
-        variant={mold ? 'filled' : 'outlined'}
+        variant='outlined'
         color={mold ? 'warning' : 'default'}
         sx={(theme) => ({
           fontWeight: 700,
           letterSpacing: 0.3,
           ...(mold
             ? {
-              bgcolor: theme.palette.getContrastText(theme.palette.warning.main),
+              bgcolor: theme.palette.contrast.contrastText,
               color: theme.palette.warning.main,
               }
             : {}),
@@ -364,6 +365,7 @@ export default function ProductInfo(props: ProductInfoProps) {
         extHint: mediaExt ?? undefined,
       })
     : 'unknown';
+
   const fbKind = fbUrl
     ? detectMediaKind({
         url: fbUrl,
@@ -428,7 +430,7 @@ export default function ProductInfo(props: ProductInfoProps) {
     make('Varyant:', safe(variantText)),
     make(
       'Birim Ağırlık (gr/m):',
-      safe(formatInt(unit_weight_g_pm)),
+      formatInt(unit_weight_g_pm),
     ),
   ]);
 
@@ -465,15 +467,41 @@ export default function ProductInfo(props: ProductInfoProps) {
 
   const showMediaActions = Boolean(base);
 
+  function getPrintUrl(): string | null {
+    if (!base) return null;
+
+    // Yazdırırken dosyanın inline açılmasını istiyoruz
+    const url = isSecureRoute(base)
+      ? withQuery(base, { disposition: 'inline' })
+      : base;
+
+    return url || null;
+  }
+
   function handlePrint() {
-    const code = (props as { code?: string | null }).code ?? '';
-    if (!code) return;
-    const w = window.open(
-      `/products/${encodeURIComponent(code)}/print`,
-      '_blank',
-      'noopener,noreferrer',
-    );
-    w?.focus();
+    if (typeof window === 'undefined') {
+      return;
+    } 
+
+    const printUrl = getPrintUrl();
+    if (!printUrl) {
+      return;
+    }
+
+    const win = window.open(printUrl, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      return;
+    }
+
+    // Dosya yüklendikten sonra doğrudan print dialog'u aç
+    win.addEventListener('load', () => {
+      try {
+        win.focus();
+        win.print();
+      } catch {
+        // çapraz origin saçmalıklarında patlamasın diye boş bırakıyoruz
+      }
+    });
   }
 
   return (
@@ -522,7 +550,7 @@ export default function ProductInfo(props: ProductInfoProps) {
                   disabled={!('code' in props) || !props.code}
                   title={
                     !props.code
-                      ? 'Bu ürünün code alanı boş'
+                      ? 'Bu ürünün kod bilgisi yok'
                       : 'Yazdır'
                   }
                 >

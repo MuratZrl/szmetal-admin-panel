@@ -58,7 +58,6 @@ export const productSchema = yup
 
     // Kategori / Alt kategori:
     //   - Müşteri Kalıbı = 'Evet' ise zorunlu değil
-    //   - Diğer durumda zorunlu
     category: yup
       .string()
       .transform((_v, orig) => (orig === '' ? undefined : _v))
@@ -71,11 +70,12 @@ export const productSchema = yup
     subCategory: yup
       .string()
       .transform((_v, orig) => (orig === '' ? undefined : _v))
-      .when('customerMold', {
-        is: (cm: CustomerMoldSelect) => cm === 'Evet',
-        then: (schema) => schema.optional(),
-        otherwise: (schema) => schema.required('Zorunlu'),
-      }),
+      .optional(),
+
+    subSubCategory: yup
+      .string()
+      .transform((_v, orig) => (orig === '' ? undefined : _v))
+      .optional(),
 
     // Yeni: boş ya da undefined gelirse otomatik "Hayır" yap
     customerMold: yup
@@ -96,6 +96,16 @@ export const productSchema = yup
       .required('Zorunlu')
       .moreThan(0, '0’dan büyük olmalı'),
 
+    // İSTENEN DAVRANIŞ: boş olabilir, ama girilirse 0’dan büyük olmalı
+    wallThicknessMm: toNullNumber()
+      .nullable()
+      .optional()
+      .test(
+        'wallThickness-positive-or-empty',
+        '0’dan büyük olmalı',
+        (v) => v == null || v > 0,
+      ),
+
     // Ana tarih (Zorunlu).
     date: yup.string().required('Zorunlu'),
 
@@ -110,9 +120,6 @@ export const productSchema = yup
     // Opsiyonel sayısal alanlar
     outerSizeMm: toNullNumber().min(0, '0 veya daha büyük olmalı'),
     sectionMm2: toNullNumber().min(0, '0 veya daha büyük olmalı'),
-
-    // Et kalınlığı (mm) — opsiyonel, girilirse 0’dan büyük olmalı
-    wallThicknessMm: toNullNumber().moreThan(0, '0’dan büyük olmalı'),
 
     // Opsiyonel metinler
     tempCode: emptyToNull(),
@@ -141,14 +148,18 @@ export const newProductDefaults: ProductFormValues = {
   name: '',
   code: '',
   variant: DEFAULT_VARIANT_KEY,
+  
   category: '',
   subCategory: '',
+  subSubCategory: '',
+
   customerMold: 'Hayır',
   availability: true,
   description: '',
 
   // KG/M için başlangıçta boş bırakalım; validasyon submit’te yakalar.
   unitWeightG: 0,
+  wallThicknessMm: null,
 
   date: today(),
   revisionDate: '',
@@ -157,7 +168,6 @@ export const newProductDefaults: ProductFormValues = {
   scale: '',
   outerSizeMm: null,
   sectionMm2: null,
-  wallThicknessMm: null,
   tempCode: null,
   manufacturerCode: null,
   image: '',

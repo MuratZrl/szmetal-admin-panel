@@ -1,4 +1,4 @@
-// src/features/products/components/ProductMedia.tsx
+// src/features/products/components/ProductMedia.client.tsx
 'use client';
 
 import Link from '@/components/Link';

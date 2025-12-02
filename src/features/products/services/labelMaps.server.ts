@@ -1,20 +1,89 @@
-// src/features/products/utils/labelMaps.server.ts
+// src/features/products/services/labelMaps.server.ts
+import 'server-only';
+
 import type { ProductDicts } from '@/features/products/services/dicts.server';
 
+/**
+ * LabelMaps:
+ *   - category: root vs child ayrımını umursamadan slug -> label
+ *   - subcategory: eski kodla uyum için bırakılmış; aynı label’ı kullanabilir
+ *   - variant: varyant key -> label
+ *   - categoryPathBySlug: slug -> ['Root', 'Alt', 'Leaf'] gibi breadcrumb path
+ */
 export type LabelMaps = {
-  variant: Record<string, string>;
   category: Record<string, string>;
   subcategory: Record<string, string>;
+  variant: Record<string, string>;
+  categoryPathBySlug: Record<string, string[]>;
 };
 
+/**
+ * buildLabelMaps:
+ *   ProductDicts içindeki categoryTree + variants kullanılarak
+ *   label map’leri ve breadcrumb path’ler üretilir.
+ */
 export function buildLabelMaps(dicts: ProductDicts): LabelMaps {
-  const variant = Object.fromEntries(dicts.variants.map(v => [v.key, v.name]));
-  const category = Object.fromEntries(
-    Object.entries(dicts.categoryTree).map(([slug, node]) => [slug, node.name])
-  );
-  const subcategory = Object.fromEntries(
-    Object.values(dicts.categoryTree).flatMap(node => node.subs.map(s => [s.slug, s.name]))
-  );
+  const category: Record<string, string> = {};
+  const subcategory: Record<string, string> = {};
+  const variant: Record<string, string> = {};
+  const categoryPathBySlug: Record<string, string[]> = {};
 
-  return { variant, category, subcategory };
+  const tree = dicts.categoryTree ?? {};
+
+  // childSlug -> parentSlug | null
+  const parentBySlug = new Map<string, string | null>();
+
+  // Her node kendi adını ve çocuklarını label map’lere yazılsın
+  for (const [slug, node] of Object.entries(tree)) {
+    category[slug] = node.name;
+    subcategory[slug] = node.name;
+
+    for (const sub of node.subs) {
+      parentBySlug.set(sub.slug, slug);
+      category[sub.slug] = sub.name;
+      subcategory[sub.slug] = sub.name;
+    }
+
+    // root gibi davranan node’lar için parent yok
+    if (!parentBySlug.has(slug)) {
+      parentBySlug.set(slug, null);
+    }
+  }
+
+  const cache = new Map<string, string[]>();
+
+  const getPath = (slug: string): string[] => {
+    if (cache.has(slug)) return cache.get(slug)!;
+
+    const label = category[slug] ?? slug;
+    const parentSlug = parentBySlug.get(slug) ?? null;
+
+    if (!parentSlug) {
+      const path = [label];
+      cache.set(slug, path);
+      return path;
+    }
+
+    const parentPath = getPath(parentSlug);
+    const path = [...parentPath, label];
+    cache.set(slug, path);
+    return path;
+  };
+
+  // TÜM slug’lar için path üret
+  for (const slug of parentBySlug.keys()) {
+    categoryPathBySlug[slug] = getPath(slug);
+  }
+
+  // Varyant label map
+  for (const v of dicts.variants ?? []) {
+    variant[v.key] = v.name;
+  }
+
+  return {
+    category,
+    subcategory,
+    variant,
+    categoryPathBySlug,
+  };
 }

@@ -1,54 +1,66 @@
-// features/products/forms/mapper.ts
-import type { Database } from '@/types/supabase';
+// src/features/products/forms/mappers.ts
 import {
   type CustomerMoldSelect,
   normalizeVariantToDb,
   DEFAULT_VARIANT_KEY,
 } from './schema';
 
+import type { Database } from '@/types/supabase';
+
 type ProductsInsert = Database['public']['Tables']['products']['Insert'];
 type ProductsUpdate = Database['public']['Tables']['products']['Update'];
 type ProductsRow    = Database['public']['Tables']['products']['Row'];
 
-/** Formun ortak şekli: create/edit aynı alanları kullanır */
+/** Formun ortak şekli: create/edit aynı alanları kullanır
+ *  Formdaki alan sırasına göre düzenlendi
+ */
 export type ProductFormValuesCore = {
+  // 1) Temel metinler
   name: string;
   code: string;
-  variant: string;
 
-  category: string;     // slug veya text
-  subCategory: string;  // slug veya text
-
-  date: string;         // yyyy-mm-dd
-  revisionDate: string; // yyyy-mm-dd veya '' (opsiyonel alan için '' serbest)
-
-  unitWeightG: number | null; // gr/m
-  customerMold: CustomerMoldSelect; // '' | 'Evet' | 'Hayır'
-
+  // 2) Müşteri kalıbı + kullanılabilirlik
+  customerMold: CustomerMoldSelect;
   availability: boolean;
 
-  description: string;
+  // 3) Kategori alanları (UI tarafında slug’lar)
+  category: string;
+  subCategory: string;
+  subSubCategory: string;
 
-  // şemada .defined() olan düz string alanlar
+  // 4) Varyant
+  variant: string;
+
+  // 5) Ağırlık ve ölçü alanları (formdaki “Birim Ağırlık / Et Kalınlığı” satırı)
+  unitWeightG: number | null;
+  wallThicknessMm: number | null;
+
+  outerSizeMm: number | null;
+  sectionMm2: number | null;
+
+  // 6) Tarih alanları
+  date: string;
+  revisionDate: string;
+
+  // 7) Teknik / çizim alanları
   drawer: string;
   control: string;
   scale: string;
 
-  // opsiyonel sayısal alanlar
-  outerSizeMm: number | null;
-  sectionMm2: number | null;
-
-  // opsiyonel metin alanlar (null serbest)
+  // 8) Kod alanları
   tempCode: string | null;
   manufacturerCode: string | null;
 
-  // asset public URL; boş string serbest
+  // 9) Açıklama
+  description: string;
+
+  // 10) Görsel (URL veya storage path)
   image: string;
 };
 
 export type ProductFormValuesWithRelations = ProductFormValuesCore & {
+  // DB ile gerçek bağlantı: seçili leaf category id'si
   categoryId?: string | null;
-  subCategoryId?: string | null;
 };
 
 export type FileMeta = {
@@ -60,151 +72,187 @@ export type FileMeta = {
   bucket: string;
 };
 
-/** string’i trimleyip boşsa null yapar */
 export function trimToNull(v: string | null | undefined): string | null {
   if (typeof v !== 'string') return null;
   const s = v.trim();
   return s.length ? s : null;
 }
 
-/** Select değeri → boolean|null */
 function moldSelectToBool(v: CustomerMoldSelect): boolean | undefined {
   if (v === 'Evet') return true;
   if (v === 'Hayır') return false;
-  return undefined; // '' → null
+  return undefined;
 }
 
-/** create için DB payload (camelCase → snake_case) */
 export function toInsertPayload(
   v: ProductFormValuesWithRelations,
-  fileMeta?: FileMeta | null
+  fileMeta?: FileMeta | null,
 ): ProductsInsert {
   const payload: ProductsInsert = {
+    // 1) Temel metinler
     name: v.name,
     code: v.code,
-    // UI'daki 'none' vb. değerleri DB formatına çevir
+
+    // 2) Varyant
     variant: normalizeVariantToDb(v.variant),
 
-    // text alanlar
-    category: v.category ?? null,
-    sub_category: v.subCategory ?? null,
-
-    // relation alanlar (şeman varsa)
+    // 3) Kategori ilişkisi
     category_id: v.categoryId ?? null,
-    subcategory_id: v.subCategoryId ?? null,
 
+    // 4) Tarihler
     date: v.date,
 
-    // gr/m → DB’de integer ise yuvarlayalım
+    // 5) Ağırlık / ölçü
     unit_weight_g_pm:
       v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG)),
-
-    // Müşteri kalıbı
-    has_customer_mold: moldSelectToBool(v.customerMold),
-
-    availability: v.availability ?? true,
-
-    description: trimToNull(v.description),
-
-    drawer: trimToNull(v.drawer),
-    control: trimToNull(v.control),
-    scale: trimToNull(v.scale),
 
     outer_size_mm: v.outerSizeMm ?? null,
     section_mm2: v.sectionMm2 ?? null,
 
+    // 6) Müşteri kalıbı + availability
+    has_customer_mold: moldSelectToBool(v.customerMold),
+    availability: v.availability ?? true,
+
+    // 7) Açıklama
+    description: trimToNull(v.description),
+
+    // 8) Teknik / çizim alanları
+    drawer: trimToNull(v.drawer),
+    control: trimToNull(v.control),
+    scale: trimToNull(v.scale),
+
+    // 9) Kod alanları
     temp_code: trimToNull(v.tempCode),
     manufacturer_code: trimToNull(v.manufacturerCode),
 
+    // 10) Görsel
     image: v.image ? v.image.trim() : null,
 
-    file_path: fileMeta?.path ?? null,
-    file_name: fileMeta?.name ?? null,
-    file_ext:  fileMeta?.ext  ?? null,
-    file_mime: fileMeta?.mime ?? null,
-    file_size: fileMeta?.size ?? null,
+    // 11) Dosya metadata
+    file_path:   fileMeta?.path   ?? null,
+    file_name:   fileMeta?.name   ?? null,
+    file_ext:    fileMeta?.ext    ?? null,
+    file_mime:   fileMeta?.mime   ?? null,
+    file_size:   fileMeta?.size   ?? null,
     file_bucket: fileMeta?.bucket ?? null,
   } as ProductsInsert;
 
-  // Revizyon tarihi (DB tipleri henüz kolon içermeyebilir, güvenli yazalım)
-  (payload as unknown as { revision_date?: string | null }).revision_date = trimToNull(v.revisionDate);
+  // Revizyon tarihi
+  (payload as unknown as { revision_date?: string | null }).revision_date =
+    trimToNull(v.revisionDate);
+
+  // Et kalınlığı
+  (payload as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
+    v.wallThicknessMm ?? null;
 
   return payload;
 }
 
-/** update için KISMİ patch payload (undefined olanlara DOKUNMA) */
 export type ProductUpdateInput = Partial<ProductFormValuesWithRelations> & {
-  // update sırasında yeni dosya metadata’sı geldiyse
   fileMeta?: FileMeta | null;
 };
 
 export function toUpdatePayload(v: ProductUpdateInput): ProductsUpdate {
   const p: ProductsUpdate = {};
 
+  // 1) Temel metinler
   if (v.name !== undefined) p.name = v.name;
   if (v.code !== undefined) p.code = v.code;
+
+  // 2) Varyant
   if (v.variant !== undefined) {
-    // yine normalize et: 'none' → DB formatı
     p.variant = normalizeVariantToDb(v.variant);
   }
 
-  if (v.category !== undefined)        p.category = v.category ?? null;
-  if (v.subCategory !== undefined)     p.sub_category = v.subCategory ?? null;
-  if (v.categoryId !== undefined)      p.category_id = v.categoryId ?? null;
-  if (v.subCategoryId !== undefined)   p.subcategory_id = v.subCategoryId ?? null;
+  // 3) Kategori ilişkisi
+  if (v.categoryId !== undefined) {
+    p.category_id = v.categoryId ?? null;
+  }
 
-  if (v.date !== undefined) p.date = v.date;
+  // 4) Tarihler
+  if (v.date !== undefined) {
+    p.date = v.date;
+  }
 
-  // Revizyon tarihi: '' geldiyse null; undefined ise dokunma
   if (v.revisionDate !== undefined) {
-    (p as unknown as { revision_date?: string | null }).revision_date = trimToNull(v.revisionDate);
+    (p as unknown as { revision_date?: string | null }).revision_date =
+      trimToNull(v.revisionDate);
   }
 
+  // 5) Ağırlık / ölçü
   if (v.unitWeightG !== undefined) {
-    p.unit_weight_g_pm = v.unitWeightG == null
-      ? 0
-      : Math.round(Number(v.unitWeightG));
+    p.unit_weight_g_pm =
+      v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG));
   }
 
-  // Müşteri kalıbı: '' geldiyse null yap; undefined ise dokunma
+  if (v.outerSizeMm !== undefined) {
+    p.outer_size_mm = v.outerSizeMm ?? null;
+  }
+
+  if (v.sectionMm2 !== undefined) {
+    p.section_mm2 = v.sectionMm2 ?? null;
+  }
+
+  if (v.wallThicknessMm !== undefined) {
+    (p as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
+      v.wallThicknessMm ?? null;
+  }
+
+  // 6) Müşteri kalıbı + availability
   if (v.customerMold !== undefined) {
     p.has_customer_mold = moldSelectToBool(v.customerMold);
   }
 
-  if (v.availability !== undefined) p.availability = v.availability;
+  if (v.availability !== undefined) {
+    p.availability = v.availability;
+  }
 
-  if (v.description !== undefined) p.description = trimToNull(v.description);
+  // 7) Açıklama
+  if (v.description !== undefined) {
+    p.description = trimToNull(v.description);
+  }
 
-  if (v.drawer !== undefined)             p.drawer = trimToNull(v.drawer);
-  if (v.control !== undefined)            p.control = trimToNull(v.control);
-  if (v.scale !== undefined)              p.scale = trimToNull(v.scale);
-  if (v.outerSizeMm !== undefined)        p.outer_size_mm = v.outerSizeMm ?? null;
-  if (v.sectionMm2 !== undefined)         p.section_mm2 = v.sectionMm2 ?? null;
-  if (v.tempCode !== undefined)           p.temp_code = trimToNull(v.tempCode);
-  if (v.manufacturerCode !== undefined)   p.manufacturer_code = trimToNull(v.manufacturerCode);
+  // 8) Teknik / çizim alanları
+  if (v.drawer !== undefined)  p.drawer  = trimToNull(v.drawer);
+  if (v.control !== undefined) p.control = trimToNull(v.control);
+  if (v.scale !== undefined)   p.scale   = trimToNull(v.scale);
 
+  // 9) Kod alanları
+  if (v.tempCode !== undefined) {
+    p.temp_code = trimToNull(v.tempCode);
+  }
+
+  if (v.manufacturerCode !== undefined) {
+    p.manufacturer_code = trimToNull(v.manufacturerCode);
+  }
+
+  // 10) Görsel
   if (v.image !== undefined) {
     const img = typeof v.image === 'string' ? v.image.trim() : null;
     p.image = img && img.length ? img : null;
   }
 
+  // 11) Dosya metadata
   if (v.fileMeta) {
-    p.file_path = v.fileMeta.path;
-    p.file_name = v.fileMeta.name;
-    p.file_ext  = v.fileMeta.ext;
-    p.file_mime = v.fileMeta.mime;
-    p.file_size = v.fileMeta.size;
+    p.file_path   = v.fileMeta.path;
+    p.file_name   = v.fileMeta.name;
+    p.file_ext    = v.fileMeta.ext;
+    p.file_mime   = v.fileMeta.mime;
+    p.file_size   = v.fileMeta.size;
     p.file_bucket = v.fileMeta.bucket;
   }
 
   return p;
 }
 
-/** DB Row → form varsayılanları (edit initial) */
 export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
-  const revision = (row as unknown as { revision_date?: string | null }).revision_date ?? '';
+  const revision =
+    (row as unknown as { revision_date?: string | null }).revision_date ?? '';
 
-  // DB'de null / boş / saçma değer varsa UI tarafında DEFAULT_VARIANT_KEY ile aç
+  const wallThickness =
+    (row as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm ??
+    null;
+
   const rawVariant = row.variant;
   const variant: string =
     rawVariant == null || String(rawVariant).trim().length === 0
@@ -212,38 +260,51 @@ export function mapRowToForm(row: ProductsRow): ProductFormValuesCore {
       : String(rawVariant);
 
   return {
+    // 1) Temel metinler
     name: row.name ?? '',
     code: row.code ?? '',
-    variant,
 
-    category: row.category ?? '',
-    subCategory: row.sub_category ?? '',
-
-    date: row.date ?? new Date().toISOString().slice(0, 10),
-    revisionDate: revision || '',
-
-    unitWeightG: row.unit_weight_g_pm ?? null,
-
-    // DB → Select
+    // 2) Müşteri kalıbı + availability
     customerMold:
       row.has_customer_mold == null
-        ? 'Hayır'                      // null/undefined ise Hayır göster
-        : row.has_customer_mold ? 'Evet' : 'Hayır',
-
+        ? 'Hayır'
+        : row.has_customer_mold
+        ? 'Evet'
+        : 'Hayır',
     availability: row.availability ?? true,
 
-    description: row.description ?? '',
+    // 3) Kategori alanları (DB'den gelmiyor, ileride category_id'den türetebilirsin)
+    category: '',
+    subCategory: '',
+    subSubCategory: '',
 
-    drawer: row.drawer ?? '',
-    control: row.control ?? '',
-    scale: row.scale ?? '',
+    // 4) Varyant
+    variant,
+
+    // 5) Ağırlık / ölçü
+    unitWeightG: row.unit_weight_g_pm ?? null,
+    wallThicknessMm: wallThickness,
 
     outerSizeMm: row.outer_size_mm ?? null,
     sectionMm2: row.section_mm2 ?? null,
 
+    // 6) Tarihler
+    date: row.date ?? new Date().toISOString().slice(0, 10),
+    revisionDate: revision || '',
+
+    // 7) Teknik / çizim
+    drawer: row.drawer ?? '',
+    control: row.control ?? '',
+    scale: row.scale ?? '',
+
+    // 8) Kod alanları
     tempCode: row.temp_code ?? null,
     manufacturerCode: row.manufacturer_code ?? null,
 
+    // 9) Açıklama
+    description: row.description ?? '',
+
+    // 10) Görsel
     image: row.image ?? '',
   };
 }

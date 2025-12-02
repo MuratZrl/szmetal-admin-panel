@@ -15,7 +15,7 @@ export default async function ProductsAnalyticsPage() {
       component="main"
       sx={{
         px: { xs: 2, sm: 3, md: 1 },
-        py: { xs: 2, sm: 3, md: 2 },
+        py: { xs: 2, sm: 3, md: 2 },  
         display: 'flex',
         flexDirection: 'column',
       }}

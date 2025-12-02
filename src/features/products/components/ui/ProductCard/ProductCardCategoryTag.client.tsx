@@ -1,4 +1,4 @@
-// src/features/products/components/ui/CategoryTag.client.tsx
+// src/features/products/components/ui/ProductCardCategoryTag.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -9,14 +9,28 @@ import { alpha } from '@mui/material/styles';
 type CategoryChipProps = {
   category?: string | null;
   subcategory?: string | null;
+  /** Breadcrumb için tam path: ['Root', 'Alt', 'Leaf'] */
+  segments?: string[];
   title?: string;
   maxWidth?: { xs: string | number; sm: string | number };
 };
 
-export function CategoryChip({ category, subcategory, title, maxWidth }: CategoryChipProps) {
-  const parts = [category, subcategory].filter(Boolean) as string[];
+export function CategoryChip({
+  category,
+  subcategory,
+  segments,
+  title,
+  maxWidth,
+}: CategoryChipProps) {
+  // Öncelik: segments; yoksa eski 2-lu yapı
+  const parts =
+    segments && segments.length > 0
+      ? segments
+      : ([category, subcategory].filter(Boolean) as string[]);
 
-  return parts.length ? (
+  if (!parts.length) return null;
+
+  return (
     <Chip
       size="small"
       variant="filled"
@@ -74,5 +88,5 @@ export function CategoryChip({ category, subcategory, title, maxWidth }: Categor
         },
       })}
     />
-  ) : null;
+  );
 }

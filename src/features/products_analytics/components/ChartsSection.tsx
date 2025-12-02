@@ -1,7 +1,7 @@
 // src/features/products_analytics/ChartsSection.tsx
 import { Grid } from '@mui/material';
 
-import ChartCard from '@/components/ui/cards/ChartCard.client';
+import ChartCard from '@/components/ui/cards/ChartCard';
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';
 import PieDonutChart from '@/components/ui/charts/PieChart.client';
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
@@ -21,7 +21,6 @@ export default async function ChartsSection() {
     getMonthlyVariantSeries(12),
   ]);
 
-  // Tüm varyantları kullanıyoruz; istersen burada slice ile kısıtlayabilirsin.
   const variantSeries = variantsMonthly.items;
 
   return (
@@ -32,18 +31,27 @@ export default async function ChartsSection() {
     >
       {/* Üst satır: toplam aylık line + kategori pie */}
       <Grid size={{ xs: 12, md: 8 }}>
-        <ChartCard title="Aylık Eklenen Ürün Sayısı" timeLabel="Son 12 ay">
+        <ChartCard title="Aylık Toplam Ürün Sayısı" timeLabel="Son 12 ay">
           <LineAreaChart
             labels={monthly.labels}
             series={[
               {
-                label: 'Yeni Ürün',
-                data: monthly.data,
+                label: 'Müşteri Kalıbı Var',
+                data: monthly.withCustomerMold,
+                valueSuffix: ' ürün',
+              },
+              {
+                label: 'Müşteri Kalıbı Yok',
+                data: monthly.withoutCustomerMold,
                 valueSuffix: ' ürün',
               },
             ]}
             height={350}
             grid={{ horizontal: true, vertical: false }}
+            colorKeyByLabel={{
+              'Müşteri Kalıbı Var': 'success',
+              'Müşteri Kalıbı Yok': 'info',
+            }}
           />
         </ChartCard>
       </Grid>
@@ -55,14 +63,15 @@ export default async function ChartsSection() {
             height={350}
             donut
             arcLabelMode="percent"
+            valueSuffix=" ürün"
           />
         </ChartCard>
       </Grid>
 
-      {/* Orta satır: varyantlara göre aylık GROUP BAR chart */}
+      {/* Orta satır: varyantlara göre aylık (kümülatif) GROUP BAR chart */}
       <Grid size={{ xs: 12, md: 8 }}>
         <ChartCard
-          title="Varyantlara Göre Aylık Eklenen Ürün Sayısı"
+          title="Varyantlara Göre Toplam Ürün Sayısı"
           timeLabel="Son 12 ay"
         >
           <GroupBarChart
@@ -85,6 +94,7 @@ export default async function ChartsSection() {
             donut
             arcLabelMode="percent"
             topK={variants.items.length}
+            valueSuffix=" ürün"
           />
         </ChartCard>
       </Grid>

@@ -1,4 +1,4 @@
-// src/components/ui/cards/ChartCard.client.tsx
+// src/components/ui/cards/ChartCard.tsx
 import * as React from 'react';
 import { Card, CardHeader, Divider, CardContent, Typography } from '@mui/material';
 

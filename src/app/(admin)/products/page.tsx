@@ -19,6 +19,9 @@ import { withVersion } from '@/features/products/utils/url';
 
 import { requirePageAccess, loadAuthState } from '@/lib/supabase/auth/guards.server';
 
+// BURASI YENİ: label map + breadcrumb üreten helper
+import { buildLabelMaps } from '@/features/products/services/labelMaps.server';
+
 const DEFAULT_PAGE_SIZE = 16;
 const MAX_PAGE_SIZE = 48;
 
@@ -49,10 +52,14 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
   const pageSize = toInt(sp.pageSize, DEFAULT_PAGE_SIZE, { min: 1, max: MAX_PAGE_SIZE });
   const filters = parseProductFilters(sp);
 
+  // Ürünler + sözlükleri paralel çek
   const [{ items, pageCount, total }, dicts] = await Promise.all([
     fetchFilteredProducts(filters, { page, pageSize }),
     fetchProductDicts(),
   ]);
+
+  // LABEL MAP + BREADCRUMB: tüm iş burada
+  const labelMaps = buildLabelMaps(dicts);
 
   const mediaUrlsByIdEntries = await Promise.all(
     items.map(async (p) => {
@@ -71,39 +78,8 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
     canBulkDelete: role === 'Admin',
   };
 
-  // Burada kategori + alt kategori + varyant için label map'lerini üret
-  const variantLabelMap: Record<string, string> = {};
-  for (const v of dicts.variants ?? []) {
-    const key = String(v.key ?? '').trim();
-    if (!key) continue;
-    const name = typeof v.name === 'string' && v.name.trim().length > 0 ? v.name.trim() : key;
-    variantLabelMap[key] = name;
-  }
-
-  const categoryLabelMap: Record<string, string> = {};
-  const subcategoryLabelMap: Record<string, string> = {};
-
-  const tree = (dicts.categoryTree ??
-    {}) as Record<string, { name: string; subs: { slug: string; name: string }[] }>;
-
-  for (const [slug, node] of Object.entries(tree)) {
-    if (!slug) continue;
-    categoryLabelMap[slug] = node.name;
-    for (const sub of node.subs) {
-      if (!sub.slug) continue;
-      subcategoryLabelMap[sub.slug] = sub.name;
-    }
-  }
-
-  const labelMaps = {
-    variant: variantLabelMap,
-    category: categoryLabelMap,
-    subcategory: subcategoryLabelMap,
-  };
-
   return (
     <Box px={1} py={1}>
-      
       <ProductsSelectionProvider>
         <ProductsToolbar perms={perms} totalCount={total} />
         <Divider sx={{ mb: 2 }} />
@@ -122,13 +98,12 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
               products={items}
               mediaUrlsById={mediaUrlsById}
               role={role}
-              labels={labelMaps}   // asıl sihir burada
+              labels={labelMaps}   // BURAYA ARTIK TAM LabelMaps GİDİYOR
             />
             <ProductsPagination page={page} totalPages={pageCount} />
           </Grid>
         </Grid>
       </ProductsSelectionProvider>
-      
     </Box>
   );
 }

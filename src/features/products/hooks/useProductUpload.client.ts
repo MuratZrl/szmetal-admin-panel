@@ -1,4 +1,4 @@
-// src/features/products/hooks/useUploadProduct.ts
+// src/features/products/hooks/useUploadProduct.client.ts
 'use client';
 
 import * as React from 'react';
@@ -10,7 +10,9 @@ import {
 } from 'react-hook-form';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
+
 import { removeUploaded, type UploadRef } from '@/features/products/services/storage.client';
 
 /* ----------------------------------------------------------------------------

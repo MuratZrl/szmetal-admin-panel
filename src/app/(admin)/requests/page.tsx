@@ -11,7 +11,7 @@ import { requirePageAccess } from '@/lib/supabase/auth/guards.server';
 import CardsGrid from '@/features/requests/components/CardsGrid.client';
 import { getRequestsCardsData } from '@/features/requests/services/card.server';
 
-import ChartCard from '@/components/ui/cards/ChartCard.client';
+import ChartCard from '@/components/ui/cards/ChartCard';
 import LineAreaChart, { type LineSeries } from '@/components/ui/charts/LineAreaChart.client';
 import GroupBarChart from '@/components/ui/charts/GroupBarChart.client';
 

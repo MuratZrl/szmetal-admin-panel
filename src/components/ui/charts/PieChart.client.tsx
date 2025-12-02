@@ -11,8 +11,8 @@ export type ColorKey = 'primary' | 'secondary' | 'success' | 'info' | 'warning' 
 export type PieItem = {
   label: string;
   value: number;
-  color?: string;            // doğrudan hex/rgb (opsiyonel)
-  colorKey?: ColorKey;       // tema paletinden anahtar (opsiyonel)
+  color?: string;      // doğrudan hex/rgb (opsiyonel)
+  colorKey?: ColorKey; // tema paletinden anahtar (opsiyonel)
 };
 
 type Props = {
@@ -20,11 +20,12 @@ type Props = {
   title?: string;
   height?: number;                 // varsayılan 320
   donut?: boolean;                 // true: donut, false: klasik pie
-  showLegend?: boolean;            // varsayılan true
+  showLegend?: boolean;            // şimdilik kullanılmıyor
   topK?: number;                   // çok kategori varsa ilk K
-  othersLabel?: string;            // (ileride "diğer" eklemek için kalsın)
+  othersLabel?: string;            // ileride "diğer" eklemek için
   arcLabelMode?: 'percent' | 'value' | 'none';
-  valueFormatter?: (v: number) => string;
+  /** Değerlerin sonuna eklenecek suffix, ör: ' ürün' */
+  valueSuffix?: string;
 
   // Label -> palette key eşlemesi; ör: { Bekleyen:'warning', Onaylanan:'success', Reddedilen:'error' }
   colorKeyByLabel?: Partial<Record<string, ColorKey>>;
@@ -42,7 +43,6 @@ function normalizeLabel(s: string): string {
 }
 
 const DEFAULT_STATUS_COLORS: Record<string, ColorKey> = (() => {
-  // Hem TR hem EN etiketlerini kapsa
   const map = new Map<string, ColorKey>([
     ['bekleyen', 'warning'],
     ['onaylanan', 'success'],
@@ -65,7 +65,7 @@ export default function PieDonutChart({
   donut = true,
   topK = 6,
   arcLabelMode = 'percent',
-  valueFormatter = formatTR,
+  valueSuffix = '',
   colorKeyByLabel,
 }: Props) {
   const theme = useTheme();
@@ -107,7 +107,11 @@ export default function PieDonutChart({
     );
   }
 
-  // Palette fallback sırası, ama önce color/colorKey/label eşlemesi denenir
+  const formatValue = React.useCallback(
+    (v: number) => `${formatTR(v)}${valueSuffix}`,
+    [valueSuffix],
+  );
+
   const fallbackPalette = [
     theme.palette.primary.main,
     theme.palette.info.main,
@@ -120,10 +124,9 @@ export default function PieDonutChart({
   const getColorFromKey = (key: ColorKey): string => theme.palette[key].main;
 
   const resolveColor = (label: string, idx: number, color?: string, colorKey?: ColorKey): string => {
-    if (color) return color;                   // doğrudan renk
-    if (colorKey) return getColorFromKey(colorKey); // item.colorKey
+    if (color) return color;
+    if (colorKey) return getColorFromKey(colorKey);
 
-    // Label tabanlı eşleme: önce prop, sonra default tablo
     const norm = normalizeLabel(label);
     const fromProp = colorKeyByLabel && colorKeyByLabel[norm as keyof typeof colorKeyByLabel];
     if (fromProp) return getColorFromKey(fromProp);
@@ -131,7 +134,6 @@ export default function PieDonutChart({
     const fromDefault = DEFAULT_STATUS_COLORS[norm];
     if (fromDefault) return getColorFromKey(fromDefault);
 
-    // en son rotasyon
     return fallbackPalette[idx % fallbackPalette.length];
   };
 
@@ -149,7 +151,7 @@ export default function PieDonutChart({
     arcLabelMode === 'none'
       ? undefined
       : (item: { value: number }) => {
-          if (arcLabelMode === 'value') return valueFormatter(item.value);
+          if (arcLabelMode === 'value') return formatValue(item.value);
           if (total <= 0) return '';
           const pct = Math.round((item.value / total) * 100);
           return pct >= 2 ? `${pct}%` : '';
@@ -180,7 +182,7 @@ export default function PieDonutChart({
               additionalRadius: -6,
               color: alpha(theme.palette.text.primary, 0.2),
             },
-            valueFormatter: (p) => `${valueFormatter(p.value ?? 0)}`,
+            valueFormatter: (p) => formatValue(p.value ?? 0),
           },
         ]}
         sx={{
@@ -203,7 +205,7 @@ export default function PieDonutChart({
             <Typography variant="caption" color="text.secondary">
               Toplam
             </Typography>
-            <Typography variant="h6">{valueFormatter(total)}</Typography>
+            <Typography variant="h6">{formatValue(total)}</Typography>
           </Box>
         </Box>
       )}

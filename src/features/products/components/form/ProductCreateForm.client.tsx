@@ -74,39 +74,76 @@ export default function ProductCreateForm({ dicts }: Props) {
 
   async function onSubmit(v: CreateValues): Promise<void> {
     try {
+      // dicts içinden slug -> id map'i çek
+      const slugToId = dicts.categoryIdBySlug || {};
+
+      // Öncelik: en alt seviye → üst seviye
+      const chosenSlug =
+        v.subSubCategory ||
+        v.subCategory ||
+        v.category ||
+        null;
+
+      const categoryId =
+        chosenSlug && slugToId[chosenSlug]
+          ? slugToId[chosenSlug]
+          : null;
+
+      const hasCustomerMold = customerMoldToBoolean(v.customerMold);
+
       const payload: Parameters<typeof createProduct>[0] = {
+        // 1) Temel metinler
         name: v.name,
         code: v.code,
+
+        // 2) Müşteri kalıbı + kullanılabilirlik
+        hasCustomerMold,
+        availability: v.availability ?? true,
+
+        // 3) Kategori alanları (UI tarafında kullanıyorsan CreateProductInput'ta opsiyonel)
+        // category: v.category || null,
+        // subCategory: v.subCategory || null,
+        // subSubCategory: v.subSubCategory || null,
+
+        // 4) Gerçek kategori id'si (leaf)
+        categoryId,
+
+        // 5) Varyant
         variant: v.variant,
-        
-        category: v.category ?? null,
-        subCategory: v.subCategory ?? null,
 
-        // Artık tek kaynak: gr/m
+        // 6) Ağırlık ve ölçü alanları
         unitWeightG: v.unitWeightG ?? null,
+        wallThicknessMm: v.wallThicknessMm ?? null,
+        outerSizeMm: v.outerSizeMm ?? null,
+        sectionMm2: v.sectionMm2 ?? null,
 
+        // 7) Tarih alanları
         date: v.date,
+        revisionDate: v.revisionDate || null,
+
+        // 8) Teknik / çizim alanları
         drawer: v.drawer || undefined,
         control: v.control || undefined,
         scale: v.scale || undefined,
-        outerSizeMm: v.outerSizeMm ?? undefined,
-        sectionMm2: v.sectionMm2 ?? undefined,
-        wallThicknessMm: v.wallThicknessMm ?? undefined,
+
+        // 9) Kod alanları
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
+        // profileCode: ileride eklersen buradan geçersin
 
+        // 10) Açıklama
+        description: v.description || null,
+
+        // 11) Görsel
         image: v.image || null,
 
-        hasCustomerMold: customerMoldToBoolean(v.customerMold),
-        availability: v.availability ?? true,
-
+        // 12) Dosya metadata
         fileBucket: v.fileBucket ?? null,
         filePath: v.filePath ?? null,
         fileName: v.fileName ?? null,
         fileMime: v.fileMime ?? null,
         fileSize: v.fileSize ?? null,
-
-        description: v.description || null,
+        // file alanı (File objesi) upload hook'unda yönetiliyor, buraya geçmiyoruz
       };
 
       await createProduct(payload);

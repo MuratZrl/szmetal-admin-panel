@@ -118,9 +118,15 @@ export default function Breadcrumb(): React.JSX.Element {
       parentHrefStr === '/products' &&
       !['new', 'create'].includes(part.toLowerCase());
 
+    // /products/{id} için: code gelene kadar hiç breadcrumb ekleme
     const label = isProductsLeaf
-      ? productCode ?? 'Ürün Detayı'
+      ? productCode || '' // fallback YOK, boş bırak
       : getLabelFromMainLinks(hrefStr, part);
+
+    // Code henüz yoksa bu segmenti tamamen atla
+    if (isProductsLeaf && !label) {
+      return;
+    }
 
     if (label === previousLabel) return;
     previousLabel = label;

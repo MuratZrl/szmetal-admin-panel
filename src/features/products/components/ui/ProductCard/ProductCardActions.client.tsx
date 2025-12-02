@@ -106,6 +106,7 @@ export function ProductActions({
       theme.palette.mode === 'dark'
         ? alpha(surface2, 0.3)
         : alpha(surface1, 0.4),
+        
     borderColor: alpha(accent, 0.5),
     display: { xs: 'none', sm: 'inline-flex' },
 
