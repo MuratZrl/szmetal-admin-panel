@@ -5,7 +5,6 @@ export const fetchCache = 'force-no-store';
 
 import { Box, Grid, Divider } from '@mui/material';
 
-import { ProductsSelectionProvider } from '@/features/products/selection/ProductsSelectionContext.client';
 import ProductsToolbar from '@/features/products/components/ProductsToolbar.client';
 import Filters from '@/features/products/components/ui/Filter/Filters.client';
 import ProductsGrid from '@/features/products/components/ProductsGrid.client';
@@ -75,35 +74,32 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
 
   const perms = {
     canCreate: role === 'Admin' || role === 'Manager',
-    canBulkDelete: role === 'Admin',
   };
 
   return (
     <Box px={1} py={1}>
-      <ProductsSelectionProvider>
-        <ProductsToolbar perms={perms} totalCount={total} />
-        <Divider sx={{ mb: 2 }} />
+      <ProductsToolbar perms={perms} totalCount={total} />
+      <Divider sx={{ mb: 2 }} />
 
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Filters
-              topLevelSlugs={dicts.categories}
-              categoryTree={dicts.categoryTree}
-              variants={dicts.variants}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 9 }}>
-            <ProductsGrid
-              products={items}
-              mediaUrlsById={mediaUrlsById}
-              role={role}
-              labels={labelMaps}   // BURAYA ARTIK TAM LabelMaps GİDİYOR
-            />
-            <ProductsPagination page={page} totalPages={pageCount} />
-          </Grid>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Filters
+            topLevelSlugs={dicts.categories}
+            categoryTree={dicts.categoryTree}
+            variants={dicts.variants}
+          />
         </Grid>
-      </ProductsSelectionProvider>
+
+        <Grid size={{ xs: 12, md: 9 }}>
+          <ProductsGrid
+            products={items}
+            mediaUrlsById={mediaUrlsById}
+            role={role}
+            labels={labelMaps}   // BURAYA ARTIK TAM LabelMaps GİDİYOR
+          />
+          <ProductsPagination page={page} totalPages={pageCount} />
+        </Grid>
+      </Grid>
     </Box>
   );
 }

@@ -17,7 +17,7 @@ import { useTheme } from '@mui/material/styles';
 
 import AddIcon from '@mui/icons-material/Add';
 
-type Perms = { canCreate: boolean; canBulkDelete: boolean };
+type Perms = { canCreate: boolean };
 
 type Props = {
   perms: Perms;

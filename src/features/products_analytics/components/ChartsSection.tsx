@@ -36,12 +36,12 @@ export default async function ChartsSection() {
             labels={monthly.labels}
             series={[
               {
-                label: 'Müşteri Kalıbı Var',
+                label: 'Müşteri Kalıbı',
                 data: monthly.withCustomerMold,
                 valueSuffix: ' ürün',
               },
               {
-                label: 'Müşteri Kalıbı Yok',
+                label: 'Müşteri Kalıbı Değil',
                 data: monthly.withoutCustomerMold,
                 valueSuffix: ' ürün',
               },
@@ -49,8 +49,8 @@ export default async function ChartsSection() {
             height={350}
             grid={{ horizontal: true, vertical: false }}
             colorKeyByLabel={{
-              'Müşteri Kalıbı Var': 'success',
-              'Müşteri Kalıbı Yok': 'info',
+              'Müşteri Kalıbı': 'success',
+              'Müşteri Kalıbı Değil': 'info',
             }}
           />
         </ChartCard>

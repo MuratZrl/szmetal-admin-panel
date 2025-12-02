@@ -1,13 +1,19 @@
 // src/features/products_analytics/components/datagrid/columns.tsx
+'use client';
+
+import * as React from 'react';
+import { Box, Chip } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type { GridColDef } from '@mui/x-data-grid';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+
 
 export type ProductAnalyticsRow = {
   id: string;
   code: string;
   name: string;
   variant: string | null;
-  category: string | null;
-  sub_category: string | null;
+  category: string | null;          // breadcrumb burada
   unit_weight_g_pm: number | null;
   has_customer_mold: boolean | null;
   availability: boolean | null;
@@ -36,7 +42,7 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
     field: 'code',
     headerName: 'Kod',
     flex: 0.6,
-    
+
     editable: false,
     resizable: false,
     filterable: false,
@@ -65,22 +71,98 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
   {
     field: 'category',
     headerName: 'Kategori',
-    flex: 0.8,
-
-    editable: false,
-    resizable: false,    
-    filterable: false,
-    disableColumnMenu: true,
-  },
-  {
-    field: 'sub_category',
-    headerName: 'Alt Kategori',
-    flex: 0.9,
+    flex: 1.6,
 
     editable: false,
     resizable: false,
     filterable: false,
     disableColumnMenu: true,
+    cellClassName: 'category-cell',
+
+    renderCell: (params) => {
+      const raw = params.row.category ?? '';
+      const trimmed = raw.trim();
+      if (!trimmed) return '';
+
+      const parts = trimmed
+        .split('/')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+      if (!parts.length) return '';
+
+      const titleText = parts.join(' / ');
+
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            maxWidth: '100%',   // 🔹 height: '100%' SİLİNDİ
+          }}
+        >
+          <Chip
+            title={titleText}
+            size="medium"
+            label={
+              <Box
+                component="span"
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.25,
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                }}
+              >
+                {parts.map((part, idx) => (
+                  <React.Fragment key={idx}>
+                    {idx > 0 && (
+                      <ChevronRightIcon
+                        sx={{
+                          fontSize: 16,
+                          mx: 0.25,
+                          flexShrink: 0,
+                          opacity: 0.7,
+                        }}
+                      />
+                    )}
+                    <Box
+                      component="span"
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: 13,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {part}
+                    </Box>
+                  </React.Fragment>
+                ))}
+              </Box>
+            }
+            sx={(theme) => ({
+              maxWidth: '100%',
+              borderRadius: 999,
+              px: 1,
+              borderColor: 'transparent',
+              backgroundColor: alpha(
+                theme.palette.accent?.main ?? theme.palette.primary.main,
+                0.16,
+              ),
+              color: theme.palette.text.primary,
+              '& .MuiChip-label': {
+                display: 'block',
+                maxWidth: '100%',
+                paddingX: 0,
+              },
+            })}
+          />
+        </Box>
+      );
+    },
   },
   {
     field: 'unit_weight_g_pm',

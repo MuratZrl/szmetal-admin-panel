@@ -27,8 +27,6 @@ import { ProductMedia } from '@/features/products/components/ui/ProductCard/Prod
 import { CategoryChip } from '@/features/products/components/ui/ProductCard/ProductCardCategoryTag.client';
 import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductCardActions.client';
 
-import { useProductsSelection } from '@/features/products/selection/ProductsSelectionContext.client';
-
 import type { Product } from '@/features/products/types';
 
 type Role = 'Admin' | 'Manager' | 'User';
@@ -79,11 +77,7 @@ function formatGrPerMeter(gPerMeter: number | 0): string {
 export default function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
   const theme = useTheme();
 
-  const { isSelected, toggle } = useProductsSelection();
-  const selected = isSelected(product.id);
-
   const normalizedRole = normalizeRole(role);
-  const canSelect = normalizedRole !== 'User';
   const canEdit = normalizedRole === 'Admin' || normalizedRole === 'Manager';
 
   const isCustomerMold = product.hasCustomerMold === true;
@@ -163,7 +157,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     <Card
       variant="elevation"
       data-role={normalizedRole}
-      data-can-select={canSelect ? 'true' : 'false'}
       data-customer-mold={isCustomerMold ? 'true' : 'false'}
       sx={{
         display: 'flex',
@@ -309,9 +302,6 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
       >
         <ProductActions
           canEdit={canEdit}
-          canSelect={canSelect}
-          selected={selected}
-          onToggle={() => toggle(product.id)}
           editHref={editHref}
           detailHref={detailHref}
         />

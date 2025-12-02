@@ -11,9 +11,6 @@ import EditIcon from '@mui/icons-material/Edit';
 
 type ProductActionsProps = {
   canEdit: boolean;
-  canSelect: boolean;
-  selected: boolean;
-  onToggle: () => void;
   editHref: string;
   detailHref: string;
 };

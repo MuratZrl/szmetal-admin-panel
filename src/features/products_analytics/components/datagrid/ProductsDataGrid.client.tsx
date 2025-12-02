@@ -19,7 +19,7 @@ export default function ProductsDataGrid({ rows, height = 600 }: Props) {
   const total = rows.length;
 
   return (
-    <Box sx={{ width: '100%'}} >
+    <Box sx={{ width: '100%' }}>
 
       <Box sx={{ height }}>
         <DataGrid<ProductAnalyticsRow>
@@ -39,6 +39,13 @@ export default function ProductsDataGrid({ rows, height = 600 }: Props) {
             },
             sorting: {
               sortModel: [{ field: 'code', sort: 'asc' }],
+            },
+          }}
+          sx={{
+            '& .MuiDataGrid-cell.category-cell': {
+              display: 'flex',
+              alignItems: 'center',
+              py: 0,           // 🔹 üst-alt padding’i eşitle / azalt
             },
           }}
         />

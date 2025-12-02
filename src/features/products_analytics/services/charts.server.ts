@@ -348,7 +348,7 @@ export async function getCategoryDistribution(): Promise<CategoryDistributionRes
     let label: string;
 
     if (bucketKey === '__none__') {
-      label = 'Belirtilmemiş';
+      label = 'Müşteri Kalıbı';
     } else {
       label = labelById.get(bucketKey) ?? bucketKey;
     }

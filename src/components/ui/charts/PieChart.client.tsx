@@ -63,11 +63,12 @@ export default function PieDonutChart({
   title,
   height = 320,
   donut = true,
-  topK = 6,
+  topK = 10,
   arcLabelMode = 'percent',
   valueSuffix = '',
   colorKeyByLabel,
 }: Props) {
+  
   const theme = useTheme();
 
   const safe = React.useMemo(() => {
@@ -82,7 +83,7 @@ export default function PieDonutChart({
 
     if (!cleaned.length) return cleaned;
     if (cleaned.length > topK) {
-      return cleaned.slice(0, topK);
+      return cleaned.slice(0, topK);   // ← burada en fazla topK kadar kesiyor
     }
     return cleaned;
   }, [items, topK]);

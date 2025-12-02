@@ -128,21 +128,21 @@ export async function getProductAnalyticsRows(): Promise<ProductAnalyticsRow[]> 
       humanizeFallback(variantKey) ||
       '';
 
-    // Kategori zinciri: [root, child, ...]
+    // Kategori zinciri: [root, child, leaf, ...] → "Root / Child / Leaf"
     const chain = getCategoryChain(row.category_id ?? null);
-    const root = chain[0];
-    const child = chain[1];
 
-    const categoryLabel    = categoryLabelFromRow(root);
-    const subCategoryLabel = categoryLabelFromRow(child);
+    const categoryBreadcrumb =
+      chain
+        .map((c) => categoryLabelFromRow(c))
+        .filter((label): label is string => Boolean(label))
+        .join(' / ') || null;
 
     return {
       id: row.id, // uuid string
       code: row.code ?? '',
       name: row.name ?? '',
       variant: variantLabel,
-      category: categoryLabel,
-      sub_category: subCategoryLabel,
+      category: categoryBreadcrumb,   // artık breadcrumb
       unit_weight_g_pm:
         typeof row.unit_weight_g_pm === 'number'
           ? row.unit_weight_g_pm
