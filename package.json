@@ -62,7 +62,7 @@
     "eslint-config-next": "16.0.3",
     "pdfjs-dist": "^4.10.38",
     "shx": "^0.4.0",
-    "supabase": "^2.63.1",
+    "supabase": "^2.65.2",
     "tailwindcss": "^4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.20.6",

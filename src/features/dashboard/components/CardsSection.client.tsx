@@ -61,7 +61,7 @@ export default function CardsGrid({ data }: Props) {
           delta={deltas.product}
           emptyPctLabel={emptyProdLabel}
           color="info"
-          detailsHref="/products"     // ← 3. kart: /products
+          detailsHref="/products_analytics"     // ← 3. kart: /products_analytics
         />
       </Grid>
     </Grid>

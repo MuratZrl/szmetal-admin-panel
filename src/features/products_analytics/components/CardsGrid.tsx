@@ -53,7 +53,7 @@ export default async function CardsGrid() {
       {/* 1) Toplam ürün */}
       <Grid size={{ xs: 12, sm: 6, md: 4 }}>
         <StatCard
-          title="Toplam ürün"
+          title="Toplam Ürünler"
           value={totalCount}
           // Bu ay hiç yeni ürün yoksa yüzdeyi gizle, sadece "Bu ay yeni kayıt yok." yazsın
           percentage={thisMonthCount === 0 ? undefined : totalPct}
@@ -66,7 +66,7 @@ export default async function CardsGrid() {
       {/* 2) Kullanılabilir ürünler */}
       <Grid size={{ xs: 12, sm: 6, md: 4 }}>
         <StatCard
-          title="Kullanılabilir ürünler"
+          title="Kullanılabilir Ürünler"
           value={totalAvailable}
           percentage={
             thisMonthAvailableCount === 0 ? undefined : availablePct
