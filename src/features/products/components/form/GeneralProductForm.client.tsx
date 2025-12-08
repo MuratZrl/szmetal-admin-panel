@@ -64,6 +64,7 @@ export default function ProductFormFields({
   showFileSection = true,
   dir,
 }: Props) {
+  
   const {
     control,
     register,

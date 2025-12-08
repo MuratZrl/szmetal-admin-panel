@@ -122,7 +122,12 @@ export default function DashboardHeaderClient({
         },
       }}
     >
-      <Grid container spacing={{ xs: 1.25, sm: 2 }} alignItems="center" sx={{ position: 'relative', zIndex: 1 }}>
+      <Grid 
+        container 
+        spacing={{ xs: 1.25, sm: 2 }} 
+        alignItems="center" 
+        sx={{ position: 'relative', zIndex: 1 }}
+      >
 
         {/* Sol */}
         <Grid size={{ xs: 12, sm: 8, md: 8 }} sx={{ minWidth: 0 }}>

@@ -171,9 +171,9 @@ export default function ProductCreateForm({ dicts }: Props) {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
+            {/* <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
               <NotesField />
-            </Grid>
+            </Grid> */}
           </Grid>
 
           <Stack direction="row" spacing={1} justifyContent="start" sx={{ mt: 2 }}>

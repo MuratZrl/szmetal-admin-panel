@@ -256,9 +256,11 @@ export default function ProductEditForm({ dicts, initial }: Props) {
                 dir={initial.id}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
+
+            {/* <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
               <NotesField disabled={methods.formState.isSubmitting} />
-            </Grid>
+            </Grid> */}
+            
           </Grid>
 
           <Stack

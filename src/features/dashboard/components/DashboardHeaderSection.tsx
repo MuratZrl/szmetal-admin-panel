@@ -3,9 +3,13 @@ import * as React from 'react';
 import DashboardHeaderClient from './DashboardHeader.client';
 import { createSupabaseServerClient } from '@/lib/supabase/supabaseServer';
 
-type ProfileRow = { username: string | null; role: string | null; image?: string | null };
+type ProfileRow = { 
+  username: string; 
+  role: string; 
+  image?: string | null 
+};
 
-function roleLabelTR(role: string | null): string {
+function roleLabelTR(role: string | null | undefined): string {
   const r = (role ?? '').toLowerCase();
   if (r === 'admin') return 'Admin';
   if (r === 'manager') return 'Yönetici';

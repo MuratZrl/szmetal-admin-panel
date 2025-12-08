@@ -108,8 +108,7 @@ export function ProductActions({
     display: { xs: 'none', sm: 'inline-flex' },
 
     // dış kırmızı çerçeve (tema error renginden)
-    outline: `1px solid ${alpha(danger, 0.9)}`,
-    outlineOffset: 2,
+    outline: `1px solid ${alpha(danger, 0.85)}`,
 
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
       transition: theme.transitions.create('transform', {

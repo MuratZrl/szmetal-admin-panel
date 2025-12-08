@@ -54,15 +54,19 @@ export default async function EditProductPage({ params }: Props) {
 
   return (
     <Box px={1} py={1}>
+      
       <Typography variant="h5" sx={{ mb: 1 }}>
         {row.code} — Düzenle
       </Typography>
+
       <Divider sx={{ mb: 2 }} />
+
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 12 }}>
           <ProductEditForm dicts={dicts} initial={initial} />
         </Grid>
       </Grid>
+      
     </Box>
   );
 }
