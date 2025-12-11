@@ -30,7 +30,6 @@ export function ProductActions({
   const theme = useTheme();
 
   const accent = theme.palette.accent?.main ?? theme.palette.primary.main;
-  const danger = theme.palette.error.main;
 
   const S = theme.palette.surface as SurfacePalette | undefined;
 
@@ -41,6 +40,33 @@ export function ProductActions({
   const softBg = alpha(accent, theme.palette.mode === 'dark' ? 0.16 : 0.06);
   const hoverBg = alpha(accent, theme.palette.mode === 'dark' ? 0.22 : 0.1);
   const pressBg = alpha(accent, theme.palette.mode === 'dark' ? 0.28 : 0.14);
+
+  // Hızlı Düzenle için koyu gri çerçeve ve outline referansları
+  const neutralBorder =
+    theme.palette.mode === 'dark'
+      ? alpha(theme.palette.grey[500], 0.9)
+      : alpha(theme.palette.grey[700], 0.9);
+
+  const neutralOutline =
+    theme.palette.mode === 'dark'
+      ? theme.palette.grey[400]
+      : theme.palette.grey[800];
+
+  // Hızlı Düzenle için gri zemin tonları (normal / hover / active)
+  const neutralBgBase =
+    theme.palette.mode === 'dark'
+      ? alpha(surface2, 0.55)
+      : alpha(surface1, 0.75);
+
+  const neutralBgHover =
+    theme.palette.mode === 'dark'
+      ? alpha(surface2, 0.85)
+      : alpha(surface1, 0.95);
+
+  const neutralBgActive =
+    theme.palette.mode === 'dark'
+      ? alpha(surface2, 0.95)
+      : surface1;
 
   const commonBtnSx = {
     flex: 1,
@@ -76,7 +102,7 @@ export function ProductActions({
 
     '&:hover': {
       backgroundColor: hoverBg,
-      borderColor: accent,
+      borderColor: outline,
       boxShadow: `0 0 0 1px ${alpha(accent, 0.16)} inset, 0 2px 10px ${alpha(
         accent,
         0.14,
@@ -85,7 +111,7 @@ export function ProductActions({
 
     '&:active': {
       backgroundColor: pressBg,
-      borderColor: accent,
+      borderColor: outline,
       transform: 'translateY(0.5px)',
       boxShadow: `0 0 0 1px ${alpha(accent, 0.2)} inset`,
     },
@@ -99,16 +125,12 @@ export function ProductActions({
   const editBtnSx = {
     ...commonBtnSx,
 
-    backgroundColor:
-      theme.palette.mode === 'dark'
-        ? alpha(surface2, 0.3)
-        : alpha(surface1, 0.4),
-        
-    borderColor: alpha(accent, 0.5),
-    display: { xs: 'none', sm: 'inline-flex' },
+    // Normal durumda gri zemin
+    backgroundColor: neutralBgBase,
 
-    // dış kırmızı çerçeve (tema error renginden)
-    outline: `1px solid ${alpha(danger, 0.85)}`,
+    // Hızlı Düzenle için koyu gri dış çerçeve
+    borderColor: neutralBorder,
+    display: { xs: 'none', sm: 'inline-flex' },
 
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
       transition: theme.transitions.create('transform', {
@@ -116,24 +138,25 @@ export function ProductActions({
       }),
     },
 
+    // Hover’da gri ton belirgin şekilde değişsin
     '&:hover': {
-      backgroundColor: hoverBg,
-      borderColor: accent,
-      boxShadow: `0 0 0 1px ${alpha(accent, 0.16)} inset, 0 2px 10px ${alpha(
+      backgroundColor: neutralBgHover,
+      borderColor: neutralBorder,
+      boxShadow: `0 0 0 1px ${alpha(accent, 0.18)} inset, 0 2px 10px ${alpha(
         accent,
-        0.14,
+        0.16,
       )}`,
     },
 
     '&:active': {
-      backgroundColor: pressBg,
-      borderColor: accent,
+      backgroundColor: neutralBgActive,
+      borderColor: neutralBorder,
       transform: 'translateY(0.5px)',
-      boxShadow: `0 0 0 1px ${alpha(accent, 0.2)} inset`,
+      boxShadow: `0 0 0 1px ${alpha(accent, 0.22)} inset`,
     },
 
     '&:focus-visible': {
-      outline: `2px solid ${danger}`,
+      outline: `2px solid ${neutralOutline}`,
       outlineOffset: 2,
     },
   } as const;

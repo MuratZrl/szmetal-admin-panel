@@ -87,9 +87,9 @@ export const darkPalette = {
 
   // Vurgu rengi primary ile eşleşik
   accent: {
-    main: '#B3122F',
-    light: '#E2566C',
-    dark:  '#760E21',
+    main: '#101010ff',
+    light: '#1b1b1bff',
+    dark:  '#1d1d1dff',
     contrastText: '#FFFFFF',
   },
 
