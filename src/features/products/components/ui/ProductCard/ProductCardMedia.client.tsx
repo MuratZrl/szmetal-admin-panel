@@ -5,6 +5,8 @@ import * as React from 'react';
 import { Box, CardMedia, useMediaQuery } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 
+import PdfThumb from '@/features/products/components/ui/PdfThumb.client';
+
 type PdfWidths = Partial<Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', number>>;
 
 type HoverPreviewProps = {
@@ -28,7 +30,6 @@ type ProductMediaProps = {
   HoverPreviewComponent: React.ComponentType<HoverPreviewProps>;
 };
 
-/* Basit 4:3 placeholder SVG */
 function svgPlaceholder4x3(opts: { bg: string; fg: string; text: string }): string {
   const { bg, fg, text } = opts;
   const svg = `
@@ -51,47 +52,66 @@ export function ProductMedia({
   pdfWidths,
   backgroundColor,
   HoverPreviewComponent,
-}: ProductMediaProps) {
+}: ProductMediaProps): React.JSX.Element {
   const theme = useTheme();
   const downSm = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [imgError, setImgError] = React.useState(false);
   const [hoverOpen, setHoverOpen] = React.useState(false);
+
   const hoverTimers = React.useRef<{ close?: number }>({});
 
   const [mediaRect, setMediaRect] = React.useState<{ width: number; height: number } | null>(null);
   const mediaBoxRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
-    if (!mediaBoxRef.current) return;
     const el = mediaBoxRef.current;
-    const ro = new ResizeObserver(entries => {
-      const r = entries[0].contentRect;
+    if (!el) return;
+
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (!r) return;
       setMediaRect({ width: r.width, height: r.height });
     });
+
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const handleEnter = () => {
-    if (hoverTimers.current.close) {
-      window.clearTimeout(hoverTimers.current.close);
+  const handleEnter = (): void => {
+    const t = hoverTimers.current.close;
+    if (t) {
+      window.clearTimeout(t);
       hoverTimers.current.close = undefined;
     }
     if (!downSm) setHoverOpen(true);
   };
 
-  const handleLeave = () => {
+  const handleLeave = (): void => {
     hoverTimers.current.close = window.setTimeout(() => setHoverOpen(false), 100);
   };
 
-  const bg = theme.palette.mode === 'dark' ? alpha(theme.palette.grey[900], 0.6) : theme.palette.grey[100];
-  const fg = theme.palette.mode === 'dark' ? theme.palette.grey[300] : theme.palette.text.secondary;
-  const placeholderSrc = svgPlaceholder4x3({ bg, fg, text: isPdf ? 'PDF Önizleme' : 'Görsel yok' });
+  const bg =
+    theme.palette.mode === 'dark'
+      ? alpha(theme.palette.grey[900], 0.6)
+      : theme.palette.grey[100];
 
-  const imageSrc = isImage && displayUrl ? displayUrl : placeholderSrc;
-  const hasPreview = (isPdf && !!displayUrl) || (isImage && !imgError);
-  const finalImgSrc = imgError ? placeholderSrc : imageSrc;
+  const fg =
+    theme.palette.mode === 'dark'
+      ? theme.palette.grey[300]
+      : theme.palette.text.secondary;
+
+  const placeholderSrc = svgPlaceholder4x3({
+    bg,
+    fg,
+    text: isPdf ? 'PDF Önizleme' : 'Görsel yok',
+  });
+
+  const finalImgSrc =
+    isImage && displayUrl && !imgError ? displayUrl : placeholderSrc;
+
+  const hasPreview =
+    (isPdf && !!displayUrl) || (isImage && !!displayUrl && !imgError);
 
   return (
     <>
@@ -109,26 +129,11 @@ export function ProductMedia({
         }}
       >
         {isPdf && displayUrl ? (
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              '& > iframe': {
-                width: '100%',
-                height: '100%',
-                border: 0,
-                display: 'block',
-                background: (t) => alpha(t.palette.background.default, 0.4),
-              },
-            }}
-          >
-            <iframe
-              src={`${displayUrl}#page=1&view=fit&toolbar=0&navpanes=0`}
-              title={`${productName} PDF`}
-              loading="lazy"
-              style={{ pointerEvents: 'none' }}
-            />
-          </Box>
+          <PdfThumb
+            src={displayUrl}
+            boxSize={mediaRect}
+            title={`${productName} PDF`}
+          />
         ) : (
           <CardMedia
             component="img"
@@ -156,7 +161,7 @@ export function ProductMedia({
           kind={isPdf ? 'pdf' : isImage ? 'image' : 'other'}
           open={hoverOpen && hasPreview}
           anchorEl={mediaBoxRef.current}
-          src={isPdf ? (displayUrl ?? undefined) : isImage ? finalImgSrc : undefined}
+          src={isPdf ? (displayUrl ?? undefined) : isImage ? (displayUrl ?? undefined) : undefined}
           baseSize={mediaRect}
           scale={hoverScale}
           pdfWidths={pdfWidths}
