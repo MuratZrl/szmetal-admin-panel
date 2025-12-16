@@ -122,128 +122,127 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
       },
     },
 
-/* -------------------- Pagination -------------------- */
-MuiPagination: {
-  defaultProps: {
-    shape: 'rounded',
-    showFirstButton: true,
-    showLastButton: true,
-    siblingCount: 1,
-    boundaryCount: 1,
-  },
-  styleOverrides: {
-    root: ({ theme }) => ({
-      '& .MuiPagination-ul': {
-        gap: 5,
-        padding: 4,
+    /* -------------------- Pagination -------------------- */
+    MuiPagination: {
+      defaultProps: {
+        shape: 'rounded',
+        showFirstButton: true,
+        showLastButton: true,
+        siblingCount: 1,
+        boundaryCount: 1,
       },
-    }),
-  },
-},
-
-MuiPaginationItem: {
-  defaultProps: { shape: 'rounded' },
-  styleOverrides: {
-    root: ({ theme }) => {
-      const { palette, shape, breakpoints, transitions } = theme;
-      const accent = palette.accent?.main ?? palette.primary.main;
-
-      return {
-        borderRadius: shape.borderRadius,
-        minWidth: 40,
-        height: 40,
-        padding: '0 2px',
-        fontWeight: 600,
-        fontSize: '0.875rem',
-        color: palette.text.primary,
-        backgroundColor: palette.surface[2],
-        border: `1px solid ${palette.surface.outline}`,
-
-        // her buton için temel outline
-        outline: `1px solid ${alpha(palette.surface.outline, 0.9)}`,
-        outlineOffset: 1,
-
-        transition: transitions.create(
-          [
-            'background-color',
-            'border-color',
-            'box-shadow',
-            'color',
-            'transform',
-            'outline-color',
-            'outline-offset',
-          ],
-          { duration: transitions.duration.shorter }
-        ),
-
-        // hover: hafif parıltı ve aksana yaslanan kenar + outline
-        '&:hover': {
-          backgroundColor: alpha(palette.contrast.main, 0.06),
-          borderColor: alpha(accent, 0.4),
-          outlineColor: alpha(accent, 0.8),
-        },
-
-        // seçili: primary üstü, daha güçlü outline
-        '&.Mui-selected': {
-          backgroundColor: palette.primary.main,
-          borderColor: palette.primary.main,
-          color: palette.primary.contrastText,
-          outlineColor: alpha(palette.primary.main, 0.95),
-          outlineWidth: 2,
-          outlineOffset: 1,
-          '&:hover': {
-            backgroundColor: darken(palette.primary.main, 0.15),
-            borderColor: darken(palette.primary.main, 0.15),
+      styleOverrides: {
+        root: ({ theme }) => ({
+          '& .MuiPagination-ul': {
+            gap: 5,
+            padding: 4,
           },
-        },
-
-        // klavye focus: outline’ı biraz daha dışarı it
-        '&.Mui-focusVisible, &:focus-visible': {
-          outlineColor: alpha(accent, 0.95),
-          outlineWidth: 2,
-          outlineOffset: 2,
-        },
-
-        // disabled: soluk, outline da sönük
-        '&.Mui-disabled': {
-          opacity: 0.6,
-          borderColor: alpha(palette.text.primary, 0.16),
-          outlineColor: alpha(palette.text.primary, 0.16),
-          boxShadow: 'none',
-        },
-
-        // ellipsis: düğme gibi görünmesin, outline yok
-        '&.MuiPaginationItem-ellipsis': {
-          border: 'none',
-          outline: 'none',
-          background: 'transparent',
-          color: palette.text.disabled,
-          boxShadow: 'none',
-          minWidth: 24,
-          height: 24,
-          padding: 0,
-        },
-
-        // önceki/sonraki/ilk/son ikon butonları: aynı yükseklik ve hizalama
-        '&.MuiPaginationItem-previousNext, &.MuiPaginationItem-firstLast': {
-          lineHeight: 0,
-        },
-
-        // küçük ekran ayarları
-        [breakpoints.down('sm')]: {
-          minWidth: 32,
-          height: 32,
-          fontSize: '0.75rem',
-        },
-      };
+        }),
+      },
     },
 
-    icon: {
-      fontSize: 20,
-    },
-  },
-},
+    MuiPaginationItem: {
+      defaultProps: { shape: 'rounded' },
+      styleOverrides: {
+        root: ({ theme }) => {
+          const { palette, shape, breakpoints, transitions } = theme;
+          const accent = palette.accent?.main ?? palette.primary.main;
 
+          return {
+            borderRadius: shape.borderRadius,
+            minWidth: 40,
+            height: 40,
+            padding: '0 2px',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            color: palette.text.primary,
+            backgroundColor: palette.surface[2],
+            border: `1px solid ${palette.surface.outline}`,
+
+            // her buton için temel outline
+            outline: `1px solid ${alpha(palette.surface.outline, 0.9)}`,
+            outlineOffset: 1,
+
+            transition: transitions.create(
+              [
+                'background-color',
+                'border-color',
+                'box-shadow',
+                'color',
+                'transform',
+                'outline-color',
+                'outline-offset',
+              ],
+              { duration: transitions.duration.shorter }
+            ),
+
+            // hover: hafif parıltı ve aksana yaslanan kenar + outline
+            '&:hover': {
+              backgroundColor: alpha(palette.contrast.main, 0.06),
+              borderColor: alpha(accent, 0.4),
+              outlineColor: alpha(accent, 0.8),
+            },
+
+            // seçili: primary üstü, daha güçlü outline
+            '&.Mui-selected': {
+              backgroundColor: palette.primary.main,
+              borderColor: palette.primary.main,
+              color: palette.primary.contrastText,
+              outlineColor: alpha(palette.primary.main, 0.95),
+              outlineWidth: 2,
+              outlineOffset: 1,
+              '&:hover': {
+                backgroundColor: darken(palette.primary.main, 0.15),
+                borderColor: darken(palette.primary.main, 0.15),
+              },
+            },
+
+            // klavye focus: outline’ı biraz daha dışarı it
+            '&.Mui-focusVisible, &:focus-visible': {
+              outlineColor: alpha(accent, 0.95),
+              outlineWidth: 2,
+              outlineOffset: 2,
+            },
+
+            // disabled: soluk, outline da sönük
+            '&.Mui-disabled': {
+              opacity: 0.6,
+              borderColor: alpha(palette.text.primary, 0.16),
+              outlineColor: alpha(palette.text.primary, 0.16),
+              boxShadow: 'none',
+            },
+
+            // ellipsis: düğme gibi görünmesin, outline yok
+            '&.MuiPaginationItem-ellipsis': {
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: palette.text.disabled,
+              boxShadow: 'none',
+              minWidth: 24,
+              height: 24,
+              padding: 0,
+            },
+
+            // önceki/sonraki/ilk/son ikon butonları: aynı yükseklik ve hizalama
+            '&.MuiPaginationItem-previousNext, &.MuiPaginationItem-firstLast': {
+              lineHeight: 0,
+            },
+
+            // küçük ekran ayarları
+            [breakpoints.down('sm')]: {
+              minWidth: 32,
+              height: 32,
+              fontSize: '0.75rem',
+            },
+          };
+        },
+
+        icon: {
+          fontSize: 20,
+        },
+      },
+    },
 
     /* -------------------- Navigation (AppBar / Tabs) -------------------- */
     MuiAppBar: {
@@ -297,7 +296,6 @@ MuiPaginationItem: {
     },
 
     MuiInputLabel: {
-      defaultProps: { shrink: true }, // zaten vardıysa kalsın
       styleOverrides: {
         root: ({ theme }) => ({
           fontWeight: 600,
@@ -325,22 +323,36 @@ MuiPaginationItem: {
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: palette.surface.outline,
           },
-          // HOVER: saf beyaz
           '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: palette.common,
           },
-          // FOCUS: “beyazın bir tık koyusu” → contrast.main üzerinden
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: alpha(palette.contrast.main, 0.92),
             borderWidth: 2,
           },
-          // DISABLED ve ERROR aynı kalsın
           '&.Mui-disabled .MuiOutlinedInput-notchedOutline': { borderColor: palette.surface.outline },
           '&.Mui-error .MuiOutlinedInput-notchedOutline': { borderColor: palette.error.main },
           '&:hover.Mui-error .MuiOutlinedInput-notchedOutline': { borderColor: palette.error.main },
           '&.Mui-focused.Mui-error .MuiOutlinedInput-notchedOutline': { borderColor: palette.error.main },
         },
-        input: { paddingTop: 12, paddingBottom: 12 },
+
+        // ✅ placeholder rengi artık global
+        input: {
+          paddingTop: 12,
+          paddingBottom: 12,
+          '&::placeholder': {
+            color: alpha(palette.text.primary, 0.35),
+            opacity: 1,
+          },
+        },
+
+        // ✅ multiline textarea placeholder için de
+        inputMultiline: {
+          '&::placeholder': {
+            color: alpha(palette.text.primary, 0.35),
+            opacity: 1,
+          },
+        },
       },
     },
 
@@ -491,12 +503,130 @@ MuiPaginationItem: {
 
     MuiListItemButton: {
       styleOverrides: {
-        root: {
-          '&:hover': { backgroundColor: alpha(palette.primary.main, 0.06) },
-          '&.Mui-selected': {
-            backgroundColor: alpha(palette.primary.main, 0.12),
-            '&:hover': { backgroundColor: alpha(palette.primary.main, 0.16) },
-          },
+        root: ({ theme }) => {
+          const isLight = theme.palette.mode === 'light';
+
+          const base = theme.palette.accent?.main ?? theme.palette.primary.main;
+          const accentLight =
+            theme.palette.accent?.light ?? (isLight ? theme.palette.primary.light : base);
+
+          const accentDark =
+            theme.palette.accent?.dark ?? darken(base, isLight ? 0.22 : 0.28);
+
+          const aHover1 = isLight ? 0.34 : 0.14;
+          const aHover2 = isLight ? 0.24 : 0.10;
+
+          const aSel1 = isLight ? 0.48 : aHover1;
+          const aSel2 = isLight ? 0.32 : aHover2;
+
+          const aSelHover1 = isLight ? 0.58 : aHover1;
+          const aSelHover2 = isLight ? 0.40 : aHover2;
+
+          const aFocus1 = isLight ? 0.44 : 0.20;
+          const aFocus2 = isLight ? 0.30 : 0.14;
+
+          const grad = (a1: number, a2: number) =>
+            `linear-gradient(135deg,
+              ${alpha(accentLight, a1)} 0%,
+              ${alpha(base, (a1 + a2) / 2)} 50%,
+              ${alpha(accentDark, a2)} 100%
+            )`;
+
+          // ✅ İkon rengi: light’ta siyah, dark’ta mevcut secondary kalsın
+          const iconColor = isLight
+            ? (theme.palette.contrast?.main ?? theme.palette.text.primary) // senin light’ta #0B0B0B
+            : theme.palette.text.secondary;
+
+          return {
+            // Sidebar olmayanlar (genel list davranışın)
+            '&:not(.SidebarNavItemButton):hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.06),
+            },
+            '&:not(.SidebarNavItemButton).Mui-selected': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.12),
+            },
+            '&:not(.SidebarNavItemButton).Mui-selected:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.16),
+            },
+
+            // ✅ Sidebar base (normalde transparan)
+            '&&.SidebarNavItemButton': {
+              height: 44,
+              borderRadius: theme.shape.borderRadius,
+              justifyContent: 'flex-start',
+              gap: 10,
+              width: '100%',
+              paddingLeft: theme.spacing(1.25),
+              paddingRight: theme.spacing(1.25),
+
+              backgroundColor: 'transparent',
+              backgroundImage: 'none',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '200% 200%',
+              backgroundPosition: '0% 50%',
+              border: 'none',
+              boxShadow: 'none',
+
+              // MUI default hover/selected bg’lerini sidebar için ez
+              '&:hover': { backgroundColor: 'transparent' },
+              '&.Mui-selected': { backgroundColor: 'transparent' },
+
+              transition: theme.transitions.create(
+                ['background-image', 'background-position', 'color', 'background-color'],
+                { duration: theme.transitions.duration.shorter }
+              ),
+
+              // ✅ ikon sabit: light’ta siyah, dark’ta secondary
+              '& .MuiSvgIcon-root': { color: iconColor },
+            },
+
+            // ✅ Hover: gradient (ikon rengi yine sabit)
+            '&&.SidebarNavItemButton:hover': {
+              backgroundImage: grad(aHover1, aHover2),
+              backgroundPosition: '100% 50%',
+              backgroundColor: alpha(base, 0.06),
+              '& .MuiSvgIcon-root': { color: iconColor },
+            },
+
+            // ✅ Selected: gradient (ikon rengi yine sabit)
+            '&&.SidebarNavItemButton.Mui-selected': {
+              backgroundImage: grad(aSel1, aSel2),
+              backgroundPosition: '0% 50%',
+              backgroundColor: alpha(base, 0.08),
+              color: theme.palette.text.primary, // metin boyanmasın
+              '& .MuiSvgIcon-root': { color: iconColor },
+            },
+
+            '&&.SidebarNavItemButton.Mui-selected:hover': {
+              backgroundImage: grad(aSelHover1, aSelHover2),
+              backgroundPosition: '100% 50%',
+              backgroundColor: alpha(base, 0.10),
+              '& .MuiSvgIcon-root': { color: iconColor },
+            },
+
+            '&&.SidebarNavItemButton.Mui-focusVisible, &&.SidebarNavItemButton:focus-visible': {
+              backgroundImage: grad(aFocus1, aFocus2),
+              backgroundColor: alpha(base, 0.08),
+              '& .MuiSvgIcon-root': { color: iconColor },
+            },
+
+            '&&.SidebarNavItemButton.Mui-disabled': {
+              backgroundImage: 'none',
+              backgroundColor: theme.palette.action.disabledBackground,
+              '& .MuiSvgIcon-root': { color: theme.palette.text.disabled },
+            },
+
+            // compact
+            '&&.SidebarNavItemButton.is-compact': {
+              justifyContent: 'center',
+              gap: 0,
+              width: 44,
+              minWidth: 44,
+              paddingLeft: 0,
+              paddingRight: 0,
+              borderRadius: '50%',
+            },
+          };
         },
       },
     },

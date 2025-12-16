@@ -3,10 +3,14 @@
 
 import * as React from 'react';
 import { Box, Chip } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, darken, lighten } from '@mui/material/styles';
 import type { GridColDef } from '@mui/x-data-grid';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import InfoIcon from '@mui/icons-material/Info';
+import DoNotDisturbAltIcon from '@mui/icons-material/DoNotDisturbAlt';
 
 export type ProductAnalyticsRow = {
   id: string;
@@ -19,12 +23,17 @@ export type ProductAnalyticsRow = {
   availability: boolean | null;
 };
 
-function formatKgPerMeter(gPerMeter: number | null): string {
+function formatGrPerMeter(gPerMeter: number | null): string {
   if (!Number.isFinite(gPerMeter ?? NaN)) return '';
-  const kg = (gPerMeter ?? 0) / 1000;
-  const fixed = kg.toFixed(3);
+  const g = gPerMeter ?? 0;
+
+  // g/m için genelde tam sayı iyi durur:
+  const fixed = g.toFixed(0);
+
+  // eğer yine de "trim" istiyorsan (gereksiz ama zarar vermez):
   const trimmed = fixed.replace(/\.?0+$/, '');
-  return `${trimmed} kg/m`;
+
+  return `${trimmed}`;
 }
 
 function formatBool(
@@ -35,6 +44,99 @@ function formatBool(
 ): string {
   if (v == null) return emptyLabel;
   return v ? trueLabel : falseLabel;
+}
+
+function BoolChip({
+  value,
+  trueLabel,
+  falseLabel,
+  kind,
+}: {
+  value: boolean | null | undefined;
+  trueLabel: string;
+  falseLabel: string;
+  kind: 'availability' | 'mold';
+}): React.JSX.Element | null {
+  if (value == null) return null;
+
+  const labelText = value ? trueLabel : falseLabel;
+
+  const Icon = (() => {
+    if (kind === 'availability') return value ? CheckCircleIcon : CancelIcon;
+    return value ? InfoIcon : DoNotDisturbAltIcon;
+  })();
+
+  return (
+    <Chip
+      size="small"
+      label={
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.6,
+            lineHeight: 1,
+            maxWidth: '100%',
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {labelText}
+          </Box>
+
+          <Icon
+            style={{
+              fontSize: 18,
+              flexShrink: 0,
+            }}
+          />
+        </Box>
+      }
+      sx={(theme) => {
+        const tone = (() => {
+          if (kind === 'availability') {
+            return value ? theme.palette.success.main : theme.palette.error.main;
+          }
+          return value ? theme.palette.warning.main : theme.palette.grey[600];
+        })();
+
+        const bgColor = alpha(tone, theme.palette.mode === 'light' ? 0.1 : 0.15);
+        const borderColor = alpha(tone, theme.palette.mode === 'light' ? 0.45 : 0.55);
+
+        // Light mode: yazıyı koyulaştır (kontrast artsın)
+        // Dark mode: yazıyı biraz parlat (koyu zeminde boğulmasın)
+        const textColor =
+          theme.palette.mode === 'light' ? darken(tone, 0.35) : lighten(tone, 0.25);
+
+        return {
+          height: 24,
+          borderRadius: 999,
+          fontWeight: 700,
+          letterSpacing: 0.3,
+          backgroundColor: bgColor,
+          border: `1px solid ${borderColor}`,
+          color: textColor,
+
+          '& .MuiChip-label': {
+            px: 1,
+            display: 'block',
+            color: textColor,
+            fontWeight: 700,
+            fontSize: 12,
+          },
+
+          '& svg': { color: textColor },
+        };
+      }}
+    />
+  );
 }
 
 export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
@@ -82,14 +184,27 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
     renderCell: (params) => {
       const raw = params.row.category ?? '';
       const trimmed = raw.trim();
-      if (!trimmed) return '';
+
+      if (!trimmed) {
+        return (
+          <Box component="span" sx={{ opacity: 0.55, fontWeight: 600 }}>
+            —
+          </Box>
+        );
+      }
 
       const parts = trimmed
         .split('/')
         .map((p) => p.trim())
         .filter(Boolean);
 
-      if (!parts.length) return '';
+      if (!parts.length) {
+        return (
+          <Box component="span" sx={{ opacity: 0.55, fontWeight: 600 }}>
+            —
+          </Box>
+        );
+      }
 
       const titleText = parts.join(' / ');
 
@@ -166,7 +281,7 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
   },
   {
     field: 'unit_weight_g_pm',
-    headerName: 'Birim Ağırlık',
+    headerName: 'Birim Ağırlık (gr/m)',
     flex: 0.7,
 
     editable: false,
@@ -175,7 +290,7 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
     disableColumnMenu: true,
 
     valueFormatter: (value) =>
-      formatKgPerMeter(typeof value === 'number' ? value : null),
+      formatGrPerMeter(typeof value === 'number' ? value : null),
   },
   {
     field: 'has_customer_mold',
@@ -189,13 +304,20 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
     filterable: false,
     disableColumnMenu: true,
 
+    align: 'center',
+    headerAlign: 'center',
+
+    renderCell: (params) => (
+      <BoolChip
+        kind="mold"
+        value={params.row.has_customer_mold}
+        trueLabel="Evet"
+        falseLabel="Hayır"
+      />
+    ),
+
     valueFormatter: (value) =>
-      formatBool(
-        typeof value === 'boolean' ? value : null,
-        'Evet',
-        'Hayır',
-        '',
-      ),
+      formatBool(typeof value === 'boolean' ? value : null, 'Evet', 'Hayır', ''),
   },
   {
     field: 'availability',
@@ -208,6 +330,18 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
     resizable: false,
     filterable: false,
     disableColumnMenu: true,
+
+    align: 'center',
+    headerAlign: 'center',
+
+    renderCell: (params) => (
+      <BoolChip
+        kind="availability"
+        value={params.row.availability}
+        trueLabel="Kullanılabilir"
+        falseLabel="Kullanılamaz"
+      />
+    ),
 
     valueFormatter: (value) =>
       formatBool(

@@ -1,4 +1,4 @@
-// src/features/products/components/form/ProductEditForm.tsx
+// src/features/products/components/form/ProductEditForm.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -10,10 +10,6 @@ import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
-import {
-  updateProduct,
-  type UpdateProductInput,
-} from '@/features/products/services/products.client';
 
 import type { ProductDicts } from '@/features/products/services/dicts.server';
 
@@ -21,14 +17,22 @@ import {
   productSchema,
   type ProductFormValues,
   type CustomerMoldSelect,
-  customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
 import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
-import NotesField from '@/features/products/components/form/NotesField.client';
 
-/* -------------------------------------------------------------------------- */
-/* Tipler                                                                      */
+// ✅ Mapper’lar
+import {
+  toUpdatePayload,
+  type ProductUpdateInput,
+} from '@/features/products/forms/mappers';
+
+// ✅ fileMeta helper (refactor)
+import { buildFileMeta, type FileMetaSource } from '@/features/products/forms/fileMeta';
+
+// ✅ DB patch ile update
+import { updateProductDb } from '@/features/products/services/products.client';
+
 /* -------------------------------------------------------------------------- */
 
 type EditValues = ProductFormValues & {
@@ -84,67 +88,78 @@ function fromBoolToSelect(v: boolean | null | undefined): CustomerMoldSelect {
   return '';
 }
 
+function pickLeafCategoryId(
+  dicts: ProductDicts,
+  v: Pick<ProductFormValues, 'category' | 'subCategory' | 'subSubCategory'>,
+): string | null {
+  const slugToId = dicts.categoryIdBySlug || {};
+  const chosenSlug = v.subSubCategory || v.subCategory || v.category || null;
+  return chosenSlug && slugToId[chosenSlug] ? slugToId[chosenSlug] : null;
+}
+
+function fileMetaSourceFromValues(v: EditValues): FileMetaSource {
+  return {
+    fileBucket: v.fileBucket ?? null,
+    filePath: v.filePath ?? null,
+    fileName: v.fileName ?? null,
+    fileMime: v.fileMime ?? null,
+    fileSize: typeof v.fileSize === 'number' ? v.fileSize : null,
+  };
+}
+
 /* -------------------------------------------------------------------------- */
 
 export default function ProductEditForm({ dicts, initial }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
 
-  const defaultValues: EditValues = {
-    // 1) Temel metinler
-    name: initial.name ?? '',
-    code: initial.code ?? '',
+  const defaultValues = React.useMemo<EditValues>(() => {
+    return {
+      name: initial.name ?? '',
+      code: initial.code ?? '',
 
-    // 2) Müşteri kalıbı + availability
-    customerMold:
-      (initial.customerMold as CustomerMoldSelect | undefined) ??
-      fromBoolToSelect(initial.hasCustomerMold ?? null),
-    availability: initial.availability ?? true,
+      customerMold:
+        (initial.customerMold as CustomerMoldSelect | undefined) ??
+        fromBoolToSelect(initial.hasCustomerMold ?? null),
 
-    // 3) Kategori alanları (UI slug’lar)
-    category: initial.category ?? '',
-    subCategory: initial.subCategory ?? '',
-    subSubCategory: '',
+      availability: initial.availability ?? true,
 
-    // 4) Varyant
-    variant: initial.variant ?? '',
+      category: initial.category ?? '',
+      subCategory: initial.subCategory ?? '',
+      subSubCategory: '',
 
-    // 5) Ağırlık / ölçü
-    unitWeightG:
-      typeof initial.unitWeightG === 'number'
-        ? Number(initial.unitWeightG)
-        : 0,
-    wallThicknessMm: initial.wallThicknessMm ?? null,
-    outerSizeMm: initial.outerSizeMm ?? null,
-    sectionMm2: initial.sectionMm2 ?? null,
+      variant: initial.variant ?? '',
 
-    // 6) Tarihler
-    date: initial.date ?? new Date().toISOString().slice(0, 10),
-    revisionDate: initial.revisionDate ?? '',
+      unitWeightG:
+        typeof initial.unitWeightG === 'number'
+          ? Number(initial.unitWeightG)
+          : 0,
 
-    // 7) Teknik / çizim
-    drawer: initial.drawer ?? '',
-    control: initial.control ?? '',
-    scale: initial.scale ?? '',
+      wallThicknessMm: initial.wallThicknessMm ?? null,
+      outerSizeMm: initial.outerSizeMm ?? null,
+      sectionMm2: initial.sectionMm2 ?? null,
 
-    // 8) Kod alanları
-    tempCode: initial.tempCode ?? null,
-    manufacturerCode: initial.manufacturerCode ?? null,
+      date: initial.date ?? new Date().toISOString().slice(0, 10),
+      revisionDate: initial.revisionDate ?? '',
 
-    // 9) Açıklama
-    description: initial.description ?? '',
+      drawer: initial.drawer ?? '',
+      control: initial.control ?? '',
+      scale: initial.scale ?? '',
 
-    // 10) Görsel
-    image: initial.image ?? '',
+      tempCode: initial.tempCode ?? null,
+      manufacturerCode: initial.manufacturerCode ?? null,
 
-    // 11) Dosya alanı + metadata
-    file: null,
-    fileBucket: undefined,
-    filePath: undefined,
-    fileName: undefined,
-    fileMime: undefined,
-    fileSize: undefined,
-  };
+      description: initial.description ?? '',
+      image: initial.image ?? '',
+
+      file: null,
+      fileBucket: undefined,
+      filePath: undefined,
+      fileName: undefined,
+      fileMime: undefined,
+      fileSize: undefined,
+    };
+  }, [initial]);
 
   const methods = useForm<EditValues>({
     resolver: yupResolver(productSchema) as unknown as Resolver<EditValues>,
@@ -161,78 +176,47 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   React.useEffect(() => {
     reset(defaultValues);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reset]);
+  }, [reset, defaultValues]);
 
   async function onSubmit(v: EditValues): Promise<void> {
     try {
-      const slugToId = dicts.categoryIdBySlug || {};
+      const categoryId = pickLeafCategoryId(dicts, v);
+      const fileMeta = buildFileMeta(fileMetaSourceFromValues(v));
 
-      const chosenSlug =
-        v.subSubCategory ||
-        v.subCategory ||
-        v.category ||
-        null;
-
-      const categoryId =
-        chosenSlug && slugToId[chosenSlug]
-          ? slugToId[chosenSlug]
-          : null;
-
-      const nextImagePath =
-        typeof v.image === 'string' && v.image.trim().length > 0
-          ? v.image.trim()
-          : null;
-
-      const payload: UpdateProductInput = {
-        // 1) Temel metinler
+      const mapperInput: ProductUpdateInput = {
         name: v.name,
         code: v.code,
 
-        // 2) Müşteri kalıbı + availability
-        hasCustomerMold: customerMoldToBoolean(v.customerMold),
+        customerMold: v.customerMold,
         availability: v.availability,
 
-        // 3) Kategori ilişkisi (UI category/subCategory/SubSubCategory’yi göndermiyoruz)
-        categoryId,
-
-        // 4) Varyant
         variant: v.variant,
 
-        // 5) Ağırlık / ölçü
-        unitWeightG: v.unitWeightG,
+        unitWeightG: v.unitWeightG ?? null,
         wallThicknessMm: v.wallThicknessMm ?? null,
         outerSizeMm: v.outerSizeMm ?? null,
         sectionMm2: v.sectionMm2 ?? null,
 
-        // 6) Tarihler
         date: v.date,
         revisionDate: v.revisionDate ?? '',
 
-        // 7) Teknik / çizim
-        drawer: v.drawer || null,
-        control: v.control || null,
-        scale: v.scale || null,
+        drawer: v.drawer ?? '',
+        control: v.control ?? '',
+        scale: v.scale ?? '',
 
-        // 8) Kod alanları
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
 
-        // 9) Açıklama
-        description: v.description || null,
+        description: v.description ?? '',
+        image: v.image ?? '',
 
-        // 10) Görsel
-        image: nextImagePath,
-
-        // 11) Dosya metadata
-        fileBucket: v.fileBucket,
-        filePath: v.filePath,
-        fileName: v.fileName,
-        fileMime: v.fileMime,
-        fileSize: v.fileSize,
+        categoryId,
+        fileMeta,
       };
 
-      await updateProduct(initial.id, payload);
+      const dbPatch = toUpdatePayload(mapperInput);
+
+      await updateProductDb(initial.id, dbPatch);
 
       show('Ürün güncellendi.', 'success');
       router.push('/products');
@@ -256,19 +240,9 @@ export default function ProductEditForm({ dicts, initial }: Props) {
                 dir={initial.id}
               />
             </Grid>
-
-            {/* <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
-              <NotesField disabled={methods.formState.isSubmitting} />
-            </Grid> */}
-            
           </Grid>
 
-          <Stack
-            direction="row"
-            spacing={1}
-            justifyContent="start"
-            sx={{ mt: 2 }}
-          >
+          <Stack direction="row" spacing={1} justifyContent="start" sx={{ mt: 2 }}>
             <Button
               variant="outlined"
               color="contrast"

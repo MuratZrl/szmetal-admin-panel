@@ -15,7 +15,7 @@ type Props = {
   height?: number;
 };
 
-export default function ProductsDataGrid({ rows, height = 600 }: Props) {
+export default function ProductsDataGrid({ rows, height = 700 }: Props) {
   const total = rows.length;
 
   return (

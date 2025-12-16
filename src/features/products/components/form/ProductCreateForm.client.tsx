@@ -1,4 +1,4 @@
-// src/features/products/components/form/ProductCreateForm.tsx
+// src/features/products/components/form/ProductCreateForm.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -11,21 +11,29 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';
 
 import type { ProductDicts } from '@/features/products/services/dicts.server';
-import { createProduct } from '@/features/products/services/products.client';
 
 import {
   productSchema,
   type ProductFormValues,
   newProductDefaults,
-  customerMoldToBoolean,
 } from '@/features/products/forms/schema';
 
 import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
-import NotesField from '@/features/products/components/form/NotesField.client';
+
+// ✅ Mapper’lar
+import {
+  toInsertPayload,
+  type ProductFormValuesWithRelations,
+} from '@/features/products/forms/mappers';
+
+// ✅ File meta builder (refactor)
+import { buildFileMeta, type FileMetaSource } from '@/features/products/forms/fileMeta';
+
+// ✅ DB insert
+import { createProductDb } from '@/features/products/services/products.client';
 
 type Props = { dicts: ProductDicts };
 
-// Form tipi: file + metadata alanları
 type CreateValues = ProductFormValues & {
   file: File | null;
   fileBucket?: string | null;
@@ -35,7 +43,6 @@ type CreateValues = ProductFormValues & {
   fileSize?: number | null;
 };
 
-// Güvenli, tekrar kullanılabilir geçici klasör ismi
 function makeDraftDir(): string {
   try {
     return `draft-${crypto.randomUUID()}`;
@@ -44,6 +51,25 @@ function makeDraftDir(): string {
     const rnd = Math.random().toString(36).slice(2, 10);
     return `draft-${ts}-${rnd}`;
   }
+}
+
+function pickLeafCategoryId(
+  dicts: ProductDicts,
+  v: Pick<ProductFormValues, 'category' | 'subCategory' | 'subSubCategory'>,
+): string | null {
+  const slugToId = dicts.categoryIdBySlug || {};
+  const chosenSlug = v.subSubCategory || v.subCategory || v.category || null;
+  return chosenSlug && slugToId[chosenSlug] ? slugToId[chosenSlug] : null;
+}
+
+function fileMetaSourceFromValues(v: CreateValues): FileMetaSource {
+  return {
+    fileBucket: v.fileBucket ?? null,
+    filePath: v.filePath ?? null,
+    fileName: v.fileName ?? null,
+    fileMime: v.fileMime ?? null,
+    fileSize: typeof v.fileSize === 'number' ? v.fileSize : null,
+  };
 }
 
 export default function ProductCreateForm({ dicts }: Props) {
@@ -74,79 +100,57 @@ export default function ProductCreateForm({ dicts }: Props) {
 
   async function onSubmit(v: CreateValues): Promise<void> {
     try {
-      // dicts içinden slug -> id map'i çek
-      const slugToId = dicts.categoryIdBySlug || {};
+      const categoryId = pickLeafCategoryId(dicts, v);
 
-      // Öncelik: en alt seviye → üst seviye
-      const chosenSlug =
-        v.subSubCategory ||
-        v.subCategory ||
-        v.category ||
-        null;
+      const fileMeta = buildFileMeta(fileMetaSourceFromValues(v));
 
-      const categoryId =
-        chosenSlug && slugToId[chosenSlug]
-          ? slugToId[chosenSlug]
-          : null;
-
-      const hasCustomerMold = customerMoldToBoolean(v.customerMold);
-
-      const payload: Parameters<typeof createProduct>[0] = {
+      const mapperInput: ProductFormValuesWithRelations = {
         // 1) Temel metinler
         name: v.name,
         code: v.code,
 
-        // 2) Müşteri kalıbı + kullanılabilirlik
-        hasCustomerMold,
+        // 2) Müşteri kalıbı + availability
+        customerMold: v.customerMold,
         availability: v.availability ?? true,
 
-        // 3) Kategori alanları (UI tarafında kullanıyorsan CreateProductInput'ta opsiyonel)
-        // category: v.category || null,
-        // subCategory: v.subCategory || null,
-        // subSubCategory: v.subSubCategory || null,
+        // 3) Kategori alanları (UI slug’lar)
+        category: v.category ?? '',
+        subCategory: v.subCategory ?? '',
+        subSubCategory: v.subSubCategory ?? '',
 
-        // 4) Gerçek kategori id'si (leaf)
-        categoryId,
-
-        // 5) Varyant
+        // 4) Varyant
         variant: v.variant,
 
-        // 6) Ağırlık ve ölçü alanları
+        // 5) Ölçüler
         unitWeightG: v.unitWeightG ?? null,
         wallThicknessMm: v.wallThicknessMm ?? null,
         outerSizeMm: v.outerSizeMm ?? null,
         sectionMm2: v.sectionMm2 ?? null,
 
-        // 7) Tarih alanları
+        // 6) Tarihler
         date: v.date,
-        revisionDate: v.revisionDate || null,
+        revisionDate: v.revisionDate ?? '',
 
-        // 8) Teknik / çizim alanları
-        drawer: v.drawer || undefined,
-        control: v.control || undefined,
-        scale: v.scale || undefined,
+        // 7) Teknik / çizim
+        drawer: v.drawer ?? '',
+        control: v.control ?? '',
+        scale: v.scale ?? '',
 
-        // 9) Kod alanları
+        // 8) Kod alanları
         tempCode: v.tempCode ?? null,
         manufacturerCode: v.manufacturerCode ?? null,
-        // profileCode: ileride eklersen buradan geçersin
 
-        // 10) Açıklama
-        description: v.description || null,
+        // 9) Açıklama + görsel
+        description: v.description ?? '',
+        image: v.image ?? '',
 
-        // 11) Görsel
-        image: v.image || null,
-
-        // 12) Dosya metadata
-        fileBucket: v.fileBucket ?? null,
-        filePath: v.filePath ?? null,
-        fileName: v.fileName ?? null,
-        fileMime: v.fileMime ?? null,
-        fileSize: v.fileSize ?? null,
-        // file alanı (File objesi) upload hook'unda yönetiliyor, buraya geçmiyoruz
+        // 10) DB relation
+        categoryId,
       };
 
-      await createProduct(payload);
+      const insertPayload = toInsertPayload(mapperInput, fileMeta);
+
+      await createProductDb(insertPayload);
 
       show('Ürün oluşturuldu.', 'success');
       router.push('/products');
@@ -170,10 +174,6 @@ export default function ProductCreateForm({ dicts }: Props) {
                 dir={draftDirRef.current}
               />
             </Grid>
-
-            {/* <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex' }}>
-              <NotesField />
-            </Grid> */}
           </Grid>
 
           <Stack direction="row" spacing={1} justifyContent="start" sx={{ mt: 2 }}>

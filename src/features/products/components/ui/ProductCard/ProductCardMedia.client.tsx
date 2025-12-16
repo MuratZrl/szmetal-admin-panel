@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+
 import { Box, CardMedia, useMediaQuery } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 
@@ -48,7 +49,6 @@ export function ProductMedia({
   isImage,
   displayUrl,
   productName,
-  hoverScale = 1.8,
   pdfWidths,
   backgroundColor,
   HoverPreviewComponent,
@@ -149,7 +149,7 @@ export function ProductMedia({
               height: 1,
               objectFit: 'contain',
               objectPosition: 'center',
-              bgcolor: 'background.default',
+              bgcolor: '#fff', // ✅ her zaman beyaz
               imageRendering: 'auto',
             }}
           />
@@ -163,7 +163,6 @@ export function ProductMedia({
           anchorEl={mediaBoxRef.current}
           src={isPdf ? (displayUrl ?? undefined) : isImage ? (displayUrl ?? undefined) : undefined}
           baseSize={mediaRect}
-          scale={hoverScale}
           pdfWidths={pdfWidths}
         />
       )}

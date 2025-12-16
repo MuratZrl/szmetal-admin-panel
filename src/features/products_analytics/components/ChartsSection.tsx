@@ -71,7 +71,7 @@ export default async function ChartsSection() {
       {/* Orta satır: varyantlara göre aylık (kümülatif) GROUP BAR chart */}
       <Grid size={{ xs: 12, md: 8 }}>
         <ChartCard
-          title="Varyantlara Göre Toplam Ürün Sayısı"
+          title="Varyantlara Göre Aylık Toplam Ürün Sayısı"
           timeLabel="Son 12 ay"
         >
           <GroupBarChart

@@ -1,6 +1,8 @@
 // src/features/products/services/products.client.ts
 'use client';
 
+import { capitalizeProductName } from '@/utils/capitalizeProductName';
+
 import { supabase } from '@/lib/supabase/supabaseClient';
 import type { Database } from '@/types/supabase';
 
@@ -80,14 +82,15 @@ function normalizeGpm(v: number | null | undefined): number | null {
   return Number.isFinite(n) ? Math.round(n) : null;
 }
 
-export async function createProduct(
-  v: CreateProductInput,
-): Promise<string | undefined> {
+export async function createProduct( v: CreateProductInput ): Promise<string | undefined> {
+
   const gpm = normalizeGpm(v.unitWeightG ?? null);
 
   const payload: ProductsInsert = {
     // 1) Temel metinler
-    name: v.name,
+
+    // ✅ DB'ye giderken normalize
+    name: capitalizeProductName(v.name),
     code: v.code,
 
     // 2) Varyant
@@ -156,10 +159,8 @@ export async function createProduct(
 export type UpdateProductInput =
   Partial<Omit<CreateProductInput, 'file'>> & { file?: File | null };
 
-export async function updateProduct(
-  id: string,
-  v: UpdateProductInput,
-): Promise<ProductsRow> {
+export async function updateProduct( id: string, v: UpdateProductInput ): Promise<ProductsRow> {
+
   type ProductsUpdateWithWeight = ProductsUpdate & {
     unit_weight_g_pm?: number | null;
   };
@@ -167,7 +168,8 @@ export async function updateProduct(
   const payload: ProductsUpdateWithWeight = {} as ProductsUpdateWithWeight;
 
   // 1) Temel metinler
-  if (v.name !== undefined) payload.name = v.name;
+   // ✅ normalize
+  if (v.name !== undefined) payload.name = capitalizeProductName(v.name);
   if (v.code !== undefined) payload.code = v.code;
 
   // 2) Varyant
@@ -257,6 +259,29 @@ export async function updateProduct(
     .select()
     .single();
 
+  if (error) throw new Error(error.message);
+  return data as ProductsRow;
+}
+
+// Ham DB fonksiyonları da normalize etmezsen “bir yerden yine kirlenir”
+export async function createProductDb(payload: ProductsInsert): Promise<string | undefined> {
+  const normalized: ProductsInsert = {
+    ...payload,
+    name: payload.name ? capitalizeProductName(payload.name) : payload.name,
+  };
+
+  const { data, error } = await supabase.from('products').insert(normalized).select('id').single();
+  if (error) throw new Error(error.message);
+  return data?.id as string | undefined;
+}
+
+export async function updateProductDb(id: string, patch: ProductsUpdate): Promise<ProductsRow> {
+  const normalized: ProductsUpdate = {
+    ...patch,
+    name: patch.name ? capitalizeProductName(patch.name) : patch.name,
+  };
+
+  const { data, error } = await supabase.from('products').update(normalized).eq('id', id).select().single();
   if (error) throw new Error(error.message);
   return data as ProductsRow;
 }

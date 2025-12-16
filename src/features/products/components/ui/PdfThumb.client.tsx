@@ -3,29 +3,28 @@
 
 import * as React from 'react';
 import { Box } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { Document, Page, pdfjs } from 'react-pdf';
 
 type Size = { width: number; height: number };
 type Props = { src: string; boxSize: Size | null; title?: string };
 type PageDims = { width: number; height: number };
 
-// Worker artık Next route’tan geliyor. 404 olmaz.
 if (!pdfjs.GlobalWorkerOptions.workerSrc) {
   pdfjs.GlobalWorkerOptions.workerSrc = '/api/pdf-worker';
 }
 
 export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Element {
-  const theme = useTheme();
-
   const [loadError, setLoadError] = React.useState(false);
   const [pageDims, setPageDims] = React.useState<PageDims | null>(null);
 
   React.useEffect(() => {
     setLoadError(false);
+    setPageDims(null);
   }, [src]);
 
-  const file = React.useMemo(() => ({ url: src }), [src]);
+  const handleLoadError = React.useCallback(() => {
+    setLoadError(true);
+  }, []);
 
   const fitScale = React.useMemo(() => {
     if (!boxSize || !pageDims) return 1;
@@ -33,10 +32,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
     return Math.max(0.1, Math.min(s, 4));
   }, [boxSize, pageDims]);
 
-  const bg =
-    theme.palette.mode === 'dark'
-      ? alpha(theme.palette.grey[900], 0.35)
-      : theme.palette.grey[100];
+  const bg = '#fff';
 
   if (loadError) {
     return <Box sx={{ position: 'absolute', inset: 0, bgcolor: bg }} title={title} />;
@@ -44,6 +40,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
 
   return (
     <Box
+      title={title}
       sx={{
         position: 'absolute',
         inset: 0,
@@ -57,6 +54,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          backgroundColor: bg,
         },
         '& .react-pdf__Page__canvas': {
           maxWidth: '100%',
@@ -65,14 +63,14 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
           height: 'auto',
           display: 'block',
           pointerEvents: 'none',
+          backgroundColor: bg,
         },
       }}
-      title={title}
     >
       <Document
-        key={src}
-        file={file}
-        onLoadError={() => setLoadError(true)}
+        file={src}                 // ✅ string: gereksiz reload uyarısı biter
+        onLoadError={handleLoadError}
+        onSourceError={handleLoadError}
         loading={null}
         error={null}
       >

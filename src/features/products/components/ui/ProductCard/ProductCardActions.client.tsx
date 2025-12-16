@@ -78,7 +78,7 @@ export function ProductActions({
     py: { xs: 0.5, sm: 0.6, md: 0.75 },
 
     fontSize: { xs: 12, sm: 13, md: 14 },
-    borderRadius: 1.25,
+    borderRadius: 1.75,
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: outline,
@@ -130,6 +130,7 @@ export function ProductActions({
 
     // Hızlı Düzenle için koyu gri dış çerçeve
     borderColor: neutralBorder,
+
     display: { xs: 'none', sm: 'inline-flex' },
 
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
@@ -163,11 +164,13 @@ export function ProductActions({
 
   const detailBtnSx = {
     ...commonBtnSx,
+
     '& .MuiButton-endIcon': { ml: { xs: 0, sm: 0.5 } },
     '&:hover .MuiButton-endIcon .MuiSvgIcon-root, &:focus-visible .MuiButton-endIcon .MuiSvgIcon-root':
       {
         transform: 'translateX(4px)',
       },
+
   } as const;
 
   return (

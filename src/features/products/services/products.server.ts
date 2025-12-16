@@ -19,6 +19,9 @@ import {
 
 import type { ProductFilters, Product } from '@/features/products/types';
 import { mapRowToProduct, mapProductPatchToRow } from '@/features/products/types';
+
+import { capitalizeProductName } from '@/utils/capitalizeProductName';
+
 import type { Database } from '@/types/supabase';
 
 // Supabase şemasından tipleri türetiyoruz. Böylece kolon yapısı değişirse
@@ -217,14 +220,15 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
  *   - Supabase hata mesajı varsa Error fırlatılır
  *   - Kayıt bulunamazsa "Product not found" hatası fırlatılır
  */
-export async function updateProduct(
-  id: string,
-  patch: Parameters<typeof mapProductPatchToRow>[0],
-) {
+export async function updateProduct(id: string, patch: Parameters<typeof mapProductPatchToRow>[0]) {
   const sb = await createSupabaseRouteClient();
 
-  // UI -> DB patch (hala g/m cinsinden gibi alan dönüşümleri burada yapılır)
-  const dbPatch: ProductUpdate = mapProductPatchToRow(patch) as ProductUpdate;
+  const normalizedPatch = {
+    ...patch,
+    name: patch.name ? capitalizeProductName(patch.name) : patch.name,
+  };
+
+  const dbPatch = mapProductPatchToRow(normalizedPatch) as ProductUpdate;
 
   const { data, error } = await sb
     .from('products')
@@ -235,8 +239,6 @@ export async function updateProduct(
 
   if (error) throw new Error(error.message);
   if (!data) throw new Error('Product not found');
-
-  // Güncel satırı tekrar domain modeli tipine map'leyip döndür
   return mapRowToProduct(data as ProductsRow);
 }
 

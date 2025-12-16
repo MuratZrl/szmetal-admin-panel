@@ -670,6 +670,7 @@ export type Database = {
         Args: { p_status: string; p_user_id: string }
         Returns: undefined
       }
+      capitalize_product_name_tr: { Args: { input: string }; Returns: string }
       email_available: { Args: { p_email: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_current_owner: { Args: { p_user_id: string }; Returns: boolean }
@@ -682,6 +683,8 @@ export type Database = {
           status: string
         }[]
       }
+      tr_lower: { Args: { s: string }; Returns: string }
+      tr_upper: { Args: { s: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
       update_user_role: {
         Args: { new_role: string; target_user_id: string }

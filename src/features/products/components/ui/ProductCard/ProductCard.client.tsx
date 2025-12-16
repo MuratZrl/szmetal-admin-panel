@@ -162,7 +162,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        borderRadius: 1.75,
+        borderRadius: 2,
         height: { xs: 'auto', md: '100%' },
         transition:
           'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
@@ -189,7 +189,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           displayUrl={displayUrl ?? null}
           hoverScale={1.8}
           pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460 }}
-          backgroundColor={theme.palette.background.default}
+          backgroundColor="#fff"   // ✅ her zaman beyaz
           HoverPreviewComponent={HoverPreview}
         />
 

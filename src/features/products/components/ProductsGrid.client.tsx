@@ -15,7 +15,7 @@ type Props = {
 
 export default function ProductsGrid({ products, mediaUrlsById, labels, role }: Props) {
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={1}>
       {products.map((p) => {
         const url = mediaUrlsById[String(p.id)] ?? null;
         return (

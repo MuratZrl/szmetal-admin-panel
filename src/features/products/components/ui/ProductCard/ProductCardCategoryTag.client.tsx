@@ -66,27 +66,59 @@ export function CategoryChip({
           ))}
         </Box>
       }
-      sx={(t) => ({
-        height: 'auto',
-        alignItems: 'flex-start',
-        border: 0,
-        bgcolor: t.palette.surface?.[3] ?? alpha(t.palette.action.hover, 0.32),
-        color: t.palette.text.secondary,
-        maxWidth: maxWidth ?? { xs: '100%', sm: 280 },
-        minWidth: 0,
-        '& .MuiChip-label': {
-          display: 'block',
-          whiteSpace: 'normal',
-          overflow: 'visible',
-          textOverflow: 'clip',
-          px: 0.75,
-          py: 0.25,
-          width: '100%',
-          minWidth: 0,
+      sx={(t) => {
+        const bg = t.palette.surface?.[2] ?? alpha(t.palette.action.selected, 0.22);
+        const bd = t.palette.surface?.outline ?? alpha(t.palette.text.primary, 0.22);
+        const hoverBg = t.palette.surface?.[3] ?? alpha(t.palette.action.selected, 0.30);
+
+        return {
+          height: 'auto',
           alignItems: 'flex-start',
-          gap: 2,
-        },
-      })}
+          maxWidth: maxWidth ?? { xs: '100%', sm: 280 },
+          minWidth: 0,
+
+          // ✅ daha belirgin yüzey
+          bgcolor: bg,
+          color: t.palette.text.primary,              // secondary yerine primary
+          border: '1px solid',
+          borderColor: bd,
+          borderRadius: 1,
+          boxShadow: `0 1px 0 ${alpha('#000', t.palette.mode === 'dark' ? 0.35 : 0.12)}`,
+
+          // ✅ hover'da hafif vurgu (göz bunu sever)
+          transition: t.transitions.create(['background-color', 'border-color', 'box-shadow'], {
+            duration: t.transitions.duration.shorter,
+          }),
+          '&:hover': {
+            bgcolor: hoverBg,
+            borderColor: alpha(t.palette.contrast.main, 0.35),
+            boxShadow: `0 2px 10px ${alpha('#000', t.palette.mode === 'dark' ? 0.35 : 0.18)}`,
+          },
+
+          '& .MuiChip-label': {
+            display: 'block',
+            whiteSpace: 'normal',
+            overflow: 'visible',
+            textOverflow: 'clip',
+            px: 0.75,
+            py: 0.35,
+            width: '100%',
+            minWidth: 0,
+            alignItems: 'flex-start',
+            gap: 2,
+
+            // ✅ metin daha “etiket” gibi dursun
+            fontWeight: 650,
+            letterSpacing: 0.1,
+          },
+
+          // ✅ ok ikonunu da biraz belirginleştir
+          '& svg': {
+            opacity: 1,
+            color: alpha(t.palette.text.primary, 0.75),
+          },
+        };
+      }}
     />
   );
 }
