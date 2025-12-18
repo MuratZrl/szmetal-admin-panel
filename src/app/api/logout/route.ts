@@ -3,17 +3,18 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { createRouteClient } from '@/lib/supabase/route';
+import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
 
 function json<T>(body: T, init?: number | ResponseInit) {
-  const resInit: ResponseInit | undefined = typeof init === 'number' ? { status: init } : init;
+  const resInit: ResponseInit | undefined =
+    typeof init === 'number' ? { status: init } : init;
   const res = NextResponse.json(body, resInit);
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
 
 export async function POST() {
-  const sb = await createRouteClient();
+  const sb = await createSupabaseRouteClient();
   try {
     await sb.auth.signOut();
   } catch {
@@ -22,7 +23,6 @@ export async function POST() {
   return json({ ok: true }, 200);
 }
 
-// İstersen güvenlik için diğer metodları kapat:
 export async function GET()     { return json({ error: 'method_not_allowed' }, { status: 405, headers: { Allow: 'POST' } }); }
 export async function PUT()     { return GET(); }
 export async function PATCH()   { return GET(); }

@@ -11,9 +11,7 @@ export default async function ProductsAnalyticsPage() {
   const rows = await getProductAnalyticsRows();
 
   return (
-    <Box
-      component="main"
-      sx={{
+    <Box component="main" sx={{
         px: { xs: 2, sm: 3, md: 1 },
         py: { xs: 2, sm: 3, md: 2 },  
         display: 'flex',

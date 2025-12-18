@@ -1,6 +1,6 @@
 // app/(admin)/dashboard/page.tsx
 import { Box } from '@mui/material';
-import { requirePageAccess } from '@/lib/supabase/auth/server';
+import { requirePageAccess } from '@/lib/supabase/auth/guards.server';
 import { fetchDashboardCards } from '@/features/dashboard/services/card.server';
 import { fetchAllDashboardData } from '@/features/dashboard/services/dashboardchart.server';
 import { fetchProductsSeries } from '@/features/dashboard/services/productsChart.server';
@@ -13,7 +13,7 @@ import { get3RollingMonthRange, get6RollingMonthRange } from '@/features/dashboa
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  await requirePageAccess('dashboard');
+  await requirePageAccess('/dashboard');
 
   const [cards, data, productsSeries] = await Promise.all([
     fetchDashboardCards(),

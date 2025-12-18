@@ -57,7 +57,7 @@ export default async function ChartsSection() {
       </Grid>
 
       <Grid size={{ xs: 12, md: 4 }}>
-        <ChartCard title="Kategoriye Göre Ürün Sayısı" timeLabel="Tüm ürünler">
+        <ChartCard title="Kategoriye Göre Ürün Sayısı" timeLabel="Tüm Zamanlar">
           <PieDonutChart
             items={categories.items}
             height={350}
@@ -87,7 +87,7 @@ export default async function ChartsSection() {
       </Grid>
 
       <Grid size={{ xs: 12, md: 4 }}>
-        <ChartCard title="Varyant Dağılımı" timeLabel="Tüm ürünler">
+        <ChartCard title="Varyant Dağılımı" timeLabel="Tüm Zamanlar">
           <PieDonutChart
             items={variants.items}
             height={350}

@@ -168,8 +168,7 @@ export default function SidebarRoot({
             compact={compact}
             onLogout={() => {
               fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
-                router.replace('/login');
-                router.refresh();
+                window.location.replace('/login'); // tek hamle, temiz
               });
             }}
           />

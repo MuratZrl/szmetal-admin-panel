@@ -73,7 +73,7 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
         color="contrast"
         startIcon={<ArrowBackIcon />}
         draggable={false}
-        sx={{ textTransform: 'capitalize' }}
+        sx={{ borderRadius: 1.5, textTransform: 'capitalize' }}
         aria-label="Geri"
       >
         Geri

@@ -8,97 +8,54 @@ import { notFound, redirect } from 'next/navigation';
 
 import { Box, Grid, Stack } from '@mui/material';
 
-import { requirePageAccess } from '@/lib/supabase/auth/server';
-import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
+// ✅ ESKİYİ SİL
+// import { requirePageAccess } from '@/lib/supabase/auth/server';
+
+// ✅ YENİ
+import { requirePageAccess, getSessionInfo } from '@/lib/supabase/auth/guards.server';
 
 import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
 
-import { resolveAvatarUrl } from '@/features/products/comments/services/resolveAvatarUrl.server';
+import { resolveStorageUrl } from '@/features/products/services/resolveStorageUrl.server';
+import { withVersion } from '@/features/products/utils/url';
+
 import { mapRowToProduct } from '@/features/products/types';
-import { buildCategoryHelpers } from '@/features/products/forms/helpers';
 
 import ProductMedia from '@/features/products/components/ProductMedia.client';
 import ProductInfo from '@/features/products/components/ProductInfo.client';
 import ProductDetailActions from '@/features/products/components/ProductDetailActions.client';
 import CommentSection from '@/features/products/components/CommentSection.client';
 
-import type { Tables } from '@/types/supabase';
+import RecommendedProductsSection from '@/features/products/components/RecommendedProductsSection.client';
+import { buildRecommendedBlock } from '@/features/products/services/recommendedBlock.server';
 
-const PRODUCT_BUCKET =
-  process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_BUCKET ?? 'product-media';
+import { buildLabelMaps } from '@/features/products/services/labelMaps.server';
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  await requirePageAccess('products');
+  // ✅ eskiden: await requirePageAccess('products');
+  // ✅ artık path ver
+  await requirePageAccess('/products');
 
   const { id } = await params;
   const row = await fetchProductById(id);
   if (!row) return { title: 'Ürün bulunamadı' };
+
   const p = mapRowToProduct(row);
   return { title: `${p.code} — ${p.name}` };
 }
 
-type UserSlim = Pick<
-  Tables<'users'>,
-  'role' | 'username' | 'email' | 'image' | 'updated_at'
->;
-
-async function getSessionInfo(): Promise<{
-  role: 'Admin' | 'Manager' | 'User' | null;
-  userId: string | null;
-  username: string | null;
-  email: string | null;
-  avatarUrl: string | null;
-}> {
-  const sb = await createSupabaseRSCClient();
-
-  const { data: auth } = await sb.auth.getUser();
-  const user = auth.user;
-  if (!user) redirect('/login');
-
-  const { data: row } = await sb
-    .from('users')
-    .select('role, username, email, image, updated_at')
-    .eq('id', user.id)
-    .maybeSingle()
-    .returns<UserSlim | null>();
-
-  const email: string | null = row?.email ?? user.email ?? null;
-  const username: string | null = row?.username ?? null;
-
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const metaAvatar =
-    (typeof meta.avatar_url === 'string' && meta.avatar_url) ||
-    (typeof meta.picture === 'string' && meta.picture) ||
-    null;
-
-  const publicUrl = await resolveAvatarUrl(row?.image ?? metaAvatar);
-  const avatarUrl = publicUrl;
-
-  const role = (row?.role ?? null) as 'Admin' | 'Manager' | 'User' | null;
-
-  return { role, userId: user.id, username, email, avatarUrl };
-}
-
-function toSecureUrl(storageKey: string | null | undefined): string | null {
-  if (!storageKey) return null;
-  if (/^https?:\/\//i.test(storageKey)) return storageKey;
-  const key = storageKey.startsWith(PRODUCT_BUCKET + '/')
-    ? storageKey.slice(PRODUCT_BUCKET.length + 1)
-    : storageKey;
-  return `/api/products/storage?bucket=${encodeURIComponent(
-    PRODUCT_BUCKET,
-  )}&path=${encodeURIComponent(key)}`;
-}
-
 export default async function ProductDetailPage({ params }: Props) {
-  const { profile } = await requirePageAccess('products');
   const { id } = await params;
 
-  const [{ userId, username, email, avatarUrl }, row, dicts] = await Promise.all([
+  // ✅ Bu sayfanın gerçek path’i ile kontrol et
+  const canonicalPath = `/products/${encodeURIComponent(id)}` as const;
+  const { profile } = await requirePageAccess(canonicalPath);
+
+  const [session, row, dicts] = await Promise.all([
     getSessionInfo(),
     fetchProductById(id),
     fetchProductDicts(),
@@ -106,8 +63,6 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!row) notFound();
 
-  // Kanonik rota: /products/{id}
-  const canonicalPath = `/products/${encodeURIComponent(id)}` as const;
   if (canonicalPath !== `/products/${id}`) {
     redirect(canonicalPath as `/products/${string}`);
   }
@@ -116,37 +71,32 @@ export default async function ProductDetailPage({ params }: Props) {
   const canPin = profile.role === 'Admin';
 
   const product = mapRowToProduct(row);
-
-  const { categoryLabelMap, subLabelMap } = buildCategoryHelpers(
-    dicts.categoryTree,
-  );
-  const variantLabelMap = Object.fromEntries(
-    dicts.variants.map(v => [v.key, v.name] as const),
-  );
+  const labelMaps = buildLabelMaps(dicts);
 
   const preferPdf =
     (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
   const rawPrimary = preferPdf ? product.filePath : product.image;
   const rawSecondary = preferPdf ? product.image : product.filePath;
 
-  const basePrimary = toSecureUrl(rawPrimary);
-  const baseSecondary = toSecureUrl(rawSecondary);
+  const versionKey = product.updatedAt ?? product.createdAt ?? null;
+
+  const [basePrimary, baseSecondary, comments, recommended] = await Promise.all([
+    (async () => withVersion(await resolveStorageUrl(rawPrimary), versionKey))(),
+    (async () => withVersion(await resolveStorageUrl(rawSecondary), versionKey))(),
+    fetchProductComments(String(product.id)),
+    buildRecommendedBlock({ currentRow: row, limit: 4 }),
+  ]);
 
   const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
   type AllowedExt = (typeof allowed)[number];
   const extLower = (product.fileExt ?? '').toLowerCase();
-  const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(
-    extLower,
-  )
+  const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
     ? (extLower as AllowedExt)
     : null;
-
-  const comments = await fetchProductComments(String(product.id));
 
   return (
     <Box px={1} py={1}>
       <Grid container spacing={2}>
-        
         <Grid size={{ xs: 12, md: 6 }}>
           <ProductMedia
             src={basePrimary}
@@ -168,7 +118,7 @@ export default async function ProductDetailPage({ params }: Props) {
               subCategory={product.subCategory ?? undefined}
               date={product.date}
               revisionDate={product.revisionDate || ''}
-              createdAt={row.created_at ?? null}    // <-- EKLENEN SATIR
+              createdAt={row.created_at ?? null}
               id={String(product.id)}
               drawer={product.drawer}
               control={product.control}
@@ -186,9 +136,9 @@ export default async function ProductDetailPage({ params }: Props) {
               tempCode={product.tempCode}
               manufacturerCode={product.manufacturerCode}
               labels={{
-                category: Object.fromEntries(categoryLabelMap),
-                subCategory: Object.fromEntries(subLabelMap),
-                variant: variantLabelMap,
+                category: labelMaps.category,
+                subCategory: labelMaps.subcategory,
+                variant: labelMaps.variant,
               }}
               mediaSrc={basePrimary}
               mediaFileUrl={baseSecondary}
@@ -202,21 +152,29 @@ export default async function ProductDetailPage({ params }: Props) {
                 canEdit={canEdit}
                 code={product.code}
               />
-              
+
             </ProductInfo>
 
             <CommentSection
               productId={String(product.id)}
-              currentUserId={userId}
-              currentUserUsername={username}
-              currentUserEmail={email}
-              currentUserAvatarUrl={avatarUrl}
+              currentUserId={session.userId}
+              currentUserUsername={session.username}
+              currentUserEmail={session.email}
+              currentUserAvatarUrl={session.avatarUrl}
               initialComments={comments}
               canPin={canPin}
             />
           </Stack>
         </Grid>
       </Grid>
+      
+      <RecommendedProductsSection
+        products={recommended.products}
+        mediaUrlsById={recommended.mediaUrlsById}
+        labels={labelMaps}
+        role={profile.role}
+      />
+      
     </Box>
   );
 }

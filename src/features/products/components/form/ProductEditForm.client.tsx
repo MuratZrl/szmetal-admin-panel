@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Paper, Box, Stack, Button, Grid } from '@mui/material';
+import { Paper, Box, Stack, Button, Grid, Typography, Divider } from '@mui/material';
 
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -80,6 +80,7 @@ type Props = {
     image?: string | null;
     description?: string | null;
   };
+  title?: string;
 };
 
 function fromBoolToSelect(v: boolean | null | undefined): CustomerMoldSelect {
@@ -109,9 +110,12 @@ function fileMetaSourceFromValues(v: EditValues): FileMetaSource {
 
 /* -------------------------------------------------------------------------- */
 
-export default function ProductEditForm({ dicts, initial }: Props) {
+export default function ProductEditForm({ dicts, initial, title }: Props) {
+
   const router = useRouter();
   const { show } = useSnackbar();
+
+  const computedTitle = title ?? `${initial.code ?? ''} — Düzenle`;
 
   const defaultValues = React.useMemo<EditValues>(() => {
     return {
@@ -229,6 +233,12 @@ export default function ProductEditForm({ dicts, initial }: Props) {
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+      {/* ✅ Başlık artık burada */}
+      <Typography variant="h5" sx={{ mb: 1 }}>
+        {computedTitle}
+      </Typography>
+      <Divider sx={{ mb: 2 }} />
+
       <FormProvider {...methods}>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={2} alignItems="stretch">

@@ -1,4 +1,4 @@
-// src/app/pdf.worker.min.mjs/route.ts
+// src/app/pdf-worker/route.ts
 import fs from 'node:fs/promises';
 import path from 'node:path';
 

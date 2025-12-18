@@ -1,6 +1,6 @@
 // app/page.tsx
 import { redirect } from 'next/navigation';
-import { getUserOrNull } from '@/lib/supabase/auth/server';
+import { getUserOrNull } from '@/lib/supabase/auth/guards.server';
 
 export default async function HomePage() {
   const user = await getUserOrNull();

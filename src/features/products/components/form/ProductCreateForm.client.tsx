@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Paper, Box, Stack, Button, Grid } from '@mui/material';
+import { Paper, Box, Stack, Button, Grid, Typography, Divider } from '@mui/material';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -32,7 +32,10 @@ import { buildFileMeta, type FileMetaSource } from '@/features/products/forms/fi
 // ✅ DB insert
 import { createProductDb } from '@/features/products/services/products.client';
 
-type Props = { dicts: ProductDicts };
+type Props = {
+  dicts: ProductDicts;
+  title?: string;
+};
 
 type CreateValues = ProductFormValues & {
   file: File | null;
@@ -72,7 +75,7 @@ function fileMetaSourceFromValues(v: CreateValues): FileMetaSource {
   };
 }
 
-export default function ProductCreateForm({ dicts }: Props) {
+export default function ProductCreateForm({ dicts, title = 'Yeni Profil Ekle' }: Props) {
   const router = useRouter();
   const { show } = useSnackbar();
 
@@ -161,8 +164,16 @@ export default function ProductCreateForm({ dicts }: Props) {
     }
   }
 
+
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+      {/* ✅ Başlık artık burada */}
+      <Typography variant="h5" sx={{ mb: 1 }}>
+        {title}
+      </Typography>
+
+      <Divider sx={{ mb: 2 }} />
+
       <FormProvider {...methods}>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={2} alignItems="stretch">

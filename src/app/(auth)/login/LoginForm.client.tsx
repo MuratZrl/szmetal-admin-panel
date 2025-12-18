@@ -114,7 +114,6 @@ export default function LoginForm() {
 
       show('Giriş başarılı, yönlendiriliyorsunuz...', 'success');
       router.replace('/account');
-      router.refresh();
     } catch (err) {
       console.error('Girişte beklenmeyen hata:', err);
       show('Beklenmeyen bir hata oluştu.', 'error');

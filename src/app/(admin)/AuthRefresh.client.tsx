@@ -1,6 +1,6 @@
 // app/(admin)/AuthRefresh.client.tsx
 'use client';
-import { useBackAuthGuard } from "@/lib/supabase/ui/useBackAuthGuard.client";
+import { useBackAuthGuard } from "@/lib/supabase/hooks/useBackAuthGuard.client";
 
 type Props = { enabled?: boolean };
 

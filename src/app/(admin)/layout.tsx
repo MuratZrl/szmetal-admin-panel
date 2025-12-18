@@ -19,11 +19,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <>
+    
       <AuthRefresh enabled={process.env.NODE_ENV === 'production'} />
+
       <AccessAutoRedirect selfUserId={initialData.userId} />
+
       <AdminShell initialData={initialData} mainLinks={mainLinks}>
         {children}
       </AdminShell>
+      
     </>
   );
 }

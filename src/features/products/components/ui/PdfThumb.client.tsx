@@ -17,14 +17,21 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
   const [loadError, setLoadError] = React.useState(false);
   const [pageDims, setPageDims] = React.useState<PageDims | null>(null);
 
+  const aliveRef = React.useRef(true);
+  React.useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
+
   React.useEffect(() => {
     setLoadError(false);
     setPageDims(null);
   }, [src]);
 
-  const handleLoadError = React.useCallback(() => {
-    setLoadError(true);
-  }, []);
+  const ready =
+    !!boxSize && boxSize.width > 8 && boxSize.height > 8 && !loadError;
 
   const fitScale = React.useMemo(() => {
     if (!boxSize || !pageDims) return 1;
@@ -34,7 +41,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
 
   const bg = '#fff';
 
-  if (loadError) {
+  if (!ready) {
     return <Box sx={{ position: 'absolute', inset: 0, bgcolor: bg }} title={title} />;
   }
 
@@ -50,12 +57,6 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
         bgcolor: bg,
         overflow: 'hidden',
         pointerEvents: 'none',
-        '& .react-pdf__Page': {
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: bg,
-        },
         '& .react-pdf__Page__canvas': {
           maxWidth: '100%',
           maxHeight: '100%',
@@ -68,9 +69,10 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
       }}
     >
       <Document
-        file={src}                 // ✅ string: gereksiz reload uyarısı biter
-        onLoadError={handleLoadError}
-        onSourceError={handleLoadError}
+        key={src}
+        file={src}
+        onLoadError={() => aliveRef.current && setLoadError(true)}
+        onSourceError={() => aliveRef.current && setLoadError(true)}
         loading={null}
         error={null}
       >
@@ -80,6 +82,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
           renderTextLayer={false}
           renderAnnotationLayer={false}
           onLoadSuccess={(page) => {
+            if (!aliveRef.current) return;
             const vp = page.getViewport({ scale: 1 });
             setPageDims({ width: vp.width, height: vp.height });
           }}

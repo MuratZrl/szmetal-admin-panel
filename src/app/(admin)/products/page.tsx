@@ -16,7 +16,7 @@ import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { resolveStorageUrl } from '@/features/products/services/resolveStorageUrl.server';
 import { withVersion } from '@/features/products/utils/url';
 
-import { requirePageAccess, loadAuthState } from '@/lib/supabase/auth/guards.server';
+import { requirePageAccess } from '@/lib/supabase/auth/guards.server';
 
 // BURASI YENİ: label map + breadcrumb üreten helper
 import { buildLabelMaps } from '@/features/products/services/labelMaps.server';
@@ -41,10 +41,8 @@ function toInt(
 }
 
 export default async function ProductsPage({ searchParams: spPromise }: PageProps) {
-  await requirePageAccess('/products');
-
-  const { profile } = await loadAuthState();
-  const role = profile?.role ?? null;
+  const { profile } = await requirePageAccess('/products');
+  const role = profile.role ?? null;
 
   const sp = await spPromise;
   const page = toInt(sp.page, 1, { min: 1 });

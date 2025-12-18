@@ -2,7 +2,6 @@
 'use client';
 
 import { ListItem, ListItemButton, Tooltip, Box, Typography } from '@mui/material';
-import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 
 import type { SidebarLink } from '../types';
 

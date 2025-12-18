@@ -1,4 +1,4 @@
-// src/features/sidebar/components/SidebarSub.tsx
+// src/features/sidebar/components/SidebarSub.client.tsx
 'use client';
 
 import { usePathname } from 'next/navigation';

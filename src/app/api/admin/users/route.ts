@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/supabaseAdmin';
 import { createSupabaseRouteClient } from '@/lib/supabase/supabaseServer';
-import type { Role, UserStatus } from '@/lib/supabase/auth/server';
+
+import { requireAdminApi, type Role, type UserStatus } from '@/lib/supabase/auth/guards.server';
 import type { Database } from '@/types/supabase';
 
 type UsersTable = Database['public']['Tables']['users'];
@@ -55,21 +56,10 @@ function buildProfileUpsert(args: {
 export async function POST(req: NextRequest) {
   // 1) Çağıran gerçekten Admin mi?
   const rw = await createSupabaseRouteClient();
-  const { data: userRes } = await rw.auth.getUser();
-  const me = userRes.user ?? null;
-  if (!me) return NextResponse.json({ error: 'Auth gerekli' }, { status: 401 });
+  const gate = await requireAdminApi(rw);
 
-  const { data: profRes, error: profErr } = await rw
-    .from('users')
-    .select('role')
-    .eq('id', me.id)
-    .maybeSingle<{ role: Role }>();
-
-  if (profErr) {
-    return NextResponse.json({ error: 'Profil okunamadı' }, { status: 500 });
-  }
-  if (!profRes || profRes.role !== 'Admin') {
-    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: gate.status });
   }
 
   // 2) Girdi
