@@ -81,6 +81,17 @@ export function VariantFilterSection({
         Profil Çeşidi
       </Typography>
 
+      {/* Başlık ile içerik arasında düz renk separator */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
+      />
+
       <Grid container spacing={1} alignItems="center" sx={{ mt: 1.5, mb: 1 }}>
         <Grid size={{ xs: 12 }}>
           <TextField

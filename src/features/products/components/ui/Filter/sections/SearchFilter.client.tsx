@@ -11,23 +11,30 @@ type SearchFilterSectionProps = {
   onChange: (value: string) => void;
 };
 
-export function SearchFilterSection({ value, onChange }: SearchFilterSectionProps) {
+export function SearchFilterSection({ value, onChange }: SearchFilterSectionProps): React.JSX.Element {
   return (
-    <Box 
-    
-      component="section"     
-    
+    <Box
+      component="section"
       sx={(t) => ({
         ...sectionSx(t),
-        borderRadius: 2.25, // istediğin değer: 0, 1.5, 2, 3, 10... neyse
+        borderRadius: 2.25,
       })}
-
     >
-
-      <Typography variant="overline" gutterBottom sx={{ opacity: 0.75 }}>
+      <Typography variant="overline" sx={{ opacity: 0.75 }}>
         Genel Arama
       </Typography>
-      
+
+      {/* Başlık ile içerik arasında düz renk separator */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
+      />
+
       <TextField
         fullWidth
         label="Ara (ad veya kod)"
@@ -35,14 +42,10 @@ export function SearchFilterSection({ value, onChange }: SearchFilterSectionProp
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-          }
+          if (e.key === 'Enter') e.preventDefault();
         }}
         inputProps={{ enterKeyHint: 'search' }}
-        sx={{ mt: 1.5 }}
       />
-
     </Box>
   );
 }

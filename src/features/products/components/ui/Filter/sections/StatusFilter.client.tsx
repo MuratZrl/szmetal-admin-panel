@@ -55,7 +55,18 @@ export function StatusFilterSection({
         Durumlar
       </Typography>
 
-      <List dense disablePadding sx={{ mt: 0.75 }}>
+      {/* Başlık ile içerik arasında düz renk separator */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
+      />
+
+      <List dense disablePadding>
         {rows.map((r, idx) => (
           <React.Fragment key={r.key}>
             <ListItemButton

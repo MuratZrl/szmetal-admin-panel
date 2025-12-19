@@ -20,7 +20,7 @@ export function DateRangeFilterSection({
   to,
   onChangeFrom,
   onChangeTo,
-}: DateRangeFilterSectionProps) {
+}: DateRangeFilterSectionProps): React.JSX.Element {
   const toDayjs = React.useCallback((v: string): Dayjs | null => {
     if (!v) return null;
     const d = dayjs(v, 'YYYY-MM-DD', true);
@@ -30,20 +30,29 @@ export function DateRangeFilterSection({
   const toIso = React.useCallback((d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : ''), []);
 
   return (
-    <Box 
-    
-      component="section" 
-    
+    <Box
+      component="section"
       sx={(t) => ({
         ...sectionSx(t),
-        borderRadius: 2.25, // istediğin değer: 0, 1.5, 2, 3, 10... neyse
+        borderRadius: 2.25,
       })}
-    
     >
-      <Typography variant="overline" sx={{ marginBottom: 2, opacity: 0.8 }}>
+      <Typography variant="overline" sx={{ opacity: 0.8 }}>
         Tarih
       </Typography>
-      <Grid container spacing={1} mt={1}>
+
+      {/* Başlık ile içerik arasında düz renk separator */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
+      />
+
+      <Grid container spacing={1}>
         <Grid size={{ xs: 6 }}>
           <DatePicker
             label="Tarih baş."
@@ -59,6 +68,7 @@ export function DateRangeFilterSection({
             }}
           />
         </Grid>
+
         <Grid size={{ xs: 6 }}>
           <DatePicker
             label="Tarih bitiş"

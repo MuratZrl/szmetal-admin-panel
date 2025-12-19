@@ -26,6 +26,19 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
       <Typography variant="overline" sx={{ opacity: 0.75 }}>
         Sıralama
       </Typography>
+
+      
+      {/* Başlık ile içerik arasında düz renk separator */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
+      />
+
       <TextField
         label="Sırala"
         select
@@ -33,7 +46,6 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         value={sort}
         onChange={(e) => onChangeSort(e.target.value)}
         fullWidth
-        sx={{ mt: 1 }}
       >
         <MenuItem value="date-desc">Tarih Yeni → Eski</MenuItem>
         <MenuItem value="date-asc">Tarih Eski → Yeni</MenuItem>

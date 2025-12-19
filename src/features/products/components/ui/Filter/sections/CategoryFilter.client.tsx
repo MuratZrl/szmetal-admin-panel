@@ -44,7 +44,6 @@ export function CategoryFilterSection({
   setSubCategories,
   setExpanded,
 }: CategoryFilterSectionProps): React.JSX.Element {
-  
   // Türkçe sıralama için collator
   const collator = React.useMemo(
     () => new Intl.Collator('tr', { sensitivity: 'base', numeric: false }),
@@ -364,8 +363,19 @@ export function CategoryFilterSection({
         Kategoriler
       </Typography>
 
+      {/* Başlık ile içerik arasında düz renk separator */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
+      />
+
       {/* Arama inputu (Variant ile aynı stil) */}
-      <Grid container spacing={1} alignItems="center" sx={{ mt: 1.5, mb: 1 }}>
+      <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth

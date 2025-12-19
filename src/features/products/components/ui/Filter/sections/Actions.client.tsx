@@ -1,7 +1,6 @@
 // src/features/products/components/ui/Filter/sections/Actions.client.tsx
 'use client';
 
-import * as React from 'react';
 import { Box, Button, Grid } from '@mui/material';
 
 import { sectionSx } from '../sectionSx';
