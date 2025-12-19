@@ -1,4 +1,4 @@
-// src/features/products/components/ui/Filter/sections/DateRangeFilterSection.tsx
+// src/features/products/components/ui/Filter/sections/DateRangeFilter.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -30,7 +30,16 @@ export function DateRangeFilterSection({
   const toIso = React.useCallback((d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : ''), []);
 
   return (
-    <Box component="section" sx={(t) => sectionSx(t)}>
+    <Box 
+    
+      component="section" 
+    
+      sx={(t) => ({
+        ...sectionSx(t),
+        borderRadius: 2.25, // istediğin değer: 0, 1.5, 2, 3, 10... neyse
+      })}
+    
+    >
       <Typography variant="overline" sx={{ marginBottom: 2, opacity: 0.8 }}>
         Tarih
       </Typography>

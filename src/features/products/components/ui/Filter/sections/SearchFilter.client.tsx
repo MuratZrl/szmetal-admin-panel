@@ -1,4 +1,4 @@
-// src/features/products/components/ui/Filter/sections/SearchFilterSection.tsx
+// src/features/products/components/ui/Filter/sections/SearchFilter.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -13,10 +13,21 @@ type SearchFilterSectionProps = {
 
 export function SearchFilterSection({ value, onChange }: SearchFilterSectionProps) {
   return (
-    <Box component="section" sx={(t) => sectionSx(t)}>
+    <Box 
+    
+      component="section"     
+    
+      sx={(t) => ({
+        ...sectionSx(t),
+        borderRadius: 2.25, // istediğin değer: 0, 1.5, 2, 3, 10... neyse
+      })}
+
+    >
+
       <Typography variant="overline" gutterBottom sx={{ opacity: 0.75 }}>
         Genel Arama
       </Typography>
+      
       <TextField
         fullWidth
         label="Ara (ad veya kod)"
@@ -31,6 +42,7 @@ export function SearchFilterSection({ value, onChange }: SearchFilterSectionProp
         inputProps={{ enterKeyHint: 'search' }}
         sx={{ mt: 1.5 }}
       />
+
     </Box>
   );
 }

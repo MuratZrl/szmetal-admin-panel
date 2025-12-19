@@ -1,4 +1,4 @@
-// src/features/products/components/ui/Filter/sections/SortFilterSection.tsx
+// src/features/products/components/ui/Filter/sections/SortFilter.client.tsx
 'use client';
 
 import * as React from 'react';
@@ -13,7 +13,16 @@ type SortFilterSectionProps = {
 
 export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps) {
   return (
-    <Box component="section" sx={(t) => sectionSx(t)}>
+    <Box 
+    
+      component="section" 
+    
+      sx={(t) => ({
+      ...sectionSx(t),
+      borderRadius: 2.25, // istediğin değer: 0, 1.5, 2, 3, 10... neyse
+      })}
+
+    >
       <Typography variant="overline" sx={{ opacity: 0.75 }}>
         Sıralama
       </Typography>
@@ -26,10 +35,10 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         fullWidth
         sx={{ mt: 1 }}
       >
-        <MenuItem value="date-desc">Tarih yeni → eski</MenuItem>
-        <MenuItem value="date-asc">Tarih eski → yeni</MenuItem>
-        <MenuItem value="weight-asc">Ağırlık artan</MenuItem>
-        <MenuItem value="weight-desc">Ağırlık azalan</MenuItem>
+        <MenuItem value="date-desc">Tarih Yeni → Eski</MenuItem>
+        <MenuItem value="date-asc">Tarih Eski → Yeni</MenuItem>
+        <MenuItem value="weight-asc">Birim Ağırlık Artan</MenuItem>
+        <MenuItem value="weight-desc">Birim Ağırlık Azalan</MenuItem>
         <MenuItem value="code-asc">Kod A → Z</MenuItem>
         <MenuItem value="code-desc">Kod Z → A</MenuItem>
       </TextField>

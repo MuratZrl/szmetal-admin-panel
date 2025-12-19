@@ -5,10 +5,13 @@ import * as React from 'react';
 import {
   Box,
   Checkbox,
+  Divider,
   FormControlLabel,
-  FormGroup,
   Grid,
   InputAdornment,
+  List,
+  ListItemButton,
+  ListItemText,
   TextField,
   Typography,
 } from '@mui/material';
@@ -32,7 +35,7 @@ export function VariantFilterSection({
   onChangeVariantQuery,
   variantsSel,
   setVariantsSel,
-}: VariantFilterSectionProps) {
+}: VariantFilterSectionProps): React.JSX.Element {
   const collator = React.useMemo(
     () => new Intl.Collator('tr', { sensitivity: 'base', numeric: false }),
     [],
@@ -57,8 +60,23 @@ export function VariantFilterSection({
     });
   }, [variantQuery, variantsSorted]);
 
+  const selectedSet = React.useMemo(() => new Set<string>(variantsSel), [variantsSel]);
+
+  const toggleVariant = React.useCallback(
+    (key: string) => {
+      setVariantsSel((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
+    },
+    [setVariantsSel],
+  );
+
   return (
-    <Box component="section" sx={(t) => sectionSx(t)}>
+    <Box
+      component="section"
+      sx={(t) => ({
+        ...sectionSx(t),
+        borderRadius: 2.25,
+      })}
+    >
       <Typography variant="overline" sx={{ opacity: 0.75 }}>
         Profil Çeşidi
       </Typography>
@@ -97,24 +115,47 @@ export function VariantFilterSection({
         aria-label="Profil Çeşidi"
       >
         {variantsFiltered.length > 0 ? (
-          <FormGroup>
-            {variantsFiltered.map((v) => (
-              <FormControlLabel
-                key={v.key}
-                control={
-                  <Checkbox
-                    checked={variantsSel.includes(v.key)}
-                    onChange={() =>
-                      setVariantsSel((prev) =>
-                        prev.includes(v.key) ? prev.filter((x) => x !== v.key) : [...prev, v.key],
-                      )
-                    }
-                  />
-                }
-                label={v.name}
-              />
-            ))}
-          </FormGroup>
+          <List dense disablePadding>
+            {variantsFiltered.map((v, idx) => {
+              const label = (v.name ?? '').trim() ? (v.name as string) : v.key;
+              const checked = selectedSet.has(v.key);
+
+              return (
+                <React.Fragment key={v.key}>
+                  <ListItemButton
+                    disableRipple
+                    disableTouchRipple
+                    onClick={() => toggleVariant(v.key)}
+                    sx={{
+                      pl: 1.25,
+                      pr: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: 1,
+                      minHeight: VARIANT_ROW_H_PX,
+                    }}
+                  >
+                    <FormControlLabel
+                      sx={{ m: 0, width: 1 }}
+                      control={
+                        <Checkbox
+                          checked={checked}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleVariant(v.key);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      }
+                      label={<ListItemText primary={label} />}
+                    />
+                  </ListItemButton>
+
+                  {idx < variantsFiltered.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}
+                </React.Fragment>
+              );
+            })}
+          </List>
         ) : (
           <Typography variant="caption" color="text.secondary">
             Sonuç yok

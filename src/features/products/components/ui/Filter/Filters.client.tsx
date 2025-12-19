@@ -10,13 +10,13 @@ import 'dayjs/locale/tr';
 
 import type { CategoryTree, VariantOption } from './types';
 import { useProductFilters } from './hooks/useProductFilters';
-import { SearchFilterSection } from '@/features/products/components/ui/Filter/sections/SearchFilter';
-import { StatusFilterSection } from '@/features/products/components/ui/Filter/sections/StatusFilter';
-import { CategoryFilterSection } from '@/features/products/components/ui/Filter/sections/CategoryFilter';
-import { VariantFilterSection } from '@/features/products/components/ui/Filter/sections/VariantFilter';
-import { DateRangeFilterSection } from '@/features/products/components/ui/Filter/sections/DateRangeFilter';
-import { SortFilterSection } from '@/features/products/components/ui/Filter/sections/SortFilter';
-import { ActionsSection } from '@/features/products/components/ui/Filter/sections/Actions';
+import { SearchFilterSection } from '@/features/products/components/ui/Filter/sections/SearchFilter.client';
+import { StatusFilterSection } from '@/features/products/components/ui/Filter/sections/StatusFilter.client';
+import { CategoryFilterSection } from '@/features/products/components/ui/Filter/sections/CategoryFilter.client';
+import { VariantFilterSection } from '@/features/products/components/ui/Filter/sections/VariantFilter.client';
+import { DateRangeFilterSection } from '@/features/products/components/ui/Filter/sections/DateRangeFilter.client';
+import { SortFilterSection } from '@/features/products/components/ui/Filter/sections/SortFilter.client';
+import { ActionsSection } from '@/features/products/components/ui/Filter/sections/Actions.client';
 
 export default function Filters({
   topLevelSlugs,

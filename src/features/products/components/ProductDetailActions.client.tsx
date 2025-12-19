@@ -87,7 +87,7 @@ export default function ProductDetailActions({ id, canEdit }: Props) {
           color="contrast"
           endIcon={<EditIcon />}
           draggable={false}
-          sx={{ textTransform: 'capitalize' }}
+          sx={{ borderRadius: 1.5, textTransform: 'capitalize' }}
         >
           Profili Düzenle
         </Button>

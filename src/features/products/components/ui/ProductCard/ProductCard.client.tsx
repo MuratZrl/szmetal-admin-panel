@@ -162,7 +162,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        borderRadius: 2,
+        borderRadius: 3,
         height: { xs: 'auto', md: '100%' },
         transition:
           'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
