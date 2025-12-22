@@ -4,6 +4,7 @@
 import * as React from 'react';
 import {
   Box,
+  Button,
   Checkbox,
   Collapse,
   Divider,
@@ -56,6 +57,16 @@ export function CategoryFilterSection({
   // Arama terimi normalize (trim + tr lowercase)
   const needle = React.useMemo(() => categoryQuery.trim().toLocaleLowerCase('tr'), [categoryQuery]);
   const queryActive = needle.length > 0; // arama açık mı?
+
+  // Temizle butonu aktif mi?
+  const isActive = categories.length > 0 || subCategories.length > 0 || categoryQuery.trim().length > 0;
+
+  const handleClear = React.useCallback(() => {
+    setCategories([]);
+    setSubCategories([]);
+    setCategoryQuery('');
+    setExpanded([]); // “tam reset” hissi için (istersen bunu kaldırıp expanded’ı koruyabilirsin)
+  }, [setCategories, setSubCategories, setExpanded]);
 
   // Slug -> görünen isim
   const catNameOf = React.useCallback(
@@ -276,7 +287,6 @@ export function CategoryFilterSection({
             if (!queryActive) toggleExpand(slug);
           }}
           sx={{
-            // depth ile içeri kaydırma
             pl: 1.25 + depth * 2,
             pr: 1,
             display: 'flex',
@@ -285,7 +295,6 @@ export function CategoryFilterSection({
             minHeight: CATEGORY_ROW_H_PX,
           }}
         >
-          {/* Checkbox + metin: Variant ile aynı hizayı korumak için m:0 + width:1 */}
           <FormControlLabel
             sx={{
               m: 0,
@@ -301,7 +310,6 @@ export function CategoryFilterSection({
               <Checkbox
                 checked={checked}
                 indeterminate={!checked && someSelected}
-                // checkbox tıklanınca expand tetiklenmesin
                 onChange={(e) => {
                   e.stopPropagation();
                   toggleNode(slug);
@@ -312,7 +320,6 @@ export function CategoryFilterSection({
             label={<ListItemText primary={name} />}
           />
 
-          {/* Ok ikonu: sabit genişlikli kutu, hizayı bozmaması için */}
           <Box
             sx={{
               width: 28,
@@ -333,10 +340,8 @@ export function CategoryFilterSection({
           </Box>
         </ListItemButton>
 
-        {/* açık node varsa araya divider */}
         {open && hasKids ? <Divider sx={{ my: 0.75 }} /> : null}
 
-        {/* alt liste (collapse) */}
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding dense>
             {kids.map((child, idx) => (
@@ -359,9 +364,41 @@ export function CategoryFilterSection({
         borderRadius: 2.25,
       })}
     >
-      <Typography variant="overline" sx={{ opacity: 0.75 }}>
-        Kategoriler
-      </Typography>
+      
+      {/* Başlık satırı: solda başlık, sağda Temizle */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+        }}
+      >
+        <Typography variant="overline" sx={{ opacity: 0.75 }}>
+          Kategoriler
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          disableRipple
+          disabled={!isActive}
+          onClick={handleClear}
+          sx={{
+            minWidth: 'auto',
+            px: 0.75,
+            py: 0.25,
+            borderRadius: 1,
+            textTransform: 'none',
+            lineHeight: 1.2,
+            '&:hover': { backgroundColor: 'transparent' },
+            '&:active': { backgroundColor: 'transparent' },
+            '&.Mui-focusVisible': { backgroundColor: 'transparent' },
+          }}
+        >
+          Temizle
+        </Button>
+      </Box>
 
       {/* Başlık ile içerik arasında düz renk separator */}
       <Box
@@ -408,7 +445,6 @@ export function CategoryFilterSection({
           pr: 1,
         }}
       >
-        {/* Aramada boş sonuç */}
         {queryActive && topLevelFiltered.length === 0 ? (
           <Typography variant="caption" color="text.secondary">
             Sonuç yok

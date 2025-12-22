@@ -4,6 +4,7 @@
 import * as React from 'react';
 import {
   Box,
+  Button,
   Checkbox,
   Divider,
   FormControlLabel,
@@ -69,6 +70,13 @@ export function VariantFilterSection({
     [setVariantsSel],
   );
 
+  const isActive = variantsSel.length > 0 || variantQuery.trim().length > 0;
+
+  const handleClear = React.useCallback(() => {
+    onChangeVariantQuery('');
+    setVariantsSel([]);
+  }, [onChangeVariantQuery, setVariantsSel]);
+
   return (
     <Box
       component="section"
@@ -77,9 +85,40 @@ export function VariantFilterSection({
         borderRadius: 2.25,
       })}
     >
-      <Typography variant="overline" sx={{ opacity: 0.75 }}>
-        Profil Çeşidi
-      </Typography>
+      {/* Başlık satırı: solda başlık, sağda Temizle */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+        }}
+      >
+        <Typography variant="overline" sx={{ opacity: 0.75 }}>
+          Profil Çeşidi
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          disableRipple
+          disabled={!isActive}
+          onClick={handleClear}
+          sx={{
+            minWidth: 'auto',
+            px: 0.75,
+            py: 0.25,
+            borderRadius: 1,
+            textTransform: 'none',
+            lineHeight: 1.2,
+            '&:hover': { backgroundColor: 'transparent' },
+            '&:active': { backgroundColor: 'transparent' },
+            '&.Mui-focusVisible': { backgroundColor: 'transparent' },
+          }}
+        >
+          Temizle
+        </Button>
+      </Box>
 
       {/* Başlık ile içerik arasında düz renk separator */}
       <Box
@@ -92,7 +131,7 @@ export function VariantFilterSection({
         })}
       />
 
-      <Grid container spacing={1} alignItems="center" sx={{ mt: 1.5, mb: 1 }}>
+      <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth

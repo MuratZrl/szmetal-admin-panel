@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Button, Grid, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { type Dayjs } from 'dayjs';
 
@@ -29,6 +29,13 @@ export function DateRangeFilterSection({
 
   const toIso = React.useCallback((d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : ''), []);
 
+  const isActive = from.trim().length > 0 || to.trim().length > 0;
+
+  const handleClear = React.useCallback(() => {
+    onChangeFrom('');
+    onChangeTo('');
+  }, [onChangeFrom, onChangeTo]);
+
   return (
     <Box
       component="section"
@@ -37,9 +44,40 @@ export function DateRangeFilterSection({
         borderRadius: 2.25,
       })}
     >
-      <Typography variant="overline" sx={{ opacity: 0.8 }}>
-        Tarih
-      </Typography>
+      {/* Başlık satırı: solda başlık, sağda Temizle */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+        }}
+      >
+        <Typography variant="overline" sx={{ opacity: 0.8 }}>
+          Tarih
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          disableRipple
+          disabled={!isActive}
+          onClick={handleClear}
+          sx={{
+            minWidth: 'auto',
+            px: 0.75,
+            py: 0.25,
+            borderRadius: 1,
+            textTransform: 'none',
+            lineHeight: 1.2,
+            '&:hover': { backgroundColor: 'transparent' },
+            '&:active': { backgroundColor: 'transparent' },
+            '&.Mui-focusVisible': { backgroundColor: 'transparent' },
+          }}
+        >
+          Temizle
+        </Button>
+      </Box>
 
       {/* Başlık ile içerik arasında düz renk separator */}
       <Box

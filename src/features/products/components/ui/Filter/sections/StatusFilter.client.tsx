@@ -4,6 +4,7 @@
 import * as React from 'react';
 import {
   Box,
+  Button,
   Checkbox,
   Divider,
   FormControlLabel,
@@ -43,6 +44,14 @@ export function StatusFilterSection({
     [moldOnly, onToggleMold, availableOnly, onToggleAvailable],
   );
 
+  const isActive = moldOnly || availableOnly;
+
+  const handleClear = React.useCallback(() => {
+    // Toggle API'n var, "set false" yok. O yüzden sadece true olanları geri toggle'lıyoruz.
+    if (moldOnly) onToggleMold();
+    if (availableOnly) onToggleAvailable();
+  }, [moldOnly, availableOnly, onToggleMold, onToggleAvailable]);
+
   return (
     <Box
       component="section"
@@ -51,9 +60,40 @@ export function StatusFilterSection({
         borderRadius: 2.25,
       })}
     >
-      <Typography variant="overline" sx={{ opacity: 0.75 }}>
-        Durumlar
-      </Typography>
+      {/* Başlık satırı: solda başlık, sağda Temizle */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+        }}
+      >
+        <Typography variant="overline" sx={{ opacity: 0.75 }}>
+          Durumlar
+        </Typography>
+
+        <Button
+          variant="text"
+          size="small"
+          disableRipple
+          disabled={!isActive}
+          onClick={handleClear}
+          sx={{
+            minWidth: 'auto',
+            px: 0.75,
+            py: 0.25,
+            borderRadius: 1,
+            textTransform: 'none',
+            lineHeight: 1.2,
+            '&:hover': { backgroundColor: 'transparent' },
+            '&:active': { backgroundColor: 'transparent' },
+            '&.Mui-focusVisible': { backgroundColor: 'transparent' },
+          }}
+        >
+          Temizle
+        </Button>
+      </Box>
 
       {/* Başlık ile içerik arasında düz renk separator */}
       <Box
