@@ -43,6 +43,9 @@ export function useCategoryCascade(methods: UseFormReturn<FormType>, dicts: Prod
   // subCategory izleniyor çünkü subSubCategory seçenekleri buna bağlı
   const watchedSubCategory = watch('subCategory');
 
+  // watchedCategory / watchedSubCategory tanımlarının altına ekle
+  const prevCategoryRef = React.useRef<string | null>(null);
+
   // customerMold izleniyor çünkü "Evet" ise kategorileri kilitleyip temizliyoruz
   const watchedCustomerMold = watch('customerMold');
 
@@ -62,39 +65,51 @@ export function useCategoryCascade(methods: UseFormReturn<FormType>, dicts: Prod
   React.useEffect(() => {
     // category seçilmemişse alt alanlar anlamsız, sıfırla
     if (!watchedCategory) {
-      setValue('subCategory', '', { shouldValidate: true });    // subCategory temizle + validasyon tetikle
-      setValue('subSubCategory', '', { shouldValidate: true }); // subSubCategory temizle + validasyon tetikle
-      return; // burada bitir
+      setValue('subCategory', '', { shouldValidate: true });
+      setValue('subSubCategory', '', { shouldValidate: true });
+      prevCategoryRef.current = null;
+      return;
     }
 
-    // Seçilen category’nin alt seçeneklerini (çocuklarını) getir
+    const prevCat = prevCategoryRef.current;
+    const isFirstLoadForCategory = prevCat == null;
+
+    // Seçilen category’nin alt seçeneklerini getir
     const subs = getSubCatsFor(watchedCategory);
 
-    // Eğer category’nin hiç alt kategorisi yoksa (leaf ise):
-    // subCategory’yi category’ye eşitleyerek “bu ürün aslında leaf category’de” bilgisini koruyoruz
+    // Eğer category leaf ise: subCategory = category (senin kararın), subSub yok.
     if (subs.length === 0) {
       setValue('subCategory', watchedCategory, { shouldValidate: true });
-      setValue('subSubCategory', '', { shouldValidate: true });
-    } else {
-      // category’nin altları varsa:
-      // subCategory mevcutta seçiliyse ama artık bu category’nin child listesinde değilse geçersizdir
-      const current = getValues('subCategory');
-
-      // current dolu ve subs içinde yoksa, temizle
-      if (current && !subs.some((s) => s.slug === current)) {
-        setValue('subCategory', '', { shouldValidate: true });
+      // subSub zaten anlamsız, sadece doluysa temizle
+      if (getValues('subSubCategory')) {
+        setValue('subSubCategory', '', { shouldValidate: true });
       }
+      prevCategoryRef.current = watchedCategory;
+      return;
+    }
 
-      // category değiştiğinde subSubCategory her durumda resetlenmeli
-      // (çünkü subCategory değişmiş olabilir veya seçenek seti tamamen değişmiş olabilir)
+    // category’nin altları varsa: subCategory geçerli mi kontrol et
+    const currentSub = getValues('subCategory');
+
+    if (currentSub && !subs.some((s) => s.slug === currentSub)) {
+      // subCategory artık bu category'ye ait değil -> temizle ve subSub da temizle
+      setValue('subCategory', '', { shouldValidate: true });
+      setValue('subSubCategory', '', { shouldValidate: true });
+      prevCategoryRef.current = watchedCategory;
+      return;
+    }
+
+    // Buradaki kritik fix:
+    // İlk yüklemede (edit initial değerleri set edilmişken) subSub'ı sakın resetleme.
+    // Sadece category gerçekten değişmişse resetle.
+    const categoryChanged = !isFirstLoadForCategory && prevCat !== watchedCategory;
+    if (categoryChanged) {
       setValue('subSubCategory', '', { shouldValidate: true });
     }
-  }, [
-    watchedCategory, // category değişince çalışsın
-    getSubCatsFor,   // helper fonksiyon referansı değişirse (helpers re-created) çalışsın
-    setValue,        // RHF setValue referansı
-    getValues,       // RHF getValues referansı
-  ]);
+
+    prevCategoryRef.current = watchedCategory;
+  }, [watchedCategory, getSubCatsFor, setValue, getValues]);
+
 
   /**
    * EFFECT 2: subCategory değişince subSubCategory düzelt
@@ -220,7 +235,7 @@ export function useCategoryCascade(methods: UseFormReturn<FormType>, dicts: Prod
    * - gerçekten alt kategori opsiyonu varsa
    * - ve “alt kategori seviyesi yok” durumunda değilsek
    */
-  const isSubRequired = !isCustomerMold && hasRealSubCategories && !noSubCategoryLevel;
+  const isSubRequired = !isCustomerMold && !!watchedCategory && hasRealSubCategories;
 
   /**
    * isSubSubRequired:
@@ -228,11 +243,7 @@ export function useCategoryCascade(methods: UseFormReturn<FormType>, dicts: Prod
    * - gerçekten en alt kategori opsiyonu varsa
    * - alt seviye yok senaryosunda değilsek
    */
-  const isSubSubRequired =
-    !isCustomerMold &&
-    hasRealSubSubCategories &&
-    !noSubCategoryLevel &&
-    !noSubSubLevel;
+  const isSubSubRequired = false;
 
   // Hook çıktısı:
   // - buildCategoryHelpers’dan gelen her şeyi dışarı açıyoruz (label map’ler, helper fonksiyonlar vs)

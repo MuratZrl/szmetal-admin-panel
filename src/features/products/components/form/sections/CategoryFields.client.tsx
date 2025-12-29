@@ -107,16 +107,22 @@ export function CategoryFields({ dicts }: { dicts: ProductDicts }) {
                     if (isCustomerMold) return 'Alt Kategori Yok (Müşteri Kalıbı)';
                     if (noSubCategoryLevel) return 'Seçenek Yok';
                     const slug = String(v ?? '');
-                    if (!slug) return watchedCategory ? 'Seçiniz' : 'Alt kategoriyi seçin';
+                    if (!slug) return watchedCategory ? 'Alt kategori seçin' : 'Önce kategori seçin';
                     return subLabelMap.get(slug) ?? slug;
                   },
                 }}
                 error={isSubRequired && !!errors.subCategory}
                 helperText={isSubRequired ? toHelper(errors.subCategory?.message) : undefined}
               >
-                <MenuItem value="">
-                  {isCustomerMold ? 'Alt Kategori Yok (Müşteri Kalıbı)' : noSubCategoryLevel ? 'Seçenek Yok' : watchedCategory ? 'Seçiniz' : 'Alt kategoriyi seçin'}
-                </MenuItem>
+              <MenuItem value="">
+                {isCustomerMold
+                  ? 'Alt Kategori Yok (Müşteri Kalıbı)'
+                  : noSubCategoryLevel
+                    ? 'Seçenek Yok'
+                    : watchedCategory
+                      ? 'Alt kategori seçin'
+                      : 'Önce kategori seçin'}
+              </MenuItem>
                 {hasRealSubCategories && subCategoryOptions.map((sc) => (
                   <MenuItem key={sc.slug} value={sc.slug}>{sc.name}</MenuItem>
                 ))}
@@ -133,35 +139,41 @@ export function CategoryFields({ dicts }: { dicts: ProductDicts }) {
           render={({ field }) => {
             const disabled = isCustomerMold || noSubCategoryLevel || noSubSubLevel;
             return (
-              <TextField
-                select
-                disabled={disabled}
-                required={isSubSubRequired}
-                label="En Alt Kategori"
-                {...field}
-                value={field.value ?? ''}
-                InputLabelProps={{ shrink: true }}
-                SelectProps={{
-                  displayEmpty: true,
-                  MenuProps: SELECT_MENU_PROPS,
-                  renderValue: (v) => {
-                    if (isCustomerMold) return 'En Alt Kategori Yok (Müşteri Kalıbı)';
-                    if (noSubCategoryLevel || noSubSubLevel) return 'Seçenek Yok';
-                    const slug = String(v ?? '');
-                    if (!slug) return !watchedSubCategory ? 'En alt kategoriyi seçin' : !hasRealSubSubCategories ? 'Seçenek Yok' : 'Seçiniz';
-                    return subLabelMap.get(slug) ?? slug;
-                  },
-                }}
-                error={isSubSubRequired && !!errors.subSubCategory}
-                helperText={isSubSubRequired ? toHelper(errors.subSubCategory?.message) : undefined}
-              >
-                <MenuItem value="">
-                  {isCustomerMold ? 'En Alt Kategori Yok (Müşteri Kalıbı)' : (noSubCategoryLevel || noSubSubLevel) ? 'Seçenek Yok' : watchedSubCategory ? 'Seçiniz' : 'En alt kategori seçin'}
-                </MenuItem>
-                {hasRealSubSubCategories && subSubCategoryOptions.map((sc) => (
-                  <MenuItem key={sc.slug} value={sc.slug}>{sc.name}</MenuItem>
-                ))}
-              </TextField>
+            <TextField
+              select
+              disabled={disabled}
+              required={false}
+              label="En Alt Kategori"
+              {...field}
+              value={field.value ?? ''}
+              InputLabelProps={{ shrink: true }}
+              SelectProps={{
+                displayEmpty: true,
+                MenuProps: SELECT_MENU_PROPS,
+                renderValue: (v) => {
+                  if (isCustomerMold) return 'En Alt Kategori Yok (Müşteri Kalıbı)';
+                  if (noSubCategoryLevel || noSubSubLevel) return 'Seçenek Yok';
+                  const slug = String(v ?? '');
+                  if (!slug) return watchedSubCategory ? 'En alt kategori seçin (opsiyonel)' : 'Önce alt kategori seçin';
+                  return subLabelMap.get(slug) ?? slug;
+                },
+              }}
+              error={false}
+              helperText={undefined}
+            >
+              <MenuItem value="">
+                {isCustomerMold
+                  ? 'En Alt Kategori Yok (Müşteri Kalıbı)'
+                  : (noSubCategoryLevel || noSubSubLevel)
+                    ? 'Seçenek Yok'
+                    : watchedSubCategory
+                      ? 'En alt kategori seçin (Opsiyonel)'
+                      : 'Önce alt kategori seçin'}
+              </MenuItem>
+              {hasRealSubSubCategories && subSubCategoryOptions.map((sc) => (
+                <MenuItem key={sc.slug} value={sc.slug}>{sc.name}</MenuItem>
+              ))}
+            </TextField>
             );
           }}
         />

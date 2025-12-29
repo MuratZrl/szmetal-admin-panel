@@ -17,23 +17,16 @@ import {
   productSchema,
   type ProductFormValues,
   type CustomerMoldSelect,
+  DEFAULT_VARIANT_KEY,
 } from '@/features/products/forms/schema';
 
 import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
 
-// ✅ Mapper’lar
-import {
-  toUpdatePayload,
-  type ProductUpdateInput,
-} from '@/features/products/forms/mappers';
+import { toUpdatePayload, type ProductUpdateInput } from '@/features/products/forms/mappers';
 
-// ✅ fileMeta helper (refactor)
 import { buildFileMeta, type FileMetaSource } from '@/features/products/forms/fileMeta';
 
-// ✅ DB patch ile update
 import { updateProductDb } from '@/features/products/services/products.client';
-
-/* -------------------------------------------------------------------------- */
 
 type EditValues = ProductFormValues & {
   file: File | null;
@@ -48,12 +41,15 @@ type Props = {
   dicts: ProductDicts;
   initial: {
     id: string;
+
     name: string | null;
     code: string | null;
     variant: string | null;
 
+    // IMPORTANT: artık subSubCategory de geliyor (edit page category_id'den türetiyor)
     category: string | null;
     subCategory: string | null;
+    subSubCategory?: string | null;
 
     unitWeightG: number | null;
 
@@ -108,16 +104,15 @@ function fileMetaSourceFromValues(v: EditValues): FileMetaSource {
   };
 }
 
-/* -------------------------------------------------------------------------- */
-
-export default function ProductEditForm({ dicts, initial, title }: Props) {
-
+export default function ProductEditForm({ dicts, initial, title }: Props): React.JSX.Element {
   const router = useRouter();
   const { show } = useSnackbar();
 
   const computedTitle = title ?? `${initial.code ?? ''} — Düzenle`;
 
   const defaultValues = React.useMemo<EditValues>(() => {
+    const today = new Date().toISOString().slice(0, 10);
+
     return {
       name: initial.name ?? '',
       code: initial.code ?? '',
@@ -130,20 +125,18 @@ export default function ProductEditForm({ dicts, initial, title }: Props) {
 
       category: initial.category ?? '',
       subCategory: initial.subCategory ?? '',
-      subSubCategory: '',
+      subSubCategory: initial.subSubCategory ?? '',
 
-      variant: initial.variant ?? '',
+      // DB null/'' gelirse schema zaten "yok" yapıyor, ama edit'te de defaultu net verelim
+      variant: (initial.variant ?? DEFAULT_VARIANT_KEY) || DEFAULT_VARIANT_KEY,
 
-      unitWeightG:
-        typeof initial.unitWeightG === 'number'
-          ? Number(initial.unitWeightG)
-          : 0,
+      unitWeightG: typeof initial.unitWeightG === 'number' ? Number(initial.unitWeightG) : 0,
 
       wallThicknessMm: initial.wallThicknessMm ?? null,
       outerSizeMm: initial.outerSizeMm ?? null,
       sectionMm2: initial.sectionMm2 ?? null,
 
-      date: initial.date ?? new Date().toISOString().slice(0, 10),
+      date: initial.date ?? today,
       revisionDate: initial.revisionDate ?? '',
 
       drawer: initial.drawer ?? '',
@@ -157,11 +150,11 @@ export default function ProductEditForm({ dicts, initial, title }: Props) {
       image: initial.image ?? '',
 
       file: null,
-      fileBucket: undefined,
-      filePath: undefined,
-      fileName: undefined,
-      fileMime: undefined,
-      fileSize: undefined,
+      fileBucket: null,
+      filePath: null,
+      fileName: null,
+      fileMime: null,
+      fileSize: null,
     };
   }, [initial]);
 
@@ -179,6 +172,7 @@ export default function ProductEditForm({ dicts, initial, title }: Props) {
   } = methods;
 
   React.useEffect(() => {
+    // initial değişirse (route değişimi vs) formu sıfırla
     reset(defaultValues);
   }, [reset, defaultValues]);
 
@@ -233,22 +227,17 @@ export default function ProductEditForm({ dicts, initial, title }: Props) {
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-      {/* ✅ Başlık artık burada */}
       <Typography variant="h5" sx={{ mb: 1 }}>
         {computedTitle}
       </Typography>
+
       <Divider sx={{ mb: 2 }} />
 
       <FormProvider {...methods}>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
-              <ProductFormFields
-                methods={methods}
-                dicts={dicts}
-                showFileSection
-                dir={initial.id}
-              />
+              <ProductFormFields methods={methods} dicts={dicts} showFileSection dir={initial.id} />
             </Grid>
           </Grid>
 

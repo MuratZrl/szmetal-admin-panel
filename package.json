@@ -61,20 +61,18 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "shx": "^0.4.0",
-    "supabase": "^2.66.0",
+    "supabase": "^2.70.5",
     "tailwindcss": "^4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2"
   },
-
   "framework": "nextjs",
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "engines": {
     "node": ">=20.19 <23"
   },
-  
   "overrides": {
     "@types/react": "19.2.6",
     "@types/react-dom": "19.2.3"

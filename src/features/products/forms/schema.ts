@@ -70,7 +70,11 @@ export const productSchema = yup
     subCategory: yup
       .string()
       .transform((_v, orig) => (orig === '' ? undefined : _v))
-      .optional(),
+      .when(['customerMold', 'category'], {
+        is: (cm: CustomerMoldSelect, cat: unknown) => cm !== 'Evet' && !!cat,
+        then: (schema) => schema.required('Zorunlu'),
+        otherwise: (schema) => schema.optional(),
+      }),
 
     subSubCategory: yup
       .string()

@@ -25,11 +25,11 @@ import { sectionSx } from '../sectionSx';
 import { CATEGORY_ROW_H_PX, VISIBLE_CATEGORY_ROWS } from '../constants';
 
 type CategoryFilterSectionProps = {
-  topLevelSlugs: string[]; // en üst kategori slug listesi
-  categoryTree: CategoryTree; // tüm kategori ağacı (slug -> node)
-  categories: string[]; // seçili root kategoriler
-  subCategories: string[]; // seçili alt kategoriler
-  expanded: string[]; // açık olan node slug'ları
+  topLevelSlugs: string[];
+  categoryTree: CategoryTree;
+  categories: string[];
+  subCategories: string[];
+  expanded: string[];
   setCategories: React.Dispatch<React.SetStateAction<string[]>>;
   setSubCategories: React.Dispatch<React.SetStateAction<string[]>>;
   setExpanded: React.Dispatch<React.SetStateAction<string[]>>;
@@ -45,42 +45,36 @@ export function CategoryFilterSection({
   setSubCategories,
   setExpanded,
 }: CategoryFilterSectionProps): React.JSX.Element {
-  // Türkçe sıralama için collator
+  
   const collator = React.useMemo(
     () => new Intl.Collator('tr', { sensitivity: 'base', numeric: false }),
     [],
   );
 
-  // Üstteki "Ara" input state'i
   const [categoryQuery, setCategoryQuery] = React.useState<string>('');
 
-  // Arama terimi normalize (trim + tr lowercase)
   const needle = React.useMemo(() => categoryQuery.trim().toLocaleLowerCase('tr'), [categoryQuery]);
-  const queryActive = needle.length > 0; // arama açık mı?
+  const queryActive = needle.length > 0;
 
-  // Temizle butonu aktif mi?
   const isActive = categories.length > 0 || subCategories.length > 0 || categoryQuery.trim().length > 0;
 
   const handleClear = React.useCallback(() => {
     setCategories([]);
     setSubCategories([]);
     setCategoryQuery('');
-    setExpanded([]); // “tam reset” hissi için (istersen bunu kaldırıp expanded’ı koruyabilirsin)
+    setExpanded([]);
   }, [setCategories, setSubCategories, setExpanded]);
 
-  // Slug -> görünen isim
   const catNameOf = React.useCallback(
     (slug: string): string => categoryTree[slug]?.name ?? slug,
     [categoryTree],
   );
 
-  // Slug -> çocuk slug'lar
   const childrenOf = React.useCallback(
     (slug: string): string[] => (categoryTree[slug]?.subs ?? []).map((s) => s.slug),
     [categoryTree],
   );
 
-  // childSlug -> parentSlug map (root bulmak ve ancestor zinciri için)
   const parentMap = React.useMemo(() => {
     const m = new Map<string, string>();
     for (const [p, node] of Object.entries(categoryTree)) {
@@ -89,7 +83,6 @@ export function CategoryFilterSection({
     return m;
   }, [categoryTree]);
 
-  // Bir slug'ın hangi top-level root'a bağlı olduğunu bul
   const rootOf = React.useCallback(
     (slug: string): string | null => {
       let cur: string | undefined = slug;
@@ -106,7 +99,6 @@ export function CategoryFilterSection({
     [parentMap, topLevelSlugs],
   );
 
-  // Bir node'un tüm alt torunlarını (descendants) çıkar
   const descendantsOf = React.useCallback(
     (slug: string): string[] => {
       const out: string[] = [];
@@ -122,13 +114,11 @@ export function CategoryFilterSection({
     [childrenOf],
   );
 
-  // Root kategorileri Türkçe isme göre sırala
   const topLevelSorted = React.useMemo(
     () => [...topLevelSlugs].sort((a, b) => collator.compare(catNameOf(a), catNameOf(b))),
     [topLevelSlugs, collator, catNameOf],
   );
 
-  // Node expand/collapse toggle (sadece UI aç/kapa)
   const toggleExpand = React.useCallback(
     (slug: string) => {
       setExpanded((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]));
@@ -136,32 +126,23 @@ export function CategoryFilterSection({
     [setExpanded],
   );
 
-  // Node seçimi toggle (checkbox davranışı, tree selection mantığı)
   const toggleNode = React.useCallback(
     (slug: string) => {
       const isRoot = topLevelSlugs.includes(slug);
       const branchDesc = descendantsOf(slug);
 
-      // subCategories set gibi kullan
       const selectedNonRoots = new Set<string>(subCategories);
       let nextCategories = [...categories];
 
-      // root seçili mi?
       const rootSelected = isRoot && nextCategories.includes(slug);
-
-      // root değilse: dalın tüm torunları seçili mi?
       const branchAllSelected = branchDesc.length > 0 && branchDesc.every((d) => selectedNonRoots.has(d));
-
-      // "bu node seçili sayılır mı?" kararı
       const isSelfSelected = isRoot ? rootSelected || branchAllSelected : selectedNonRoots.has(slug);
 
       if (isSelfSelected) {
-        // seçimi kaldır
         if (isRoot) nextCategories = nextCategories.filter((c) => c !== slug);
         selectedNonRoots.delete(slug);
         for (const d of branchDesc) selectedNonRoots.delete(d);
       } else {
-        // seçimi ekle
         if (isRoot) {
           if (!nextCategories.includes(slug)) nextCategories.push(slug);
         } else {
@@ -170,7 +151,6 @@ export function CategoryFilterSection({
         for (const d of branchDesc) selectedNonRoots.add(d);
       }
 
-      // root olmayan bir node seçildiyse: bağlı root tam seçili mi kontrol et
       if (!isRoot) {
         const root = rootOf(slug);
         if (root) {
@@ -181,11 +161,10 @@ export function CategoryFilterSection({
         }
       }
 
-      // state commit
       setCategories(nextCategories);
       setSubCategories(Array.from(selectedNonRoots));
 
-      // seçilince otomatik genişlet (UX)
+      // seçilince aç (ama sonra kullanıcı kapatabilsin diye open hesabına seçimi sokmuyoruz)
       setExpanded((prev) => (prev.includes(slug) ? prev : [...prev, slug]));
     },
     [
@@ -200,7 +179,6 @@ export function CategoryFilterSection({
     ],
   );
 
-  // Arama eşleşen slug'lar (isim veya slug içinde needle geçiyorsa)
   const matchSet = React.useMemo(() => {
     if (!queryActive) return null;
     const m = new Set<string>();
@@ -213,13 +191,11 @@ export function CategoryFilterSection({
     return m;
   }, [queryActive, needle, categoryTree]);
 
-  // Aramada görünmesi gereken node'lar: eşleşenler + onların ancestor zinciri + root güvenliği
   const visibleSet = React.useMemo(() => {
     if (!queryActive || !matchSet || matchSet.size === 0) return null;
 
     const vis = new Set<string>();
 
-    // eşleşen node'dan yukarı doğru tüm parent'ları ekle
     const addAncestors = (slug: string) => {
       let cur: string | undefined = slug;
       const seen = new Set<string>();
@@ -234,7 +210,6 @@ export function CategoryFilterSection({
 
     for (const s of matchSet) addAncestors(s);
 
-    // root zinciri eksik olursa root'u yine de ekle
     for (const s of matchSet) {
       const r = rootOf(s);
       if (r) vis.add(r);
@@ -243,30 +218,23 @@ export function CategoryFilterSection({
     return vis;
   }, [queryActive, matchSet, parentMap, rootOf]);
 
-  // Arama varken root listesi de filtrelensin
   const topLevelFiltered = React.useMemo(() => {
     if (!queryActive) return topLevelSorted;
     if (!visibleSet) return [];
     return topLevelSorted.filter((root) => visibleSet.has(root));
   }, [queryActive, topLevelSorted, visibleSet]);
 
-  // Recursive render: tek bir node ve alt ağacı
   function renderNode(slug: string, depth: number): React.JSX.Element | null {
-    // aramada görünmeyecekse render etme
     if (queryActive && visibleSet && !visibleSet.has(slug)) return null;
 
     const name = catNameOf(slug);
 
-    // çocukları sırala ve gerekirse aramaya göre filtrele
     const kidsAll = childrenOf(slug).sort((a, b) => collator.compare(catNameOf(a), catNameOf(b)));
     const kids = queryActive && visibleSet ? kidsAll.filter((k) => visibleSet.has(k)) : kidsAll;
 
     const hasKids = kidsAll.length > 0;
 
-    // seçili set: root + sub'lar
     const selected = new Set<string>([...categories, ...subCategories]);
-
-    // checkbox state (checked/indeterminate)
     const desc = descendantsOf(slug);
     const allSelected = desc.length > 0 && desc.every((d) => selected.has(d));
     const someSelected = desc.some((d) => selected.has(d)) && !allSelected;
@@ -274,15 +242,16 @@ export function CategoryFilterSection({
     const isRoot = topLevelSlugs.includes(slug);
     const checked = selected.has(slug) || (isRoot && allSelected);
 
-    // aramada otomatik açık göster; normalde expanded/selected ile aç
-    const open = queryActive ? kids.length > 0 : expanded.includes(slug) || kidsAll.some((k) => selected.has(k));
+    // KRİTİK FIX:
+    // Eskiden: expanded.includes(slug) || kidsAll.some((k) => selected.has(k))
+    // Bu yüzünden "seçiliyken kapanmıyor" oluyordu.
+    const open = queryActive ? kids.length > 0 : expanded.includes(slug);
 
     return (
       <Box key={slug}>
         <ListItemButton
           disableRipple
           disableTouchRipple
-          // aramada aç/kapa yok (otomatik açık), normalde expand toggle
           onClick={() => {
             if (!queryActive) toggleExpand(slug);
           }}
@@ -364,8 +333,6 @@ export function CategoryFilterSection({
         borderRadius: 2.25,
       })}
     >
-      
-      {/* Başlık satırı: solda başlık, sağda Temizle */}
       <Box
         sx={{
           display: 'flex',
@@ -400,7 +367,6 @@ export function CategoryFilterSection({
         </Button>
       </Box>
 
-      {/* Başlık ile içerik arasında düz renk separator */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -411,7 +377,6 @@ export function CategoryFilterSection({
         })}
       />
 
-      {/* Arama inputu (Variant ile aynı stil) */}
       <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
         <Grid size={{ xs: 12 }}>
           <TextField
@@ -437,7 +402,6 @@ export function CategoryFilterSection({
         </Grid>
       </Grid>
 
-      {/* Scroll alanı */}
       <Box
         sx={{
           maxHeight: VISIBLE_CATEGORY_ROWS * CATEGORY_ROW_H_PX,
