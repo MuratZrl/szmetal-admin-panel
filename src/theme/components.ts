@@ -134,8 +134,8 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
       styleOverrides: {
         root: ({ theme }) => ({
           '& .MuiPagination-ul': {
-            gap: 5,
-            padding: 4,
+            gap: 2,
+            padding: 2,
           },
         }),
       },
@@ -146,90 +146,67 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
       styleOverrides: {
         root: ({ theme }) => {
           const { palette, shape, breakpoints, transitions } = theme;
+
           const accent = palette.accent?.main ?? palette.primary.main;
+          const baseBorder = palette.surface.outline;
 
           return {
             borderRadius: shape.borderRadius,
             minWidth: 40,
             height: 40,
-            padding: '0 2px',
+            padding: '0 6px',
             fontWeight: 600,
             fontSize: '0.875rem',
+
             color: palette.text.primary,
             backgroundColor: palette.surface[2],
-            border: `1px solid ${palette.surface.outline}`,
-
-            // her buton için temel outline
-            outline: `1px solid ${alpha(palette.surface.outline, 0.9)}`,
-            outlineOffset: 1,
+            border: `1px solid ${baseBorder}`,
 
             transition: transitions.create(
-              [
-                'background-color',
-                'border-color',
-                'box-shadow',
-                'color',
-                'transform',
-                'outline-color',
-                'outline-offset',
-              ],
+              ['background-color', 'border-color', 'color', 'box-shadow'],
               { duration: transitions.duration.shorter }
             ),
 
-            // hover: hafif parıltı ve aksana yaslanan kenar + outline
             '&:hover': {
-              backgroundColor: alpha(palette.contrast.main, 0.06),
-              borderColor: alpha(accent, 0.4),
-              outlineColor: alpha(accent, 0.8),
+              backgroundColor: alpha(accent, 0.10),
+              borderColor: alpha(accent, 0.50),
             },
 
-            // seçili: primary üstü, daha güçlü outline
             '&.Mui-selected': {
               backgroundColor: palette.primary.main,
               borderColor: palette.primary.main,
               color: palette.primary.contrastText,
-              outlineColor: alpha(palette.primary.main, 0.95),
-              outlineWidth: 2,
-              outlineOffset: 1,
               '&:hover': {
-                backgroundColor: darken(palette.primary.main, 0.15),
-                borderColor: darken(palette.primary.main, 0.15),
+                backgroundColor: darken(palette.primary.main, 0.12),
+                borderColor: darken(palette.primary.main, 0.12),
               },
             },
 
-            // klavye focus: outline’ı biraz daha dışarı it
             '&.Mui-focusVisible, &:focus-visible': {
-              outlineColor: alpha(accent, 0.95),
-              outlineWidth: 2,
-              outlineOffset: 2,
+              boxShadow: `0 0 0 3px ${alpha(accent, 0.35)}`,
             },
 
-            // disabled: soluk, outline da sönük
             '&.Mui-disabled': {
-              opacity: 0.6,
-              borderColor: alpha(palette.text.primary, 0.16),
-              outlineColor: alpha(palette.text.primary, 0.16),
+              opacity: 0.55,
+              color: palette.text.disabled,
+              borderColor: alpha(palette.text.primary, 0.12),
               boxShadow: 'none',
             },
 
-            // ellipsis: düğme gibi görünmesin, outline yok
             '&.MuiPaginationItem-ellipsis': {
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              color: palette.text.disabled,
-              boxShadow: 'none',
               minWidth: 24,
               height: 24,
               padding: 0,
+              border: 'none',
+              backgroundColor: 'transparent',
+              boxShadow: 'none',
+              color: palette.text.disabled,
             },
 
-            // önceki/sonraki/ilk/son ikon butonları: aynı yükseklik ve hizalama
             '&.MuiPaginationItem-previousNext, &.MuiPaginationItem-firstLast': {
               lineHeight: 0,
             },
 
-            // küçük ekran ayarları
             [breakpoints.down('sm')]: {
               minWidth: 32,
               height: 32,

@@ -8,13 +8,12 @@ import { notFound, redirect } from 'next/navigation';
 
 import { Box, Grid, Stack } from '@mui/material';
 
-// ✅ ESKİYİ SİL
-// import { requirePageAccess } from '@/lib/supabase/auth/server';
-
-// ✅ YENİ
 import { requirePageAccess, getSessionInfo } from '@/lib/supabase/auth/guards.server';
 
-import { fetchProductById } from '@/features/products/services/products.server';
+import {
+  fetchProductById,
+  fetchProductByIdWithCategoryChain,
+} from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
 
@@ -33,14 +32,60 @@ import { buildRecommendedBlock } from '@/features/products/services/recommendedB
 
 import { buildLabelMaps } from '@/features/products/services/labelMaps.server';
 
+import type { Database } from '@/types/supabase';
+
+type ProductsRow = Database['public']['Tables']['products']['Row'];
+
+type CategoryChain = {
+  slug: string | null;
+  parent: {
+    slug: string | null;
+    parent: {
+      slug: string | null;
+    } | null;
+  } | null;
+};
+
+type ProductsRowWithChain = ProductsRow & {
+  category?: CategoryChain | null;
+};
+
 type Props = { params: Promise<{ id: string }> };
 
+function enrichProductWithCategoryChain(row: ProductsRowWithChain) {
+  const base = mapRowToProduct(row);
+
+  const leaf = row.category?.slug ?? null;
+  const parent = row.category?.parent?.slug ?? null;
+  const grand = row.category?.parent?.parent?.slug ?? null;
+
+  let category: string | null = null;
+  let subCategory: string | null = null;
+  let subSubCategory: string | null = null;
+
+  if (leaf && parent && grand) {
+    category = grand;
+    subCategory = parent;
+    subSubCategory = leaf;
+  } else if (leaf && parent) {
+    category = parent;
+    subCategory = leaf;
+    subSubCategory = null;
+  } else if (leaf) {
+    category = leaf;
+    subCategory = null;
+    subSubCategory = null;
+  }
+
+  return { ...base, category, subCategory, subSubCategory };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // ✅ eskiden: await requirePageAccess('products');
-  // ✅ artık path ver
   await requirePageAccess('/products');
 
   const { id } = await params;
+
+  // Metadata için kategori zinciri şart değil; code+name yeterli.
   const row = await fetchProductById(id);
   if (!row) return { title: 'Ürün bulunamadı' };
 
@@ -51,17 +96,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params;
 
-  // ✅ Bu sayfanın gerçek path’i ile kontrol et
   const canonicalPath = `/products/${encodeURIComponent(id)}` as const;
   const { profile } = await requirePageAccess(canonicalPath);
 
-  const [session, row, dicts] = await Promise.all([
+  const [session, rowWithChain, dicts] = await Promise.all([
     getSessionInfo(),
-    fetchProductById(id),
+    fetchProductByIdWithCategoryChain(id),
     fetchProductDicts(),
   ]);
 
-  if (!row) notFound();
+  if (!rowWithChain) notFound();
 
   if (canonicalPath !== `/products/${id}`) {
     redirect(canonicalPath as `/products/${string}`);
@@ -70,11 +114,11 @@ export default async function ProductDetailPage({ params }: Props) {
   const canEdit = profile.role === 'Admin' || profile.role === 'Manager';
   const canPin = profile.role === 'Admin';
 
-  const product = mapRowToProduct(row);
+  const row = rowWithChain as ProductsRowWithChain;
+  const product = enrichProductWithCategoryChain(row);
   const labelMaps = buildLabelMaps(dicts);
 
-  const preferPdf =
-    (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
+  const preferPdf = (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
   const rawPrimary = preferPdf ? product.filePath : product.image;
   const rawSecondary = preferPdf ? product.image : product.filePath;
 
@@ -84,7 +128,7 @@ export default async function ProductDetailPage({ params }: Props) {
     (async () => withVersion(await resolveStorageUrl(rawPrimary), versionKey))(),
     (async () => withVersion(await resolveStorageUrl(rawSecondary), versionKey))(),
     fetchProductComments(String(product.id)),
-    buildRecommendedBlock({ currentRow: row, limit: 4 }),
+    buildRecommendedBlock({ currentRow: row as ProductsRow, limit: 4 }),
   ]);
 
   const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
@@ -116,6 +160,7 @@ export default async function ProductDetailPage({ params }: Props) {
               variant={product.variant}
               category={product.category}
               subCategory={product.subCategory ?? undefined}
+              subSubCategory={product.subSubCategory ?? undefined}
               date={product.date}
               revisionDate={product.revisionDate || ''}
               createdAt={row.created_at ?? null}
@@ -126,9 +171,7 @@ export default async function ProductDetailPage({ params }: Props) {
               outerSizeMm={product.outerSizeMm}
               sectionMm2={product.sectionMm2}
               unit_weight_g_pm={
-                typeof product.unit_weight_g_pm === 'number'
-                  ? product.unit_weight_g_pm
-                  : undefined
+                typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined
               }
               has_customer_mold={row.has_customer_mold}
               availability={product.availability}
@@ -138,6 +181,7 @@ export default async function ProductDetailPage({ params }: Props) {
               labels={{
                 category: labelMaps.category,
                 subCategory: labelMaps.subcategory,
+                subSubCategory: labelMaps.subSubCategory,
                 variant: labelMaps.variant,
               }}
               mediaSrc={basePrimary}
@@ -146,13 +190,7 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
-
-              <ProductDetailActions
-                id={String(product.id)}
-                canEdit={canEdit}
-                code={product.code}
-              />
-
+              <ProductDetailActions id={String(product.id)} canEdit={canEdit} code={product.code} />
             </ProductInfo>
 
             <CommentSection
@@ -167,14 +205,13 @@ export default async function ProductDetailPage({ params }: Props) {
           </Stack>
         </Grid>
       </Grid>
-      
+
       <RecommendedProductsSection
         products={recommended.products}
         mediaUrlsById={recommended.mediaUrlsById}
         labels={labelMaps}
         role={profile.role}
       />
-      
     </Box>
   );
 }

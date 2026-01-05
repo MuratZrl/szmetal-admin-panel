@@ -7,12 +7,14 @@ import type { ProductDicts } from '@/features/products/services/dicts.server';
  * LabelMaps:
  *   - category: root vs child ayrımını umursamadan slug -> label
  *   - subcategory: eski kodla uyum için bırakılmış; aynı label’ı kullanabilir
+ *   - subSubCategory: yeni UI alanı için; pratikte slug -> label (category ile aynı kapsam)
  *   - variant: varyant key -> label
  *   - categoryPathBySlug: slug -> ['Root', 'Alt', 'Leaf'] gibi breadcrumb path
  */
 export type LabelMaps = {
   category: Record<string, string>;
   subcategory: Record<string, string>;
+  subSubCategory: Record<string, string>;
   variant: Record<string, string>;
   categoryPathBySlug: Record<string, string[]>;
 };
@@ -25,6 +27,7 @@ export type LabelMaps = {
 export function buildLabelMaps(dicts: ProductDicts): LabelMaps {
   const category: Record<string, string> = {};
   const subcategory: Record<string, string> = {};
+  const subSubCategory: Record<string, string> = {};
   const variant: Record<string, string> = {};
   const categoryPathBySlug: Record<string, string[]> = {};
 
@@ -33,15 +36,17 @@ export function buildLabelMaps(dicts: ProductDicts): LabelMaps {
   // childSlug -> parentSlug | null
   const parentBySlug = new Map<string, string | null>();
 
-  // Her node kendi adını ve çocuklarını label map’lere yazılsın
+  // Her node kendi adını ve çocuklarını label map’lere yaz
   for (const [slug, node] of Object.entries(tree)) {
     category[slug] = node.name;
     subcategory[slug] = node.name;
+    subSubCategory[slug] = node.name;
 
     for (const sub of node.subs) {
       parentBySlug.set(sub.slug, slug);
       category[sub.slug] = sub.name;
       subcategory[sub.slug] = sub.name;
+      subSubCategory[sub.slug] = sub.name;
     }
 
     // root gibi davranan node’lar için parent yok
@@ -53,7 +58,8 @@ export function buildLabelMaps(dicts: ProductDicts): LabelMaps {
   const cache = new Map<string, string[]>();
 
   const getPath = (slug: string): string[] => {
-    if (cache.has(slug)) return cache.get(slug)!;
+    const cached = cache.get(slug);
+    if (cached) return cached;
 
     const label = category[slug] ?? slug;
     const parentSlug = parentBySlug.get(slug) ?? null;
@@ -83,6 +89,7 @@ export function buildLabelMaps(dicts: ProductDicts): LabelMaps {
   return {
     category,
     subcategory,
+    subSubCategory,
     variant,
     categoryPathBySlug,
   };

@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default function RecommendedProductsSection({
-  title = 'Önerilen Ürünler',
+  title = 'İlgili Profiller',
   products,
   mediaUrlsById,
   labels,
@@ -39,7 +39,7 @@ export default function RecommendedProductsSection({
           t.palette.mode === 'dark'
             ? alpha(t.palette.background.paper, 0.35)
             : alpha(t.palette.background.paper, 0.85),
-        backdropFilter: 'saturate(120%) blur(4px)',
+        backdropFilter: 'saturate(100%)',
         overflow: 'hidden',
       })}
     >

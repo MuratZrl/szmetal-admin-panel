@@ -13,8 +13,8 @@
  */
 
 import {
-  createSupabaseServerClient,   // sadece okuma (read-only) için kullanılır
-  createSupabaseRouteClient,    // yazma/güncelleme (mutasyon) için kullanılır
+  createSupabaseServerClient, // sadece okuma (read-only) için kullanılır
+  createSupabaseRouteClient,  // yazma/güncelleme (mutasyon) için kullanılır
 } from '@/lib/supabase/supabaseServer';
 
 import type { ProductFilters, Product } from '@/features/products/types';
@@ -26,9 +26,9 @@ import type { Database } from '@/types/supabase';
 
 // Supabase şemasından tipleri türetiyoruz. Böylece kolon yapısı değişirse
 // derleme aşamasında uyarı alırız.
-type ProductsRow   = Database['public']['Tables']['products']['Row'];
+type ProductsRow = Database['public']['Tables']['products']['Row'];
 type ProductUpdate = Database['public']['Tables']['products']['Update'];
-type CategoryRow   = Database['public']['Tables']['categories']['Row'];
+type CategoryRow = Database['public']['Tables']['categories']['Row'];
 
 /**
  * Listeleme tarafında kullanmak için, products satırını category join’li
@@ -46,6 +46,28 @@ type ProductsRowWithCategory = ProductsRow & {
 };
 
 /**
+ * ✅ Detail sayfasında gerçek ihtiyacımız olan:
+ * products.category_id -> categories (leaf) -> parent -> grandparent
+ * Bu join yapısı ile 3 seviyeye kadar slug alabiliriz.
+ */
+type CategoryJoin3 = {
+  id: CategoryRow['id'];
+  slug: CategoryRow['slug'];
+  parent: {
+    id: CategoryRow['id'];
+    slug: CategoryRow['slug'];
+    parent: {
+      id: CategoryRow['id'];
+      slug: CategoryRow['slug'];
+    } | null;
+  } | null;
+};
+
+type ProductsRowWithCategoryChain = ProductsRow & {
+  category?: CategoryJoin3 | null;
+};
+
+/**
  * mapRowWithCategoryToProduct:
  *   - DB satırını önce eski mapRowToProduct ile domain Product’a çeviriyor
  *   - Sonra category join’den gelen slug’ı kullanarak Product.subCategory’yi dolduruyor
@@ -60,11 +82,43 @@ function mapRowWithCategoryToProduct(row: ProductsRowWithCategory): Product {
 
   return {
     ...base,
-    // DB’de artık category/subCategory kolonları yok; burada leaf slug’ı
-    // doğrudan subCategory alanına yazıyoruz. CategoryChip bunu label map
-    // ile çözüp gösteriyor.
+    // Leaf slug’ı tek satır için yeterliydi.
     subCategory: leafSlug ?? null,
   };
+}
+
+/**
+ * ✅ Detail (products/[id]) için doğru mapper:
+ * leaf + parent + grandparent slug’larını çözerek
+ * Product.category / subCategory / subSubCategory alanlarını doldurur.
+ */
+// ❗️EXPORT YOK: bu sadece helper. 'use server' dosyasında export edersen Next bunu action sayıyor.
+function mapRowWithCategoryChainToProduct(row: ProductsRowWithCategoryChain): Product {
+  const base = mapRowToProduct(row as ProductsRow);
+
+  const leaf = row.category?.slug ?? null;
+  const parent = row.category?.parent?.slug ?? null;
+  const grand = row.category?.parent?.parent?.slug ?? null;
+
+  let category: string | null = null;
+  let subCategory: string | null = null;
+  let subSubCategory: string | null = null;
+
+  if (leaf && parent && grand) {
+    category = String(grand);
+    subCategory = String(parent);
+    subSubCategory = String(leaf);
+  } else if (leaf && parent) {
+    category = String(parent);
+    subCategory = String(leaf);
+    subSubCategory = null;
+  } else if (leaf) {
+    category = String(leaf);
+    subCategory = null;
+    subSubCategory = null;
+  }
+
+  return { ...base, category, subCategory, subSubCategory };
 }
 
 /**
@@ -72,23 +126,15 @@ function mapRowWithCategoryToProduct(row: ProductsRowWithCategory): Product {
  *   Sayfa numarasını normalize eder.
  *   - Geçerli bir sayı ve 0'dan büyükse aşağı yuvarlayarak kullan
  *   - Değilse 1. sayfaya düş
- *
- * Hatalı query paramları (ör. page=abc) nedeniyle Supabase range indekslerinin
- * patlamamasını sağlar.
  */
 const clampPage = (v: number) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 1);
 
 /**
  * asUpdateParam:
  *   Supabase update çağrısına verilecek patch objesini,
- *   "Update" tipinin Supabase infer'ları ile uyuşmadığı durumlarda
- *   TypeScript'i susturmak için kullanılan küçücük bir yardımcı.
- *
- *   Amaç: 'any' kullanmadan, gerekirse 'never' üzerinden cast yaparak
- *   tip sistemini mutasyon tarafında sakinleştirmek.
+ *   infer tip uyuşmazlıklarında TypeScript’i sakinleştirmek için kullanır.
  */
 function asUpdateParam(u: ProductUpdate) {
-  // Not: 'any' yok. 'never' TS için kabul edilebilir bir cast.
   return (u as unknown) as never;
 }
 
@@ -102,8 +148,7 @@ function asUpdateParam(u: ProductUpdate) {
  *   - Bulunamazsa null
  *   - Supabase hatasında da null
  *
- * Dikkat: Burada hala sadece products tablosunu okuyoruz; edit formunda
- * kategori alanlarını şimdilik boş dolduruyorsun zaten.
+ * Dikkat: Burada sadece products tablosunu okur (join yok).
  */
 export async function fetchProductById(id: string): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
@@ -111,21 +156,60 @@ export async function fetchProductById(id: string): Promise<ProductsRow | null> 
   const val = id.trim();
   if (!val) return null;
 
-  const { data, error } = await sb
-    .from('products')
-    .select('*')
-    .eq('id', val)
-    .maybeSingle();
+  const { data, error } = await sb.from('products').select('*').eq('id', val).maybeSingle();
 
   if (error) return null;
   return (data ?? null) as ProductsRow | null;
 }
 
 /**
+ * ✅ products/[id] sayfası için: ürün + kategori zinciri (leaf->parent->grand)
+ * Bu fonksiyon tam olarak “detail page’de neden kategori yok” sorununu çözer.
+ */
+export async function fetchProductByIdWithCategoryChain(
+  id: string,
+): Promise<ProductsRowWithCategoryChain | null> {
+  const sb = await createSupabaseServerClient();
+
+  const val = id.trim();
+  if (!val) return null;
+
+  const { data, error } = await sb
+    .from('products')
+    .select(
+      `
+        *,
+        category:categories!products_category_id_fkey (
+          id,
+          slug,
+          parent:parent_id (
+            id,
+            slug,
+            parent:parent_id (
+              id,
+              slug
+            )
+          )
+        )
+      `,
+    )
+    .eq('id', val)
+    .maybeSingle();
+
+  if (error) return null;
+  return (data ?? null) as ProductsRowWithCategoryChain | null;
+}
+
+// ✅ BUNU KULLAN: products/[id] detail için direkt Product döndürür.
+export async function fetchProductDetailById(id: string): Promise<Product | null> {
+  const row = await fetchProductByIdWithCategoryChain(id);
+  if (!row) return null;
+  return mapRowWithCategoryChainToProduct(row);
+}
+
+/**
  * fetchProductByProfileCode:
  *   Eski API ile geriye dönük uyumluluk için bırakılmış bir alias.
- *   profile_code alanı kaldırıldığı için artık doğrudan code üzerinden
- *   çalışan fetchProductByCode'a delegasyon yapıyor.
  */
 export async function fetchProductByProfileCode(profileCode: string): Promise<ProductsRow | null> {
   return fetchProductByCode(profileCode);
@@ -134,8 +218,6 @@ export async function fetchProductByProfileCode(profileCode: string): Promise<Pr
 /**
  * fetchProductByCode:
  *   "code" alanı benzersiz kabul edilerek, tekil ürün döndürür.
- *   - Boş/whitespace code gelirse direkt null
- *   - Bulunamazsa null
  */
 export async function fetchProductByCode(code: string): Promise<ProductsRow | null> {
   const sb = await createSupabaseServerClient();
@@ -143,63 +225,38 @@ export async function fetchProductByCode(code: string): Promise<ProductsRow | nu
   const val = code.trim();
   if (!val) return null;
 
-  const { data, error } = await sb
-    .from('products')
-    .select('*')
-    .eq('code', val)
-    .maybeSingle();
-
+  const { data, error } = await sb.from('products').select('*').eq('code', val).maybeSingle();
   if (error) return null;
+
   return (data ?? null) as ProductsRow | null;
 }
 
 /**
  * fetchProductByKey:
  *   Tek bir "key" üzerinden ürünü çözmeye çalışan çok amaçlı helper.
- *
- * Çözüm sırası (uuid'e göre güncellendi):
- *   1) key string'e çevrilip id (uuid) olarak denenir
- *   2) code kolonu üzerinden arama
- *   3) manufacturer_code kolonu üzerinden arama
- *   4) temp_code kolonu üzerinden arama
- *
- * Kısaca: kullanıcının elindeki tek bilgi ile ürünü bulmaya çalışır.
  */
 export async function fetchProductByKey(key: string | number): Promise<ProductsRow | null> {
   const raw = String(key).trim();
   if (!raw) return null;
 
-  // 1) id (uuid) olarak dene
   const byId = await fetchProductById(raw);
   if (byId) return byId;
 
-  // 2) code
   const byCode = await fetchProductByCode(raw);
   if (byCode) return byCode;
 
   const sb = await createSupabaseServerClient();
 
-  // 3) manufacturer_code
   {
-    const { data } = await sb
-      .from('products')
-      .select('*')
-      .eq('manufacturer_code', raw)
-      .maybeSingle();
+    const { data } = await sb.from('products').select('*').eq('manufacturer_code', raw).maybeSingle();
     if (data) return data as ProductsRow;
   }
 
-  // 4) temp_code
   {
-    const { data } = await sb
-      .from('products')
-      .select('*')
-      .eq('temp_code', raw)
-      .maybeSingle();
+    const { data } = await sb.from('products').select('*').eq('temp_code', raw).maybeSingle();
     if (data) return data as ProductsRow;
   }
 
-  // Hiçbir yerde bulunamazsa null
   return null;
 }
 
@@ -207,19 +264,6 @@ export async function fetchProductByKey(key: string | number): Promise<ProductsR
  * Update (ürün güncelleme)
  * ---------------------------------------------------------------------------*/
 
-/**
- * updateProduct:
- *   Verilen uuid id'li ürünü, UI'den gelen patch ile günceller.
- *
- * Akış:
- *   1) UI patch -> mapProductPatchToRow ile DB patch'e çevrilir
- *   2) Supabase update çağrısı yapılır
- *   3) Güncel satır mapRowToProduct ile domain tipine çevrilir ve döndürülür
- *
- * Hata durumları:
- *   - Supabase hata mesajı varsa Error fırlatılır
- *   - Kayıt bulunamazsa "Product not found" hatası fırlatılır
- */
 export async function updateProduct(id: string, patch: Parameters<typeof mapProductPatchToRow>[0]) {
   const sb = await createSupabaseRouteClient();
 
@@ -239,6 +283,7 @@ export async function updateProduct(id: string, patch: Parameters<typeof mapProd
 
   if (error) throw new Error(error.message);
   if (!data) throw new Error('Product not found');
+
   return mapRowToProduct(data as ProductsRow);
 }
 
@@ -246,16 +291,6 @@ export async function updateProduct(id: string, patch: Parameters<typeof mapProd
  * Pagination + filters (listeleme)
  * ---------------------------------------------------------------------------*/
 
-/**
- * ProductPage:
- *   fetchFilteredProducts fonksiyonunun döndürdüğü sayfalı sonuç yapısı.
- *
- *  - items: domain Product listesi (kategori slug’ı dahil)
- *  - total: toplam kayıt sayısı
- *  - page: mevcut sayfa numarası
- *  - pageSize: sayfa başına kayıt sayısı
- *  - pageCount: toplam sayfa sayısı
- */
 export type ProductPage = {
   items: Product[];
   total: number;
@@ -264,46 +299,17 @@ export type ProductPage = {
   pageCount: number;
 };
 
-/**
- * fetchFilteredProducts:
- *   /products sayfasındaki tüm filtreler ve sıralama kuralları ile
- *   birlikte Supabase üzerinden ürün listesini çeker.
- *
- * Girdi:
- *   - filters: parseProductFilters ile URL'den türetilen ProductFilters
- *   - opts: page ve pageSize bilgileri
- *
- * Çıktı:
- *   - ProductPage: sayfalama ve filtrelenmiş ürün listesi
- */
 export async function fetchFilteredProducts(
   filters: ProductFilters,
   opts: { page: number; pageSize: number },
 ): Promise<ProductPage> {
   const sb = await createSupabaseServerClient();
 
-  // Sayfa boyutu ve sayfa numarasını güvenli aralığa çek
   const pageSize = Math.max(1, opts.pageSize);
   const page = clampPage(opts.page);
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  /**
-   * Buradaki en kritik değişiklik:
-   *   select('*') yerine, categories join’li bir select kullanıyoruz.
-   *   Böylece her ürün satırı için categories.slug’i "category" alanı
-   *   altında alacağız.
-   *
-   * Supabase/Postgrest select:
-   *
-   *   *,
-   *   category:categories!products_category_id_fkey (
-   *     id,
-   *     slug
-   *   )
-   *
-   * count: 'exact' kayıyor, eski davranış aynı.
-   */
   let q = sb
     .from('products')
     .select(
@@ -317,18 +323,8 @@ export async function fetchFilteredProducts(
       { count: 'exact' },
     );
 
-  /**
-   * Serbest metin arama (q):
-   *   - code
-   *   - name
-   *   - manufacturer_code
-   *   - temp_code
-   *
-   * Postgrest "or" ifadesi ile birden fazla kolonda ilike uygulanır.
-   */
   if (filters.q?.trim()) {
     const t = filters.q.trim();
-    // code + name + manufacturer_code + temp_code
     q = q.or(
       [
         `code.ilike.%${t}%`,
@@ -339,98 +335,35 @@ export async function fetchFilteredProducts(
     );
   }
 
-  /**
-   * Kategori filtresi:
-   *   UI tarafı slug listeleri gönderiyor (hem root hem leaf).
-   *   Biz bu slug'ları önce categories tablosunda id'lere çeviriyoruz,
-   *   sonra products.category_id üzerinden filtreliyoruz.
-   */
-  const catSlugs = Array.from(
-    new Set([...(filters.categories ?? []), ...(filters.subCategories ?? [])]),
-  );
+  const catSlugs = Array.from(new Set([...(filters.categories ?? []), ...(filters.subCategories ?? [])]));
 
   if (catSlugs.length > 0) {
-    // Slug'lardan kategori id'lerini bul
-    const { data: catRows, error: catErr } = await sb
-      .from('categories')
-      .select('id, slug')
-      .in('slug', catSlugs);
-
-    if (catErr) {
-      throw new Error(catErr.message);
-    }
+    const { data: catRows, error: catErr } = await sb.from('categories').select('id, slug').in('slug', catSlugs);
+    if (catErr) throw new Error(catErr.message);
 
     const categoryIds = (catRows ?? []).map((c) => String(c.id));
-
-    // Hiç eşleşen kategori yoksa direkt boş sayfa döndür
     if (categoryIds.length === 0) {
-      return {
-        items: [],
-        total: 0,
-        page,
-        pageSize,
-        pageCount: 1,
-      };
+      return { items: [], total: 0, page, pageSize, pageCount: 1 };
     }
 
-    // products.category_id üzerinden filtrele
     q = q.in('category_id', categoryIds as ProductsRow['category_id'][]);
   }
 
-  /**
-   * Varyant filtresi:
-   *   filters.variants içinde gelen key'leri doğrudan variant kolonu
-   *   üzerinde .in ile uygularız.
-   */
   if (filters.variants?.length) {
     q = q.in('variant', filters.variants as ProductsRow['variant'][]);
   }
 
-  /**
-   * Müşteri kalıbı filtresi:
-   *   Burada filters içinde doğrudan tanımlı olmayan, ancak parseProductFilters
-   *   tarafından runtime'da eklenmiş olabilen customerMold alanını okuyoruz.
-   *
-   *   Eski UI'den kalan "Evet" string değeriyle uyumlu kalmak için:
-   *     - true
-   *     - 'Evet'
-   *     - ['Evet'] (tek elemanlı dizi)
-   *   gibi varyantları "aktif" kabul ediyoruz.
-   */
   const cm = (filters as unknown as { customerMold?: unknown }).customerMold;
-  const moldOn =
-    cm === true || cm === 'Evet' || (Array.isArray(cm) && cm.length === 1 && cm[0] === 'Evet');
+  const moldOn = cm === true || cm === 'Evet' || (Array.isArray(cm) && cm.length === 1 && cm[0] === 'Evet');
   if (moldOn) q = q.eq('has_customer_mold', true);
 
-  /**
-   * Kullanılabilirlik filtresi:
-   *   parseProductFilters tarafında availability boolean ise
-   *   burada availability = true olan ürünleri filtreleriz.
-   *
-   *   availability undefined ise filtre uygulanmaz.
-   */
   if (typeof filters.availability === 'boolean') {
     q = q.eq('availability', filters.availability);
   }
 
-  /**
-   * Tarih filtresi:
-   *   filters.from ve filters.to, UI'de YYYY-MM-DD formatında set ediliyor.
-   *
-   *   Burada "date" kolonu üzerinden aralık filtresi uygulanıyor.
-   *   (Şemanızda created_at kullanıyorsanız burayı ona göre uyarlaman gerekir.)
-   */
   if (filters.from) q = q.gte('date', filters.from);
   if (filters.to) q = q.lte('date', filters.to);
-  
-  /**
-   * Sıralama:
-   *   ProductSort union'ına göre sıralama stratejisi seçilir.
-   *   - date-asc/desc       -> created_at kolonu (siteye eklenme tarihi)
-   *   - weight-asc/desc     -> unit_weight_g_pm
-   *   - code-asc/desc       -> code
-   *   - default             -> created_at (en yeni ürünler önce)
-   */
+
   switch (filters.sort) {
     case 'date-desc':
       q = q.order('created_at', { ascending: false });
@@ -455,17 +388,12 @@ export async function fetchFilteredProducts(
       break;
   }
 
-  // Supabase range ile sayfaya ait satırları ve toplam sayıyı çek
   const { data, error, count } = await q.range(from, to);
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as ProductsRowWithCategory[];
-
-  // Her satırı domain tipi olan Product'a map'liyoruz, category join’inden
-  // gelen slug’ı Product.subCategory’ye yazıyoruz.
   const items = rows.map(mapRowWithCategoryToProduct);
 
-  // Toplam kayıt sayısı; Supabase count null dönerse en azından 0 varsayılır
   const total = count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 

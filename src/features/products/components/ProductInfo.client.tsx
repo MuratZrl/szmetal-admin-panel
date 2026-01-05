@@ -29,6 +29,7 @@ type Maybe<T> = T | null | undefined;
 export type LabelMaps = {
   category?: Record<string, string>;
   subCategory?: Record<string, string>;
+  subSubCategory?: Record<string, string>; // ✅ eklendi
   variant?: Record<string, string>;
 };
 
@@ -37,6 +38,7 @@ export type ProductInfoProps = {
   variant: string;
   category?: string | null;
   subCategory?: string | null;
+  subSubCategory?: string | null; // ✅ eklendi (En Alt Kategori)
   date: string;
   revisionDate?: string | null;
   /** created_at sütunundan gelecek, Eklenme Tarihi için */
@@ -277,6 +279,7 @@ export default function ProductInfo(props: ProductInfoProps) {
     variant,
     category,
     subCategory,
+    subSubCategory,
     unit_weight_g_pm,
     date,
     revisionDate,
@@ -345,8 +348,9 @@ export default function ProductInfo(props: ProductInfoProps) {
 
   const variantText = labels?.variant?.[variant] ?? variant;
   const catText = category ? labels?.category?.[category] ?? category : '';
-  const subText = subCategory
-    ? labels?.subCategory?.[subCategory] ?? subCategory
+  const subText = subCategory ? labels?.subCategory?.[subCategory] ?? subCategory : '';
+  const leafText = subSubCategory
+    ? labels?.subSubCategory?.[subSubCategory] ?? subSubCategory
     : '';
 
   // created_at genelde ISO datetime, sadece tarihi göstermek için ilk 10 karakteri alalım
@@ -426,12 +430,16 @@ export default function ProductInfo(props: ProductInfoProps) {
     make('Alt Kategori:', safe(subText)),
   ]);
 
+  // ✅ İSTEDİĞİN SATIR: Varyant + En Alt Kategori yan yana
   rows.push([
     make('Varyant:', safe(variantText)),
-    make(
-      'Birim Ağırlık (gr/m):',
-      formatInt(unit_weight_g_pm),
-    ),
+    make('En Alt Kategori:', safe(leafText)),
+  ]);
+
+  // ✅ Birim ağırlık satırını aşağı kaydır (boşa düşmesin)
+  rows.push([
+    make('Birim Ağırlık (gr/m):', formatInt(unit_weight_g_pm)),
+    make('Kullanım Durumu:', safe(usageNode)),
   ]);
 
   rows.push([
