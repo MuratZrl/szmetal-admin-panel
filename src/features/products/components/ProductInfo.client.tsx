@@ -438,24 +438,18 @@ export default function ProductInfo(props: ProductInfoProps) {
 
   // ✅ Birim ağırlık satırını aşağı kaydır (boşa düşmesin)
   rows.push([
-    make('Birim Ağırlık (gr/m):', formatInt(unit_weight_g_pm)),
-    make('Kullanım Durumu:', safe(usageNode)),
-  ]);
-
-  rows.push([
     make('Kullanım Durumu:', safe(usageNode)),
     make('Müşteri Kalıbı:', safe(moldChip)),
   ]);
 
   rows.push([
+    make('Birim Ağırlık (gr/m):', formatInt(unit_weight_g_pm)),
     make('Çizildiği Tarih:', safe(date)),
-    make('Revizyon Tarihi:', safe(revisionDate)),
   ]);
 
-  // Burada ekstra satır: Eklenme Tarihi (created_at)
   rows.push([
     make('Eklenme Tarihi:', safe(createdDate)),
-    null,
+    make('Revizyon Tarihi:', safe(revisionDate)),
   ]);
 
   rows.push([make('Çizen:', safe(drawer)), make('Kontrol:', safe(control))]);
