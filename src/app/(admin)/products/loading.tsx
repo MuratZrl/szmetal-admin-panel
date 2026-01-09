@@ -1,9 +1,11 @@
 // src/app/(admin)/products/loading.tsx
 import * as React from 'react';
+
 import { Box, Divider, Grid, Skeleton, Stack } from '@mui/material';
+
 import ProductCardSkeleton from '@/features/products/components/ui/ProductCard/ProductCardSkeleton.client';
 
-const SKELETON_COUNT = 12;
+const DEFAULT_PAGE_SIZE = 16;
 
 const sectionShellSx = {
   border: '1px solid',
@@ -12,7 +14,7 @@ const sectionShellSx = {
   bgcolor: 'background.paper',
   px: 1.25,
   py: 1.25,
-};
+} as const;
 
 function CheckRowSkeleton({ width = '70%' }: { width?: number | string }): React.JSX.Element {
   return (
@@ -118,7 +120,7 @@ function ActionsSectionSkeleton(): React.JSX.Element {
 
 function FiltersPanelSkeleton(): React.JSX.Element {
   return (
-    <Stack spacing={2.25} sx={{ position: 'sticky', top: 16 }}>
+    <Stack spacing={2} sx={{ position: 'sticky', top: 16 }}>
       <SearchSectionSkeleton />
       <StatusSectionSkeleton />
       <CategorySectionSkeleton />
@@ -133,7 +135,7 @@ function FiltersPanelSkeleton(): React.JSX.Element {
 function ToolbarSkeleton(): React.JSX.Element {
   return (
     <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1.25 }}>
-      <Skeleton height={36} width={220} />
+      <Skeleton height={36} width={240} />
       <Skeleton height={36} width={140} />
       <Box sx={{ flex: 1 }} />
       <Skeleton variant="rounded" height={36} width={160} />
@@ -150,6 +152,18 @@ function PaginationSkeleton(): React.JSX.Element {
   );
 }
 
+function ProductsGridSkeleton(): React.JSX.Element {
+  return (
+    <Grid container spacing={1}>
+      {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (
+        <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+          <ProductCardSkeleton />
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
 export default function Loading(): React.JSX.Element {
   return (
     <Box px={1} py={1}>
@@ -162,13 +176,7 @@ export default function Loading(): React.JSX.Element {
         </Grid>
 
         <Grid size={{ xs: 12, md: 9 }}>
-          <Grid container spacing={2}>
-            {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-              <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-                <ProductCardSkeleton />
-              </Grid>
-            ))}
-          </Grid>
+          <ProductsGridSkeleton />
           <PaginationSkeleton />
         </Grid>
       </Grid>
