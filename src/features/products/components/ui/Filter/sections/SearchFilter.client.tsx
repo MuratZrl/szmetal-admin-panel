@@ -9,9 +9,18 @@ import { sectionSx } from '../sectionSx';
 type SearchFilterSectionProps = {
   value: string;
   onChange: (value: string) => void;
+  /**
+   * SSR/CSR hydration mismatch yaşamamak için MUI'nin auto-id üretimini bypass eder.
+   * Aynı sayfada birden fazla SearchFilterSection kullanırsan parent’tan unique gönder.
+   */
+  inputId?: string;
 };
 
-export function SearchFilterSection({ value, onChange }: SearchFilterSectionProps): React.JSX.Element {
+export function SearchFilterSection({
+  value,
+  onChange,
+  inputId = 'products-filter-search',
+}: SearchFilterSectionProps): React.JSX.Element {
   return (
     <Box
       component="section"
@@ -24,7 +33,6 @@ export function SearchFilterSection({ value, onChange }: SearchFilterSectionProp
         Genel Arama
       </Typography>
 
-      {/* Başlık ile içerik arasında düz renk separator */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -36,6 +44,8 @@ export function SearchFilterSection({ value, onChange }: SearchFilterSectionProp
       />
 
       <TextField
+        id={inputId}
+        name="q"
         fullWidth
         label="Ara (ad veya kod)"
         size="small"

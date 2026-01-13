@@ -84,10 +84,8 @@ function moldSelectToBool(v: CustomerMoldSelect): boolean | undefined {
   return undefined;
 }
 
-export function toInsertPayload(
-  v: ProductFormValuesWithRelations,
-  fileMeta?: FileMeta | null,
-): ProductsInsert {
+export function toInsertPayload( v: ProductFormValuesWithRelations, fileMeta?: FileMeta | null ): ProductsInsert {
+  
   const payload: ProductsInsert = {
     // 1) Temel metinler
     name: v.name,
@@ -102,10 +100,10 @@ export function toInsertPayload(
     // 4) Tarihler
     date: v.date,
 
-    // 5) Ağırlık / ölçü
-    unit_weight_g_pm:
-      v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG)),
-
+    // 5) Ağırlık ve ölçüler
+    unit_weight_g_pm: v.unitWeightG == null ? 0 : Math.round(Number(v.unitWeightG)),
+    scale: trimToNull(v.scale),
+    
     outer_size_mm: v.outerSizeMm ?? null,
     section_mm2: v.sectionMm2 ?? null,
 
@@ -119,7 +117,6 @@ export function toInsertPayload(
     // 8) Teknik / çizim alanları
     drawer: trimToNull(v.drawer),
     control: trimToNull(v.control),
-    scale: trimToNull(v.scale),
 
     // 9) Kod alanları
     temp_code: trimToNull(v.tempCode),
@@ -135,6 +132,7 @@ export function toInsertPayload(
     file_mime:   fileMeta?.mime   ?? null,
     file_size:   fileMeta?.size   ?? null,
     file_bucket: fileMeta?.bucket ?? null,
+
   } as ProductsInsert;
 
   // Revizyon tarihi

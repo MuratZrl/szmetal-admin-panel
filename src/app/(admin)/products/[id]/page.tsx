@@ -17,13 +17,11 @@ import {
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
 
-import { resolveStorageUrl } from '@/features/products/services/resolveStorageUrl.server';
-import { withVersion } from '@/features/products/utils/url';
-
 import { mapRowToProduct } from '@/features/products/types';
 
 import ProductMedia from '@/features/products/components/ProductMedia.client';
-import ProductInfo from '@/features/products/components/ProductInfo.client';
+import ProductInfo from '@/features/products/components/ProductInfo';
+
 import ProductDetailActions from '@/features/products/components/ProductDetailActions.client';
 import CommentSection from '@/features/products/components/CommentSection.client';
 
@@ -48,6 +46,7 @@ type CategoryChain = {
 
 type ProductsRowWithChain = ProductsRow & {
   category?: CategoryChain | null;
+  created_by_user?: { username: string | null } | null;
 };
 
 type Props = { params: Promise<{ id: string }> };
@@ -85,7 +84,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { id } = await params;
 
-  // Metadata için kategori zinciri şart değil; code+name yeterli.
   const row = await fetchProductById(id);
   if (!row) return { title: 'Ürün bulunamadı' };
 
@@ -115,25 +113,41 @@ export default async function ProductDetailPage({ params }: Props) {
   const canPin = profile.role === 'Admin';
 
   const row = rowWithChain as ProductsRowWithChain;
+
+  const createdByName = row.created_by_user?.username;
+  if (!createdByName) {
+    throw new Error(`created_by_user.username missing for product ${id}`);
+  }
+
+  const createdAt = row.created_at;
+  if (!createdAt) {
+    throw new Error(`created_at missing for product ${id}`);
+  }
+
   const product = enrichProductWithCategoryChain(row);
   const labelMaps = buildLabelMaps(dicts);
 
-  const preferPdf = (product.fileExt ?? '').toLowerCase() === 'pdf' && !!product.filePath;
-  const rawPrimary = preferPdf ? product.filePath : product.image;
-  const rawSecondary = preferPdf ? product.image : product.filePath;
-
   const versionKey = product.updatedAt ?? product.createdAt ?? null;
+  const v = versionKey ? `&v=${encodeURIComponent(versionKey)}` : '';
 
-  const [basePrimary, baseSecondary, comments, recommended] = await Promise.all([
-    (async () => withVersion(await resolveStorageUrl(rawPrimary), versionKey))(),
-    (async () => withVersion(await resolveStorageUrl(rawSecondary), versionKey))(),
-    fetchProductComments(String(product.id)),
+  // ✅ Kritik nokta: media ve comment tarafında route param id kullanıyoruz.
+  const safeId = id;
+
+  const basePrimary = `/api/products/storage/${encodeURIComponent(safeId)}?slot=primary${v}`;
+  const baseSecondary = `/api/products/storage/${encodeURIComponent(safeId)}?slot=secondary${v}`;
+
+  const [commentsRaw, recommendedRaw] = await Promise.all([
+    fetchProductComments(safeId),
     buildRecommendedBlock({ currentRow: row as ProductsRow, limit: 4 }),
   ]);
+
+  const comments = commentsRaw ?? [];
+  const recommended = recommendedRaw ?? { products: [], mediaUrlsById: {} };
 
   const allowed = ['pdf', 'png', 'webp', 'jpg', 'jpeg'] as const;
   type AllowedExt = (typeof allowed)[number];
   const extLower = (product.fileExt ?? '').toLowerCase();
+
   const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
     ? (extLower as AllowedExt)
     : null;
@@ -141,7 +155,7 @@ export default async function ProductDetailPage({ params }: Props) {
   return (
     <Box px={1} py={1}>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, sm: 12, md: 6 }}>
           <ProductMedia
             src={basePrimary}
             fileUrl={baseSecondary}
@@ -152,7 +166,7 @@ export default async function ProductDetailPage({ params }: Props) {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, sm: 12, md: 6 }}>
           <Stack spacing={2}>
             <ProductInfo
               title={`${product.code} — ${product.name}`}
@@ -162,9 +176,10 @@ export default async function ProductDetailPage({ params }: Props) {
               subCategory={product.subCategory ?? undefined}
               subSubCategory={product.subSubCategory ?? undefined}
               date={product.date}
-              revisionDate={product.revisionDate || ''}
+              revisionDate={product.revisionDate ?? null}
               createdAt={row.created_at ?? null}
-              id={String(product.id)}
+              createdBy={createdByName}
+              id={safeId}
               drawer={product.drawer}
               control={product.control}
               scale={product.scale}
@@ -173,10 +188,12 @@ export default async function ProductDetailPage({ params }: Props) {
               unit_weight_g_pm={
                 typeof product.unit_weight_g_pm === 'number' ? product.unit_weight_g_pm : undefined
               }
+              wallThicknessMm={product.wallThicknessMm}
               has_customer_mold={row.has_customer_mold}
               availability={product.availability}
               hasCustomerMold={product.hasCustomerMold}
               tempCode={product.tempCode}
+              profileCode={product.code ?? null}
               manufacturerCode={product.manufacturerCode}
               labels={{
                 category: labelMaps.category,
@@ -190,11 +207,11 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
-              <ProductDetailActions id={String(product.id)} canEdit={canEdit} code={product.code} />
+              <ProductDetailActions id={safeId} canEdit={canEdit} code={product.code} />
             </ProductInfo>
 
             <CommentSection
-              productId={String(product.id)}
+              productId={safeId}
               currentUserId={session.userId}
               currentUserUsername={session.username}
               currentUserEmail={session.email}

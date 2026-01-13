@@ -82,9 +82,9 @@ export type Product = {
 
   /** 5) Ağırlık ve ölçü alanları */
   // DB’de g/m
-  unit_weight_g_pm: number | 0;
+  unit_weight_g_pm: number | null;
   /** Et kalınlığı (mm cinsinden, örn: 4, 5) */
-  wallThicknessMm: number | 0;
+  wallThicknessMm: number | null;
 
   outerSizeMm: number | null;
   sectionMm2: number | null;
@@ -159,8 +159,8 @@ export function mapRowToProduct(r: ProductRow): Product {
     variant: r.variant,
 
     // 5) Ağırlık + ölçü
-    unit_weight_g_pm: r.unit_weight_g_pm ?? 0,
-    wallThicknessMm: wallThickness ?? 0,
+    unit_weight_g_pm: r.unit_weight_g_pm ?? null,
+    wallThicknessMm: wallThickness ?? null,
     outerSizeMm: r.outer_size_mm ?? null,
     sectionMm2: r.section_mm2 ?? null,
 
@@ -200,8 +200,8 @@ export function mapRowToProduct(r: ProductRow): Product {
 }
 
 /** UI Product patch -> kısmi DB Row patch */
-export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRow> {
-  const out: Partial<ProductRow> = {};
+export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductUpdate> {
+  const out: Partial<ProductUpdate> = {};
 
   // Temel metinler
   if (patch.code !== undefined) out.code = patch.code;
@@ -244,25 +244,20 @@ export function mapProductPatchToRow(patch: Partial<Product>): Partial<ProductRo
   if (patch.scale !== undefined) out.scale = patch.scale;
 
   // Ağırlık ve ölçüler
+  // ✅ null gelirse "temizle" değil "gönderme" (undefined) yapıyoruz
   if (patch.unit_weight_g_pm !== undefined) {
-    out.unit_weight_g_pm = patch.unit_weight_g_pm;
+    out.unit_weight_g_pm = patch.unit_weight_g_pm ?? undefined;
   }
-  if (patch.outerSizeMm !== undefined) {
-    out.outer_size_mm = patch.outerSizeMm;
-  }
-  if (patch.sectionMm2 !== undefined) {
-    out.section_mm2 = patch.sectionMm2;
-  }
-  if (patch.wallThicknessMm !== undefined) {
-    (out as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm =
-      patch.wallThicknessMm;
-  }
+
+  if (patch.wallThicknessMm !== undefined) { (out as unknown as { wall_thickness_mm?: number | null }).wall_thickness_mm = patch.wallThicknessMm }
+
+  if (patch.outerSizeMm !== undefined) { out.outer_size_mm = patch.outerSizeMm }
+
+  if (patch.sectionMm2 !== undefined) { out.section_mm2 = patch.sectionMm2 }
 
   // Kod alanları
   if (patch.tempCode !== undefined) out.temp_code = patch.tempCode;
-  if (patch.manufacturerCode !== undefined) {
-    out.manufacturer_code = patch.manufacturerCode;
-  }
+  if (patch.manufacturerCode !== undefined) { out.manufacturer_code = patch.manufacturerCode }
 
   // Dosya metadata
   if (patch.fileBucket !== undefined) out.file_bucket = patch.fileBucket;

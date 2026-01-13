@@ -65,6 +65,11 @@ type CategoryJoin3 = {
 
 type ProductsRowWithCategoryChain = ProductsRow & {
   category?: CategoryJoin3 | null;
+
+  // ✅ created_by -> users join'inden gelecek alan
+  created_by_user?: {
+    username: string | null;
+  } | null;
 };
 
 /**
@@ -190,6 +195,9 @@ export async function fetchProductByIdWithCategoryChain(
               slug
             )
           )
+        ),
+        created_by_user:users!products_created_by_fkey (
+          username
         )
       `,
     )
@@ -199,6 +207,7 @@ export async function fetchProductByIdWithCategoryChain(
   if (error) return null;
   return (data ?? null) as ProductsRowWithCategoryChain | null;
 }
+
 
 // ✅ BUNU KULLAN: products/[id] detail için direkt Product döndürür.
 export async function fetchProductDetailById(id: string): Promise<Product | null> {

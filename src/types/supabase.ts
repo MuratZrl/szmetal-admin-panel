@@ -266,6 +266,7 @@ export type Database = {
           code: string
           control: string | null
           created_at: string
+          created_by: string
           date: string
           description: string | null
           drawer: string | null
@@ -296,6 +297,7 @@ export type Database = {
           code: string
           control?: string | null
           created_at?: string
+          created_by?: string
           date: string
           description?: string | null
           drawer?: string | null
@@ -326,6 +328,7 @@ export type Database = {
           code?: string
           control?: string | null
           created_at?: string
+          created_by?: string
           date?: string
           description?: string | null
           drawer?: string | null
@@ -363,6 +366,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

@@ -18,19 +18,16 @@ type Props = {
   objectFit?: 'contain' | 'cover';
 };
 
-/** Append query params without accidentally absolutizing a relative URL during SSR. */
 function withQuery(u: string, q: Record<string, string>): string {
   const url = new URL(u, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
   for (const [k, v] of Object.entries(q)) url.searchParams.set(k, v);
   return u.startsWith('/') ? url.pathname + (url.search || '') + (url.hash || '') : url.toString();
 }
 
-/** Force inline disposition for our secure proxy route. */
 function ensureInline(u: string): string {
   return u.startsWith('/api/products/storage') ? withQuery(u, { disposition: 'inline' }) : u;
 }
 
-/** True if URL is absolute (http/https or protocol-relative). */
 function isExternalUrl(u: string): boolean {
   return /^(?:https?:)?\/\//i.test(u);
 }
@@ -48,7 +45,7 @@ export default function ProductMedia({
   const fallbackUrl = (fileUrl ?? '').trim();
 
   const srcKind = detectMediaKind({ url: srcUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
-  const fbKind  = detectMediaKind({ url: fallbackUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
+  const fbKind = detectMediaKind({ url: fallbackUrl, mime: fileMime ?? undefined, extHint: fileExt ?? undefined });
 
   const chosen =
     (srcUrl && srcKind !== 'unknown' && { url: srcUrl, kind: srcKind }) ||
@@ -59,9 +56,10 @@ export default function ProductMedia({
   const openHref = viewUrl || (fallbackUrl ? ensureInline(fallbackUrl) : '');
   const external = openHref ? isExternalUrl(openHref) : false;
 
-  const pdfViewUrl = chosen.kind === 'pdf' && viewUrl
-    ? `${viewUrl}#zoom=page-fit&view=FitH&toolbar=0&navpanes=0`
-    : '';
+  const pdfViewUrl =
+    chosen.kind === 'pdf' && viewUrl
+      ? `${viewUrl}#zoom=page-fit&view=FitH&toolbar=0&navpanes=0`
+      : '';
 
   return (
     <Paper
@@ -80,28 +78,14 @@ export default function ProductMedia({
       aria-label={alt}
     >
       {chosen.kind === 'pdf' && viewUrl ? (
-        <Box
-          component="object"
-          data={pdfViewUrl}
-          type="application/pdf"
-          sx={{ width: '100%', height: '100%', border: 0 }}
-        >
-          <Stack spacing={1} alignItems="center">
-            <Typography variant="body2">PDF could not be previewed.</Typography>
-            {openHref && (
-              <Button
-                component={external ? 'a' : Link}
-                href={openHref}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                startIcon={<OpenInNewIcon />}
-                size="small"
-                sx={{ textTransform: 'none' }}
-              >
-                Open PDF
-              </Button>
-            )}
-          </Stack>
+        <Box sx={{ width: '100%', height: '100%' }}>
+          {/* ✅ object yerine iframe: PDF viewer embed daha stabil */}
+          <Box
+            component="iframe"
+            src={pdfViewUrl}
+            title={alt}
+            sx={{ width: '100%', height: '100%', border: 0 }}
+          />
         </Box>
       ) : chosen.kind === 'image' && viewUrl ? (
         <Box

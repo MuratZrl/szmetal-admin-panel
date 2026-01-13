@@ -67,11 +67,10 @@ function resolveLabelFromMap(
   return key;
 }
 
-function formatGrPerMeter(gPerMeter: number | 0): string {
-  const n = Number(gPerMeter);
+function formatGrPerMeter(gPerMeter: number | null | undefined): string {
+  const n = typeof gPerMeter === 'number' ? gPerMeter : 0;
   if (!Number.isFinite(n) || n <= 0) return '0 gr/m';
-  const int = Math.round(n);
-  return `${int} gr/m`;
+  return `${Math.round(n)} gr/m`;
 }
 
 export default function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
@@ -224,7 +223,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
               hyphens: 'auto',
             }}
           >
-            {product.code} {product.name}
+            {product.code} — {product.name}
           </Typography>
 
           {isCustomerMold && (
