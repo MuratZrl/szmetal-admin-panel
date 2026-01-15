@@ -19,7 +19,7 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Clients',             labelTr: 'Kullanıcılar',   href: '/clients',                   icon: People },
   { label: 'Product Analytics',   labelTr: 'Ürün Analizi',   href: '/products_analytics',        icon: ShowChartIcon },
 
-  { label: 'Products',            labelTr: 'Ürünler',        href: '/products',                  icon: Category,       section: 'quick',  order: 1 },
+  { label: 'Products',            labelTr: 'Profiller',      href: '/products',                  icon: Category,       section: 'quick',  order: 1 },
   { label: 'Create Request',      labelTr: 'Talep Oluştur',  href: '/create_request',            icon: ShoppingCart,   section: 'quick',  order: 2 },
   { label: 'Orders',              labelTr: 'Siparişler',     href: '/orders',                    icon: ShoppingBasket, section: 'quick',  order: 3 },
 

@@ -8,6 +8,8 @@ import dayjs, { type Dayjs } from 'dayjs';
 
 import { sectionSx } from '../sectionSx';
 
+import { DATE_FROM_ID, DATE_TO_ID } from '@/features/products/components/ui/Filter/constants';
+
 type DateRangeFilterSectionProps = {
   from: string;
   to: string;
@@ -99,6 +101,7 @@ export function DateRangeFilterSection({
             onChange={(val) => onChangeFrom(toIso(val))}
             slotProps={{
               textField: {
+                id: DATE_FROM_ID,
                 size: 'small',
                 fullWidth: true,
                 InputLabelProps: { shrink: true },
@@ -115,6 +118,7 @@ export function DateRangeFilterSection({
             onChange={(val) => onChangeTo(toIso(val))}
             slotProps={{
               textField: {
+                id: DATE_TO_ID,
                 size: 'small',
                 fullWidth: true,
                 InputLabelProps: { shrink: true },

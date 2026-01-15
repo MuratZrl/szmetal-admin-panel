@@ -20,7 +20,7 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import type { VariantOption } from '../types';
 import { sectionSx } from '../sectionSx';
-import { VARIANT_ROW_H_PX, VISIBLE_VARIANT_ROWS } from '../constants';
+import { VARIANT_ROW_H_PX, VISIBLE_VARIANT_ROWS, VARIANTS_ID } from '../constants';
 
 type VariantFilterSectionProps = {
   variants: VariantOption[];
@@ -134,6 +134,7 @@ export function VariantFilterSection({
       <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
         <Grid size={{ xs: 12 }}>
           <TextField
+            id={VARIANTS_ID}
             fullWidth
             size="small"
             placeholder="Ara"

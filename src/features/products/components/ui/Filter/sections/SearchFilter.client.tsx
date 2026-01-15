@@ -5,43 +5,26 @@ import * as React from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 
 import { sectionSx } from '../sectionSx';
+import { SEARCH_ID } from '@/features/products/components/ui/Filter/constants';
 
 type SearchFilterSectionProps = {
   value: string;
   onChange: (value: string) => void;
-  /**
-   * SSR/CSR hydration mismatch yaşamamak için MUI'nin auto-id üretimini bypass eder.
-   * Aynı sayfada birden fazla SearchFilterSection kullanırsan parent’tan unique gönder.
-   */
   inputId?: string;
 };
 
 export function SearchFilterSection({
   value,
   onChange,
-  inputId = 'products-filter-search',
+  inputId = SEARCH_ID, // 'products-filter-search'
 }: SearchFilterSectionProps): React.JSX.Element {
   return (
-    <Box
-      component="section"
-      sx={(t) => ({
-        ...sectionSx(t),
-        borderRadius: 2.25,
-      })}
-    >
+    <Box component="section" sx={(t) => ({ ...sectionSx(t), borderRadius: 2.25 })}>
       <Typography variant="overline" sx={{ opacity: 0.75 }}>
         Genel Arama
       </Typography>
 
-      <Box
-        sx={(t) => ({
-          mt: 1,
-          mb: 1.5,
-          height: 2,
-          borderRadius: 999,
-          bgcolor: t.palette.divider,
-        })}
-      />
+      <Box sx={(t) => ({ mt: 1, mb: 1.5, height: 2, borderRadius: 999, bgcolor: t.palette.divider })} />
 
       <TextField
         id={inputId}

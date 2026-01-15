@@ -78,11 +78,6 @@ export function buildProductInfoRows(input: {
     make('Revizyon Tarihi', safe(input.revisionDate)),
   ]);
 
-  rows.push([
-    make('Çizen', safe(input.drawer)), 
-    make('Kontrol', safe(input.control))
-  ]);
-
   // ✅ Tail’de value boş/placeholder ise tabloya hiç sokma
   const filteredTail = input.tail.filter((it) => hasMeaningfulValue(it.value));
   for (let i = 0; i < filteredTail.length; i += 2) {

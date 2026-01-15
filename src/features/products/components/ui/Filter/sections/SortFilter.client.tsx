@@ -6,6 +6,8 @@ import { Box, Button, MenuItem, TextField, Typography } from '@mui/material';
 
 import { sectionSx } from '../sectionSx';
 
+import { SORT_SELECT_ID } from '@/features/products/components/ui/Filter/constants';
+
 type SortFilterSectionProps = {
   sort: string;
   onChangeSort: (value: string) => void;
@@ -77,6 +79,7 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
       />
 
       <TextField
+        id={SORT_SELECT_ID}
         label="Sırala"
         select
         size="small"

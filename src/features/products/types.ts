@@ -4,10 +4,7 @@ import type { Database } from '@/types/supabase';
 /* -----------------------------------------------------------------------------
  * 1) Ortak sözlük tipleri
  * ---------------------------------------------------------------------------*/
-export type CategoryTree = Record<
-  string,
-  { name: string; subs: { slug: string; name: string }[] }
->;
+export type CategoryTree = Record< string, { name: string; subs: { slug: string; name: string }[] } >;
 
 export type VariantOption = { key: string; name: string };
 

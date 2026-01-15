@@ -22,7 +22,7 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import type { CategoryTree } from '../types';
 import { sectionSx } from '../sectionSx';
-import { CATEGORY_ROW_H_PX, VISIBLE_CATEGORY_ROWS } from '../constants';
+import { CATEGORY_ROW_H_PX, VISIBLE_CATEGORY_ROWS, CATEGORY_QUERY_ID } from '../constants';
 
 type CategoryFilterSectionProps = {
   topLevelSlugs: string[];
@@ -380,6 +380,7 @@ export function CategoryFilterSection({
       <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
         <Grid size={{ xs: 12 }}>
           <TextField
+            id={CATEGORY_QUERY_ID}
             fullWidth
             size="small"
             placeholder="Ara"
