@@ -5,9 +5,9 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
 
-import CommentForm from '@/features/products/comments/components/CommentForm.client';
-import CommentList from '@/features/products/comments/components/CommentList.client';
-import type { CommentItem } from '@/features/products/comments/types';
+import CommentForm from '@/features/products/screen/detail/Comments/components/CommentForm.client';
+import CommentList from '@/features/products/screen/detail/Comments/components/CommentList.client';
+import type { CommentItem } from '@/features/products/screen/detail/Comments/types';
 
 import {
   addCommentAction,
@@ -15,7 +15,7 @@ import {
   updateCommentAction,
   setCommentVote,
   setPinnedCommentAction, // ← EKLENDİ
-} from '@/features/products/comments/actions';
+} from '@/features/products/screen/detail/actions';
 
 type Props = {
   productId: string;
@@ -147,6 +147,7 @@ export default function CommentSection({
           </Box>
 
           <CommentForm
+            productId={'productId'}
             disabled={false}
             currentUserId={currentUserId}
             onSubmitContent={handleSubmit}

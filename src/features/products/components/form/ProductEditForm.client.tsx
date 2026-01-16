@@ -18,13 +18,13 @@ import {
   type ProductFormValues,
   type CustomerMoldSelect,
   DEFAULT_VARIANT_KEY,
-} from '@/features/products/forms/schema';
+} from '@/features/products/components/form/forms/schema';
 
 import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
 
-import { toUpdatePayload, type ProductUpdateInput } from '@/features/products/forms/mappers';
+import { toUpdatePayload, type ProductUpdateInput } from '@/features/products/components/form/forms/mappers';
 
-import { buildFileMeta, type FileMetaSource } from '@/features/products/forms/fileMeta';
+import { buildFileMeta, type FileMetaSource } from '@/features/products/components/form/forms/fileMeta';
 
 import { updateProductDb } from '@/features/products/services/products.client';
 

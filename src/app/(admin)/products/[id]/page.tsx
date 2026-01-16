@@ -15,15 +15,16 @@ import {
   fetchProductByIdWithCategoryChain,
 } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
-import { fetchProductComments } from '@/features/products/comments/services/fetchComments.server';
+import { fetchProductComments } from '@/features/products/screen/detail/services/fetchComments.server';
+import { fetchAdjacentProductIds } from '@/features/products/services/productNavigation.server';
 
 import { mapRowToProduct } from '@/features/products/types';
 
-import ProductMedia from '@/features/products/components/ProductMedia.client';
-import ProductInfo from '@/features/products/components/ProductInfo';
+import ProductMedia from '@/features/products/screen/detail/components/ProductMedia.client';
+import ProductInfo from '@/features/products/screen/detail/ProductInfo';
 
-import ProductDetailActions from '@/features/products/components/ProductDetailActions.client';
-import CommentSection from '@/features/products/components/CommentSection.client';
+import ProductDetailActions from '@/features/products/screen/detail/ProductInfo/ProductDetailActions.client';
+import CommentSection from '@/features/products/screen/detail/components/CommentSection.client';
 
 import RecommendedProductsSection from '@/features/products/components/RecommendedProductsSection.client';
 import { buildRecommendedBlock } from '@/features/products/services/recommendedBlock.server';
@@ -119,19 +120,21 @@ export default async function ProductDetailPage({ params }: Props) {
     throw new Error(`created_by_user.username missing for product ${id}`);
   }
 
+  // ✅ Kritik nokta: media ve comment tarafında route param id kullanıyoruz.
+  const safeId = id;
+
   const createdAt = row.created_at;
   if (!createdAt) {
     throw new Error(`created_at missing for product ${id}`);
   }
 
   const product = enrichProductWithCategoryChain(row);
+
+  const adjacent = await fetchAdjacentProductIds({ id: safeId, createdAt });
   const labelMaps = buildLabelMaps(dicts);
 
   const versionKey = product.updatedAt ?? product.createdAt ?? null;
   const v = versionKey ? `&v=${encodeURIComponent(versionKey)}` : '';
-
-  // ✅ Kritik nokta: media ve comment tarafında route param id kullanıyoruz.
-  const safeId = id;
 
   const basePrimary = `/api/products/storage/${encodeURIComponent(safeId)}?slot=primary${v}`;
   const baseSecondary = `/api/products/storage/${encodeURIComponent(safeId)}?slot=secondary${v}`;
@@ -207,7 +210,13 @@ export default async function ProductDetailPage({ params }: Props) {
               mediaMime={product.fileMime ?? null}
               description={product.description}
             >
-              <ProductDetailActions id={safeId} canEdit={canEdit} code={product.code} />
+              <ProductDetailActions
+                id={safeId}
+                canEdit={canEdit}
+                code={product.code}
+                newerProductId={adjacent.newerId}
+                olderProductId={adjacent.olderId}
+              />
             </ProductInfo>
 
             <CommentSection

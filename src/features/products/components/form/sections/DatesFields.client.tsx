@@ -9,7 +9,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { type Dayjs } from 'dayjs';
 
-import type { ProductFormValues } from '@/features/products/forms/schema';
+import type { ProductFormValues } from '@/features/products/components/form/forms/schema';
 
 type WithFileFields = { file: File | null };
 type FormType = ProductFormValues & WithFileFields;
@@ -26,7 +26,7 @@ const toDayjs = (v: string | undefined | null): Dayjs | null => {
 
 const toIso = (d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : '');
 
-export function DatesFields() {
+export function DatesFields(): React.JSX.Element {
   const {
     control,
     formState: { errors },
@@ -46,6 +46,7 @@ export function DatesFields() {
               onChange={(v) => field.onChange(toIso(v))}
               slotProps={{
                 textField: {
+                  id: 'product-form-date',
                   required: true,
                   fullWidth: true,
                   size: 'small',
@@ -72,6 +73,7 @@ export function DatesFields() {
               onChange={(v) => field.onChange(toIso(v))}
               slotProps={{
                 textField: {
+                  id: 'product-form-revision-date',
                   fullWidth: true,
                   size: 'small',
                   InputLabelProps: { shrink: true },

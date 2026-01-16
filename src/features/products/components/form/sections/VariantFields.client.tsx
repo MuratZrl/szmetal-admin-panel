@@ -6,8 +6,10 @@ import * as React from 'react';
 import { Grid, MenuItem, TextField } from '@mui/material';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import type { ProductFormValues } from '@/features/products/forms/schema';
-import { DEFAULT_VARIANT_KEY } from '@/features/products/forms/schema';
+import type { ProductFormValues } from '@/features/products/components/form/forms/schema';
+import { DEFAULT_VARIANT_KEY } from '@/features/products/components/form/forms/schema';
+
+import { PRODUCT_FORM_VARIANT_ID } from '@/features/products/components/form/constants/constants';
 
 type WithFileFields = { file: File | null };
 type FormType = ProductFormValues & WithFileFields;
@@ -21,7 +23,7 @@ type Props = {
   variants: Variant[];
 };
 
-export function VariantFields({ variants }: Props) {
+export function VariantFields({ variants }: Props): React.JSX.Element {
   const { control } = useFormContext<FormType>();
 
   const variantLabel = React.useCallback(
@@ -45,6 +47,7 @@ export function VariantFields({ variants }: Props) {
 
           return (
             <TextField
+              id={PRODUCT_FORM_VARIANT_ID}
               select
               fullWidth
               label="Varyant"

@@ -11,7 +11,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 import { useFormContext } from 'react-hook-form';
 
-import type { ProductFormValues } from '@/features/products/forms/schema';
+import type { ProductFormValues } from '@/features/products/components/form/forms/schema';
 import { useProductUpload } from '@/features/products/hooks/useProductUpload.client';
 import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 

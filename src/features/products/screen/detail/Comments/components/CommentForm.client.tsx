@@ -2,14 +2,10 @@
 'use client';
 
 import * as React from 'react';
-
 import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material';
-
 import { useForm, type SubmitHandler } from 'react-hook-form';
-
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 
 const DEFAULT_MAX_LEN = 2000;
@@ -32,14 +28,24 @@ type Props = {
   currentUserId: string | null;
   onSubmitContent: (content: string) => Promise<void> | void;
   maxLen?: number;
+
+  /** SSR/CSR hydration mismatch yaşamamak için sabit id üretmekte kullanılır */
+  productId: string;
 };
+
+function safeIdSuffix(input: unknown): string {
+  const s = typeof input === 'string' ? input : '';
+  // boşsa bile stabil bir suffix dön, patlama yok
+  return (s || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
 
 export default function CommentForm({
   disabled,
   currentUserId,
   onSubmitContent,
   maxLen = DEFAULT_MAX_LEN,
-}: Props) {
+  productId,
+}: Props): React.JSX.Element {
   const {
     register,
     handleSubmit,
@@ -52,14 +58,17 @@ export default function CommentForm({
     mode: 'onChange',
   });
 
-  // Formu dışarıdan tetiklemek için güvenli unique id
-  const formId = React.useId();
+  // ✅ Stabil, deterministik id.
+  // productId gelmezse bile çökmez, sadece "unknown" kullanır.
+  const pid = safeIdSuffix(productId);
+  const formId = `comment-form-${pid}`;
+  const inputId = `comment-content-${pid}`;
 
   const contentVal = watch('content') ?? '';
   const trimmed = contentVal.trim();
   const len = contentVal.length;
 
-  const onSubmit: SubmitHandler<FormValues> = async values => {
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
     const content = values.content.trim();
     if (content.length === 0) return;
     await onSubmitContent(content);
@@ -80,12 +89,11 @@ export default function CommentForm({
     currentUserId === null
       ? 'Giriş yapmalısınız'
       : trimmed.length === 0
-      ? 'Önce yorum yazınız'
-      : 'Gönder';
+        ? 'Önce yorum yazınız'
+        : 'Gönder';
 
   return (
     <>
-      {/* FORM */}
       <Box
         component="form"
         id={formId}
@@ -97,11 +105,13 @@ export default function CommentForm({
           borderRadius: 0.5,
           border: '1px solid',
           borderColor: 'divider',
-          bgcolor: t => (t.palette.mode === 'dark' ? t.palette.background.default : t.palette.background.paper),
+          bgcolor: (t) =>
+            t.palette.mode === 'dark' ? t.palette.background.default : t.palette.background.paper,
         }}
       >
         <Stack spacing={1}>
           <TextField
+            id={inputId}
             variant="standard"
             fullWidth
             multiline
@@ -112,7 +122,7 @@ export default function CommentForm({
             {...register('content')}
             sx={{ '& .MuiInputBase-root': { alignItems: 'flex-start' } }}
             inputProps={{ maxLength: maxLen }}
-            onKeyDown={e => {
+            onKeyDown={(e) => {
               if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 if (canSubmit) void handleSubmit(onSubmit)();
@@ -120,33 +130,21 @@ export default function CommentForm({
             }}
           />
 
-          {/* Karakter sayacı formun içinde kalsın */}
-          <Typography variant="caption" sx={{ color: len > maxLen ? 'error.main' : 'text.secondary', textAlign: 'right' }}>
+          <Typography
+            variant="caption"
+            sx={{ color: len > maxLen ? 'error.main' : 'text.secondary', textAlign: 'right' }}
+          >
             {len}/{maxLen}
           </Typography>
         </Stack>
       </Box>
 
-      {/* FORM ALTINDA BUTON BÖLÜMÜ */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          mt: 1,
-          // İstersen mobile’da yapışkan alt bar gibi dursun:
-          // position: { xs: 'sticky', md: 'static' },
-          // bottom: 0,
-          // bgcolor: 'background.paper',
-          // borderTop: '1px solid',
-          // borderColor: 'divider',
-          // py: 1,
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
         <Tooltip placement="left" title={tooltipTitle}>
           <span>
             <Button
               type="submit"
-              form={formId}              // ← Dışarıda olsa da formu submit eder
+              form={formId}
               variant="contained"
               endIcon={<SendRoundedIcon />}
               disabled={!canSubmit}

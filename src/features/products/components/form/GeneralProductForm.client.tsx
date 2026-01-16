@@ -6,7 +6,7 @@ import { Box, Grid } from '@mui/material';
 import { FormProvider, type UseFormReturn } from 'react-hook-form';
 
 import type { ProductDicts } from '@/features/products/services/dicts.server';
-import type { ProductFormValues } from '@/features/products/forms/schema';
+import type { ProductFormValues } from '@/features/products/components/form/forms/schema';
 
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';

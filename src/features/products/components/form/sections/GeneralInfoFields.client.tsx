@@ -6,7 +6,14 @@ import * as React from 'react';
 import { Grid, MenuItem, TextField } from '@mui/material';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import type { ProductFormValues } from '@/features/products/forms/schema';
+import type { ProductFormValues } from '@/features/products/components/form/forms/schema';
+
+import {
+  PRODUCT_FORM_CODE_ID,
+  PRODUCT_FORM_NAME_ID,
+  PRODUCT_FORM_CUSTOMER_MOLD_ID,
+  PRODUCT_FORM_AVAILABILITY_ID,
+} from '@/features/products/components/form/constants/constants';
 
 type WithFileFields = { file: File | null };
 type FormType = ProductFormValues & WithFileFields;
@@ -15,7 +22,7 @@ function toHelper(m: unknown): string | undefined {
   return typeof m === 'string' ? m : undefined;
 }
 
-export function GeneralInfoFields() {
+export function GeneralInfoFields(): React.JSX.Element {
   const {
     control,
     register,
@@ -26,6 +33,7 @@ export function GeneralInfoFields() {
     <>
       <Grid size={{ xs: 12, md: 6 }}>
         <TextField
+          id={PRODUCT_FORM_CODE_ID}
           label="Kod"
           fullWidth
           required
@@ -38,6 +46,7 @@ export function GeneralInfoFields() {
 
       <Grid size={{ xs: 12, md: 6 }}>
         <TextField
+          id={PRODUCT_FORM_NAME_ID}
           label="Ad"
           fullWidth
           required
@@ -54,6 +63,7 @@ export function GeneralInfoFields() {
           control={control}
           render={({ field }) => (
             <TextField
+              id={PRODUCT_FORM_CUSTOMER_MOLD_ID}
               {...field}
               select
               label="Müşteri Kalıbı"
@@ -77,6 +87,7 @@ export function GeneralInfoFields() {
           control={control}
           render={({ field }) => (
             <TextField
+              id={PRODUCT_FORM_AVAILABILITY_ID}
               select
               fullWidth
               required

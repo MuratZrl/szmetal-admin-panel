@@ -11,7 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import type { User } from '@supabase/supabase-js';
 
-import { resolveAvatarUrl } from '@/features/products/comments/services/resolveAvatarUrl.server';
+import { resolveAvatarUrl } from '@/features/products/screen/detail/services/resolveAvatarUrl.server';
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */

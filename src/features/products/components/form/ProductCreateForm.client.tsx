@@ -16,7 +16,7 @@ import {
   productSchema,
   type ProductFormValues,
   newProductDefaults,
-} from '@/features/products/forms/schema';
+} from '@/features/products/components/form/forms/schema';
 
 import ProductFormFields from '@/features/products/components/form/GeneralProductForm.client';
 
@@ -24,10 +24,10 @@ import ProductFormFields from '@/features/products/components/form/GeneralProduc
 import {
   toInsertPayload,
   type ProductFormValuesWithRelations,
-} from '@/features/products/forms/mappers';
+} from '@/features/products/components/form/forms/mappers';
 
 // ✅ File meta builder (refactor)
-import { buildFileMeta, type FileMetaSource } from '@/features/products/forms/fileMeta';
+import { buildFileMeta, type FileMetaSource } from '@/features/products/components/form/forms/fileMeta';
 
 // ✅ DB insert
 import { createProductDb } from '@/features/products/services/products.client';
@@ -163,7 +163,6 @@ export default function ProductCreateForm({ dicts, title = 'Yeni Profil Ekle' }:
       show(`Kayıt başarısız: ${msg}`, 'error');
     }
   }
-
 
   return (
     <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>

@@ -13,6 +13,9 @@ if (!pdfjs.GlobalWorkerOptions.workerSrc) {
   pdfjs.GlobalWorkerOptions.workerSrc = '/api/pdf-worker';
 }
 
+// ✅ Sabit options (en basit ve en temiz çözüm)
+const PDF_OPTIONS = { disableRange: true, disableStream: true } as const;
+
 export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Element {
   const [loadError, setLoadError] = React.useState(false);
   const [pageDims, setPageDims] = React.useState<PageDims | null>(null);
@@ -30,8 +33,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
     setPageDims(null);
   }, [src]);
 
-  const ready =
-    !!boxSize && boxSize.width > 8 && boxSize.height > 8 && !loadError;
+  const ready = !!boxSize && boxSize.width > 8 && boxSize.height > 8 && !loadError;
 
   const fitScale = React.useMemo(() => {
     if (!boxSize || !pageDims) return 1;
@@ -71,6 +73,7 @@ export default function PdfThumb({ src, boxSize, title }: Props): React.JSX.Elem
       <Document
         key={src}
         file={src}
+        options={PDF_OPTIONS}
         onLoadError={() => aliveRef.current && setLoadError(true)}
         onSourceError={() => aliveRef.current && setLoadError(true)}
         loading={null}

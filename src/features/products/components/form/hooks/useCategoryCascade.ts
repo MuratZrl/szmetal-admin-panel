@@ -3,10 +3,10 @@
 
 import * as React from 'react'; // useMemo + useEffect kullanıyoruz
 
-import { buildCategoryHelpers } from '@/features/products/forms/helpers'; // categoryTree’den seçenek + label map + helper fonksiyon üreten yardımcı
+import { buildCategoryHelpers } from '@/features/products/components/form/forms/helpers'; // categoryTree’den seçenek + label map + helper fonksiyon üreten yardımcı
 import type { ProductDicts } from '@/features/products/services/dicts.server'; // dicts tipi (categoryTree + variants vs)
 import type { UseFormReturn } from 'react-hook-form'; // react-hook-form methods tipi
-import type { ProductFormValues } from '@/features/products/forms/schema'; // form alanlarının ana tipi (category/subCategory/subSubCategory vs)
+import type { ProductFormValues } from '@/features/products/components/form/forms/schema'; // form alanlarının ana tipi (category/subCategory/subSubCategory vs)
 
 // Bu formda ayrıca dosya alanı var (form şemasına eklenmiş local field)
 type WithFileFields = { file: File | null };

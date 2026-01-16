@@ -12,7 +12,7 @@ import { createSupabaseRSCClient } from '@/lib/supabase/supabaseServer';
 import { fetchProductById } from '@/features/products/services/products.server';
 import { fetchProductDicts } from '@/features/products/services/dicts.server';
 import ProductEditForm from '@/features/products/components/form/ProductEditForm.client';
-import { mapRowToForm } from '@/features/products/forms/mappers';
+import { mapRowToForm } from '@/features/products/components/form/forms/mappers';
 
 import type { Database } from '@/types/supabase';
 

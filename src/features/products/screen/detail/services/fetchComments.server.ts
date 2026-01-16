@@ -4,8 +4,8 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { withVersion } from '@/features/products/utils/url';
-import { resolveAvatarUrl } from '@/features/products/comments/services/resolveAvatarUrl.server';
-import type { CommentItem } from '@/features/products/comments/types';
+import { resolveAvatarUrl } from '@/features/products/screen/detail/services/resolveAvatarUrl.server';
+import type { CommentItem } from '@/features/products/screen/detail/Comments/types';
 
 type VoteStatsRow = { comment_id: number; likes: number; dislikes: number };
 type MyVoteRow = { comment_id: number; value: -1 | 1 };
