@@ -1,5 +1,5 @@
-// src/components/ui/charts/PieDonutChart.client.tsx
 'use client';
+// src/components/ui/charts/PieDonutChart.client.tsx
 
 import * as React from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
@@ -90,6 +90,11 @@ export default function PieDonutChart({
 
   const total = safe.reduce((acc, s) => acc + s.value, 0);
 
+  const formatValue = React.useCallback(
+    (v: number) => `${formatTR(v)}${valueSuffix}`,
+    [valueSuffix],
+  );
+
   if (!safe.length) {
     return (
       <Box
@@ -107,11 +112,6 @@ export default function PieDonutChart({
       </Box>
     );
   }
-
-  const formatValue = React.useCallback(
-    (v: number) => `${formatTR(v)}${valueSuffix}`,
-    [valueSuffix],
-  );
 
   const fallbackPalette = [
     theme.palette.primary.main,

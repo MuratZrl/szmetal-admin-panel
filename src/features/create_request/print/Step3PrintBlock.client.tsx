@@ -1,5 +1,7 @@
 'use client';
+// src/features/create_request/print/Step3PrintBlock.client.tsx
 
+/* eslint-disable @next/next/no-img-element */
 import * as React from 'react';
 
 // Özet için KV satır tipi (ProductPrintBlock’taki Row ile aynı)

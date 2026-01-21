@@ -27,7 +27,7 @@ import { alpha } from '@mui/material/styles';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import * as yup from 'yup';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { glassTextFieldProps } from '../constants/formstyles';
@@ -183,7 +183,7 @@ export default function RegisterForm(): React.JSX.Element {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setError,
     formState: { errors, isSubmitting, isValid, isDirty },
   } = useForm<FormValues>({
@@ -197,7 +197,8 @@ export default function RegisterForm(): React.JSX.Element {
     },
   });
 
-  const passwordValue = watch('password');
+  // const passwordValue = watch('password');
+  const passwordValue = useWatch({ control, name: 'password', defaultValue: '' });
   const pwdScore = scorePassword(passwordValue ?? '');
 
   const onSubmit = async (values: FormValues): Promise<void> => {

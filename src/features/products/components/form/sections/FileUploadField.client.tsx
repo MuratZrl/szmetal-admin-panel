@@ -1,5 +1,5 @@
-// src/features/products/components/form/sections/FileUploadField.client.tsx
 'use client';
+// src/features/products/components/form/sections/FileUploadField.client.tsx
 
 import * as React from 'react';
 
@@ -15,20 +15,35 @@ import type { ProductFormValues } from '@/features/products/components/form/form
 import { useProductUpload } from '@/features/products/hooks/useProductUpload.client';
 import ConfirmDialog from '@/components/ui/dialogs/ConfirmDialog';
 
-type WithFileFields = { file: File | null };
-type FormType = ProductFormValues & WithFileFields;
+// ✅ hook’un beklediği gerçek alanlar:
+type UploadMetaFields = {
+  file: File | null;
+
+  fileBucket: string | null;
+  filePath: string | null;
+  fileName: string | null;
+  fileMime: string | null;
+  fileSize: number | null;
+
+  // hook içinde setValue('image', ...) yaptığın için bunu da garanti et
+  image: string;
+};
+
+type FormType = ProductFormValues & UploadMetaFields;
 
 function toHelper(m: unknown): string | undefined {
   return typeof m === 'string' ? m : undefined;
 }
 
 export function FileUploadField({ dir }: { dir: string }) {
+
   const methods = useFormContext<FormType>();
+
   const {
     watch,
     formState: { errors, isSubmitting },
   } = methods;
-
+  
   const up = useProductUpload(methods, dir);
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);

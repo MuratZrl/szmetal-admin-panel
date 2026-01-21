@@ -1,7 +1,7 @@
-// src/features/products_analytics/datagrid/ProductsDataGrid.client.tsx
 'use client';
+// src/features/products_analytics/datagrid/ProductsDataGrid.client.tsx
 
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 import {
@@ -16,8 +16,6 @@ type Props = {
 };
 
 export default function ProductsDataGrid({ rows, height = 700 }: Props) {
-  const total = rows.length;
-
   return (
     <Box sx={{ width: '100%' }}>
 

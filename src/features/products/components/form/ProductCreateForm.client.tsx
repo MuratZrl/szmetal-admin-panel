@@ -1,5 +1,5 @@
-// src/features/products/components/form/ProductCreateForm.client.tsx
 'use client';
+// src/features/products/components/form/ProductCreateForm.client.tsx
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
@@ -79,7 +79,7 @@ export default function ProductCreateForm({ dicts, title = 'Yeni Profil Ekle' }:
   const router = useRouter();
   const { show } = useSnackbar();
 
-  const draftDirRef = React.useRef<string>(makeDraftDir());
+  const [draftDir] = React.useState<string>(() => makeDraftDir());
 
   const methods = useForm<CreateValues>({
     resolver: yupResolver(productSchema) as unknown as Resolver<CreateValues>,
@@ -181,7 +181,7 @@ export default function ProductCreateForm({ dicts, title = 'Yeni Profil Ekle' }:
                 methods={methods}
                 dicts={dicts}
                 showFileSection
-                dir={draftDirRef.current}
+                dir={draftDir}
               />
             </Grid>
           </Grid>

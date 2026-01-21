@@ -1,5 +1,5 @@
-// src/providers.tsx
 'use client';
+// src/providers.tsx
 
 import * as React from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
@@ -9,6 +9,7 @@ import type { PaletteMode } from '@mui/material';
 import { createAppTheme } from '@/theme';
 import { ThemeModeProvider, useThemeMode } from '@/theme/ThemeModeProvider.client';
 import { SnackbarProvider } from '@/components/ui/snackbar/useSnackbar.client';
+import Link from '@/components/Link';
 
 type Mode = 'light' | 'dark' | 'system';
 
@@ -19,8 +20,10 @@ function useResolvedPaletteMode(mode: Mode): PaletteMode {
   React.useEffect(() => {
     const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
     if (!mql) return;
+
     // İlk mount’ta gerçek sistem durumunu al
     setSystemDark(mql.matches);
+
     const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
     mql.addEventListener?.('change', onChange);
     return () => mql.removeEventListener?.('change', onChange);
@@ -32,13 +35,14 @@ function useResolvedPaletteMode(mode: Mode): PaletteMode {
 
 function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const { mode } = useThemeMode();
-  const paletteMode = useResolvedPaletteMode(mode); // <-- önce çöz
+  const paletteMode = useResolvedPaletteMode(mode);
+
   const theme = React.useMemo(() => {
-  const t = createAppTheme(paletteMode);
+    const t = createAppTheme(paletteMode);
     t.components = {
       ...t.components,
-      MuiLink: { defaultProps: { component: require('@/components/Link').default } },
-      MuiButtonBase: { defaultProps: { LinkComponent: require('@/components/Link').default } },
+      MuiLink: { defaultProps: { component: Link } },
+      MuiButtonBase: { defaultProps: { LinkComponent: Link } },
     };
     return t;
   }, [paletteMode]);
@@ -62,9 +66,7 @@ export default function Providers({
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeModeProvider initialMode={initialMode}>
         <MuiThemeBridge>
-          <SnackbarProvider>
-            {children}
-          </SnackbarProvider>
+          <SnackbarProvider>{children}</SnackbarProvider>
         </MuiThemeBridge>
       </ThemeModeProvider>
     </AppRouterCacheProvider>

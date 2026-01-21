@@ -11,7 +11,7 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import type { Asserts } from 'yup';
 import { accountSchema } from '@/constants/account/form-validations/accountSchemas';
@@ -36,7 +36,7 @@ export default function AccountForm({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors, isDirty, isValid },
   } = useForm<FormValues>({
     resolver: yupResolver(accountSchema) as unknown as Resolver<FormValues>,
@@ -57,6 +57,12 @@ export default function AccountForm({
       country: userData?.country ?? '',
     });
   }, [userData, reset]);
+
+  const countryValue = useWatch({
+    control,
+    name: 'country',
+    defaultValue: userData?.country ?? '',
+  });
 
   const onSubmit = async (data: FormValues) => {
     const res = await updateProfile({
@@ -175,7 +181,7 @@ export default function AccountForm({
               select
               label="Ülke Seçimi"
               variant="outlined"
-              value={watch('country') || ''}
+              value={countryValue}
               {...register('country')}
               InputLabelProps={{ shrink: true }}
               // ↓↓↓ Menü her zaman alta açılsın:
