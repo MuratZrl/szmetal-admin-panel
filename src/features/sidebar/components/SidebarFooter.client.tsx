@@ -1,5 +1,5 @@
-// src/features/sidebar/components/SidebarFooter.tsx
 'use client';
+// src/features/sidebar/components/SidebarFooter.tsx
 
 import { Box } from '@mui/material';
 import ThemeToggle from '@/theme/ThemeToggle.client';
@@ -13,7 +13,7 @@ type Props = {
   compact?: boolean;
 };
 
-export default function SidebarFooter({ logoutLink, unreadCount, onLogout, compact = true }: Props) {
+export default function SidebarFooter({ logoutLink, onLogout, compact = true }: Props) {
   return (
     <Box
       display="flex"

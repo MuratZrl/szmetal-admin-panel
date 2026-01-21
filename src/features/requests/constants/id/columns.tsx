@@ -1,12 +1,10 @@
-// src/features/requests/components/id/columns.tsx
 'use client';
+// src/features/requests/components/id/columns.tsx
 
 import * as React from 'react';
 
-import Image from 'next/image';
-
 import { Box, Typography } from '@mui/material';
-import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
 
 import type { MaterialRow } from '@/features/requests/types';
 

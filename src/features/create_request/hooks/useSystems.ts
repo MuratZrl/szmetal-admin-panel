@@ -1,5 +1,5 @@
-// src/features/systems/hooks/useSystems.ts
 'use client';
+// src/features/systems/hooks/useSystems.ts
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/supabaseClient';
@@ -60,7 +60,14 @@ export default function useSystems(initial?: SystemCardType[]) {
 
   // Boş diziyle de gelse client fetch et
   useEffect(() => {
-    if (!initial || initial.length === 0) void fetchSystems();
+    if (!initial || initial.length === 0) {
+      const t = setTimeout(() => {
+        void fetchSystems();
+      }, 0);
+
+      return () => clearTimeout(t);
+    }
+    return;
   }, [initial, fetchSystems]);
 
   return { systems, loading, error, refresh: fetchSystems, setSystems };

@@ -1,5 +1,6 @@
-// src/features/requests/components/TableGrid.client.tsx
 'use client'
+// src/features/requests/components/TableGrid.client.tsx
+
 import * as React from 'react';
 import { Box } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
@@ -7,7 +8,7 @@ import type { MaterialRow } from '@/features/requests/types';
 import { buildMaterialColumns } from '@/features/requests/constants/id/columns';
 
 export default function MaterialTable({ rows }: { rows: MaterialRow[] }) {
-  const columns: GridColDef<MaterialRow>[] = React.useMemo(buildMaterialColumns, []);
+  const columns: GridColDef<MaterialRow>[] = React.useMemo(() => buildMaterialColumns(), []);
 
   React.useEffect(() => {
     // sanity log: ilk satır ne?

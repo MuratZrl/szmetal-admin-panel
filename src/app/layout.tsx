@@ -8,7 +8,7 @@ import { InitColorSchemeScript } from '@mui/material'; // <— DOĞRU import
 import type { Metadata } from 'next';
 import { fontSans, fontMono } from './fonts';
 
-import Providers from '@/providers';
+import Providers from '@/providers.client';
 
 export const metadata: Metadata = {
   icons: { icon: '/favicon.ico?v=2' },

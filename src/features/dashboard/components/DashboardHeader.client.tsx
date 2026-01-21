@@ -78,7 +78,6 @@ export default function DashboardHeaderClient({
   const blendMode = 'soft-light';
 
   // Avatar
-  const avatarBg = alpha(theme.palette.primary.main, isDark ? 0.15 : 0.18);
   const statusDot = theme.palette.success.main;
 
   // Rol görselleri: stil util'den, ikon lokal
@@ -86,7 +85,6 @@ export default function DashboardHeaderClient({
 
   const greet = greetPrefix ?? getGreetInTR('Europe/Istanbul');
 
-  const avatarSize = dense ? 40 : isMdDown ? 48 : 64;
   const titleFont = dense ? 16 : isMdDown ? 18 : 20;
 
   return (

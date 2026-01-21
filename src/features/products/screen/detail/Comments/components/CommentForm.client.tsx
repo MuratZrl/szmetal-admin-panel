@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
@@ -50,7 +50,7 @@ export default function CommentForm({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: yupResolver(schema(maxLen)),
@@ -64,7 +64,7 @@ export default function CommentForm({
   const formId = `comment-form-${pid}`;
   const inputId = `comment-content-${pid}`;
 
-  const contentVal = watch('content') ?? '';
+  const contentVal = useWatch({ control, name: 'content' }) ?? '';
   const trimmed = contentVal.trim();
   const len = contentVal.length;
 

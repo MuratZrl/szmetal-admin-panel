@@ -1,8 +1,7 @@
-// src/features/sidebar/components/SidebarRoot.client.tsx
 'use client';
+// src/features/sidebar/components/SidebarRoot.client.tsx
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 
 import { Box, Drawer, Stack, Grid, Skeleton } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
@@ -51,8 +50,6 @@ export default function SidebarRoot({
   mobileOpen = false,
   onCloseMobile,
 }: Props) {
-  const router = useRouter();
-
   const roleResolved: Role = initialRole ?? 'User';
   const statusUI = React.useMemo(() => toStatusUI(initialStatus), [initialStatus]);
 

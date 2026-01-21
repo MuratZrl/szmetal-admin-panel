@@ -132,7 +132,7 @@ export const componentsOverrides = ( theme: Theme ): Components<Omit<Theme, 'com
         boundaryCount: 1,
       },
       styleOverrides: {
-        root: ({ theme }) => ({
+        root: () => ({
           '& .MuiPagination-ul': {
             gap: 2,
             padding: 2,

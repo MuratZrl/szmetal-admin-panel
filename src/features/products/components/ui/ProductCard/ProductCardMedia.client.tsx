@@ -64,6 +64,13 @@ export function ProductMedia({
   const [mediaRect, setMediaRect] = React.useState<{ width: number; height: number } | null>(null);
   const mediaBoxRef = React.useRef<HTMLDivElement | null>(null);
 
+  const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null);
+
+  const setMediaBoxEl = React.useCallback((node: HTMLDivElement | null) => {
+    mediaBoxRef.current = node;
+    setAnchorEl(node);
+  }, []);
+
   React.useEffect(() => {
     const el = mediaBoxRef.current;
     if (!el) return;
@@ -116,7 +123,7 @@ export function ProductMedia({
   return (
     <>
       <Box
-        ref={mediaBoxRef}
+        ref={setMediaBoxEl}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
         sx={{
@@ -160,7 +167,7 @@ export function ProductMedia({
         <HoverPreviewComponent
           kind={isPdf ? 'pdf' : isImage ? 'image' : 'other'}
           open={hoverOpen && hasPreview}
-          anchorEl={mediaBoxRef.current}
+          anchorEl={anchorEl}
           src={isPdf ? (displayUrl ?? undefined) : isImage ? (displayUrl ?? undefined) : undefined}
           baseSize={mediaRect}
           pdfWidths={pdfWidths}
