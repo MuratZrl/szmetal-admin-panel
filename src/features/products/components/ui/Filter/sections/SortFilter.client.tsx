@@ -5,19 +5,16 @@ import * as React from 'react';
 import { Box, Button, MenuItem, TextField, Typography } from '@mui/material';
 
 import { sectionSx } from '../sectionSx';
-
-import { SORT_SELECT_ID } from '@/features/products/components/ui/Filter/constants';
+import { SORT_SELECT_ID, DEFAULT_SORT } from '@/features/products/components/ui/Filter/constants';
 
 type SortFilterSectionProps = {
   sort: string;
   onChangeSort: (value: string) => void;
 };
 
-// Projede varsayılan sort neyse bunu ona göre ayarla.
-// Eğer default boş string ise: const DEFAULT_SORT = '';
-const DEFAULT_SORT = 'date-desc';
-
 export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps): React.JSX.Element {
+  const insetX = 1.5;
+
   const isActive = sort !== DEFAULT_SORT;
 
   const handleClear = React.useCallback(() => {
@@ -32,13 +29,15 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         borderRadius: 2.25,
       })}
     >
-      {/* Başlık satırı: solda başlık, sağda Temizle */}
+      {/* Başlık satırı: insetX ile hizalı */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1,
+          pl: insetX,
+          pr: insetX,
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.75 }}>
@@ -67,7 +66,7 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         </Button>
       </Box>
 
-      {/* Başlık ile içerik arasında düz renk separator */}
+      {/* Divider: TAM GENİŞLİK (daralmasın) */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -78,22 +77,25 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         })}
       />
 
-      <TextField
-        id={SORT_SELECT_ID}
-        label="Sırala"
-        select
-        size="small"
-        value={sort}
-        onChange={(e) => onChangeSort(e.target.value)}
-        fullWidth
-      >
-        <MenuItem value="date-desc">Tarih Yeni → Eski</MenuItem>
-        <MenuItem value="date-asc">Tarih Eski → Yeni</MenuItem>
-        <MenuItem value="code-asc">Kod A → Z</MenuItem>
-        <MenuItem value="code-desc">Kod Z → A</MenuItem>
-        <MenuItem value="weight-asc">Birim Ağırlık Artan</MenuItem>
-        <MenuItem value="weight-desc">Birim Ağırlık Azalan</MenuItem>
-      </TextField>
+      {/* İçerik: insetX ile hizalı */}
+      <Box sx={{ px: insetX }}>
+        <TextField
+          id={SORT_SELECT_ID}
+          label="Sırala"
+          select
+          size="small"
+          value={sort}
+          onChange={(e) => onChangeSort(e.target.value)}
+          fullWidth
+        >
+          <MenuItem value="date-desc">Tarih Yeni → Eski</MenuItem>
+          <MenuItem value="date-asc">Tarih Eski → Yeni</MenuItem>
+          <MenuItem value="code-asc">Kod A → Z</MenuItem>
+          <MenuItem value="code-desc">Kod Z → A</MenuItem>
+          <MenuItem value="weight-asc">Birim Ağırlık Artan</MenuItem>
+          <MenuItem value="weight-desc">Birim Ağırlık Azalan</MenuItem>
+        </TextField>
+      </Box>
     </Box>
   );
 }

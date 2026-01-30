@@ -7,7 +7,6 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import { sectionSx } from '../sectionSx';
-
 import { DATE_FROM_ID, DATE_TO_ID } from '@/features/products/components/ui/Filter/constants';
 
 type DateRangeFilterSectionProps = {
@@ -23,6 +22,8 @@ export function DateRangeFilterSection({
   onChangeFrom,
   onChangeTo,
 }: DateRangeFilterSectionProps): React.JSX.Element {
+  const insetX = 1.5;
+
   const toDayjs = React.useCallback((v: string): Dayjs | null => {
     if (!v) return null;
     const d = dayjs(v, 'YYYY-MM-DD', true);
@@ -46,13 +47,15 @@ export function DateRangeFilterSection({
         borderRadius: 2.25,
       })}
     >
-      {/* Başlık satırı: solda başlık, sağda Temizle */}
+      {/* Başlık satırı: insetX ile hizalı */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1,
+          pl: insetX,
+          pr: insetX,
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.8 }}>
@@ -81,7 +84,7 @@ export function DateRangeFilterSection({
         </Button>
       </Box>
 
-      {/* Başlık ile içerik arasında düz renk separator */}
+      {/* Divider: TAM GENİŞLİK (daralmasın) */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -92,41 +95,44 @@ export function DateRangeFilterSection({
         })}
       />
 
-      <Grid container spacing={1}>
-        <Grid size={{ xs: 6 }}>
-          <DatePicker
-            label="Tarih baş."
-            format="DD/MM/YY"
-            value={toDayjs(from)}
-            onChange={(val) => onChangeFrom(toIso(val))}
-            slotProps={{
-              textField: {
-                id: DATE_FROM_ID,
-                size: 'small',
-                fullWidth: true,
-                InputLabelProps: { shrink: true },
-              },
-            }}
-          />
-        </Grid>
+      {/* İçerik: insetX ile hizalı */}
+      <Box sx={{ px: insetX }}>
+        <Grid container spacing={1}>
+          <Grid size={{ xs: 6 }}>
+            <DatePicker
+              label="Tarih baş."
+              format="DD/MM/YY"
+              value={toDayjs(from)}
+              onChange={(val) => onChangeFrom(toIso(val))}
+              slotProps={{
+                textField: {
+                  id: DATE_FROM_ID,
+                  size: 'small',
+                  fullWidth: true,
+                  InputLabelProps: { shrink: true },
+                },
+              }}
+            />
+          </Grid>
 
-        <Grid size={{ xs: 6 }}>
-          <DatePicker
-            label="Tarih bitiş"
-            format="DD/MM/YY"
-            value={toDayjs(to)}
-            onChange={(val) => onChangeTo(toIso(val))}
-            slotProps={{
-              textField: {
-                id: DATE_TO_ID,
-                size: 'small',
-                fullWidth: true,
-                InputLabelProps: { shrink: true },
-              },
-            }}
-          />
+          <Grid size={{ xs: 6 }}>
+            <DatePicker
+              label="Tarih bitiş"
+              format="DD/MM/YY"
+              value={toDayjs(to)}
+              onChange={(val) => onChangeTo(toIso(val))}
+              slotProps={{
+                textField: {
+                  id: DATE_TO_ID,
+                  size: 'small',
+                  fullWidth: true,
+                  InputLabelProps: { shrink: true },
+                },
+              }}
+            />
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </Box>
   );
 }

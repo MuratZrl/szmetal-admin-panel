@@ -362,9 +362,26 @@ export async function fetchFilteredProducts(
     q = q.in('variant', filters.variants as ProductsRow['variant'][]);
   }
 
-  const cm = (filters as unknown as { customerMold?: unknown }).customerMold;
-  const moldOn = cm === true || cm === 'Evet' || (Array.isArray(cm) && cm.length === 1 && cm[0] === 'Evet');
-  if (moldOn) q = q.eq('has_customer_mold', true);
+  // ✅ BURAYA KOY: eski moldOn filtresinin yerine
+  const cmRaw = (filters as unknown as { customerMold?: unknown }).customerMold;
+
+  const cmArr: Array<'Evet' | 'Hayır'> =
+    Array.isArray(cmRaw)
+      ? (cmRaw as Array<'Evet' | 'Hayır'>)
+      : typeof cmRaw === 'string'
+        ? ([cmRaw] as Array<'Evet' | 'Hayır'>)
+        : [];
+
+  const wantMold = cmRaw === true || cmArr.includes('Evet');
+  const wantNonMold = cmRaw === false || cmArr.includes('Hayır');
+
+  if (wantMold && !wantNonMold) {
+    q = q.eq('has_customer_mold', true);
+  } else if (!wantMold && wantNonMold) {
+    q = q.eq('has_customer_mold', false);
+    // null da kalıpsız saysın istiyorsan:
+    // q = q.or('has_customer_mold.eq.false,has_customer_mold.is.null');
+  }
 
   if (typeof filters.availability === 'boolean') {
     q = q.eq('availability', filters.availability);

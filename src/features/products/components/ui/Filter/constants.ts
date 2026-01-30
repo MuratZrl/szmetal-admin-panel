@@ -6,6 +6,10 @@ export const VISIBLE_CATEGORY_ROWS = 7;
 export const VISIBLE_VARIANT_ROWS = 7;
 export const VARIANT_ROW_H_PX = 40;
 
+// Projede varsayılan sort neyse bunu ona göre ayarla.
+// Eğer default boş string ise: const DEFAULT_SORT = '';
+export const DEFAULT_SORT = 'date-desc';
+
 // Stable ids to avoid SSR/CSR hydration mismatches (MUI auto-id)
 export const SEARCH_ID = 'products-filter-search';
 export const STATUS_SELECT_ID = 'products-filter-status';

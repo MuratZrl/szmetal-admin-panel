@@ -5,53 +5,57 @@ import * as React from 'react';
 import {
   Box,
   Button,
-  Checkbox,
   Divider,
   List,
   ListItemButton,
   ListItemText,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 
 import { sectionSx } from '../sectionSx';
 
-type StatusFilterSectionProps = {
-  moldOnly: boolean;
-  onToggleMold: () => void;
-  availableOnly: boolean;
-  onToggleAvailable: () => void;
-};
+export type MoldMode = 'all' | 'mold' | 'nonMold';
+export type AvailabilityMode = 'all' | 'unavailable' | 'available';
 
-type Row = {
-  key: 'moldOnly' | 'availableOnly';
-  label: string;
-  checked: boolean;
-  onToggle: () => void;
+type StatusFilterSectionProps = {
+  moldMode: MoldMode;
+  onChangeMoldMode: (mode: MoldMode) => void;
+
+  availabilityMode: AvailabilityMode;
+  onChangeAvailabilityMode: (mode: AvailabilityMode) => void;
 };
 
 export function StatusFilterSection({
-  moldOnly,
-  onToggleMold,
-  availableOnly,
-  onToggleAvailable,
+  moldMode,
+  onChangeMoldMode,
+  availabilityMode,
+  onChangeAvailabilityMode,
 }: StatusFilterSectionProps): React.JSX.Element {
-  const rows = React.useMemo<Row[]>(
-    () => [
-      { key: 'moldOnly', label: 'Müşteri Kalıbı', checked: moldOnly, onToggle: onToggleMold },
-      { key: 'availableOnly', label: 'Kullanılamaz', checked: availableOnly, onToggle: onToggleAvailable },
-    ],
-    [moldOnly, onToggleMold, availableOnly, onToggleAvailable],
-  );
-
-  const isActive = moldOnly || availableOnly;
+  const isActive = moldMode !== 'all' || availabilityMode !== 'all';
 
   const handleClear = React.useCallback(() => {
-    if (moldOnly) onToggleMold();
-    if (availableOnly) onToggleAvailable();
-  }, [moldOnly, availableOnly, onToggleMold, onToggleAvailable]);
+    onChangeMoldMode('all');
+    onChangeAvailabilityMode('all');
+  }, [onChangeMoldMode, onChangeAvailabilityMode]);
 
-  // Tek kaynak: hem başlık hem satırlar aynı sol çizgiden başlar
   const insetX = 1.5;
+
+  const handleMoldChange = React.useCallback(
+    (_: React.MouseEvent<HTMLElement>, next: MoldMode | null) => {
+      // aynı seçeneğe tekrar tıklayınca null gelebilir, istemiyoruz
+      if (next) onChangeMoldMode(next);
+    },
+    [onChangeMoldMode],
+  );
+
+  const handleAvailabilityChange = React.useCallback(
+    (_: React.MouseEvent<HTMLElement>, next: AvailabilityMode | null) => {
+      if (next) onChangeAvailabilityMode(next);
+    },
+    [onChangeAvailabilityMode],
+  );
 
   return (
     <Box
@@ -67,7 +71,7 @@ export function StatusFilterSection({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1,
-          pl: insetX, // ✅ başlık soldan tam aynı hizaya gelir
+          pl: insetX,
           pr: insetX,
         }}
       >
@@ -108,40 +112,95 @@ export function StatusFilterSection({
       />
 
       <List dense disablePadding>
-        {rows.map((r, idx) => (
-          <React.Fragment key={r.key}>
-            <ListItemButton
-              disableRipple
-              disableTouchRipple
-              onClick={r.onToggle}
-              sx={{
-                pl: insetX, // ✅ satır da aynı hizadan başlar
-                pr: insetX,
+        {/* Müşteri Kalıbı: 3 durumlu */}
+        <ListItemButton
+          disableRipple
+          disableTouchRipple
+          sx={{
+            pl: insetX,
+            pr: insetX,
+            py: 0.25,
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: 1,
+            cursor: 'default',
+          }}
+        >
+          <ListItemText primary="Müşteri Kalıbı" sx={{ m: 0 }} />
+
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={moldMode}
+            onChange={handleMoldChange}
+            aria-label="Müşteri kalıbı filtresi"
+            sx={{
+              ml: 1,
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                px: 1,
                 py: 0.25,
-                display: 'flex',
-                alignItems: 'center',
-                borderRadius: 1,
-              }}
-            >
-              <Checkbox
-                checked={r.checked}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  r.onToggle();
-                }}
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  p: 0,     // ✅ ikonun sol başlangıcını sabitler (gizli padding yok)
-                  mr: 0.75, // label ile aralık
-                }}
-              />
+                lineHeight: 1.2,
+              },
+            }}
+          >
+            <ToggleButton value="all" aria-label="Hepsi">
+              Tümü
+            </ToggleButton>
+            <ToggleButton value="mold" aria-label="Sadece kalıplı">
+              Evet
+            </ToggleButton>
+            <ToggleButton value="nonMold" aria-label="Sadece kalıpsız">
+              Hayır
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </ListItemButton>
 
-              <ListItemText primary={r.label} sx={{ m: 0 }} />
-            </ListItemButton>
+        <Divider sx={{ my: 0.75 }} />
 
-            {idx < rows.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}
-          </React.Fragment>
-        ))}
+        {/* Kullanılabilirlik: 3 durumlu */}
+        <ListItemButton
+          disableRipple
+          disableTouchRipple
+          sx={{
+            pl: insetX,
+            pr: insetX,
+            py: 0.25,
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: 1,
+            cursor: 'default',
+          }}
+        >
+          <ListItemText primary="Kullanılabilirlik" sx={{ m: 0 }} />
+
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={availabilityMode}
+            onChange={handleAvailabilityChange}
+            aria-label="Kullanılabilirlik filtresi"
+            sx={{
+              ml: 1,
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                px: 1,
+                py: 0.25,
+                lineHeight: 1.2,
+              },
+            }}
+          >
+            <ToggleButton value="all" aria-label="Hepsi">
+              Tümü
+            </ToggleButton>
+            <ToggleButton value="unavailable" aria-label="Kullanılamaz">
+              Evet
+            </ToggleButton>
+            <ToggleButton value="available" aria-label="Kullanılabilir">
+              Hayır
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </ListItemButton>
       </List>
     </Box>
   );

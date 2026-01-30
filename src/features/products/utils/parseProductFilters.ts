@@ -1,30 +1,24 @@
 // src/features/products/utils/parseProductFilters.ts
 
-import type { ProductFilters, ProductSort } from '@/features/products/types';
+import type { ProductFilters, ProductSort, CustomerMoldValue } from '@/features/products/types';
 
 type RawParams = Record<string, string | string[] | undefined>;
 
 function toArray(input: string | string[] | undefined): string[] {
   if (!input) return [];
-  if (Array.isArray(input)) {
-    return input.map((v) => v.trim()).filter((v) => v.length > 0);
-  }
-  const trimmed = input.trim();
-  return trimmed.length > 0 ? [trimmed] : [];
+  if (Array.isArray(input)) return input.map((v) => v.trim()).filter(Boolean);
+  const t = input.trim();
+  return t ? [t] : [];
 }
 
-function toBoolParam(value: string | string[] | undefined): boolean {
-  if (!value) return false;
-  const raw = Array.isArray(value) ? value[0] : value;
-  const lowered = raw.toLowerCase();
-  return ['1', 'true', 'on', 'yes', 'evet'].includes(lowered);
+function first(input: string | string[] | undefined): string {
+  if (!input) return '';
+  return (Array.isArray(input) ? input[0] : input).trim();
 }
 
 /**
  * URL'den gelen sort string'ini union tipe zorlar.
- * Geçersiz veya hiç gelmeyen durumda artık DEFAULT DÖNDÜRMÜYOR,
- * undefined döndürüyor. Böylece fetchFilteredProducts içindeki
- * switch/default bloğu çalışıp created_at DESC sıralaması devreye giriyor.
+ * Geçersiz veya hiç gelmeyen durumda undefined döndürür.
  */
 function normalizeSort(raw: string | undefined): ProductSort | undefined {
   const allowed: ProductSort[] = [
@@ -35,57 +29,58 @@ function normalizeSort(raw: string | undefined): ProductSort | undefined {
     'code-asc',
     'code-desc',
   ];
-
   if (!raw) return undefined;
-
   const val = raw as ProductSort;
   return allowed.includes(val) ? val : undefined;
 }
 
-export function parseProductFilters(sp: RawParams): ProductFilters {
-  const q = typeof sp.q === 'string' ? sp.q : '';
+function parseCustomerMold(raw: string): CustomerMoldValue[] | undefined {
+  if (!raw) return undefined;
+  const v = raw.toLocaleLowerCase('tr');
 
-  const from = typeof sp.from === 'string' ? sp.from : '';
-  const to = typeof sp.to === 'string' ? sp.to : '';
+  if (v === 'evet' || v === 'true' || v === '1' || v === 'mold') return ['Evet'];
+  if (v === 'hayır' || v === 'hayir' || v === 'false' || v === '0' || v === 'nonmold' || v === 'non_mold')
+    return ['Hayır'];
+
+  return undefined;
+}
+
+function parseAvailability(raw: string): boolean | undefined {
+  if (!raw) return undefined;
+  const v = raw.toLocaleLowerCase('tr');
+
+  // Senin eski mantık: availability=0 => Kullanılamaz
+  if (v === '0' || v === 'false' || v === 'unavailable') return false;
+
+  // Yeni toggle ile bunu da destekle (availability=1 => Kullanılabilir)
+  if (v === '1' || v === 'true' || v === 'available') return true;
+
+  return undefined;
+}
+
+export function parseProductFilters(sp: RawParams): ProductFilters {
+  const q = first(sp.q);
+  const from = first(sp.from);
+  const to = first(sp.to);
 
   const categories = toArray(sp.category);
   const subCategories = toArray(sp.subCategory);
   const variants = toArray(sp.variants);
 
-  const rawSort = typeof sp.sort === 'string' ? sp.sort : undefined;
-  const sort = normalizeSort(rawSort);
+  const sort = normalizeSort(first(sp.sort) || undefined);
 
-  let availability: boolean | undefined = undefined;
+  const customerMold = parseCustomerMold(first(sp.customerMold));
+  const availability = parseAvailability(first(sp.availability));
 
-  const rawAvail = sp.availability;
-  const rawAvailStr =
-    typeof rawAvail === 'string'
-      ? rawAvail.trim()
-      : Array.isArray(rawAvail) && rawAvail[0]
-      ? rawAvail[0].trim()
-      : '';
-
-  if (rawAvailStr === '0') {
-    availability = false;
-  }
-  // İleride availability=1 için true da ekleyebilirsin.
-
-  const moldOn = toBoolParam(sp.customerMold);
-
-  const base: ProductFilters = {
-    q,
-    from,
-    to,
-    categories,
-    subCategories,
-    variants,
+  return {
+    q: q || undefined,
+    from: from || undefined,
+    to: to || undefined,
+    categories: categories.length ? categories : undefined,
+    subCategories: subCategories.length ? subCategories : undefined,
+    variants: variants.length ? variants : undefined,
     sort,
+    customerMold,
     availability,
   };
-
-  if (moldOn) {
-    (base as unknown as { customerMold?: boolean }).customerMold = true;
-  }
-
-  return base;
 }

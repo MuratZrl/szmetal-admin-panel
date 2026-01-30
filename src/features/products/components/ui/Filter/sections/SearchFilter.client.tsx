@@ -18,27 +18,44 @@ export function SearchFilterSection({
   onChange,
   inputId = SEARCH_ID, // 'products-filter-search'
 }: SearchFilterSectionProps): React.JSX.Element {
+  const insetX = 1.5; // başlık + input hizası
+
   return (
     <Box component="section" sx={(t) => ({ ...sectionSx(t), borderRadius: 2.25 })}>
-      <Typography variant="overline" sx={{ opacity: 0.75 }}>
-        Genel Arama
-      </Typography>
+      {/* Başlık: içeriden hizalı */}
+      <Box sx={{ px: insetX }}>
+        <Typography variant="overline" sx={{ opacity: 0.75 }}>
+          Genel Arama
+        </Typography>
+      </Box>
 
-      <Box sx={(t) => ({ mt: 1, mb: 1.5, height: 2, borderRadius: 999, bgcolor: t.palette.divider })} />
-
-      <TextField
-        id={inputId}
-        name="q"
-        fullWidth
-        label="Ara (ad veya kod)"
-        size="small"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.preventDefault();
-        }}
-        inputProps={{ enterKeyHint: 'search' }}
+      {/* Divider: TAM GENİŞLİK (daralmasın) */}
+      <Box
+        sx={(t) => ({
+          mt: 1,
+          mb: 1.5,
+          height: 2,
+          borderRadius: 999,
+          bgcolor: t.palette.divider,
+        })}
       />
+
+      {/* Input: içeriden hizalı */}
+      <Box sx={{ px: insetX }}>
+        <TextField
+          id={inputId}
+          name="q"
+          fullWidth
+          label="Ara (ad veya kod)"
+          size="small"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.preventDefault();
+          }}
+          inputProps={{ enterKeyHint: 'search' }}
+        />
+      </Box>
     </Box>
   );
 }

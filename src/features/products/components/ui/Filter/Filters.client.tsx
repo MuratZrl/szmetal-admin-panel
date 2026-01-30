@@ -1,6 +1,7 @@
 'use client';
 // src/features/products/components/ui/Filter/Filters.client.tsx
 
+import * as React from 'react';
 import { Stack } from '@mui/material';
 
 // MUI X Date Pickers + dayjs
@@ -10,6 +11,7 @@ import 'dayjs/locale/tr';
 
 import type { CategoryTree, VariantOption } from './types';
 import { useProductFilters } from './hooks/useProductFilters';
+
 import { SearchFilterSection } from '@/features/products/components/ui/Filter/sections/SearchFilter.client';
 import { StatusFilterSection } from '@/features/products/components/ui/Filter/sections/StatusFilter.client';
 import { CategoryFilterSection } from '@/features/products/components/ui/Filter/sections/CategoryFilter.client';
@@ -18,15 +20,13 @@ import { DateRangeFilterSection } from '@/features/products/components/ui/Filter
 import { SortFilterSection } from '@/features/products/components/ui/Filter/sections/SortFilter.client';
 import { ActionsSection } from '@/features/products/components/ui/Filter/sections/Actions.client';
 
-export default function Filters({
-  topLevelSlugs,
-  categoryTree,
-  variants,
-}: {
+type FiltersProps = {
   topLevelSlugs: string[];
   categoryTree: CategoryTree;
   variants: VariantOption[];
-}) {
+};
+
+export default function Filters({ topLevelSlugs, categoryTree, variants }: FiltersProps): React.JSX.Element {
   const {
     q,
     setQ,
@@ -42,10 +42,13 @@ export default function Filters({
     setTo,
     sort,
     setSort,
-    moldOnly,
-    setMoldOnly,
-    availableOnly,
-    setAvailableOnly,
+
+    moldMode,
+    setMoldMode,
+
+    availabilityMode,
+    setAvailabilityMode,
+
     variantQuery,
     setVariantQuery,
     expanded,
@@ -70,10 +73,10 @@ export default function Filters({
         />
 
         <StatusFilterSection
-          moldOnly={moldOnly}
-          onToggleMold={() => setMoldOnly((p) => !p)}
-          availableOnly={availableOnly}
-          onToggleAvailable={() => setAvailableOnly((p) => !p)}
+          moldMode={moldMode}
+          onChangeMoldMode={setMoldMode}
+          availabilityMode={availabilityMode}
+          onChangeAvailabilityMode={setAvailabilityMode}
         />
 
         <VariantFilterSection
@@ -84,12 +87,7 @@ export default function Filters({
           setVariantsSel={setVariantsSel}
         />
 
-        <DateRangeFilterSection
-          from={from}
-          to={to}
-          onChangeFrom={setFrom}
-          onChangeTo={setTo}
-        />
+        <DateRangeFilterSection from={from} to={to} onChangeFrom={setFrom} onChangeTo={setTo} />
 
         <SortFilterSection sort={sort} onChangeSort={setSort} />
 

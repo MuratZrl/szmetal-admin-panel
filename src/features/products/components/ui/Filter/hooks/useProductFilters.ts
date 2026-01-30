@@ -1,8 +1,13 @@
+'use client';
 // src/features/products/components/ui/Filter/hooks/useProductFilters.ts
+
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { CategoryTree } from '../types';
+
+export type MoldMode = 'all' | 'mold' | 'nonMold';
+export type AvailabilityMode = 'all' | 'unavailable' | 'available';
 
 export type UseProductFiltersResult = {
   q: string;
@@ -26,11 +31,11 @@ export type UseProductFiltersResult = {
   sort: string;
   setSort: React.Dispatch<React.SetStateAction<string>>;
 
-  moldOnly: boolean;
-  setMoldOnly: React.Dispatch<React.SetStateAction<boolean>>;
+  moldMode: MoldMode;
+  setMoldMode: React.Dispatch<React.SetStateAction<MoldMode>>;
 
-  availableOnly: boolean;
-  setAvailableOnly: React.Dispatch<React.SetStateAction<boolean>>;
+  availabilityMode: AvailabilityMode;
+  setAvailabilityMode: React.Dispatch<React.SetStateAction<AvailabilityMode>>;
 
   variantQuery: string;
   setVariantQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -44,11 +49,41 @@ export type UseProductFiltersResult = {
 function buildParentMap(tree: CategoryTree): Map<string, string> {
   const m = new Map<string, string>();
   for (const [parent, node] of Object.entries(tree)) {
-    for (const sub of node.subs) {
-      m.set(sub.slug, parent);
-    }
+    for (const sub of node.subs) m.set(sub.slug, parent);
   }
   return m;
+}
+
+function parseMoldMode(raw: string | null): MoldMode {
+  if (!raw) return 'all';
+
+  const v = raw.trim().toLocaleLowerCase('tr');
+
+  // Eski/uyumlu değerler: "Evet", "true", "1"
+  if (v === 'evet' || v === 'true' || v === '1' || v === 'mold') return 'mold';
+
+  // Yeni değer: "Hayır" / "false" / "0"
+  if (v === 'hayır' || v === 'hayir' || v === 'false' || v === '0' || v === 'nonmold') return 'nonMold';
+
+  return 'all';
+}
+
+function parseAvailabilityMode(raw: string | null): AvailabilityMode {
+  if (!raw) return 'all';
+
+  const v = raw.trim().toLocaleLowerCase('tr');
+
+  // Geriye dönük uyumluluk: senin projede "availability=0" => Kullanılamaz
+  if (v === '0' || v === 'false' || v === 'unavailable' || v === 'kullanilamaz' || v === 'kullanılamaz') {
+    return 'unavailable';
+  }
+
+  // Yeni: "availability=1" => Kullanılabilir
+  if (v === '1' || v === 'true' || v === 'available' || v === 'kullanilabilir' || v === 'kullanılabilir') {
+    return 'available';
+  }
+
+  return 'all';
 }
 
 export function useProductFilters(categoryTree: CategoryTree): UseProductFiltersResult {
@@ -66,8 +101,8 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
   const rawSort = sp.get('sort') ?? 'date-desc';
   const rawVariants = sp.getAll('variants');
 
-  const initialMold = rawCM === 'Evet' || rawCM === 'true' || rawCM === '1';
-  const initialAvail = rawAvail === '0';
+  const initialMoldMode = parseMoldMode(rawCM);
+  const initialAvailabilityMode = parseAvailabilityMode(rawAvail);
 
   const [q, setQ] = React.useState<string>(rawQ);
   const [categories, setCategories] = React.useState<string[]>(initialCategories);
@@ -76,8 +111,11 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
   const [from, setFrom] = React.useState<string>(rawFrom);
   const [to, setTo] = React.useState<string>(rawTo);
   const [sort, setSort] = React.useState<string>(rawSort);
-  const [moldOnly, setMoldOnly] = React.useState<boolean>(initialMold);
-  const [availableOnly, setAvailableOnly] = React.useState<boolean>(initialAvail);
+
+  const [moldMode, setMoldMode] = React.useState<MoldMode>(initialMoldMode);
+  const [availabilityMode, setAvailabilityMode] =
+    React.useState<AvailabilityMode>(initialAvailabilityMode);
+
   const [variantQuery, setVariantQuery] = React.useState<string>('');
 
   const [expanded, setExpanded] = React.useState<string[]>(() => {
@@ -116,8 +154,15 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
     if (to) params.set('to', to);
     if (sort) params.set('sort', sort);
 
-    if (moldOnly) params.append('customerMold', 'Evet');
-    if (availableOnly) params.set('availability', '0');
+    // 3 durumlu müşteri kalıbı filtresi
+    if (moldMode === 'mold') params.set('customerMold', 'Evet');
+    if (moldMode === 'nonMold') params.set('customerMold', 'Hayır');
+    // moldMode === 'all' => param yok => hepsi
+
+    // 3 durumlu kullanılabilirlik filtresi
+    if (availabilityMode === 'unavailable') params.set('availability', '0');
+    if (availabilityMode === 'available') params.set('availability', '1');
+    // availabilityMode === 'all' => param yok => hepsi
 
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '?');
@@ -129,8 +174,8 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
     from,
     to,
     sort,
-    moldOnly,
-    availableOnly,
+    moldMode,
+    availabilityMode,
     router,
   ]);
 
@@ -142,8 +187,10 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
     setFrom('');
     setTo('');
     setSort('date-desc');
-    setMoldOnly(false);
-    setAvailableOnly(false);
+
+    setMoldMode('all');
+    setAvailabilityMode('all');
+
     setVariantQuery('');
     setExpanded([]);
   }, []);
@@ -163,10 +210,10 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
     setTo,
     sort,
     setSort,
-    moldOnly,
-    setMoldOnly,
-    availableOnly,
-    setAvailableOnly,
+    moldMode,
+    setMoldMode,
+    availabilityMode,
+    setAvailabilityMode,
     variantQuery,
     setVariantQuery,
     expanded,
