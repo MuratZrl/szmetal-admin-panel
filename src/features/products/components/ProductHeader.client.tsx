@@ -1,5 +1,5 @@
-// src/features/products/components/ProductHeader.client.tsx
 'use client';
+// src/features/products/components/ProductHeader.client.tsx
 
 import * as React from 'react';
 import { Typography, Divider, Box } from '@mui/material';

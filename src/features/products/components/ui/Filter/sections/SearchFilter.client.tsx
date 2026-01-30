@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/sections/SearchFilter.client.tsx
 'use client';
+// src/features/products/components/ui/Filter/sections/SearchFilter.client.tsx
 
 import * as React from 'react';
 import { Box, TextField, Typography } from '@mui/material';

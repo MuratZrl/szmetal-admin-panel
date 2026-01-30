@@ -1,5 +1,5 @@
-// src/features/products/components/ProductDetailActions.client.tsx
 'use client';
+// src/features/products/components/ProductDetailActions.client.tsx
 
 import * as React from 'react';
 import type { Route } from 'next';

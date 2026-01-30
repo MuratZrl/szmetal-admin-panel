@@ -1,5 +1,5 @@
-// src/features/requests/components/id/SummarySection.tsx
 'use client';
+// src/features/requests/components/id/SummarySection.tsx
 
 import * as React from 'react';
 import { Paper } from '@mui/material';

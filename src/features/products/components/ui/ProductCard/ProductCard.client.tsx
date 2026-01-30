@@ -1,5 +1,5 @@
-// src/features/products/components/ui/ProductCard.client.tsx
 'use client';
+// src/features/products/components/ui/ProductCard.client.tsx
 
 import * as React from 'react';
 import Link from 'next/link';
@@ -38,6 +38,14 @@ type Props = {
   role?: Role | string | null;
 };
 
+const PDF_WIDTHS = {
+  xs: 335,
+  sm: 350,
+  md: 375,
+  lg: 425,
+  xl: 460,
+} as const;
+
 function normalizeRole(r: Props['role']): Role {
   const v = typeof r === 'string' ? r.trim().toLowerCase() : 'user';
   if (v === 'admin') return 'Admin';
@@ -73,7 +81,7 @@ function formatGrPerMeter(gPerMeter: number | null | undefined): string {
   return `${Math.round(n)} gr/m`;
 }
 
-export default function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
+function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
   const theme = useTheme();
 
   const normalizedRole = normalizeRole(role);
@@ -87,7 +95,10 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
       : theme.palette.warning.dark;
 
   // Varyant: products.variant = key, labels.variant[key] = name
-  const variantLabel = resolveLabelFromMap(product.variant, labels?.variant).trim();
+  const variantLabel = React.useMemo(
+    () => resolveLabelFromMap(product.variant, labels?.variant).trim(),
+    [product.variant, labels?.variant],
+  );
   const showVariantCaption = React.useMemo(() => {
     const raw = String(product.variant ?? '').trim().toLowerCase();
     if (!raw || raw === 'none' || raw === 'yok') return false;
@@ -129,17 +140,25 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
   const categoryTitle =
     categoryPathLabels.length > 0 ? categoryPathLabels.join(' / ') : undefined;
 
-  const displayUrl =
-    resolvedImageUrl ??
-    (typeof product.image === 'string' && /^https?:\/\//i.test(product.image)
-      ? product.image
-      : null);
+  const displayUrl = React.useMemo(() => {
+    if (resolvedImageUrl !== null && resolvedImageUrl !== undefined) {
+      return resolvedImageUrl;
+    }
+    if (typeof product.image === 'string' && /^https?:\/\//i.test(product.image)) {
+      return product.image;
+    }
+    return null;
+  }, [resolvedImageUrl, product.image]);
 
-  const kind = detectMediaKind({
-    url: displayUrl ?? undefined,
-    mime: product.fileMime ?? undefined,
-    extHint: product.fileExt ?? undefined,
-  });
+  const kind = React.useMemo(
+    () =>
+      detectMediaKind({
+        url: displayUrl ?? undefined,
+        mime: product.fileMime ?? undefined,
+        extHint: product.fileExt ?? undefined,
+      }),
+    [displayUrl, product.fileMime, product.fileExt],
+  );
 
   const isPdf = kind === 'pdf';
   const isImage = kind === 'image';
@@ -187,7 +206,7 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
           productName={product.name || 'Ürün'}
           displayUrl={displayUrl ?? null}
           hoverScale={1.8}
-          pdfWidths={{ xs: 335, sm: 350, md: 375, lg: 425, xl: 460 }}
+          pdfWidths={PDF_WIDTHS}
           backgroundColor="#fff"   // ✅ her zaman beyaz
           HoverPreviewComponent={HoverPreview}
         />
@@ -308,3 +327,32 @@ export default function ProductCard({ product, labels, resolvedImageUrl, role }:
     </Card>
   );
 }
+
+function areProductCardPropsEqual(prev: Props, next: Props): boolean {
+  if (prev === next) return true;
+  if (prev.role !== next.role) return false;
+  if (prev.resolvedImageUrl !== next.resolvedImageUrl) return false;
+  if (prev.labels !== next.labels) return false;
+
+  const p = prev.product;
+  const n = next.product;
+  if (p === n) return true;
+
+  return (
+    p.id === n.id &&
+    p.name === n.name &&
+    p.code === n.code &&
+    p.hasCustomerMold === n.hasCustomerMold &&
+    p.unit_weight_g_pm === n.unit_weight_g_pm &&
+    p.date === n.date &&
+    p.createdAt === n.createdAt &&
+    p.variant === n.variant &&
+    p.category === n.category &&
+    p.subCategory === n.subCategory &&
+    p.image === n.image &&
+    p.fileMime === n.fileMime &&
+    p.fileExt === n.fileExt
+  );
+}
+
+export default React.memo(ProductCard, areProductCardPropsEqual);

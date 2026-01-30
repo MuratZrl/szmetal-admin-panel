@@ -1,5 +1,5 @@
-// src/features/products/components/HoverPreview.client.tsx
 'use client';
+// src/features/products/components/HoverPreview.client.tsx
 
 import * as React from 'react';
 import { Popper, Paper, Box } from '@mui/material';

@@ -1,5 +1,5 @@
-// src/features/orders/constants/columns.tsx
 'use client';
+// src/features/orders/constants/columns.tsx
 
 import * as React from 'react';
 import { Chip, Tooltip } from '@mui/material';

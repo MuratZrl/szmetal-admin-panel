@@ -1,5 +1,5 @@
-// src/app/(auth)/forgot-password/ForgotPasswordForm.client.tsx
 'use client';
+// src/app/(auth)/forgot-password/ForgotPasswordForm.client.tsx
 
 import * as React from 'react';
 

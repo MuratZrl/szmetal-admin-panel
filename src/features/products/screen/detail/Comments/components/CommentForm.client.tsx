@@ -1,5 +1,5 @@
-// src/features/products/comments/components/CommentForm.client.tsx
 'use client';
+// src/features/products/comments/components/CommentForm.client.tsx
 
 import * as React from 'react';
 import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material';

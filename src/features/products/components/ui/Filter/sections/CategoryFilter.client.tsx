@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/sections/CategoryFilter.client.tsx
 'use client';
+// src/features/products/components/ui/Filter/sections/CategoryFilter.client.tsx
 
 import * as React from 'react';
 import {
@@ -8,7 +8,6 @@ import {
   Checkbox,
   Collapse,
   Divider,
-  FormControlLabel,
   Grid,
   InputAdornment,
   List,
@@ -45,7 +44,6 @@ export function CategoryFilterSection({
   setSubCategories,
   setExpanded,
 }: CategoryFilterSectionProps): React.JSX.Element {
-  
   const collator = React.useMemo(
     () => new Intl.Collator('tr', { sensitivity: 'base', numeric: false }),
     [],
@@ -224,6 +222,10 @@ export function CategoryFilterSection({
     return topLevelSorted.filter((root) => visibleSet.has(root));
   }, [queryActive, topLevelSorted, visibleSet]);
 
+  // hizalama kaynağı: başlık + arama + root satırlar aynı hattan başlasın
+  const insetX = 1.5;
+  const indentStep = 2; // depth başına ekstra sol boşluk
+
   function renderNode(slug: string, depth: number): React.JSX.Element | null {
     if (queryActive && visibleSet && !visibleSet.has(slug)) return null;
 
@@ -253,40 +255,36 @@ export function CategoryFilterSection({
           disableRipple
           disableTouchRipple
           onClick={() => {
-            if (!queryActive) toggleExpand(slug);
+            if (!queryActive && hasKids) toggleExpand(slug);
           }}
           sx={{
-            pl: 1.25 + depth * 2,
-            pr: 1,
+            pl: insetX + depth * indentStep,
+            pr: insetX,
             display: 'flex',
             alignItems: 'center',
             borderRadius: 1,
             minHeight: CATEGORY_ROW_H_PX,
           }}
         >
-          <FormControlLabel
-            sx={{
-              m: 0,
-              width: 1,
-              flex: 1,
-              minWidth: 0,
-              '& .MuiFormControlLabel-label': {
-                flex: 1,
-                minWidth: 0,
-              },
+          <Checkbox
+            checked={checked}
+            indeterminate={!checked && someSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              toggleNode(slug);
             }}
-            control={
-              <Checkbox
-                checked={checked}
-                indeterminate={!checked && someSelected}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  toggleNode(slug);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            }
-            label={<ListItemText primary={name} />}
+            onClick={(e) => e.stopPropagation()}
+            sx={{
+              p: 0,        // hizayı sabitler (gizli padding yok)
+              mr: 0.75,    // label ile aralık
+              flex: '0 0 auto',
+            }}
+          />
+
+          <ListItemText
+            primary={name}
+            sx={{ m: 0, flex: 1, minWidth: 0 }}
+            primaryTypographyProps={{ noWrap: true }}
           />
 
           <Box
@@ -297,6 +295,7 @@ export function CategoryFilterSection({
               justifyContent: 'center',
               opacity: hasKids ? 1 : 0,
               pointerEvents: 'none',
+              flex: '0 0 auto',
             }}
             aria-hidden
           >
@@ -339,6 +338,8 @@ export function CategoryFilterSection({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1,
+          pl: insetX,
+          pr: insetX,
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.75 }}>
@@ -377,7 +378,7 @@ export function CategoryFilterSection({
         })}
       />
 
-      <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
+      <Grid container spacing={1} alignItems="center" sx={{ mb: 1, px: insetX }}>
         <Grid size={{ xs: 12 }}>
           <TextField
             id={CATEGORY_QUERY_ID}
@@ -411,15 +412,17 @@ export function CategoryFilterSection({
         }}
       >
         {queryActive && topLevelFiltered.length === 0 ? (
-          <Typography variant="caption" color="text.secondary">
-            Sonuç yok
-          </Typography>
+          <Box sx={{ px: insetX }}>
+            <Typography variant="caption" color="text.secondary">
+              Sonuç yok
+            </Typography>
+          </Box>
         ) : (
           <List dense disablePadding>
             {topLevelFiltered.map((slug, idx) => (
               <React.Fragment key={slug}>
                 {renderNode(slug, 0)}
-                {idx < topLevelFiltered.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}
+                {idx < topLevelFiltered.length - 1 ? <Divider /> : null}
               </React.Fragment>
             ))}
           </List>

@@ -1,5 +1,5 @@
-// src/features/products/components/ProductInfo/ProductInfo.client.tsx
 'use client';
+// src/features/products/components/ProductInfo/ProductInfo.client.tsx
 
 import * as React from 'react';
 

@@ -1,5 +1,5 @@
-// src/components/layout/Breadcrumb.tsx
 'use client';
+// src/components/layout/Breadcrumb.tsx
 
 import * as React from 'react';
 import Link from 'next/link';

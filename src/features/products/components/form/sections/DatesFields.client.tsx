@@ -1,5 +1,5 @@
-// src/features/products/components/form/sections/DatesFields.client.tsx
 'use client';
+// src/features/products/components/form/sections/DatesFields.client.tsx
 
 import * as React from 'react';
 

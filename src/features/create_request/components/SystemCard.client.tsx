@@ -1,5 +1,5 @@
-// src/features/systems/components/SystemCard.client.tsx
 'use client';
+// src/features/systems/components/SystemCard.client.tsx
 
 import * as React from 'react';
 import {

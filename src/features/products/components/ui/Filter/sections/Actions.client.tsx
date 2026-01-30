@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/sections/Actions.client.tsx
 'use client';
+// src/features/products/components/ui/Filter/sections/Actions.client.tsx
 
 import { Box, Button, Grid } from '@mui/material';
 

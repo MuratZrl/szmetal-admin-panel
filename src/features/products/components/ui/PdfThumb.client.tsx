@@ -1,5 +1,5 @@
-// src/features/products/components/ui/PdfThumb.client.tsx
 'use client';
+// src/features/products/components/ui/PdfThumb.client.tsx
 
 import * as React from 'react';
 import { Box } from '@mui/material';

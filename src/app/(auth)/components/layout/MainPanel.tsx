@@ -1,5 +1,5 @@
-// src/app/(auth)/components/layout/MainPanel.tsx
 'use client';
+// src/app/(auth)/components/layout/MainPanel.tsx
 
 import * as React from 'react';
 import { Box, Paper } from '@mui/material';

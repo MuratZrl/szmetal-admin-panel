@@ -1,5 +1,5 @@
-// src/features/products/components/RecommendedProductsSection.client.tsx
 'use client'
+// src/features/products/components/RecommendedProductsSection.client.tsx
 
 import * as React from 'react';
 import { Box, Grid, Stack, Typography, Divider } from '@mui/material';

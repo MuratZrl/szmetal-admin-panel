@@ -1,5 +1,5 @@
-// src/features/products/components/form/ProductEditForm.client.tsx
 'use client';
+// src/features/products/components/form/ProductEditForm.client.tsx
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';

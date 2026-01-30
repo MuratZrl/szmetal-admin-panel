@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/sections/VariantFilterSection.tsx
 'use client';
+// src/features/products/components/ui/Filter/sections/VariantFilterSection.tsx
 
 import * as React from 'react';
 import {
@@ -7,7 +7,6 @@ import {
   Button,
   Checkbox,
   Divider,
-  FormControlLabel,
   Grid,
   InputAdornment,
   List,
@@ -54,6 +53,7 @@ export function VariantFilterSection({
   const variantsFiltered = React.useMemo(() => {
     const needle = variantQuery.trim().toLocaleLowerCase('tr');
     if (!needle) return variantsSorted;
+
     return variantsSorted.filter((v) => {
       const name = (v.name ?? '').toLocaleLowerCase('tr');
       const key = v.key.toLocaleLowerCase('tr');
@@ -77,6 +77,9 @@ export function VariantFilterSection({
     setVariantsSel([]);
   }, [onChangeVariantQuery, setVariantsSel]);
 
+  // Tek kaynak: başlık, arama input’u ve satırlar aynı hattan başlasın
+  const insetX = 1.5;
+
   return (
     <Box
       component="section"
@@ -85,13 +88,14 @@ export function VariantFilterSection({
         borderRadius: 2.25,
       })}
     >
-      {/* Başlık satırı: solda başlık, sağda Temizle */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1,
+          pl: insetX,
+          pr: insetX,
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.75 }}>
@@ -120,7 +124,6 @@ export function VariantFilterSection({
         </Button>
       </Box>
 
-      {/* Başlık ile içerik arasında düz renk separator */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -131,7 +134,7 @@ export function VariantFilterSection({
         })}
       />
 
-      <Grid container spacing={1} alignItems="center" sx={{ mb: 1 }}>
+      <Grid container spacing={1} alignItems="center" sx={{ mb: 1, px: insetX }}>
         <Grid size={{ xs: 12 }}>
           <TextField
             id={VARIANTS_ID}
@@ -178,28 +181,28 @@ export function VariantFilterSection({
                     disableTouchRipple
                     onClick={() => toggleVariant(v.key)}
                     sx={{
-                      pl: 1.25,
-                      pr: 1,
+                      pl: insetX,
+                      pr: insetX,
                       display: 'flex',
                       alignItems: 'center',
                       borderRadius: 1,
                       minHeight: VARIANT_ROW_H_PX,
                     }}
                   >
-                    <FormControlLabel
-                      sx={{ m: 0, width: 1 }}
-                      control={
-                        <Checkbox
-                          checked={checked}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleVariant(v.key);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      }
-                      label={<ListItemText primary={label} />}
+                    <Checkbox
+                      checked={checked}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleVariant(v.key);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      sx={{
+                        p: 0,
+                        mr: 0.75,
+                      }}
                     />
+
+                    <ListItemText primary={label} sx={{ m: 0 }} />
                   </ListItemButton>
 
                   {idx < variantsFiltered.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}
@@ -208,9 +211,11 @@ export function VariantFilterSection({
             })}
           </List>
         ) : (
-          <Typography variant="caption" color="text.secondary">
-            Sonuç yok
-          </Typography>
+          <Box sx={{ px: insetX }}>
+            <Typography variant="caption" color="text.secondary">
+              Sonuç yok
+            </Typography>
+          </Box>
         )}
       </Box>
     </Box>

@@ -1,5 +1,5 @@
-// src/features/products/screen/detail/Comments/hooks/useCommentDeletingConfirm.ts
 'use client';
+// src/features/products/screen/detail/Comments/hooks/useCommentDeletingConfirm.ts
 
 import * as React from 'react';
 

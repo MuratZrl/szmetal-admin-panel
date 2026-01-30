@@ -1,5 +1,5 @@
-// src/features/products/components/ui/ProductCard/ProductCardSkeleton.client.tsx
 'use client';
+// src/features/products/components/ui/ProductCard/ProductCardSkeleton.client.tsx
 
 import * as React from 'react';
 import { Card, CardContent, Box, Stack, Skeleton } from '@mui/material';

@@ -1,5 +1,5 @@
-// src/features/products/components/form/sections/VariantFields.client.tsx
 'use client';
+// src/features/products/components/form/sections/VariantFields.client.tsx
 
 import * as React from 'react';
 

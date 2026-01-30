@@ -1,5 +1,5 @@
-// src/features/products/components/ProductsPagination.client.tsx
 'use client';
+// src/features/products/components/ProductsPagination.client.tsx
 
 import * as React from 'react';
 

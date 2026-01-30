@@ -1,5 +1,5 @@
-// src/features/products/components/ui/ProductCard/CustomerMoldBadge.client.tsx
 'use client';
+// src/features/products/components/ui/ProductCard/CustomerMoldBadge.client.tsx
 
 import { Box } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';

@@ -1,9 +1,10 @@
 // src/features/products/components/ui/Filter/constants.ts
+
+export const CATEGORY_ROW_H_PX = 62;
+export const VISIBLE_CATEGORY_ROWS = 7;
+
 export const VISIBLE_VARIANT_ROWS = 7;
 export const VARIANT_ROW_H_PX = 40;
-
-export const VISIBLE_CATEGORY_ROWS = 7;
-export const CATEGORY_ROW_H_PX = 62;
 
 // Stable ids to avoid SSR/CSR hydration mismatches (MUI auto-id)
 export const SEARCH_ID = 'products-filter-search';

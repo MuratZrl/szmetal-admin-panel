@@ -1,5 +1,5 @@
-// src/theme/ThemeModeProvider.client.tsx
 'use client';
+// src/theme/ThemeModeProvider.client.tsx
 
 import * as React from 'react';
 

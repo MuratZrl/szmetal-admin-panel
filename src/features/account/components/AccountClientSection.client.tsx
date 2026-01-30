@@ -1,5 +1,5 @@
-// src/features/account/components/AccountClientSection.client.tsx
 "use client";
+// src/features/account/components/AccountClientSection.client.tsx
 
 import { SnackbarProvider } from "@/components/ui/snackbar/useSnackbar.client";
 import { useAccount, type UserData } from "@/features/account/hooks/useAccount";

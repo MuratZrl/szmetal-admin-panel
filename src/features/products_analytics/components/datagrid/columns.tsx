@@ -1,5 +1,5 @@
-// src/features/products_analytics/components/datagrid/columns.tsx
 'use client';
+// src/features/products_analytics/components/datagrid/columns.tsx
 
 import * as React from 'react';
 import { Box, Chip } from '@mui/material';

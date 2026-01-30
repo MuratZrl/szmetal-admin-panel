@@ -1,5 +1,5 @@
-// src/features/account/hooks/useAccount.ts
 'use client';
+// src/features/account/hooks/useAccount.ts
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSnackbar } from '@/components/ui/snackbar/useSnackbar.client';

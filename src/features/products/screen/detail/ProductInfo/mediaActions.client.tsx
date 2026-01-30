@@ -1,5 +1,5 @@
-// src/features/products/components/ProductInfo/mediaActions.client.ts
 'use client';
+// src/features/products/components/ProductInfo/mediaActions.client.ts
 
 import * as React from 'react';
 import { detectMediaKind } from '@/features/products/utils/media';

@@ -1,5 +1,5 @@
-// src/features/products/screen/detail/Comments/hooks/useCommentEditing.ts
 'use client';
+// src/features/products/screen/detail/Comments/hooks/useCommentEditing.ts
 
 import * as React from 'react';
 

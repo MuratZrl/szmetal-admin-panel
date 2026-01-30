@@ -1,5 +1,5 @@
-// src/features/auth/LoginForm.client.tsx
 'use client';
+// src/features/auth/LoginForm.client.tsx
 
 import * as React from 'react';
 

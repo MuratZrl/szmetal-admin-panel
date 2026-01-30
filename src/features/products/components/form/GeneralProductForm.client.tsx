@@ -1,5 +1,5 @@
-// src/features/products/components/form/GeneralProductForm.client.tsx
 'use client';
+// src/features/products/components/form/GeneralProductForm.client.tsx
 
 import { Box, Grid } from '@mui/material';
 

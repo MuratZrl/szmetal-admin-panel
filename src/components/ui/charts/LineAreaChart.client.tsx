@@ -1,5 +1,5 @@
-// src/components/ui/charts/LineAreaChart.client.tsx
 'use client';
+// src/components/ui/charts/LineAreaChart.client.tsx
 
 import * as React from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';

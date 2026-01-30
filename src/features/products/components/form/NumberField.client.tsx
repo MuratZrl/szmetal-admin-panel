@@ -1,5 +1,5 @@
-// src/features/products/components/form/NumberField.tsx
 'use client';
+// src/features/products/components/form/NumberField.tsx
 
 import { TextField, InputAdornment, type TextFieldProps } from '@mui/material';
 import {

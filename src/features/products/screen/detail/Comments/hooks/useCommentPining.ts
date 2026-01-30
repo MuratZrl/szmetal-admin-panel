@@ -1,5 +1,5 @@
-// src/features/products/screen/detail/Comments/hooks/useCommentPinning.ts
 'use client';
+// src/features/products/screen/detail/Comments/hooks/useCommentPinning.ts
 
 import * as React from 'react';
 

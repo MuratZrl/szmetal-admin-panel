@@ -1,5 +1,5 @@
-// src/features/sidebar/components/SidebarLogo.tsx
 'use client';
+// src/features/sidebar/components/SidebarLogo.tsx
 
 import Link from 'next/link';
 import Image from 'next/image';

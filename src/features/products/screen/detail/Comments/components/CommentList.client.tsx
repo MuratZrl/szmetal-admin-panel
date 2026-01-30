@@ -1,5 +1,5 @@
-// src/features/products/screen/detail/Comments/CommentList.client.tsx
 'use client';
+// src/features/products/screen/detail/Comments/CommentList.client.tsx
 
 import * as React from 'react';
 import {

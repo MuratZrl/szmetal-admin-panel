@@ -1,5 +1,5 @@
-// src/features/dashboard/components/DashboardHeader.client.tsx
 'use client';
+// src/features/dashboard/components/DashboardHeader.client.tsx
 
 import * as React from 'react';
 import {

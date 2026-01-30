@@ -1,5 +1,5 @@
-// src/features/products/components/CommentSection.client.tsx
 'use client';
+// src/features/products/components/CommentSection.client.tsx
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';

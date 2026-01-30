@@ -1,5 +1,5 @@
-// src/components/ui/cards/StatCard.client.tsx
 'use client';
+// src/components/ui/cards/StatCard.client.tsx
 
 import * as React from 'react';
 import {

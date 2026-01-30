@@ -1,5 +1,5 @@
-// src/features/dashboard/components/RatesTicker.client.tsx
 'use client';
+// src/features/dashboard/components/RatesTicker.client.tsx
 
 import * as React from 'react';
 import {

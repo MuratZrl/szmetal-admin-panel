@@ -1,5 +1,5 @@
-// src/features/users/components/UserDetailCard.client.tsx
 'use client';
+// src/features/users/components/UserDetailCard.client.tsx
 
 import * as React from 'react';
 

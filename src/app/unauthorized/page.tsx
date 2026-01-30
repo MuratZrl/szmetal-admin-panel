@@ -1,5 +1,5 @@
-// app/unauthorized/page.tsx
 'use client';
+// app/unauthorized/page.tsx
 
 import * as React from 'react';
 import {

@@ -1,5 +1,5 @@
-// src/features/products/components/ProductsToolbar.client.tsx
 'use client';
+// src/features/products/components/ProductsToolbar.client.tsx
 
 import * as React from 'react';
 import Link from '@/components/Link';

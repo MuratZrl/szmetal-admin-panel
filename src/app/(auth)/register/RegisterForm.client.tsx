@@ -1,5 +1,5 @@
-// src/features/auth/components/RegisterForm.tsx
 'use client';
+// src/features/auth/components/RegisterForm.tsx
 
 /**
  * Kayıt formu

@@ -1,5 +1,5 @@
-// src/features/clients/components/columns.tsx
 'use client';
+// src/features/clients/components/columns.tsx
 
 import * as React from 'react';
 

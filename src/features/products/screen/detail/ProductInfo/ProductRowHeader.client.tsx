@@ -1,5 +1,5 @@
-// src/features/products/components/ProductInfo/ProductHeaderRow.client.tsx
 'use client';
+// src/features/products/components/ProductInfo/ProductHeaderRow.client.tsx
 
 import * as React from 'react';
 import Link from 'next/link';

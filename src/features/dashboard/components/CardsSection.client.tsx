@@ -1,5 +1,5 @@
-// src/features/dashboard/components/CardsGrid.client.tsx
 'use client';
+// src/features/dashboard/components/CardsGrid.client.tsx
 
 import { Grid } from '@mui/material';
 import StatCard from '@/components/ui/cards/StatCard.client';

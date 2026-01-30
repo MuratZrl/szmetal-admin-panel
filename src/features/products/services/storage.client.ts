@@ -1,5 +1,5 @@
-// src/features/products/services/storage.client.ts
 'use client';
+// src/features/products/services/storage.client.ts
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';

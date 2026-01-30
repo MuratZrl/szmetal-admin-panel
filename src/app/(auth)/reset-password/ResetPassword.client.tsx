@@ -1,5 +1,5 @@
-// src/app/(auth)/reset-password/ResetPassword.client.tsx
 'use client';
+// src/app/(auth)/reset-password/ResetPassword.client.tsx
 
 import * as React from 'react';
 import Link from 'next/link';

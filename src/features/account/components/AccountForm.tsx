@@ -1,5 +1,5 @@
-// src/features/account/AccountForm.tsx
 'use client';
+// src/features/account/AccountForm.tsx
 
 import React, { useEffect } from 'react';
 import {

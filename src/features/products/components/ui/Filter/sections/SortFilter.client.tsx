@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/sections/SortFilter.client.tsx
 'use client';
+// src/features/products/components/ui/Filter/sections/SortFilter.client.tsx
 
 import * as React from 'react';
 import { Box, Button, MenuItem, TextField, Typography } from '@mui/material';

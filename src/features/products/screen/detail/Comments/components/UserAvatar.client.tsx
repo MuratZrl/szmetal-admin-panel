@@ -1,5 +1,5 @@
-// src/features/products/screen/detail/Comments/components/UserAvatar.client.tsx
 'use client';
+// src/features/products/screen/detail/Comments/components/UserAvatar.client.tsx
 
 import * as React from 'react';
 import { Avatar } from '@mui/material';

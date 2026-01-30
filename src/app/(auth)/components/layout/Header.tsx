@@ -1,5 +1,5 @@
-// src/app/(auth)/components/layout/Header.tsx
 'use client';
+// src/app/(auth)/components/layout/Header.tsx
 
 import * as React from 'react';
 

@@ -1,5 +1,5 @@
-// src/features/products/components/ui/ProductCardCategoryTag.client.tsx
 'use client';
+// src/features/products/components/ui/ProductCardCategoryTag.client.tsx
 
 import * as React from 'react';
 import { Chip, Box } from '@mui/material';

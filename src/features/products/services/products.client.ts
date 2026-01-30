@@ -1,5 +1,5 @@
-// src/features/products/services/products.client.ts
 'use client';
+// src/features/products/services/products.client.ts
 
 import { capitalizeProductName } from '@/utils/capitalizeProductName';
 

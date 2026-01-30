@@ -1,5 +1,5 @@
-// src/features/dashboard/components/TimeTicker.client.tsx
 'use client';
+// src/features/dashboard/components/TimeTicker.client.tsx
 
 import * as React from 'react';
 import { Box, Typography } from '@mui/material';

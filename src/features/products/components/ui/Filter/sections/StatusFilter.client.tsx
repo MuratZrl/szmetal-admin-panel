@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/sections/StatusFilter.client.tsx
 'use client';
+// src/features/products/components/ui/Filter/sections/StatusFilter.client.tsx
 
 import * as React from 'react';
 import {
@@ -7,7 +7,6 @@ import {
   Button,
   Checkbox,
   Divider,
-  FormControlLabel,
   List,
   ListItemButton,
   ListItemText,
@@ -47,10 +46,12 @@ export function StatusFilterSection({
   const isActive = moldOnly || availableOnly;
 
   const handleClear = React.useCallback(() => {
-    // Toggle API'n var, "set false" yok. O yüzden sadece true olanları geri toggle'lıyoruz.
     if (moldOnly) onToggleMold();
     if (availableOnly) onToggleAvailable();
   }, [moldOnly, availableOnly, onToggleMold, onToggleAvailable]);
+
+  // Tek kaynak: hem başlık hem satırlar aynı sol çizgiden başlar
+  const insetX = 1.5;
 
   return (
     <Box
@@ -60,13 +61,14 @@ export function StatusFilterSection({
         borderRadius: 2.25,
       })}
     >
-      {/* Başlık satırı: solda başlık, sağda Temizle */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1,
+          pl: insetX, // ✅ başlık soldan tam aynı hizaya gelir
+          pr: insetX,
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.75 }}>
@@ -95,7 +97,6 @@ export function StatusFilterSection({
         </Button>
       </Box>
 
-      {/* Başlık ile içerik arasında düz renk separator */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -114,27 +115,28 @@ export function StatusFilterSection({
               disableTouchRipple
               onClick={r.onToggle}
               sx={{
-                pl: 1.25,
-                pr: 1,
+                pl: insetX, // ✅ satır da aynı hizadan başlar
+                pr: insetX,
+                py: 0.25,
                 display: 'flex',
                 alignItems: 'center',
                 borderRadius: 1,
               }}
             >
-              <FormControlLabel
-                sx={{ m: 0, width: 1 }}
-                control={
-                  <Checkbox
-                    checked={r.checked}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      r.onToggle();
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                }
-                label={<ListItemText primary={r.label} />}
+              <Checkbox
+                checked={r.checked}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  r.onToggle();
+                }}
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  p: 0,     // ✅ ikonun sol başlangıcını sabitler (gizli padding yok)
+                  mr: 0.75, // label ile aralık
+                }}
               />
+
+              <ListItemText primary={r.label} sx={{ m: 0 }} />
             </ListItemButton>
 
             {idx < rows.length - 1 ? <Divider sx={{ my: 0.75 }} /> : null}

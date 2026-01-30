@@ -1,5 +1,5 @@
-// src/features/sidebar/components/SidebarSub.client.tsx
 'use client';
+// src/features/sidebar/components/SidebarSub.client.tsx
 
 import { usePathname } from 'next/navigation';
 

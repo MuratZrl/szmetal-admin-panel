@@ -1,5 +1,5 @@
-// src/features/products/screen/detail/Comments/hooks/useCommentVoting.ts
 'use client';
+// src/features/products/screen/detail/Comments/hooks/useCommentVoting.ts
 
 import * as React from 'react';
 import type { CommentItem } from '@/features/products/screen/detail/Comments/types';

@@ -1,5 +1,5 @@
-// src/lib/supabase/ui/useBackAuthGuard.client.tsx
 'use client';
+// src/lib/supabase/ui/useBackAuthGuard.client.tsx
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

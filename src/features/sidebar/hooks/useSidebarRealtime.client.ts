@@ -1,5 +1,5 @@
-// src/features/sidebar/hooks/useSidebarRealtime.client.ts
 'use client';
+// src/features/sidebar/hooks/useSidebarRealtime.client.ts
 
 /**
  * Realtime unread counter for the sidebar.

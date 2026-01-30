@@ -1,5 +1,5 @@
-// src/features/auth/AccessAutoRedirect.client.tsx
 'use client';
+// src/features/auth/AccessAutoRedirect.client.tsx
 
 import * as React from 'react';
 import type { Route } from 'next';

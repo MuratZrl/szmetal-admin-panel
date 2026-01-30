@@ -1,5 +1,5 @@
-// src/features/products/components/ui/ProductMedia.client.tsx
 'use client';
+// src/features/products/components/ui/ProductMedia.client.tsx
 
 import * as React from 'react';
 

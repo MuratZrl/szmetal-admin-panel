@@ -1,5 +1,5 @@
-// src/features/orders/components/InboxGrid.client.tsx
 'use client';
+// src/features/orders/components/InboxGrid.client.tsx
 
 import * as React from 'react';
 import { Box } from '@mui/material';

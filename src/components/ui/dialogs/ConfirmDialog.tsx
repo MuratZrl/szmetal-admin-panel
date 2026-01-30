@@ -1,5 +1,5 @@
-// src/components/ui/dialogs/ConfirmDialog.tsx
 'use client';
+// src/components/ui/dialogs/ConfirmDialog.tsx
 
 import * as React from 'react';
 import {

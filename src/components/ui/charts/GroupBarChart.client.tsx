@@ -1,5 +1,5 @@
-// src/components/ui/charts/GroupBarChart.client.tsx
 'use client';
+// src/components/ui/charts/GroupBarChart.client.tsx
 
 import * as React from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';

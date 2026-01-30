@@ -1,5 +1,5 @@
-// src/features/products/components/form/sections/meta/CodeFields.client.tsx
 'use client';
+// src/features/products/components/form/sections/meta/CodeFields.client.tsx
 
 import * as React from 'react';
 

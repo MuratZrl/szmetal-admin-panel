@@ -1,5 +1,5 @@
-// src/features/products/components/ui/Filter/Filters.client.tsx
 'use client';
+// src/features/products/components/ui/Filter/Filters.client.tsx
 
 import { Stack } from '@mui/material';
 
@@ -58,13 +58,6 @@ export default function Filters({
       <Stack spacing={2.25} sx={{ position: 'sticky', top: 16 }}>
         <SearchFilterSection value={q} onChange={setQ} />
 
-        <StatusFilterSection
-          moldOnly={moldOnly}
-          onToggleMold={() => setMoldOnly((p) => !p)}
-          availableOnly={availableOnly}
-          onToggleAvailable={() => setAvailableOnly((p) => !p)}
-        />
-
         <CategoryFilterSection
           topLevelSlugs={topLevelSlugs}
           categoryTree={categoryTree}
@@ -74,6 +67,13 @@ export default function Filters({
           setCategories={setCategories}
           setSubCategories={setSubCategories}
           setExpanded={setExpanded}
+        />
+
+        <StatusFilterSection
+          moldOnly={moldOnly}
+          onToggleMold={() => setMoldOnly((p) => !p)}
+          availableOnly={availableOnly}
+          onToggleAvailable={() => setAvailableOnly((p) => !p)}
         />
 
         <VariantFilterSection

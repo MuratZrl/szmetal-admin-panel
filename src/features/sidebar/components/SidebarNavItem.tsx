@@ -1,5 +1,5 @@
-// src/features/sidebar/components/SidebarNavItem.tsx
 'use client';
+// src/features/sidebar/components/SidebarNavItem.tsx
 
 import { ListItem, ListItemButton, Tooltip, Box, Typography } from '@mui/material';
 

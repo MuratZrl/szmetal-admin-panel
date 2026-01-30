@@ -1,5 +1,5 @@
-// src/features/clients/components/TableGrid.client.tsx
 'use client';
+// src/features/clients/components/TableGrid.client.tsx
 
 import * as React from 'react';
 import { DataGrid } from '@mui/x-data-grid';

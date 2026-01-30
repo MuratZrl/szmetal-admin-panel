@@ -1,5 +1,5 @@
-// src/features/products/components/form/hooks/useCategoryCascade.ts
 'use client'; // Next.js App Router: bu dosya client tarafında çalışacak (hook + RHF watch/effect var)
+// src/features/products/components/form/hooks/useCategoryCascade.ts
 
 import * as React from 'react'; // useMemo + useEffect kullanıyoruz
 

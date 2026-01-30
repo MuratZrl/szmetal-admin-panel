@@ -1,5 +1,5 @@
-// src/features/sidebar/components/SidebarSkeleton.client.tsx
 'use client';
+// src/features/sidebar/components/SidebarSkeleton.client.tsx
 
 import * as React from 'react';
 

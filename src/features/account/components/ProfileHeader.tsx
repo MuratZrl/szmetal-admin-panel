@@ -1,5 +1,5 @@
-// src/features/account/ProfileHeader.tsx
 'use client';
+// src/features/account/ProfileHeader.tsx
 
 import * as React from 'react';
 import { Avatar, Box, Typography, Chip, Button } from '@mui/material';

@@ -1,5 +1,5 @@
-// src/components/ui/snackbar/useSnackbar.client.tsx
 'use client';
+// src/components/ui/snackbar/useSnackbar.client.tsx
 
 import React, { createContext, useContext, useState } from 'react';
 import { Snackbar, Alert } from '@mui/material';
