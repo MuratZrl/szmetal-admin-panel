@@ -2,6 +2,7 @@
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
+export const runtime = 'nodejs';
 
 import { Box, Grid, Divider } from '@mui/material';
 
@@ -80,7 +81,7 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
       <Divider sx={{ mb: 2 }} />
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={{ xs: 12, md: 2.75 }}>
           <Filters
             topLevelSlugs={dicts.categories}
             categoryTree={dicts.categoryTree}
@@ -88,7 +89,7 @@ export default async function ProductsPage({ searchParams: spPromise }: PageProp
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 9 }}>
+        <Grid size={{ xs: 12, md: 9.25 }}>
           <ProductsGrid
             products={items}
             mediaUrlsById={mediaUrlsById}

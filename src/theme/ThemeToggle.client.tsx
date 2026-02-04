@@ -8,7 +8,7 @@ import type { TooltipProps } from '@mui/material/Tooltip';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 
-import { useThemeMode } from './ThemeModeProvider.client';
+import { useThemeMode } from '@/theme/ThemeModeProvider.client';
 
 type Props = { placement?: TooltipProps['placement'] };
 

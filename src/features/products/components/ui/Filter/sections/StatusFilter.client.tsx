@@ -13,6 +13,8 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import { darken, lighten } from '@mui/material/styles';
 
 import { sectionSx } from '../sectionSx';
 
@@ -44,7 +46,6 @@ export function StatusFilterSection({
 
   const handleMoldChange = React.useCallback(
     (_: React.MouseEvent<HTMLElement>, next: MoldMode | null) => {
-      // aynı seçeneğe tekrar tıklayınca null gelebilir, istemiyoruz
       if (next) onChangeMoldMode(next);
     },
     [onChangeMoldMode],
@@ -55,6 +56,29 @@ export function StatusFilterSection({
       if (next) onChangeAvailabilityMode(next);
     },
     [onChangeAvailabilityMode],
+  );
+
+  // ✅ “Evet” butonları için ortak gradient vurgusu (theme’e göre warning tonu)
+  const yesSelectedSx = React.useCallback(
+    (t: Theme) => {
+      const base = t.palette.mode === 'dark' ? t.palette.warning.light : t.palette.warning.dark;
+      const c1 = lighten(base, t.palette.mode === 'dark' ? 0 : 0.18);
+      const c2 = darken(base, t.palette.mode === 'dark' ? 0.58 : 0.10);
+
+      return {
+        '&.Mui-selected': {
+          backgroundColor: base,
+          backgroundImage: `linear-gradient(135deg, ${c1} 0%, ${base} 45%, ${c2} 100%)`,
+          borderColor: base,
+          color: t.palette.getContrastText(base),
+        },
+        '&.Mui-selected:hover': {
+          backgroundColor: base,
+          backgroundImage: `linear-gradient(135deg, ${lighten(base, t.palette.mode === 'dark' ? 0.14 : 0.22)} 0%, ${base} 45%, ${darken(base, t.palette.mode === 'dark' ? 0.22 : 0.14)} 100%)`,
+        },
+      } as const;
+    },
+    [],
   );
 
   return (
@@ -112,7 +136,6 @@ export function StatusFilterSection({
       />
 
       <List dense disablePadding>
-        {/* Müşteri Kalıbı: 3 durumlu */}
         <ListItemButton
           disableRipple
           disableTouchRipple
@@ -133,7 +156,6 @@ export function StatusFilterSection({
             size="small"
             value={moldMode}
             onChange={handleMoldChange}
-            aria-label="Müşteri kalıbı filtresi"
             sx={{
               ml: 1,
               '& .MuiToggleButton-root': {
@@ -144,21 +166,19 @@ export function StatusFilterSection({
               },
             }}
           >
-            <ToggleButton value="all" aria-label="Hepsi">
-              Tümü
-            </ToggleButton>
-            <ToggleButton value="mold" aria-label="Sadece kalıplı">
+            <ToggleButton value="all">Tümü</ToggleButton>
+
+            {/* ✅ EVET -> gradient warning */}
+            <ToggleButton value="mold" sx={yesSelectedSx}>
               Evet
             </ToggleButton>
-            <ToggleButton value="nonMold" aria-label="Sadece kalıpsız">
-              Hayır
-            </ToggleButton>
+
+            <ToggleButton value="nonMold">Hayır</ToggleButton>
           </ToggleButtonGroup>
         </ListItemButton>
 
         <Divider sx={{ my: 0.75 }} />
 
-        {/* Kullanılabilirlik: 3 durumlu */}
         <ListItemButton
           disableRipple
           disableTouchRipple
@@ -179,7 +199,6 @@ export function StatusFilterSection({
             size="small"
             value={availabilityMode}
             onChange={handleAvailabilityChange}
-            aria-label="Kullanılabilirlik filtresi"
             sx={{
               ml: 1,
               '& .MuiToggleButton-root': {
@@ -190,15 +209,14 @@ export function StatusFilterSection({
               },
             }}
           >
-            <ToggleButton value="all" aria-label="Hepsi">
-              Tümü
-            </ToggleButton>
-            <ToggleButton value="unavailable" aria-label="Kullanılamaz">
+            <ToggleButton value="all">Tümü</ToggleButton>
+
+            {/* ✅ EVET -> aynı gradient warning */}
+            <ToggleButton value="unavailable" sx={yesSelectedSx}>
               Evet
             </ToggleButton>
-            <ToggleButton value="available" aria-label="Kullanılabilir">
-              Hayır
-            </ToggleButton>
+
+            <ToggleButton value="available">Hayır</ToggleButton>
           </ToggleButtonGroup>
         </ListItemButton>
       </List>

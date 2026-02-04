@@ -282,7 +282,6 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
             <CategoryChip
               segments={categoryPathLabels}
               title={categoryTitle}
-              maxWidth={{ xs: '100%', sm: 280 }}
             />
           )}
 

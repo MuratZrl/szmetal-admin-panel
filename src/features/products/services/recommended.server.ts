@@ -33,10 +33,8 @@ export async function fetchRecommendedProducts({
   const sb = await createSupabaseRSCClient();
 
   const results: ProductRow[] = [];
-
   const v = normText(variant);
 
-  // 1) Aynı category_id
   if (categoryId) {
     const { data, error } = await sb
       .from('products')
@@ -51,7 +49,6 @@ export async function fetchRecommendedProducts({
     if (data) results.push(...data);
   }
 
-  // 2) Yetmezse: aynı parent grubundaki kategoriler (kardeşler)
   if (categoryId && uniqById(results).length < limit) {
     const { data: cat, error: catErr } = await sb
       .from('categories')
@@ -90,7 +87,6 @@ export async function fetchRecommendedProducts({
     }
   }
 
-  // 3) Yetmezse: aynı variant (varsa)
   if (uniqById(results).length < limit && v) {
     const { data, error } = await sb
       .from('products')
@@ -105,7 +101,6 @@ export async function fetchRecommendedProducts({
     if (data) results.push(...data);
   }
 
-  // 4) Son çare: en güncel ürünler
   if (uniqById(results).length < limit) {
     const { data, error } = await sb
       .from('products')
