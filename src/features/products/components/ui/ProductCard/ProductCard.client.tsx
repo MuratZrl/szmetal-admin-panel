@@ -25,6 +25,7 @@ import { humanizeSystemSlug, isSlugLike } from '@/utils/caseFilter';
 
 import { ProductMedia } from '@/features/products/components/ui/ProductCard/ProductCardMedia.client';
 import { CategoryChip } from '@/features/products/components/ui/ProductCard/ProductCardCategoryTag.client';
+import { VariantCaption } from '@/features/products/components/ui/ProductCard/ProductCardVariantCaptionclient';
 import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductCardActions.client';
 
 import type { Product } from '@/features/products/types';
@@ -93,19 +94,6 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
     theme.palette.mode === 'dark'
       ? theme.palette.warning.light
       : theme.palette.warning.dark;
-
-  // Varyant: products.variant = key, labels.variant[key] = name
-  const variantLabel = React.useMemo(
-    () => resolveLabelFromMap(product.variant, labels?.variant).trim(),
-    [product.variant, labels?.variant],
-  );
-  const showVariantCaption = React.useMemo(() => {
-    const raw = String(product.variant ?? '').trim().toLowerCase();
-    if (!raw || raw === 'none' || raw === 'yok') return false;
-    const lbl = variantLabel.toLowerCase();
-    if (!lbl || lbl === 'none' || lbl === 'yok') return false;
-    return true;
-  }, [product.variant, variantLabel]);
 
   const createdDate =
     typeof product.createdAt === 'string' && product.createdAt
@@ -182,6 +170,11 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
         position: 'relative',
         borderRadius: 3,
         height: { xs: 'auto', md: '100%' },
+
+        // ✅ Kartın genişliği artık layout’tan gelsin
+        width: '100%',
+        maxWidth: '100%',
+
         transition:
           'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
       }}
@@ -285,23 +278,8 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
             />
           )}
 
-          {showVariantCaption && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              noWrap
-              sx={{
-                display: 'block',
-                width: { xs: '100%', sm: 280 },
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-              title={`${variantLabel} Profilleri`}
-            >
-              {`${variantLabel} Profilleri`}
-            </Typography>
-          )}
+          <VariantCaption variant={product.variant} variantMap={labels?.variant} />
+
         </CardContent>
       </CardActionArea>
 

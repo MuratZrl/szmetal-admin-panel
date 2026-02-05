@@ -6,7 +6,7 @@ import * as React from 'react';
 import type { Route } from 'next'; // ⬅️ önemli
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import CustomPagination from '@/components/ui/pagination/Pagination';
+import CustomPagination from '@/components/ui/pagination/Pagination.client';
 
 type Props = { page: number; totalPages: number };
 

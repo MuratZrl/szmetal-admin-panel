@@ -141,7 +141,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const [commentsRaw, recommendedRaw] = await Promise.all([
     fetchProductComments(safeId),
-    buildRecommendedBlock({ currentRow: row as ProductsRow, limit: 4 }),
+    buildRecommendedBlock({ currentRow: row as ProductsRow, limit: 5 }),
   ]);
 
   const comments = commentsRaw ?? [];

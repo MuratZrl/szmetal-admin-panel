@@ -5,7 +5,7 @@ import * as React from 'react';
 import Link from 'next/link';
 
 import { Box, Stack, Button } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha, darken, useTheme } from '@mui/material/styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import EditIcon from '@mui/icons-material/Edit';
 
@@ -30,68 +30,53 @@ export function ProductActions({
   const theme = useTheme();
 
   const accent = theme.palette.accent?.main ?? theme.palette.primary.main;
-
   const S = theme.palette.surface as SurfacePalette | undefined;
 
   const outline = S?.outline ?? theme.palette.divider;
   const surface1 = S?.[1] ?? theme.palette.background.paper;
   const surface2 = S?.[2] ?? theme.palette.background.default;
 
-  const softBg = alpha(accent, theme.palette.mode === 'dark' ? 0.16 : 0.06);
-  const hoverBg = alpha(accent, theme.palette.mode === 'dark' ? 0.22 : 0.1);
-  const pressBg = alpha(accent, theme.palette.mode === 'dark' ? 0.28 : 0.14);
+  const primaryText = theme.palette.getContrastText(accent);
 
-  // Hızlı Düzenle için koyu gri çerçeve ve outline referansları
+  const primaryBg = theme.palette.mode === 'dark' ? darken(accent, 0.12) : accent;
+  const primaryHover = theme.palette.mode === 'dark' ? darken(accent, 0.2) : darken(accent, 0.08);
+  const primaryActive = theme.palette.mode === 'dark' ? darken(accent, 0.26) : darken(accent, 0.14);
+
   const neutralBorder =
     theme.palette.mode === 'dark'
-      ? alpha(theme.palette.grey[500], 0.9)
-      : alpha(theme.palette.grey[700], 0.9);
+      ? alpha(theme.palette.grey[500], 0.75)
+      : alpha(theme.palette.grey[700], 0.75);
 
-  const neutralOutline =
+  const neutralBg =
     theme.palette.mode === 'dark'
-      ? theme.palette.grey[400]
-      : theme.palette.grey[800];
+      ? alpha(surface2, 0.65)
+      : alpha(surface1, 0.85);
 
-  // Hızlı Düzenle için gri zemin tonları (normal / hover / active)
-  const neutralBgBase =
+  const neutralHover =
     theme.palette.mode === 'dark'
-      ? alpha(surface2, 0.55)
-      : alpha(surface1, 0.75);
+      ? alpha(surface2, 0.9)
+      : alpha(surface1, 0.98);
 
-  const neutralBgHover =
+  const neutralActive =
     theme.palette.mode === 'dark'
-      ? alpha(surface2, 0.85)
-      : alpha(surface1, 0.95);
-
-  const neutralBgActive =
-    theme.palette.mode === 'dark'
-      ? alpha(surface2, 0.95)
+      ? alpha(surface2, 0.98)
       : surface1;
 
-  const commonBtnSx = {
+  const baseBtnSx = {
     flex: 1,
     minWidth: 0,
     width: { xs: 1, sm: 'auto' },
-    minHeight: { xs: 32, sm: 36, md: 40 },
-
-    px: { xs: 1, sm: 1.25, md: 1.5 },
-    py: { xs: 0.5, sm: 0.6, md: 0.75 },
-
+    minHeight: { xs: 34, sm: 38, md: 40 },
+    px: { xs: 1.25, sm: 1.5 },
+    py: { xs: 0.6, sm: 0.75 },
     fontSize: { xs: 12, sm: 13, md: 14 },
-    borderRadius: 1.75,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: outline,
-    color: theme.palette.text.primary,
-    backgroundColor: softBg,
-
-    transition: theme.transitions.create(
-      ['background-color', 'border-color', 'box-shadow', 'transform'],
-      { duration: theme.transitions.duration.shorter },
-    ),
-
+    fontWeight: 700,
+    textTransform: 'none' as const,
+    borderRadius: 999,
+    transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow', 'transform'], {
+      duration: theme.transitions.duration.shorter,
+    }),
     '& .MuiButton-endIcon': { ml: 0.5, mr: 0 },
-
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
       fontSize: { xs: 16, sm: 18, md: 20 },
       transition: theme.transitions.create('transform', {
@@ -99,23 +84,6 @@ export function ProductActions({
       }),
       willChange: 'transform',
     },
-
-    '&:hover': {
-      backgroundColor: hoverBg,
-      borderColor: outline,
-      boxShadow: `0 0 0 1px ${alpha(accent, 0.16)} inset, 0 2px 10px ${alpha(
-        accent,
-        0.14,
-      )}`,
-    },
-
-    '&:active': {
-      backgroundColor: pressBg,
-      borderColor: outline,
-      transform: 'translateY(0.5px)',
-      boxShadow: `0 0 0 1px ${alpha(accent, 0.2)} inset`,
-    },
-
     '&:focus-visible': {
       outline: `2px solid ${alpha(accent, 0.6)}`,
       outlineOffset: 2,
@@ -123,68 +91,58 @@ export function ProductActions({
   } as const;
 
   const editBtnSx = {
-    ...commonBtnSx,
-
-    // Normal durumda gri zemin
-    backgroundColor: neutralBgBase,
-
-    // Hızlı Düzenle için koyu gri dış çerçeve
-    borderColor: neutralBorder,
-
-    display: { xs: 'none', sm: 'inline-flex' },
-
-    '& .MuiButton-endIcon .MuiSvgIcon-root': {
-      transition: theme.transitions.create('transform', {
-        duration: theme.transitions.duration.shorter,
-      }),
-    },
-
-    // Hover’da gri ton belirgin şekilde değişsin
+    ...baseBtnSx,
+    color: theme.palette.text.primary,
+    border: `1px solid ${neutralBorder}`,
+    backgroundColor: neutralBg,
+    boxShadow: 'none',
     '&:hover': {
-      backgroundColor: neutralBgHover,
+      backgroundColor: neutralHover,
       borderColor: neutralBorder,
-      boxShadow: `0 0 0 1px ${alpha(accent, 0.18)} inset, 0 2px 10px ${alpha(
-        accent,
-        0.16,
-      )}`,
+      boxShadow: `0 0 0 1px ${alpha(outline, 0.35)} inset`,
     },
-
     '&:active': {
-      backgroundColor: neutralBgActive,
-      borderColor: neutralBorder,
+      backgroundColor: neutralActive,
       transform: 'translateY(0.5px)',
-      boxShadow: `0 0 0 1px ${alpha(accent, 0.22)} inset`,
-    },
-
-    '&:focus-visible': {
-      outline: `2px solid ${neutralOutline}`,
-      outlineOffset: 2,
+      boxShadow: `0 0 0 1px ${alpha(outline, 0.45)} inset`,
     },
   } as const;
 
   const detailBtnSx = {
-    ...commonBtnSx,
-
-    '& .MuiButton-endIcon': { ml: { xs: 0, sm: 0.5 } },
-    '&:hover .MuiButton-endIcon .MuiSvgIcon-root, &:focus-visible .MuiButton-endIcon .MuiSvgIcon-root':
-      {
-        transform: 'translateX(4px)',
-      },
-
+    ...baseBtnSx,
+    color: primaryText,
+    border: `1px solid ${alpha(accent, theme.palette.mode === 'dark' ? 0.55 : 0.35)}`,
+    backgroundColor: primaryBg,
+    boxShadow: `0 6px 18px ${alpha(accent, theme.palette.mode === 'dark' ? 0.22 : 0.18)}`,
+    '&:hover': {
+      backgroundColor: primaryHover,
+      boxShadow: `0 8px 22px ${alpha(accent, theme.palette.mode === 'dark' ? 0.28 : 0.22)}`,
+    },
+    '&:active': {
+      backgroundColor: primaryActive,
+      transform: 'translateY(0.5px)',
+      boxShadow: `0 4px 14px ${alpha(accent, theme.palette.mode === 'dark' ? 0.22 : 0.18)}`,
+    },
+    '&:hover .MuiButton-endIcon .MuiSvgIcon-root, &:focus-visible .MuiButton-endIcon .MuiSvgIcon-root': {
+      transform: 'translateX(4px)',
+    },
   } as const;
 
   return (
     <Box
       role="group"
-      sx={{ px: { xs: 1, sm: 1.25, md: 0 }, pt: 1, pb: 1 }}
+      sx={{
+        px: { xs: 1, sm: 1.25, md: 0 },
+        pt: 1,
+        pb: 1,
+      }}
       onClick={(e) => {
         e.stopPropagation();
       }}
     >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
-        alignItems="center"
-        justifyContent="space-between"
+        alignItems="stretch"
         spacing={{ xs: 1, sm: 1.25 }}
         sx={{ minHeight: 42 }}
       >
@@ -199,7 +157,12 @@ export function ProductActions({
             aria-label="Ürünü düzenle"
             sx={editBtnSx}
           >
-            Hızlı Düzenle
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+              Düzenle
+            </Box>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+              Hızlı Düzenle
+            </Box>
           </Button>
         )}
 
@@ -207,12 +170,16 @@ export function ProductActions({
           LinkComponent={Link}
           href={detailHref}
           size="small"
-          variant="text"
+          variant="contained"
+          disableElevation
           endIcon={<ArrowForwardIosIcon fontSize="small" />}
           draggable={false}
           aria-label="Ürün profilini incele"
           sx={detailBtnSx}
         >
+          <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+            İncele
+          </Box>
           <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
             Profili İncele
           </Box>
