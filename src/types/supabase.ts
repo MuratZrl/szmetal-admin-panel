@@ -289,6 +289,7 @@ export type Database = {
           unit_weight_g_pm: number
           updated_at: string
           variant: string
+          view_count: number
           wall_thickness_mm: number | null
         }
         Insert: {
@@ -320,6 +321,7 @@ export type Database = {
           unit_weight_g_pm?: number
           updated_at?: string
           variant: string
+          view_count?: number
           wall_thickness_mm?: number | null
         }
         Update: {
@@ -351,6 +353,7 @@ export type Database = {
           unit_weight_g_pm?: number
           updated_at?: string
           variant?: string
+          view_count?: number
           wall_thickness_mm?: number | null
         }
         Relationships: [
@@ -682,6 +685,7 @@ export type Database = {
       }
       capitalize_product_name_tr: { Args: { input: string }; Returns: string }
       email_available: { Args: { p_email: string }; Returns: boolean }
+      increment_product_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_current_owner: { Args: { p_user_id: string }; Returns: boolean }
       is_current_staff: { Args: never; Returns: boolean }

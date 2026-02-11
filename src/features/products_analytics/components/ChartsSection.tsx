@@ -1,4 +1,4 @@
-// src/features/products_analytics/ChartsSection.tsx
+// src/features/products_analytics/components/ChartsSection.tsx
 import { Grid } from '@mui/material';
 
 import ChartCard from '@/components/ui/cards/ChartCard';
@@ -63,7 +63,8 @@ export default async function ChartsSection() {
             height={350}
             donut
             arcLabelMode="percent"
-            valueSuffix=" ürün"
+            topK={categories.items.length}
+            valueSuffix=" ürün" 
           />
         </ChartCard>
       </Grid>

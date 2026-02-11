@@ -2,24 +2,70 @@
 // src/features/products/components/ui/Filter/sections/SortFilter.client.tsx
 
 import * as React from 'react';
-import { Box, Button, MenuItem, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  MenuItem,
+  TextField,
+  Typography,
+  ToggleButton,
+  ToggleButtonGroup,
+  useMediaQuery,
+} from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 import { sectionSx } from '../sectionSx';
 import { SORT_SELECT_ID, DEFAULT_SORT } from '@/features/products/components/ui/Filter/constants';
+import type { ProductSort } from '@/features/products/components/ui/Filter/hooks/useProductFilters';
 
 type SortFilterSectionProps = {
-  sort: string;
-  onChangeSort: (value: string) => void;
+  sort: ProductSort;
+  onChangeSort: (value: ProductSort) => void;
 };
+
+const OPTIONS: ReadonlyArray<{ value: ProductSort; label: string; short?: string }> = [
+  { value: 'date-desc', label: 'Tarih Yeni → Eski', short: 'Yeni' },
+  { value: 'date-asc', label: 'Tarih Eski → Yeni', short: 'Eski' },
+  { value: 'code-asc', label: 'Kod A → Z', short: 'Kod A-Z' },
+  { value: 'code-desc', label: 'Kod Z → A', short: 'Kod Z-A' },
+  { value: 'weight-asc', label: 'Birim Ağırlık Artan', short: 'Ağ. ↑' },
+  { value: 'weight-desc', label: 'Birim Ağırlık Azalan', short: 'Ağ. ↓' },
+];
+
+function isProductSort(v: string): v is ProductSort {
+  return OPTIONS.some((o) => o.value === v);
+}
 
 export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps): React.JSX.Element {
   const insetX = 1.5;
+  const theme = useTheme<Theme>();
+  const smUp = useMediaQuery(theme.breakpoints.up('sm'));
 
-  const isActive = sort !== DEFAULT_SORT;
+  // constants'tan gelen DEFAULT_SORT string olabilir; union'a oturtuyoruz.
+  const defaultSort = DEFAULT_SORT as ProductSort;
+
+  const isActive = sort !== defaultSort;
 
   const handleClear = React.useCallback(() => {
-    onChangeSort(DEFAULT_SORT);
-  }, [onChangeSort]);
+    onChangeSort(defaultSort);
+  }, [onChangeSort, defaultSort]);
+
+  const handleSelectChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = e.target.value;
+      if (isProductSort(v)) onChangeSort(v);
+      else onChangeSort(defaultSort);
+    },
+    [onChangeSort, defaultSort],
+  );
+
+  const handleToggleChange = React.useCallback(
+    (_e: React.MouseEvent<HTMLElement>, value: ProductSort | null) => {
+      if (value) onChangeSort(value);
+    },
+    [onChangeSort],
+  );
 
   return (
     <Box
@@ -29,7 +75,6 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         borderRadius: 2.25,
       })}
     >
-      {/* Başlık satırı: insetX ile hizalı */}
       <Box
         sx={{
           display: 'flex',
@@ -66,7 +111,6 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         </Button>
       </Box>
 
-      {/* Divider: TAM GENİŞLİK (daralmasın) */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -77,24 +121,46 @@ export function SortFilterSection({ sort, onChangeSort }: SortFilterSectionProps
         })}
       />
 
-      {/* İçerik: insetX ile hizalı */}
       <Box sx={{ px: insetX }}>
-        <TextField
-          id={SORT_SELECT_ID}
-          label="Sırala"
-          select
-          size="small"
-          value={sort}
-          onChange={(e) => onChangeSort(e.target.value)}
-          fullWidth
-        >
-          <MenuItem value="date-desc">Tarih Yeni → Eski</MenuItem>
-          <MenuItem value="date-asc">Tarih Eski → Yeni</MenuItem>
-          <MenuItem value="code-asc">Kod A → Z</MenuItem>
-          <MenuItem value="code-desc">Kod Z → A</MenuItem>
-          <MenuItem value="weight-asc">Birim Ağırlık Artan</MenuItem>
-          <MenuItem value="weight-desc">Birim Ağırlık Azalan</MenuItem>
-        </TextField>
+        {smUp ? (
+          <ToggleButtonGroup
+            value={sort}
+            exclusive
+            onChange={handleToggleChange}
+            size="small"
+            fullWidth
+            aria-label="Sıralama seçimi"
+            sx={{
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                px: 1,
+              },
+            }}
+          >
+            {OPTIONS.map((o) => (
+              <ToggleButton key={o.value} value={o.value} aria-label={o.label}>
+                {o.short ?? o.label}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        ) : (
+          <TextField
+            id={SORT_SELECT_ID}
+            label="Sırala"
+            select
+            size="small"
+            value={sort}
+            onChange={handleSelectChange}
+            fullWidth
+          >
+            {OPTIONS.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
       </Box>
     </Box>
   );

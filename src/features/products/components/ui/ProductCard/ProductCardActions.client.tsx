@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 
-import { Box, Stack, Button } from '@mui/material';
+import { Box, Stack, Button, useMediaQuery } from '@mui/material';
 import { alpha, darken, useTheme } from '@mui/material/styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import EditIcon from '@mui/icons-material/Edit';
@@ -28,6 +28,10 @@ export function ProductActions({
   detailHref,
 }: ProductActionsProps): React.JSX.Element {
   const theme = useTheme();
+
+  // md altını "compact" say: telefon + çoğu tablet aralığı
+  const mdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const compact = !mdUp;
 
   const accent = theme.palette.accent?.main ?? theme.palette.primary.main;
   const S = theme.palette.surface as SurfacePalette | undefined;
@@ -65,18 +69,26 @@ export function ProductActions({
   const baseBtnSx = {
     flex: 1,
     minWidth: 0,
-    width: { xs: 1, sm: 'auto' },
-    minHeight: { xs: 34, sm: 38, md: 40 },
+    width: 1, // compact modda (kolon) full width, md+ row’da da eşit paylaşım
+    minHeight: { xs: 36, sm: 38, md: 40 },
     px: { xs: 1.25, sm: 1.5 },
-    py: { xs: 0.6, sm: 0.75 },
+    py: { xs: 0.65, sm: 0.75 },
     fontSize: { xs: 12, sm: 13, md: 14 },
     fontWeight: 700,
     textTransform: 'none' as const,
     borderRadius: 999,
+    justifyContent: 'center',
+
+    // Yazı taşmasın: tek satır + ellipsis
+    whiteSpace: 'nowrap' as const,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+
     transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow', 'transform'], {
       duration: theme.transitions.duration.shorter,
     }),
-    '& .MuiButton-endIcon': { ml: 0.5, mr: 0 },
+
+    '& .MuiButton-endIcon': { ml: 0.5, mr: 0, flexShrink: 0 },
     '& .MuiButton-endIcon .MuiSvgIcon-root': {
       fontSize: { xs: 16, sm: 18, md: 20 },
       transition: theme.transitions.create('transform', {
@@ -84,6 +96,7 @@ export function ProductActions({
       }),
       willChange: 'transform',
     },
+
     '&:focus-visible': {
       outline: `2px solid ${alpha(accent, 0.6)}`,
       outlineOffset: 2,
@@ -141,9 +154,9 @@ export function ProductActions({
       }}
     >
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
+        direction={compact ? 'column' : 'row'} // 🔥 telefon/tablet: alt alta. md+: yan yana.
         alignItems="stretch"
-        spacing={{ xs: 1, sm: 1.25 }}
+        spacing={{ xs: 1, md: 1.25 }}
         sx={{ minHeight: 42 }}
       >
         {canEdit && (
@@ -157,11 +170,17 @@ export function ProductActions({
             aria-label="Ürünü düzenle"
             sx={editBtnSx}
           >
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-              Düzenle
-            </Box>
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              Hızlı Düzenle
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-block',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {compact ? 'Düzenle' : 'Hızlı Düzenle'}
             </Box>
           </Button>
         )}
@@ -177,11 +196,17 @@ export function ProductActions({
           aria-label="Ürün profilini incele"
           sx={detailBtnSx}
         >
-          <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-            İncele
-          </Box>
-          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-            Profili İncele
+          <Box
+            component="span"
+            sx={{
+              display: 'inline-block',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {compact ? 'İncele' : 'Profili İncele'}
           </Box>
         </Button>
       </Stack>

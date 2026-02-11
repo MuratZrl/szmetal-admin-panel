@@ -4,7 +4,6 @@
 import * as React from 'react';
 import { Stack } from '@mui/material';
 
-// MUI X Date Pickers + dayjs
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/tr';
@@ -20,13 +19,23 @@ import { DateRangeFilterSection } from '@/features/products/components/ui/Filter
 import { SortFilterSection } from '@/features/products/components/ui/Filter/sections/SortFilter.client';
 import { ActionsSection } from '@/features/products/components/ui/Filter/sections/Actions.client';
 
+type FiltersVariant = 'sidebar' | 'drawer';
+
 type FiltersProps = {
   topLevelSlugs: string[];
   categoryTree: CategoryTree;
   variants: VariantOption[];
+  variant?: FiltersVariant;
+  stickyTop?: number;
 };
 
-export default function Filters({ topLevelSlugs, categoryTree, variants }: FiltersProps): React.JSX.Element {
+export default function Filters({
+  topLevelSlugs,
+  categoryTree,
+  variants,
+  variant = 'sidebar',
+  stickyTop = 16,
+}: FiltersProps): React.JSX.Element {
   const {
     q,
     setQ,
@@ -42,13 +51,10 @@ export default function Filters({ topLevelSlugs, categoryTree, variants }: Filte
     setTo,
     sort,
     setSort,
-
     moldMode,
     setMoldMode,
-
     availabilityMode,
     setAvailabilityMode,
-
     variantQuery,
     setVariantQuery,
     expanded,
@@ -56,9 +62,17 @@ export default function Filters({ topLevelSlugs, categoryTree, variants }: Filte
     reset,
   } = useProductFilters(categoryTree);
 
+  const stickySx =
+    variant === 'sidebar'
+      ? {
+          position: { xs: 'static', md: 'sticky' as const },
+          top: { md: stickyTop },
+        }
+      : { position: 'static' as const };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="tr">
-      <Stack spacing={2.25} sx={{ position: 'sticky', top: 16 }}>
+      <Stack spacing={2.25} sx={stickySx}>
         <SearchFilterSection value={q} onChange={setQ} />
 
         <CategoryFilterSection

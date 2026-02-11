@@ -3,39 +3,45 @@
 
 import * as React from 'react';
 
-import { Box, Paper, AppBar, Toolbar, IconButton } from '@mui/material';
+import { AppBar, Box, IconButton, Paper, Toolbar } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+
 import { SIDEBAR_WIDTH } from '@/constants/layout';
 import SidebarRoot from '@/features/sidebar/components/SidebarRoot.client';
 import SidebarLogo from '@/features/sidebar/components/SidebarLogo';
 import Breadcrumb from '@/components/layout/Breadcrumb';
-import type { SidebarInitialData } from '@/features/sidebar/services/sidebar.server';
 
 import AuthRefresh from '@/app/(admin)/AuthRefresh.client';
 import AccessAutoRedirect from '@/features/auth/AccessAuthRedirect.client';
 
+import type { SidebarInitialData } from '@/features/sidebar/services/sidebar.server';
 import type { SidebarLink } from '@/features/sidebar/types';
 
-export default function AdminShell({
-  initialData,
-  mainLinks,
-  children,
-}: {
+type Props = {
   initialData: SidebarInitialData;
   mainLinks: SidebarLink[];
   children: React.ReactNode;
-}) {
+};
+
+export default function AdminShell({ initialData, mainLinks, children }: Props): React.JSX.Element {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
 
-  // Logo tıklanınca nereye gitsin: Inactive ise /account, aksi halde /create_request
-  const logoHref = initialData.status === 'Inactive' ? ('/account' as const) : ('/create_request' as const);
+  const logoHref =
+    initialData.status === 'Inactive' ? ('/account' as const) : ('/create_request' as const);
 
   return (
     <>
       <AuthRefresh enabled={process.env.NODE_ENV === 'production'} />
       <AccessAutoRedirect selfUserId={initialData.userId} />
 
-      <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: 'background.default', color: 'text.primary' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          minHeight: '100dvh',
+          bgcolor: 'background.default',
+          color: 'text.primary',
+        }}
+      >
         <SidebarRoot
           initialRole={initialData.role}
           initialStatus={initialData.status}
@@ -50,15 +56,23 @@ export default function AdminShell({
           position="fixed"
           color="inherit"
           elevation={0}
-          sx={{ display: { xs: 'flex', sm: 'none' }, borderBottom: theme => `1px solid ${theme.palette.divider}` }}
+          sx={{
+            display: { xs: 'flex', sm: 'none' },
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+            bgcolor: 'background.paper',
+          }}
         >
           <Toolbar variant="regular" sx={{ minHeight: 56 }}>
-            <IconButton edge="start" aria-label="menu" onClick={() => setMobileOpen(true)}>
+            <IconButton
+              edge="start"
+              aria-label="Menüyü aç"
+              onClick={() => setMobileOpen(true)}
+              color="inherit"
+            >
               <MenuIcon />
             </IconButton>
 
             <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
-              {/* Burada boyutu küçült: örn. 104x42 gayet dengeli */}
               <SidebarLogo href={logoHref} variant="expanded" size={{ width: 104, height: 42 }} />
             </Box>
           </Toolbar>
@@ -71,29 +85,39 @@ export default function AdminShell({
             ml: { xs: 0, sm: `${SIDEBAR_WIDTH}px` },
             overflowX: 'hidden',
             overflowY: 'auto',
-            px: { xs: 1.25 },
+            px: { xs: 1.25, sm: 2, md: 3 },
             py: { xs: 1, md: 2 },
           }}
         >
-          {/* Mobil AppBar yüksekliği kadar spacer */}
           <Box sx={{ height: { xs: 56, sm: 0 } }} />
 
-          <Paper variant="outlined" sx={{ px: 2, py: 2, borderRadius: 2.5, bgcolor: 'var(--rs-surface-1)' }}>
-            <Breadcrumb />
+          <Box sx={{ width: '100%' }}>
             <Paper
               variant="outlined"
               sx={{
-                width: '100%',
-                px: { xs: 2, md: 3 },
+                px: { xs: 1.5, md: 2 },
                 py: { xs: 1.5, md: 2 },
-                my: 2,
-                borderRadius: 3,
-                bgcolor: 'var(--rs-surface-2)',
+                borderRadius: 2.5,
+                bgcolor: 'var(--rs-surface-1)',
               }}
             >
-              {children}
+              <Breadcrumb />
+
+              <Paper
+                variant="outlined"
+                sx={{
+                  width: '100%',
+                  px: { xs: 1.5, md: 3 },
+                  py: { xs: 1.5, md: 2 },
+                  mt: 2,
+                  borderRadius: 3,
+                  bgcolor: 'var(--rs-surface-2)',
+                }}
+              >
+                {children}
+              </Paper>
             </Paper>
-          </Paper>
+          </Box>
         </Box>
       </Box>
     </>

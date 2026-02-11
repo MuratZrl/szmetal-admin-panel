@@ -120,7 +120,6 @@ export default async function ProductDetailPage({ params }: Props) {
     throw new Error(`created_by_user.username missing for product ${id}`);
   }
 
-  // ✅ Kritik nokta: media ve comment tarafında route param id kullanıyoruz.
   const safeId = id;
 
   const createdAt = row.created_at;
@@ -154,6 +153,18 @@ export default async function ProductDetailPage({ params }: Props) {
   const mediaExt: AllowedExt | null = (allowed as readonly string[]).includes(extLower)
     ? (extLower as AllowedExt)
     : null;
+
+  // Görüntülenme sayısı: kolon adını kesin bilmediğimiz için “güvenli okuma”.
+  // DB'de "view_count" ya da "viewCount" varsa alır, yoksa null gösterir.
+  type RowWithViews = ProductsRowWithChain & {
+    view_count?: number | null;
+    viewCount?: number | null;
+  };
+
+  const viewCount =
+    (row as RowWithViews).view_count ??
+    (row as RowWithViews).viewCount ??
+    null;
 
   return (
     <Box px={1} py={1}>
@@ -216,6 +227,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 code={product.code}
                 newerProductId={adjacent.newerId}
                 olderProductId={adjacent.olderId}
+                viewCount={viewCount}
               />
             </ProductInfo>
 

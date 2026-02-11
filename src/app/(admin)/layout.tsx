@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 
 import { getSidebarInitialData } from '@/features/sidebar/services/sidebar.server';
 import { mainLinks } from '@/constants/mainlinks';
-
 import AdminShell from '@/app/(admin)/AdminShell.client';
 
 export const revalidate = 0;
@@ -16,12 +15,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!initialData.userId) redirect('/login');
 
   return (
-    <>
-
-      <AdminShell initialData={initialData} mainLinks={mainLinks}>
-        {children}
-      </AdminShell>
-      
-    </>
+    <AdminShell initialData={initialData} mainLinks={mainLinks}>
+      {children}
+    </AdminShell>
   );
 }

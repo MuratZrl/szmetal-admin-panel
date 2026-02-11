@@ -4,9 +4,22 @@ import type { ProductFilters, ProductSort, CustomerMoldValue } from '@/features/
 
 type RawParams = Record<string, string | string[] | undefined>;
 
+function uniqTrimmed(arr: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of arr) {
+    const v = raw.trim();
+    if (!v) continue;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+}
+
 function toArray(input: string | string[] | undefined): string[] {
   if (!input) return [];
-  if (Array.isArray(input)) return input.map((v) => v.trim()).filter(Boolean);
+  if (Array.isArray(input)) return uniqTrimmed(input);
   const t = input.trim();
   return t ? [t] : [];
 }
@@ -14,6 +27,11 @@ function toArray(input: string | string[] | undefined): string[] {
 function first(input: string | string[] | undefined): string {
   if (!input) return '';
   return (Array.isArray(input) ? input[0] : input).trim();
+}
+
+function isValidDateParam(raw: string): boolean {
+  if (!raw) return false;
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw);
 }
 
 /**
@@ -30,38 +48,50 @@ function normalizeSort(raw: string | undefined): ProductSort | undefined {
     'code-desc',
   ];
   if (!raw) return undefined;
-  const val = raw as ProductSort;
-  return allowed.includes(val) ? val : undefined;
+  const v = raw.trim() as ProductSort;
+  return allowed.includes(v) ? v : undefined;
 }
 
 function parseCustomerMold(raw: string): CustomerMoldValue[] | undefined {
   if (!raw) return undefined;
-  const v = raw.toLocaleLowerCase('tr');
+  const v = raw.trim().toLocaleLowerCase('tr');
 
   if (v === 'evet' || v === 'true' || v === '1' || v === 'mold') return ['Evet'];
-  if (v === 'hayır' || v === 'hayir' || v === 'false' || v === '0' || v === 'nonmold' || v === 'non_mold')
+  if (
+    v === 'hayır' ||
+    v === 'hayir' ||
+    v === 'false' ||
+    v === '0' ||
+    v === 'nonmold' ||
+    v === 'non_mold' ||
+    v === 'non-mold'
+  ) {
     return ['Hayır'];
+  }
 
   return undefined;
 }
 
 function parseAvailability(raw: string): boolean | undefined {
   if (!raw) return undefined;
-  const v = raw.toLocaleLowerCase('tr');
+  const v = raw.trim().toLocaleLowerCase('tr');
 
-  // Senin eski mantık: availability=0 => Kullanılamaz
-  if (v === '0' || v === 'false' || v === 'unavailable') return false;
+  // availability=0 => Kullanılamaz
+  if (v === '0' || v === 'false' || v === 'unavailable' || v === 'kullanilamaz' || v === 'kullanılamaz') return false;
 
-  // Yeni toggle ile bunu da destekle (availability=1 => Kullanılabilir)
-  if (v === '1' || v === 'true' || v === 'available') return true;
+  // availability=1 => Kullanılabilir
+  if (v === '1' || v === 'true' || v === 'available' || v === 'kullanilabilir' || v === 'kullanılabilir') return true;
 
   return undefined;
 }
 
 export function parseProductFilters(sp: RawParams): ProductFilters {
   const q = first(sp.q);
-  const from = first(sp.from);
-  const to = first(sp.to);
+  const fromRaw = first(sp.from);
+  const toRaw = first(sp.to);
+
+  const from = isValidDateParam(fromRaw) ? fromRaw : '';
+  const to = isValidDateParam(toRaw) ? toRaw : '';
 
   const categories = toArray(sp.category);
   const subCategories = toArray(sp.subCategory);

@@ -21,7 +21,6 @@ export default function ProductMetaRow({ createdBy, createdAt }: Props): React.J
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 1,
         minWidth: 0,
       }}
     >
@@ -29,17 +28,23 @@ export default function ProductMetaRow({ createdBy, createdAt }: Props): React.J
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 0.85,
+          gap: 0.75,
           minWidth: 0,
           overflow: 'hidden',
         }}
       >
-        <PersonOutlineIcon fontSize="small" />
+        <PersonOutlineIcon
+          fontSize="small"
+          sx={{
+            transform: 'skewX(-12deg)',
+            transformOrigin: 'center',
+          }}
+        />
 
         <Typography
           variant="caption"
           color="text.secondary"
-          sx={{ flexShrink: 0, letterSpacing: 0.2, fontStyle: 'italic' }}
+          sx={{ flexShrink: 0, fontStyle: 'italic' }}
         >
           Yükleyen:
         </Typography>

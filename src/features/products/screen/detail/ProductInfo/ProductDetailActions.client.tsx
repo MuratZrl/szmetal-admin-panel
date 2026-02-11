@@ -1,14 +1,14 @@
 'use client';
-// src/features/products/components/ProductDetailActions.client.tsx
 
 import * as React from 'react';
 import type { Route } from 'next';
 import Link from '@/components/Link';
 
-import { Box, Button, Divider, Stack } from '@mui/material';
+import { Box, Button, Divider, Stack, Typography } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
 import ProductDetailEditButton from '@/features/products/screen/detail/ProductInfo/ProductDetailEditButton.client';
 
@@ -16,15 +16,32 @@ type Props = {
   id: string;
   canEdit: boolean;
   code?: string | null;
-  newerProductId?: string | null; // “Geri” = daha yeni
-  olderProductId?: string | null; // “İleri” = daha eski
+  newerProductId?: string | null;
+  olderProductId?: string | null;
+  viewCount?: number | null;
 };
+
+function formatViews(n: number | null | undefined): string {
+  const v = typeof n === 'number' ? n : 0;
+  if (!Number.isFinite(v) || v < 0) return '0';
+  return new Intl.NumberFormat('tr-TR').format(Math.floor(v));
+}
+
+function toSafeInt(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v) && v >= 0) return Math.floor(v);
+  if (typeof v === 'string') {
+    const n = Number.parseInt(v, 10);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+  return null;
+}
 
 export default function ProductDetailActions({
   id,
   canEdit,
   newerProductId = null,
   olderProductId = null,
+  viewCount = null,
 }: Props): React.JSX.Element {
   const newerHref = newerProductId
     ? (`/products/${encodeURIComponent(newerProductId)}` as unknown as Route)
@@ -36,9 +53,54 @@ export default function ProductDetailActions({
 
   const showNav = Boolean(newerHref || olderHref);
 
+  const [views, setViews] = React.useState<number | null>(() => (typeof viewCount === 'number' ? viewCount : null));
+
+  React.useEffect(() => {
+    let alive = true;
+
+    // Aynı üründe spam artışı olmasın diye basit throttle (5 dk)
+    const key = `pv:${id}`;
+    const now = Date.now();
+    const lastRaw = localStorage.getItem(key);
+    const last = lastRaw ? Number.parseInt(lastRaw, 10) : 0;
+
+    if (Number.isFinite(last) && last > 0 && now - last < 5 * 60 * 1000) {
+      return () => {
+        alive = false;
+      };
+    }
+
+    localStorage.setItem(key, String(now));
+
+    fetch(`/api/products/${encodeURIComponent(id)}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    })
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const j: unknown = await r.json();
+        return j;
+      })
+      .then((j) => {
+        if (!alive || !j || typeof j !== 'object') return;
+        const obj = j as { viewCount?: unknown };
+        const n = toSafeInt(obj.viewCount);
+        if (n !== null) setViews(n);
+      })
+      .catch(() => {
+        // sessiz geç, sayaç “best-effort”
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  const viewsText = formatViews(views);
+
   return (
     <Stack spacing={1} sx={{ width: '100%' }}>
-      {/* ÜST SATIR: Sol (Yeni/Eski) - Sağ (Ana Sayfa) */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
         {showNav ? (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
@@ -90,11 +152,29 @@ export default function ProductDetailActions({
         </Button>
       </Stack>
 
-      {/* ALT KATMAN: Divider + sadece edit (sağda) */}
       {canEdit ? (
         <>
           <Divider sx={{ opacity: 0.7 }} />
-          <ProductDetailEditButton id={id} canEdit={canEdit} />
+
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ width: '100%' }}>
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0, overflow: 'hidden' }}>
+              <VisibilityOutlinedIcon fontSize="small" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+                {viewsText}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ lineHeight: 1.1, whiteSpace: 'nowrap', display: { xs: 'none', sm: 'inline' } }}
+              >
+                görüntülenme
+              </Typography>
+            </Stack>
+
+            <Box sx={{ flexShrink: 0 }}>
+              <ProductDetailEditButton id={id} canEdit={canEdit} />
+            </Box>
+          </Stack>
         </>
       ) : null}
     </Stack>
