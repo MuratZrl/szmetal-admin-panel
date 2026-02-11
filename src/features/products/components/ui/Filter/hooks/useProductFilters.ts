@@ -168,6 +168,7 @@ type UrlSnapshot = {
   moldMode: MoldMode;
   availabilityMode: AvailabilityMode;
   pageSize: string;
+  page: string;
 };
 
 // Next'in ReadonlyURLSearchParams tipine isimle bağımlı olmak yerine,
@@ -190,8 +191,9 @@ function readFromSearchParams(sp: SearchParamsLike): UrlSnapshot {
   const availabilityMode = parseAvailabilityMode(sp.get('availability'));
 
   const pageSize = (sp.get('pageSize') ?? '').trim();
+  const page = (sp.get('page') ?? '').trim();
 
-  return { q, categories, subCategories, variantsSel, from, to, sort, moldMode, availabilityMode, pageSize };
+  return { q, categories, subCategories, variantsSel, from, to, sort, moldMode, availabilityMode, pageSize, page };
 }
 
 function toSearchParams(snapshot: UrlSnapshot): URLSearchParams {
@@ -214,6 +216,7 @@ function toSearchParams(snapshot: UrlSnapshot): URLSearchParams {
   if (snapshot.availabilityMode === 'available') params.set('availability', '1');
 
   if (snapshot.pageSize) params.set('pageSize', snapshot.pageSize);
+  if (snapshot.page && snapshot.page !== '1') params.set('page', snapshot.page);
 
   return params;
 }
@@ -287,6 +290,7 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
       moldMode,
       availabilityMode,
       pageSize: (sp.get('pageSize') ?? '').trim(),
+      page: (sp.get('page') ?? '').trim(),   // ← add this
     };
 
     const nextParams = toSearchParams(snapshot);

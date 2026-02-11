@@ -2,31 +2,19 @@
 // src/features/products/components/ProductsPagination.client.tsx
 
 import * as React from 'react';
-
-import type { Route } from 'next'; // ⬅️ önemli
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-
 import CustomPagination from '@/components/ui/pagination/Pagination.client';
+import { useProductsQuery } from '@/features/products/hooks/useProductsQuery.client';
 
 type Props = { page: number; totalPages: number };
 
-export default function ProductsPagination({ page, totalPages }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
+export default function ProductsPagination({ page, totalPages }: Props): React.JSX.Element {
+  const { navigate } = useProductsQuery();
 
   const onChange = React.useCallback(
     (_e: React.ChangeEvent<unknown>, value: number) => {
-      const params = new URLSearchParams(sp); // ReadonlyURLSearchParams → kopya
-      if (value <= 1) params.delete('page');
-      else params.set('page', String(value));
-
-      const query = params.toString();
-      const href = (query ? `${pathname}?${query}` : pathname) as Route; // ⬅️ assert
-
-      router.push(href, { scroll: false });
+      navigate({ page: value <= 1 ? null : String(value) });
     },
-    [router, pathname, sp]
+    [navigate]
   );
 
   return <CustomPagination page={page} totalPages={totalPages} onChange={onChange} />;
