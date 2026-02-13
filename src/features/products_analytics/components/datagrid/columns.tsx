@@ -156,7 +156,7 @@ export const productAnalyticsColumns: GridColDef<ProductAnalyticsRow>[] = [
     flex: 1.2,
 
     editable: false,
-    resizable: false,
+    resizable: true,
     filterable: false,
     disableColumnMenu: true,
   },

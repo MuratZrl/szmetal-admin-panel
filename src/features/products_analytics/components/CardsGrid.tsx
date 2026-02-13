@@ -10,14 +10,11 @@ export default async function CardsGrid() {
   const {
     totalCount,
     thisMonthCount,
-    // prevMonthCount, // artık kullanmıyoruz
-    // prevPrevMonthCount,
     totalWithCustomerMold,
     totalAvailable,
     thisMonthWithCustomerMoldCount,
     thisMonthAvailableCount,
-    // prevMonthWithCustomerMoldCount,
-    // prevMonthAvailableCount,
+    totalViewCount,
   } = await getProductStats();
 
   // 1) Toplam ürün için: geçen ay sonundaki toplamı hesapla
@@ -51,11 +48,10 @@ export default async function CardsGrid() {
       sx={{ mb: 3 }}
     >
       {/* 1) Toplam ürün */}
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Toplam Ürünler"
           value={totalCount}
-          // Bu ay hiç yeni ürün yoksa yüzdeyi gizle, sadece "Bu ay yeni kayıt yok." yazsın
           percentage={thisMonthCount === 0 ? undefined : totalPct}
           delta={thisMonthCount}
           percentDecimals={1}
@@ -64,7 +60,7 @@ export default async function CardsGrid() {
       </Grid>
 
       {/* 2) Kullanılabilir ürünler */}
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Kullanılabilir Ürünler"
           value={totalAvailable}
@@ -78,7 +74,7 @@ export default async function CardsGrid() {
       </Grid>
 
       {/* 3) Müşteri Kalıbı profilleri */}
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
           title="Müşteri Kalıbı Profilleri"
           value={totalWithCustomerMold}
@@ -90,6 +86,15 @@ export default async function CardsGrid() {
           delta={thisMonthWithCustomerMoldCount}
           percentDecimals={1}
           emptyPctLabel="Bu ay yeni kayıt yok."
+        />
+      </Grid>
+
+      {/* 4) Toplam Görüntülenme */}
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <StatCard
+          title="Toplam Görüntülenme"
+          value={totalViewCount}
+          emptyPctLabel="Görüntülenme verisi"
         />
       </Grid>
     </Grid>

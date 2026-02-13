@@ -19,6 +19,8 @@ export type ProductStats = {
   prevMonthWithCustomerMoldCount: number;
   /** Geçen ay eklenen kullanılabilir ürün sayısı */
   prevMonthAvailableCount: number;
+  /** Tüm ürünlerin toplam görüntülenme sayısı */
+  totalViewCount: number;
 };
 
 type CountResultShape = {
@@ -57,6 +59,7 @@ export async function getProductStats(): Promise<ProductStats> {
     thisMonthAvailableRes,
     prevMonthWithCustomerMoldRes,
     prevMonthAvailableRes,
+    viewCountRes,
   ] = await Promise.all([
     // Toplam ürün
     supabase
@@ -124,6 +127,11 @@ export async function getProductStats(): Promise<ProductStats> {
       .gte('created_at', startOfPrevMonthIso)
       .lt('created_at', startOfThisMonthIso)
       .eq('availability', true),
+
+    // Toplam görüntülenme (view_count sütununun toplamı)
+    supabase
+      .from('products')
+      .select('view_count'),
   ]);
 
   const totalCount = toSafeCount(totalRes as CountResultShape);
@@ -145,6 +153,12 @@ export async function getProductStats(): Promise<ProductStats> {
     prevMonthAvailableRes as CountResultShape,
   );
 
+  // view_count toplamı
+  const totalViewCount = ((viewCountRes.data ?? []) as { view_count: number | null }[]).reduce(
+    (sum, row) => sum + (typeof row.view_count === 'number' && Number.isFinite(row.view_count) ? row.view_count : 0),
+    0,
+  );
+
   return {
     totalCount,
     thisMonthCount,
@@ -156,6 +170,7 @@ export async function getProductStats(): Promise<ProductStats> {
     thisMonthAvailableCount,
     prevMonthWithCustomerMoldCount,
     prevMonthAvailableCount,
+    totalViewCount,
   };
 }
 
