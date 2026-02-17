@@ -12,12 +12,19 @@ const ALLOWED_IPS: Set<string> = new Set(
   (process.env.ALLOWED_IPS ?? '').split(',').map(ip => ip.trim()).filter(Boolean),
 );
 
+/** IP ile korunan rotalar (sadece şirket ağından erişilebilir) */
+const IP_RESTRICTED_ROUTES = ['/products', '/products_analytics'] as const;
+
 function getClientIp(req: NextRequest): string | null {
   return (
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers.get('x-real-ip') ||
     null
   );
+}
+
+function isIpRestricted(path: string): boolean {
+  return IP_RESTRICTED_ROUTES.some((base) => path === base || path.startsWith(`${base}/`));
 }
 
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'] as const;
@@ -101,8 +108,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // 0.25) IP kısıtlama (sadece production)
-  if (process.env.NODE_ENV === 'production' && ALLOWED_IPS.size > 0) {
+  // 0.25) IP kısıtlama – sadece belirli rotalar için (production)
+  if (process.env.NODE_ENV === 'production' && ALLOWED_IPS.size > 0 && isIpRestricted(npath)) {
     const clientIp = getClientIp(req);
     if (!clientIp || !ALLOWED_IPS.has(clientIp)) {
       return new NextResponse('403 Forbidden', { status: 403 });
