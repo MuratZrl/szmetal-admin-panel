@@ -1,6 +1,5 @@
 // src/features/products/services/labelMaps.server.ts
 import 'server-only';
-
 import type { ProductDicts } from '@/features/products/services/dicts.server';
 
 /**

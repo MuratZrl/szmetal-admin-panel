@@ -7,6 +7,19 @@ type Role = Tables<'users'>['role'];
 type Status = Tables<'users'>['status'];
 type UserRow = { role: Role; status: Status };
 
+/* IP kısıtlama – sadece production'da aktif */
+const ALLOWED_IPS: Set<string> = new Set(
+  (process.env.ALLOWED_IPS ?? '').split(',').map(ip => ip.trim()).filter(Boolean),
+);
+
+function getClientIp(req: NextRequest): string | null {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    null
+  );
+}
+
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'] as const;
 const PUBLIC_ROUTES = ['/403', '/unauthorized'] as const;
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
@@ -86,6 +99,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     /\.(?:css|js|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$/i.test(npath)
   ) {
     return NextResponse.next();
+  }
+
+  // 0.25) IP kısıtlama (sadece production)
+  if (process.env.NODE_ENV === 'production' && ALLOWED_IPS.size > 0) {
+    const clientIp = getClientIp(req);
+    if (!clientIp || !ALLOWED_IPS.has(clientIp)) {
+      return new NextResponse('403 Forbidden', { status: 403 });
+    }
   }
 
   // 0.5) Prefetch/HEAD/OPTIONS ise ağır iş yok; sadece temel yönlendirme kuralı uygula
