@@ -12,9 +12,6 @@ const ALLOWED_IPS: Set<string> = new Set(
   (process.env.ALLOWED_IPS ?? '').split(',').map(ip => ip.trim()).filter(Boolean),
 );
 
-/** IP ile korunan rotalar (sadece şirket ağından erişilebilir) */
-const IP_RESTRICTED_ROUTES = ['/products', '/products_analytics'] as const;
-
 function getClientIp(req: NextRequest): string | null {
   return (
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -22,18 +19,16 @@ function getClientIp(req: NextRequest): string | null {
     null
   );
 }
-
-function isIpRestricted(path: string): boolean {
-  return IP_RESTRICTED_ROUTES.some((base) => path === base || path.startsWith(`${base}/`));
-}
-
+ 
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password'] as const;
 const PUBLIC_ROUTES = ['/403', '/unauthorized'] as const;
+
 const ROLE_ACCESS: Record<Role, readonly string[]> = {
   Admin: ['*'],
-  Manager: ['/account', '/requests', '/clients', '/orders', '/create_request', '/products_analytics', '/products'],
-  User: ['/account', '/create_request', '/orders', '/products'],
+  Manager: ['/account', '/clients', '/products_analytics', '/products'],
+  User: ['/account', '/products'],
 } as const;
+
 const HOME_PATH = '/account' as const;
 
 /* -------------------------------------------------------------------------- */
@@ -43,14 +38,17 @@ function normPath(p: string): string {
   const q = p.split('?')[0]!.split('#')[0]!;
   return q.endsWith('/') ? q.slice(0, -1) : q;
 }
+
 function isAuthRoute(path: string): boolean {
   const n = normPath(path);
   return AUTH_ROUTES.some((p) => n === p || n.startsWith(`${p}/`));
 }
+
 function isPublicRoute(path: string): boolean {
   const n = normPath(path);
   return PUBLIC_ROUTES.some((p) => n === p || n.startsWith(`${p}/`));
 }
+
 function isAllowedForRole(role: Role, path: string): boolean {
   const n = normPath(path);
   const allowed = ROLE_ACCESS[role];
@@ -58,12 +56,14 @@ function isAllowedForRole(role: Role, path: string): boolean {
   if (allowed.includes('*')) return true;
   return allowed.some((base) => n === base || n.startsWith(`${base}/`));
 }
+
 function hasSupabaseSessionCookies(req: NextRequest): boolean {
   const names = req.cookies.getAll().map(c => c.name);
   const hasLegacy = names.includes('sb-access-token') || names.includes('sb-refresh-token');
   const hasPacked = names.some(n => /^sb-[a-z0-9-]+-auth-token$/i.test(n));
   return hasLegacy || hasPacked;
 }
+
 function getSupabaseCookieNames(req: NextRequest): string[] {
   return req.cookies
     .getAll()
@@ -108,8 +108,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // 0.25) IP kısıtlama – sadece belirli rotalar için (production)
-  if (process.env.NODE_ENV === 'production' && ALLOWED_IPS.size > 0 && isIpRestricted(npath)) {
+  // 0.25) IP kısıtlama – tüm rotalar için (production)
+  if (process.env.NODE_ENV === 'production' && ALLOWED_IPS.size > 0) {
     const clientIp = getClientIp(req);
     if (!clientIp || !ALLOWED_IPS.has(clientIp)) {
       return new NextResponse('403 Forbidden', { status: 403 });
@@ -132,10 +132,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const base = NextResponse.next();
 
   const written: Array<{ name: string; value: string; options: CookieOptions }> = [];
+  
   const withForwardedCookies = (out: NextResponse): NextResponse => {
     for (const { name, value, options } of written) out.cookies.set(name, value, options);
     return out;
   };
+
   const writeCookie = (name: string, value: string, options: CookieOptions) => {
     written.push({ name, value, options });
     base.cookies.set(name, value, options);
