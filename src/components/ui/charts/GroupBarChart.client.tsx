@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { useTheme, alpha, type Theme } from '@mui/material/styles';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Stack } from '@mui/material';
 
 export type GroupSeries = { label: string; data: number[]; color?: string };
 
@@ -86,20 +86,45 @@ export default function GroupBarChart({
   tone = 'solid',
 }: Props) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   if (!labels.length || !series.length) {
+    const emptyBarColor = isDark ? alpha('#fff', 0.06) : alpha('#000', 0.04);
     return (
       <Box
         sx={{
           height,
-          display: 'grid',
-          placeItems: 'center',
-          border: `1px dashed ${alpha(theme.palette.text.primary, 0.2)}`,
-          borderRadius: 1.5,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          Görselleştirilecek veri bulunamadı.
+        {/* Mini bar chart illustration */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: 64 }}>
+          {[28, 48, 20, 40, 64, 34].map((h, i) => (
+            <Box
+              key={i}
+              sx={{
+                width: 14,
+                height: h,
+                borderRadius: '4px 4px 2px 2px',
+                bgcolor: emptyBarColor,
+              }}
+            />
+          ))}
+        </Box>
+        <Typography
+          sx={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'text.secondary',
+            opacity: 0.55,
+            letterSpacing: 0.15,
+          }}
+        >
+          Görselleştirecek veri bulunamadı.
         </Typography>
       </Box>
     );
@@ -123,22 +148,108 @@ export default function GroupBarChart({
 
   const resolvedColors =
     tone === 'soft'
-      ? baseColors.map((c) => alpha(c, theme.palette.mode === 'dark' ? 0.95 : 0.75))
+      ? baseColors.map((c) => alpha(c, isDark ? 0.95 : 0.75))
       : baseColors;
 
+  // Calculate totals per series for the legend badges
+  const seriesTotals = series.map((s) =>
+    s.data.reduce((sum, v) => sum + (Number.isFinite(v) ? v : 0), 0),
+  );
+
   return (
-    <Box>
+    <Box
+      sx={{
+        '@keyframes barChartFadeIn': {
+          from: { opacity: 0, transform: 'translateY(8px)' },
+          to: { opacity: 1, transform: 'translateY(0)' },
+        },
+        animation: 'barChartFadeIn 0.5s ease-out',
+      }}
+    >
       {title && (
         <Typography variant="h6" mb={1}>
           {title}
         </Typography>
       )}
+
+      {/* ─── Compact custom legend with totals ─── */}
+      <Stack
+        direction="row"
+        sx={{ mb: 0.75, px: 0.5, flexWrap: 'wrap', gap: 1.25 }}
+      >
+        {series.map((s, i) => (
+          <Stack
+            key={s.label}
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
+          >
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '2px',
+                flexShrink: 0,
+                bgcolor: resolvedColors[i],
+                boxShadow: `0 0 4px ${alpha(resolvedColors[i], isDark ? 0.4 : 0.25)}`,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 500,
+                fontSize: 11,
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {s.label}
+            </Typography>
+            <Box
+              sx={{
+                px: 0.5,
+                py: 0.125,
+                borderRadius: 0.75,
+                bgcolor: alpha(resolvedColors[i], isDark ? 0.15 : 0.1),
+                lineHeight: 1,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: resolvedColors[i],
+                  fontWeight: 700,
+                  fontSize: 10,
+                  lineHeight: 1,
+                }}
+              >
+                {formatTR(seriesTotals[i])}
+              </Typography>
+            </Box>
+          </Stack>
+        ))}
+      </Stack>
+
       <BarChart
         xAxis={[
           {
             data: labels,
             scaleType: 'band',
-            tickLabelStyle: { fontSize: 12, fill: theme.palette.text.secondary },
+            tickLabelStyle: {
+              fontSize: 11.5,
+              fill: theme.palette.text.secondary,
+              fontWeight: 500,
+            },
+          },
+        ]}
+        yAxis={[
+          {
+            tickLabelStyle: {
+              fontSize: 11,
+              fill: alpha(theme.palette.text.secondary, 0.6),
+              fontWeight: 400,
+            },
           },
         ]}
         series={series.map((s) => ({
@@ -149,20 +260,46 @@ export default function GroupBarChart({
         colors={resolvedColors}
         grid={{ horizontal: true, vertical: false }}
         height={height}
-        margin={{ top: 8, right: 8, bottom: 32, left: 8 }}
-        slotProps={{ legend: { position: { vertical: 'top' } } }}
+        margin={{ top: 8, right: 12, bottom: 36, left: 44 }}
+        borderRadius={8}
+        hideLegend
         sx={{
+          // ─── Subtle grid — barely visible lines ───
           '.MuiChartsGrid-line': {
-            strokeDasharray: '3 3',
-            stroke: alpha(theme.palette.text.primary, 0.15),
+            strokeDasharray: '4 6',
+            stroke: alpha(
+              theme.palette.text.primary,
+              isDark ? 0.06 : 0.08,
+            ),
+            strokeWidth: 0.75,
           },
-          '.MuiChartsAxis-line': { stroke: theme.palette.divider },
+
+          // ─── Clean axis lines ───
+          '.MuiChartsAxis-line': {
+            stroke: alpha(theme.palette.divider, 0.5),
+            strokeWidth: 1,
+          },
+          '.MuiChartsAxis-tick': {
+            stroke: alpha(theme.palette.divider, 0.3),
+          },
+
+          // ─── Premium bars with glow ───
           '.MuiBarElement-root': {
-            rx: 1,
-            transition: 'opacity 120ms ease, transform 120ms ease',
+            filter: isDark
+              ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
+              : 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))',
+            transition: 'filter 250ms cubic-bezier(0.4,0,0.2,1), opacity 250ms ease',
           },
           '.MuiBarElement-root:hover': {
-            opacity: theme.palette.mode === 'dark' ? 0.9 : 0.95,
+            filter: isDark
+              ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) brightness(1.15)'
+              : 'drop-shadow(0 3px 10px rgba(0,0,0,0.15)) brightness(1.05)',
+          },
+
+          // ─── Highlight band on hover ───
+          '.MuiChartsAxisHighlight-root': {
+            fill: alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04),
+            stroke: 'none',
           },
         }}
       />

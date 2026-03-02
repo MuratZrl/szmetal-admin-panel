@@ -95,14 +95,11 @@ export const ROLE_ACCESS: Record<Role, readonly string[]> = {
   Admin: ['*'],
   Manager: [
     '/account',
-    '/requests',
     '/clients',
-    '/orders',
-    '/create_request',
     '/products',
     '/products_analytics',
   ],
-  User: ['/account', '/create_request', '/orders', '/products'],
+  User: ['/account', '/products'],
 } as const;
 
 function normalizePath(p: string): string {
@@ -152,7 +149,6 @@ export async function guardAccountPage(): Promise<void> {
  * - Login yoksa → /login
  * - Profile yoksa → /login?error=profile-missing
  * - Banned → /unauthorized
- * - Inactive → sadece /create_request'e giremez (senin requirement)
  * - Role → ROLE_ACCESS matrisi
  */
 export async function requirePageAccess(pagePath: string): Promise<{
@@ -161,12 +157,6 @@ export async function requirePageAccess(pagePath: string): Promise<{
 }> {
   const path = normalizePath(pagePath);
   const { user, profile } = await requireActiveUser();
-
-  // Status kuralı (senin requirement)
-  if (profile.status === 'Inactive') {
-    const isCreate = path === '/create_request' || path.startsWith('/create_request/');
-    if (isCreate) redirect('/unauthorized?reason=inactive');
-  }
 
   const role = (profile.role ?? 'User') as Role;
 
@@ -195,10 +185,7 @@ export async function requirePageAccess(pagePath: string): Promise<{
 const PAGE_KEY_TO_PATH = {
   account: '/account',
   dashboard: '/dashboard',
-  create_request: '/create_request',
-  orders: '/orders',
   clients: '/clients',
-  requests: '/requests',
   products: '/products',
   products_analytics: '/products_analytics',
 } as const;

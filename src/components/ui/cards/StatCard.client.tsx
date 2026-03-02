@@ -124,7 +124,17 @@ export default function StatCard({
 
   if (loading) {
     return (
-      <Card sx={{ borderRadius: 2, minHeight }} data-testid="stat-card-skeleton">
+      <Card
+        sx={{
+          borderRadius: 2,
+          minHeight,
+          boxShadow: (theme) =>
+            theme.palette.mode === 'light'
+              ? '0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)'
+              : undefined,
+        }}
+        data-testid="stat-card-skeleton"
+      >
         <CardContent sx={{ px: { xs: 1.5, sm: 2.5 }, py: { xs: 1.5, sm: 2 } }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
             <Skeleton variant="text" width={160} height={18} />
@@ -144,6 +154,10 @@ export default function StatCard({
         minHeight,
         display: 'flex',
         flexDirection: 'column',
+        boxShadow: (theme) =>
+          theme.palette.mode === 'light'
+            ? '0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)'
+            : undefined,
         ...(color !== 'default' && {
           '--_color':
             color === 'primary' ? 'primary.main' :

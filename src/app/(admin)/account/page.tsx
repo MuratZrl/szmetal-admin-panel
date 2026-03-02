@@ -1,7 +1,7 @@
 // app/(admin)/account/page.tsx
 import { redirect } from 'next/navigation';
 import { Box } from '@mui/material';
-import AccountClientSection from '@/features/account/components/AccountClientSection.client';
+import AccountClientSection from '@/features/account/components/AccountSection.client';
 import { getAccountData } from '@/features/account/services/getAccountData.server';
 
 export const dynamic = 'force-dynamic'; // veya: export const revalidate = 0;
@@ -20,7 +20,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <Box px={1} py={2}>
+    <Box sx={{ maxWidth: 840, px: 1, py: 2 }}>
       <AccountClientSection initialUserData={profile} />
     </Box>
   );

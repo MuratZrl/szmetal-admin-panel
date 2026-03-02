@@ -11,7 +11,7 @@ import { fetchUsersAll } from '@/features/clients/services/table.server';
 import { fetchClientsLine6M } from '@/features/clients/services/chart.server';
 
 import CardsGrid from '@/features/clients/components/CardsGrid.client';
-import TableGrid from '@/features/clients/components/TableGrid.client';
+import TableGrid from '@/features/clients/components/TableGrid.client'; 
 
 import ChartCard from '@/components/ui/cards/ChartCard';
 import LineAreaChart from '@/components/ui/charts/LineAreaChart.client';

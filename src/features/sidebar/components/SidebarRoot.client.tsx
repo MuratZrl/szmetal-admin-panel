@@ -74,7 +74,7 @@ export default function SidebarRoot({
     [mainLinks]
   );
 
-  const logoHref = statusUI === 'Inactive' ? ('/account' as const) : ('/create_request' as const);
+  const logoHref = '/account' as const;
 
   // Drawer kağıdı: genişliği parametreyle veren fabrika
   const paperSx =

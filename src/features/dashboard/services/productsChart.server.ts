@@ -52,3 +52,22 @@ export async function fetchProductsSeries(nMonths = 6): Promise<Series> {
   if (error) throw error;
   return buildSeries(data ?? [], months);
 }
+
+// --------------- Date-range variant ---------------
+import type { DateRange, BucketStrategy, SeriesData } from '../types/dashboardData';
+import { type Buckets, buildSeriesFromBuckets } from '../utils/dateRanges';
+
+export async function fetchProductsSeriesForRange(
+  range: DateRange,
+  buckets: Buckets,
+  strategy: BucketStrategy,
+): Promise<SeriesData> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('products')
+    .select('created_at')
+    .gte('created_at', range.startISO)
+    .lt('created_at', range.endISO) as { data: Row[] | null; error: unknown };
+  if (error) throw error;
+  return buildSeriesFromBuckets(data ?? [], buckets, strategy);
+}

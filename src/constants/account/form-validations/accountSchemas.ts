@@ -10,7 +10,7 @@ export const accountSchema = yup.object({
     .string()
     .optional()
     .nullable()
-    .matches(/^0\d{10}$/, 'Telefon numarası 0 ile başlamalı ve 11 hane olmalıdır.')
+    .matches(/^\d{10}$/, 'Telefon numarası 10 hane olmalıdır.')
     .transform((value, originalValue) => originalValue.trim() === '' ? null : value),
 
   company: yup

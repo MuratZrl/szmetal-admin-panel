@@ -31,11 +31,11 @@ export default function ProfileHeader({
   return (
     <Box
       sx={{
-        p: { xs: 1, sm: 1.5 },
-        mb: 3,
-        gap: { xs: 1.5, sm: 2 },
+        p: { xs: 1, sm: 1.25 },
+        mb: 1.5,
+        gap: { xs: 1, sm: 1.5 },
         display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },          // ← küçükte dikey
+        flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'stretch', sm: 'center' },
         justifyContent: 'space-between',
         borderRadius: 2,
@@ -58,8 +58,8 @@ export default function ProfileHeader({
           src={userData?.image || undefined}
           alt={userData?.username ?? 'Avatar'}
           sx={(t) => ({
-            width: { xs: 56, sm: 64, md: 72 },
-            height: { xs: 56, sm: 64, md: 72 },
+            width: { xs: 48, sm: 52, md: 56 },
+            height: { xs: 48, sm: 52, md: 56 },
             bgcolor:
               t.palette.mode === 'dark'
                 ? alpha(t.palette.primary.main, 0.2)
@@ -78,32 +78,30 @@ export default function ProfileHeader({
 
         <Box
           sx={{
-            height: { xs: 'auto', sm: 72 },
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: { xs: 'flex-start', sm: 'space-between' },
-            gap: { xs: 0.5, sm: 0 },
+            justifyContent: 'center',
+            gap: 0.25,
             minWidth: 0,
-            py: 0.25,
             flex: '1 1 auto',
           }}
         >
           <Typography
-            variant="subtitle1"
+            variant="body2"
             fontWeight={600}
             color="text.primary"
             noWrap
-            sx={{ lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden' }}
+            sx={{ fontSize: 13.5, lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden' }}
             title={userData?.username ?? 'Yükleniyor...'}
           >
             {userData?.username ?? 'Yükleniyor...'}
           </Typography>
 
           <Typography
-            variant="body2"
+            variant="caption"
             color="text.secondary"
             noWrap
-            sx={{ lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden' }}
+            sx={{ fontSize: 12, lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden' }}
             title={userData?.email ?? ''}
           >
             {userData?.email ?? ''}

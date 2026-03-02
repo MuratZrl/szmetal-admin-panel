@@ -6,26 +6,23 @@ type Trend = { change: number | null; trend: TrendDir };
 
 export type CardsTotals = {
   totalUsers: number;
-  totalPendingRequests: number;
   totalProducts: number;
 };
 
 export type CardsTrends = {
   user: Trend;
-  request: Trend;
   product: Trend;
 };
 
 export type CardsDeltas = {
   user: number;
-  request: number;
   product: number;
 };
 
 export type CardsData = {
   totals: CardsTotals;
-  trends: CardsTrends; // yüzde
-  deltas: CardsDeltas; // adet
+  trends: CardsTrends;
+  deltas: CardsDeltas;
 };
 
 // --------------- Helpers ---------------
@@ -46,7 +43,7 @@ type Client = Awaited<ReturnType<typeof createSupabaseAdminClient>>;
 
 async function countExact(
   sb: Client,
-  table: 'users' | 'products' | 'requests',
+  table: 'users' | 'products',
   where?: { column: string; value: string | number | boolean },
 ): Promise<number> {
   let q = sb.from(table).select('*', { count: 'exact', head: true });
@@ -61,7 +58,7 @@ async function countExact(
 
 async function countBetween(
   sb: Client,
-  table: 'users' | 'products' | 'requests',
+  table: 'users' | 'products',
   createdCol: string,
   startIso: string,
   endIso: string,
@@ -84,7 +81,7 @@ async function countBetween(
 /** Belirli bir aya kadar (endIso dahil değil) kümülatif toplam say. */
 async function countUntil(
   sb: Client,
-  table: 'users' | 'products' | 'requests',
+  table: 'users' | 'products',
   createdCol: string,
   endIso: string,
   where?: { column: string; value: string | number | boolean },
@@ -105,33 +102,27 @@ export async function fetchDashboardCards(): Promise<CardsData> {
   const sb = createSupabaseAdminClient();
 
   // 1) Toplamlar
-  const [totalUsers, totalProducts, totalPendingRequests] = await Promise.all([
+  const [totalUsers, totalProducts] = await Promise.all([
     countExact(sb, 'users'),
     countExact(sb, 'products'),
-    countExact(sb, 'requests', { column: 'status', value: 'pending' }),
   ]);
 
-  const totals: CardsTotals = { totalUsers, totalPendingRequests, totalProducts };
+  const totals: CardsTotals = { totalUsers, totalProducts };
 
   // 2) Aylık aralıklar
   const { startIso: curS,  endIso: curE }  = monthRange(0);
   const { startIso: prevS, endIso: prevE } = monthRange(-1);
   const CREATED_COL = 'created_at';
 
-  // Bu ay eklenen kullanıcı ve bekleyen talepler (delta için)
-  const [uCurr, pendCurr, pendPrev] = await Promise.all([
-    countBetween(sb, 'users',    CREATED_COL, curS,  curE),
-    countBetween(sb, 'requests', CREATED_COL, curS,  curE, { column: 'status', value: 'pending' }),
-    countBetween(sb, 'requests', CREATED_COL, prevS, prevE, { column: 'status', value: 'pending' }),
-  ]);
+  const uCurr = await countBetween(sb, 'users', CREATED_COL, curS, curE);
 
   // Kullanıcı yüzdesi için KÜMÜLATİF toplamlar
   const [userTotalCurr, userTotalPrev] = await Promise.all([
-    countUntil(sb, 'users', CREATED_COL, curE),   // bu ayın sonu itibarıyla toplam
-    countUntil(sb, 'users', CREATED_COL, prevE),  // geçen ayın sonu itibarıyla toplam
+    countUntil(sb, 'users', CREATED_COL, curE),
+    countUntil(sb, 'users', CREATED_COL, prevE),
   ]);
 
-  // Ürün kartı: zaten kümülatif trend + bu ay eklenen delta
+  // Ürün kartı
   const [prodTotalCurr, prodTotalPrev] = await Promise.all([
     countUntil(sb, 'products', CREATED_COL, curE),
     countUntil(sb, 'products', CREATED_COL, prevE),
@@ -139,16 +130,51 @@ export async function fetchDashboardCards(): Promise<CardsData> {
   const prodCurr = await countBetween(sb, 'products', CREATED_COL, curS, curE);
 
   const trends: CardsTrends = {
-    user:    calcTrend(userTotalCurr, userTotalPrev),   // ← burada düzeldi
-    request: calcTrend(pendCurr,      pendPrev),
+    user:    calcTrend(userTotalCurr, userTotalPrev),
     product: calcTrend(prodTotalCurr, prodTotalPrev),
   };
 
   const deltas: CardsDeltas = {
-    user: uCurr,          // bu ay eklenen kullanıcı
-    request: pendCurr,    // bu ay açılan bekleyen
-    product: prodCurr,    // bu ay eklenen ürün
+    user: uCurr,
+    product: prodCurr,
   };
 
   return { totals, trends, deltas };
+}
+
+// --------------- Date-range variant ---------------
+import type { DateRange } from '../types/dashboardData';
+
+export async function fetchCardsForRange(
+  range: DateRange,
+  prevRange: DateRange,
+): Promise<CardsData> {
+  noStore();
+  const sb = createSupabaseAdminClient();
+  const COL = 'created_at';
+
+  const [
+    totalUsers, totalProducts,
+    uCurr, uPrev,
+    prodCurr, prodPrev,
+  ] = await Promise.all([
+    countBetween(sb, 'users',    COL, range.startISO, range.endISO),
+    countBetween(sb, 'products', COL, range.startISO, range.endISO),
+    countBetween(sb, 'users',    COL, range.startISO, range.endISO),
+    countBetween(sb, 'users',    COL, prevRange.startISO, prevRange.endISO),
+    countBetween(sb, 'products', COL, range.startISO, range.endISO),
+    countBetween(sb, 'products', COL, prevRange.startISO, prevRange.endISO),
+  ]);
+
+  return {
+    totals: { totalUsers, totalProducts },
+    trends: {
+      user:    calcTrend(uCurr,    uPrev),
+      product: calcTrend(prodCurr, prodPrev),
+    },
+    deltas: {
+      user:    uCurr,
+      product: prodCurr,
+    },
+  };
 }

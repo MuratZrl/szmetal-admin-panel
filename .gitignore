@@ -46,3 +46,7 @@ next-env.d.ts
 project-diagnose.ps1
 
 supabase/.temp/cli-latest
+
+# claude code
+.claude/
+nul

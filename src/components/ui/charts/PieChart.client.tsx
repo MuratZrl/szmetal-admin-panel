@@ -68,8 +68,9 @@ export default function PieDonutChart({
   valueSuffix = '',
   colorKeyByLabel,
 }: Props) {
-  
+
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   const safe = React.useMemo(() => {
     const cleaned = (items ?? [])
@@ -102,11 +103,12 @@ export default function PieDonutChart({
           height,
           display: 'grid',
           placeItems: 'center',
-          border: `1px dashed ${alpha(theme.palette.text.primary, 0.2)}`,
-          borderRadius: 1.5,
+          border: `1px dashed ${alpha(theme.palette.text.primary, 0.15)}`,
+          borderRadius: 2,
+          bgcolor: alpha(theme.palette.text.primary, 0.02),
         }}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7 }}>
           Görselleştirilecek veri bulunamadı.
         </Typography>
       </Box>
@@ -159,7 +161,16 @@ export default function PieDonutChart({
         };
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box
+      sx={{
+        position: 'relative',
+        '@keyframes pieFadeIn': {
+          from: { opacity: 0, transform: 'scale(0.95)' },
+          to: { opacity: 1, transform: 'scale(1)' },
+        },
+        animation: 'pieFadeIn 0.5s cubic-bezier(0.4,0,0.2,1)',
+      }}
+    >
       {title && (
         <Typography variant="h6" mb={1}>
           {title}
@@ -174,14 +185,14 @@ export default function PieDonutChart({
             data,
             innerRadius,
             outerRadius,
-            paddingAngle: 2,
-            cornerRadius: 3,
+            paddingAngle: 2.5,
+            cornerRadius: 4,
             arcLabel,
             arcLabelMinAngle: 12,
             faded: {
               innerRadius,
-              additionalRadius: -6,
-              color: alpha(theme.palette.text.primary, 0.2),
+              additionalRadius: -8,
+              color: alpha(theme.palette.text.primary, 0.15),
             },
             valueFormatter: (p) => formatValue(p.value ?? 0),
           },
@@ -189,6 +200,27 @@ export default function PieDonutChart({
         sx={{
           '.MuiChartsLegend-mark': { borderRadius: '50%' },
           '.MuiChartsTooltip-root': { textTransform: 'none' },
+          // ─── Premium pie slice styling ───
+          '.MuiPieArc-root': {
+            stroke: 'none !important',
+            strokeWidth: '0 !important',
+            filter: isDark
+              ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
+              : 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))',
+            transition: 'transform 300ms cubic-bezier(0.4,0,0.2,1), filter 300ms ease',
+          },
+          // Remove stroke on highlighted/faded states too
+          '.MuiPieArc-root path, .MuiPieArc-faded, .MuiPieArc-highlighted': {
+            stroke: 'none !important',
+            strokeWidth: '0 !important',
+          },
+          // ─── Arc label styling ───
+          '.MuiPieArcLabel-root': {
+            fill: '#fff',
+            fontWeight: 600,
+            fontSize: 12,
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          },
         }}
       />
 
@@ -202,11 +234,47 @@ export default function PieDonutChart({
             pointerEvents: 'none',
           }}
         >
-          <Box sx={{ textAlign: 'center', lineHeight: 1.1 }}>
-            <Typography variant="caption" color="text.secondary">
+          <Box
+            sx={{
+              textAlign: 'center',
+              lineHeight: 1.1,
+              // Subtle frosted circle behind the center text
+              bgcolor: alpha(
+                theme.palette.background.paper,
+                isDark ? 0.6 : 0.8,
+              ),
+              borderRadius: '50%',
+              width: innerRadius * 1.5,
+              height: innerRadius * 1.5,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: 0.5,
+                textTransform: 'uppercase',
+              }}
+            >
               Toplam
             </Typography>
-            <Typography variant="h6">{formatValue(total)}</Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.2,
+                fontSize: '1.1rem',
+              }}
+            >
+              {formatValue(total)}
+            </Typography>
           </Box>
         </Box>
       )}

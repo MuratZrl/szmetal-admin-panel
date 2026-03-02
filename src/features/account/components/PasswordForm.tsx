@@ -93,28 +93,28 @@ export default function PasswordForm() {
   return (
     <Box
       sx={(t) => ({
-        mt: 4,
-        p: 2,
+        mt: 1.5,
+        p: { xs: 1.5, sm: 2 },
         borderRadius: 2,
         bgcolor: 'background.paper',
         border: `1px solid ${t.palette.divider}`,
       })}
     >
       <Typography
-        fontSize={14}
+        fontSize={13}
         fontWeight={600}
-        mb={3}
-        gutterBottom
+        mb={2}
         color="text.secondary"
       >
         Şifreyi Güncelle
       </Typography>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Grid container spacing={2}>
+        <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
+              size="small"
               type={showCurrent ? 'text' : 'password'}
               label="Mevcut Şifre"
               autoComplete="current-password"
@@ -141,6 +141,7 @@ export default function PasswordForm() {
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
+              size="small"
               type={showNew ? 'text' : 'password'}
               label="Yeni Şifre"
               autoComplete="new-password"
@@ -165,13 +166,14 @@ export default function PasswordForm() {
           </Grid>
         </Grid>
 
-        <Box mt={3} display="flex" justifyContent="space-between" gap={2}>
+        <Box mt={2} display="flex" justifyContent="space-between" gap={1.5}>
           <Button
             type="button"
             variant="outlined"
             color="error"
+            size="small"
             onClick={() => setCloseOpen(true)}
-            sx={{ textTransform: 'capitalize', borderRadius: 2 }}
+            sx={{ textTransform: 'capitalize', borderRadius: 2, fontSize: 13 }}
           >
             Hesabı Kapat
           </Button>
@@ -180,13 +182,15 @@ export default function PasswordForm() {
             type="submit"
             variant="contained"
             color="primary"
+            size="small"
             disabled={!isDirty || !isValid || isSubmitting}
             disableElevation
             sx={(t) => ({
-              px: 3,
-              py: 1,
+              px: 2.5,
+              py: 0.75,
               borderRadius: t.shape.borderRadius,
               textTransform: 'capitalize',
+              fontSize: 13,
             })}
           >
             {isSubmitting ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}

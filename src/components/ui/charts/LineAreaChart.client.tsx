@@ -65,7 +65,7 @@ type Props = {
   showLegend?: boolean;
   legendPosition?: LegendPosition;
 
-  /** Y ekseni aralığı; sadece min verip 0’dan başlatmak istersen yMin: 0 */
+  /** Y ekseni aralığı; sadece min verip 0'dan başlatmak istersen yMin: 0 */
   yMin?: number;
   yMax?: number;
 
@@ -108,7 +108,6 @@ function clampSeries(labels: string[], series: LineSeries[]): { labels: string[]
 }
 
 /* -------------------- Bileşen -------------------- */
-
 export default function LineAreaChart({
   labels,
   series,
@@ -117,7 +116,7 @@ export default function LineAreaChart({
   subtitle,
   grid = { horizontal: true, vertical: false },
   tickLabelFontSize = 12,
-  emptyText = 'Görselleştirilecek veri bulunamadı.',
+  emptyText = 'Veri bulunamadı.',
   yValueFormatter = formatNumberTR,
   areaOpacity,
   yMin,
@@ -126,20 +125,17 @@ export default function LineAreaChart({
   paddingBottom = 0,
 }: Props) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   // Boş ya da eksik veri kontrolü
   if (!Array.isArray(labels) || labels.length === 0 || !Array.isArray(series) || series.length === 0) {
-    return (
-      <EmptyState height={height} text={emptyText} />
-    );
+    return <EmptyState height={height} text={emptyText} />;
   }
 
   // Uzunluk ve NaN temizliği
   const { labels: safeLabels, series: safeSeries } = clampSeries(labels, series);
   if (safeLabels.length === 0) {
-    return (
-      <EmptyState height={height} text={emptyText} />
-    );
+    return <EmptyState height={height} text={emptyText} />;
   }
 
   // Varsayılan renk sırası (tema uyumlu)
@@ -181,15 +177,7 @@ export default function LineAreaChart({
     return autoColors[index % autoColors.length];
   }
 
-  // Alan opaklığını mod’a göre belirle
-  const resolvedAreaOpacity =
-    typeof areaOpacity === 'number'
-      ? areaOpacity
-      : theme.palette.mode === 'dark'
-      ? 0.22
-      : 0.16;
-
-  // Serileri renklendir, default’ları doldur
+  // Serileri renklendir, default'ları doldur
   const resolvedSeries = safeSeries.map((s, i) => {
     const color = resolveColor(s, i);
     return {
@@ -201,7 +189,7 @@ export default function LineAreaChart({
     };
   });
 
-  // Y ekseni domain’i; kullanıcı sağlarsa kullan
+  // Y ekseni domain'i; kullanıcı sağlarsa kullan
   const yAxisMin = typeof yMin === 'number' ? yMin : undefined;
   const yAxisMax = typeof yMax === 'number' ? yMax : undefined;
 
@@ -211,7 +199,17 @@ export default function LineAreaChart({
   }
 
   return (
-    <Box>
+    <Box
+      sx={{
+        position: 'relative',
+        // Fade-in animation on mount
+        '@keyframes chartFadeIn': {
+          from: { opacity: 0, transform: 'translateY(8px)' },
+          to: { opacity: 1, transform: 'translateY(0)' },
+        },
+        animation: 'chartFadeIn 0.5s ease-out',
+      }}
+    >
       {(title || subtitle) && (
         <Box mb={1}>
           {title && (
@@ -231,12 +229,20 @@ export default function LineAreaChart({
         xAxis={[{
           data: safeLabels,
           scaleType: 'point',
-          tickLabelStyle: { fontSize: tickLabelFontSize, fill: theme.palette.text.secondary },
+          tickLabelStyle: {
+            fontSize: tickLabelFontSize,
+            fill: theme.palette.text.secondary,
+            fontWeight: 500,
+          },
         }]}
         yAxis={[{
           min: yAxisMin,
           max: yAxisMax,
-          // küçük titreşimleri azaltmak için otomatik nice değerler
+          tickLabelStyle: {
+            fontSize: 11,
+            fill: alpha(theme.palette.text.secondary, 0.7),
+            fontWeight: 400,
+          },
         }]}
         series={resolvedSeries.map(s => ({
           label: s.label,
@@ -249,34 +255,82 @@ export default function LineAreaChart({
         }))}
         grid={{ horizontal: !!grid.horizontal, vertical: !!grid.vertical }}
         height={height + paddingBottom}
+        margin={{ top: 16, right: 16, bottom: 28, left: 48 }}
         slotProps={{
           tooltip: { trigger: 'axis' },
         }}
         sx={{
-          // Alan dolgusu
+          // ─── Premium area gradient ───
           '.MuiAreaElement-root': {
-            fillOpacity: resolvedAreaOpacity,
-            transition: 'fill-opacity 160ms ease',
+            fillOpacity: typeof areaOpacity === 'number'
+              ? areaOpacity
+              : isDark ? 0.15 : 0.12,
+            filter: isDark ? 'none' : 'saturate(1.2)',
+            transition: 'fill-opacity 300ms cubic-bezier(0.4,0,0.2,1)',
           },
-          // Çizgi kalınlığı
-          '.MuiLineElement-root': { strokeWidth: 2.25 },
-          // Nokta işaretleri
+
+          // ─── Smooth thick lines with round caps ───
+          '.MuiLineElement-root': {
+            strokeWidth: 2.5,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+            filter: isDark
+              ? 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))'
+              : 'drop-shadow(0 1px 2px rgba(0,0,0,0.08))',
+            transition: 'stroke-width 200ms ease, filter 200ms ease',
+          },
+          '.MuiLineElement-root:hover': {
+            strokeWidth: 3,
+            filter: isDark
+              ? 'drop-shadow(0 2px 8px rgba(0,0,0,0.7))'
+              : 'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',
+          },
+
+          // ─── Refined data point marks ───
           '.MuiMarkElement-root': {
-            r: 3.2,
-            strokeWidth: 1.5,
+            r: 3.5,
+            strokeWidth: 2,
             stroke: theme.palette.background.paper,
-            transition: 'r 120ms ease, opacity 120ms ease',
+            filter: isDark
+              ? 'drop-shadow(0 0 3px rgba(0,0,0,0.4))'
+              : 'drop-shadow(0 0 2px rgba(0,0,0,0.06))',
+            transition: 'r 200ms cubic-bezier(0.4,0,0.2,1), stroke-width 200ms ease',
           },
-          '.MuiMarkElement-root:hover': { r: 4 },
-          // Izgara
+          '.MuiMarkElement-root:hover': {
+            r: 5,
+            strokeWidth: 2.5,
+          },
+
+          // ─── Subtle grid lines ───
           '.MuiChartsGrid-line': {
-            strokeDasharray: '3 3',
-            stroke: alpha(theme.palette.text.primary, 0.15),
+            strokeDasharray: '4 6',
+            stroke: alpha(
+              theme.palette.text.primary,
+              isDark ? 0.08 : 0.1,
+            ),
+            strokeWidth: 0.75,
           },
-          // Eksen çizgileri
-          '.MuiChartsAxis-line': { stroke: theme.palette.divider },
-          // Hover davranışı
-          '.MuiLineElement-root:hover': { opacity: theme.palette.mode === 'dark' ? 0.9 : 0.95 },
+
+          // ─── Axis styling ───
+          '.MuiChartsAxis-line': {
+            stroke: alpha(theme.palette.divider, 0.6),
+            strokeWidth: 1,
+          },
+          '.MuiChartsAxis-tick': {
+            stroke: alpha(theme.palette.divider, 0.4),
+          },
+
+          // ─── Tooltip overlay line ───
+          '.MuiChartsAxisHighlight-root': {
+            stroke: alpha(theme.palette.text.primary, isDark ? 0.15 : 0.12),
+            strokeDasharray: '3 3',
+            strokeWidth: 1,
+          },
+
+          // ─── Smooth hover highlight ───
+          '.MuiChartsVirtualElement-root': {
+            transition: 'opacity 200ms ease',
+          },
         }}
       />
     </Box>
@@ -293,11 +347,12 @@ function EmptyState({ height, text }: { height: number; text: string }) {
         height,
         display: 'grid',
         placeItems: 'center',
-        border: `1px dashed ${alpha(theme.palette.text.primary, 0.2)}`,
-        borderRadius: 1.5,
+        border: `1px dashed ${alpha(theme.palette.text.primary, 0.12)}`,
+        borderRadius: 2,
+        bgcolor: alpha(theme.palette.text.primary, 0.02),
       }}
     >
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.6 }}>
         {text}
       </Typography>
     </Box>

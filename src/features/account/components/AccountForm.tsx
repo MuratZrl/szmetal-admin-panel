@@ -8,6 +8,7 @@ import {
   TextField,
   Button,
   FormControl,
+  InputAdornment,
   MenuItem,
   Typography,
 } from '@mui/material';
@@ -88,28 +89,28 @@ export default function AccountForm({
       component="form"
       onSubmit={handleSubmit(onSubmit)}
       sx={(t) => ({
-        mt: 2,
-        p: 2,
+        mt: 1.5,
+        p: { xs: 1.5, sm: 2 },
         borderRadius: 2,
         border: `1px solid ${t.palette.divider}`,
         bgcolor: 'background.paper',
       })}
     >
       <Typography
-        fontSize={14}
+        fontSize={13}
         fontWeight={600}
-        mb={3}
-        gutterBottom
+        mb={2}
         color="text.secondary"
       >
         Kişisel Bilgiler
       </Typography>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={1.5}>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             required
             fullWidth
+            size="small"
             label="Kullanıcı Adı"
             variant="outlined"
             {...register('username')}
@@ -153,19 +154,44 @@ export default function AccountForm({
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
+            size="small"
             label="Telefon"
             variant="outlined"
             {...register('phone')}
             helperText={errors.phone?.message}
             error={!!errors.phone}
-            inputProps={{ maxLength: 11 }}
+            inputProps={{ maxLength: 10 }}
             InputLabelProps={{ shrink: true }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start" sx={{ mr: 0.5 }}>
+                  <Box
+                    sx={(t) => ({
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      bgcolor: t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      borderRight: `1px solid ${t.palette.divider}`,
+                      mr: 0.25,
+                    })}
+                  >
+                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: 'text.secondary', lineHeight: 1 }}>
+                      +90
+                    </Typography>
+                  </Box>
+                </InputAdornment>
+              ),
+            }}
           />
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
+            size="small"
             label="Şirket"
             variant="outlined"
             {...register('company')}
@@ -179,6 +205,7 @@ export default function AccountForm({
           <FormControl fullWidth>
             <TextField
               select
+              size="small"
               label="Ülke Seçimi"
               variant="outlined"
               value={countryValue}
@@ -216,14 +243,15 @@ export default function AccountForm({
         </Grid>
       </Grid>
 
-      <Box mt={3} display="flex" justifyContent="flex-end">
+      <Box mt={2} display="flex" justifyContent="flex-end">
         <Button
           type="submit"
           variant="contained"
           color="primary"
+          size="small"
           disabled={!isDirty || !isValid}
           disableElevation
-          sx={(t) => ({ py: 1, px: 3.25, borderRadius: t.shape.borderRadius })}
+          sx={(t) => ({ py: 0.75, px: 2.5, borderRadius: t.shape.borderRadius, fontSize: 13 })}
         >
           Kaydet
         </Button>

@@ -26,8 +26,7 @@ type Props = {
 export default function AdminShell({ initialData, mainLinks, children }: Props): React.JSX.Element {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
 
-  const logoHref =
-    initialData.status === 'Inactive' ? ('/account' as const) : ('/create_request' as const);
+  const logoHref = '/account' as const;
 
   return (
     <>
