@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           "img-src 'self' data: blob: https://zofgtjswwjikwhdirvpa.supabase.co https://placehold.co",
-          "connect-src 'self' https://zofgtjswwjikwhdirvpa.supabase.co",
+          "connect-src 'self' https://zofgtjswwjikwhdirvpa.supabase.co wss://zofgtjswwjikwhdirvpa.supabase.co",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",
