@@ -94,15 +94,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params;
+  const pageStart = Date.now();
 
   const canonicalPath = `/products/${encodeURIComponent(id)}` as const;
-  const { profile } = await requirePageAccess(canonicalPath);
 
+  const t0 = Date.now();
+  const { profile } = await requirePageAccess(canonicalPath);
+  console.log(`⏱ requirePageAccess: ${Date.now() - t0}ms`);
+
+  const t1 = Date.now();
   const [session, rowWithChain, dicts] = await Promise.all([
     getSessionInfo(),
     fetchProductByIdWithCategoryChain(id),
     fetchProductDicts(),
   ]);
+  console.log(`⏱ [session + product + dicts] batch: ${Date.now() - t1}ms`);
 
   if (!rowWithChain) notFound();
 
@@ -128,8 +134,6 @@ export default async function ProductDetailPage({ params }: Props) {
   }
 
   const product = enrichProductWithCategoryChain(row);
-
-  const adjacent = await fetchAdjacentProductIds({ id: safeId, createdAt });
   const labelMaps = buildLabelMaps(dicts);
 
   const versionKey = product.updatedAt ?? product.createdAt ?? null;
@@ -138,10 +142,16 @@ export default async function ProductDetailPage({ params }: Props) {
   const basePrimary = `/api/products/storage/${encodeURIComponent(safeId)}?slot=primary${v}`;
   const baseSecondary = `/api/products/storage/${encodeURIComponent(safeId)}?slot=secondary${v}`;
 
-  const [commentsRaw, recommendedRaw] = await Promise.all([
+  // Run ALL remaining fetches in parallel — comments, recommended, AND adjacent
+  const t2 = Date.now();
+  const [commentsRaw, recommendedRaw, adjacent] = await Promise.all([
     fetchProductComments(safeId),
     buildRecommendedBlock({ currentRow: row as ProductsRow, limit: 5 }),
+    fetchAdjacentProductIds({ id: safeId, createdAt }),
   ]);
+  console.log(`⏱ [comments + recommended + adjacent] batch: ${Date.now() - t2}ms`);
+
+  console.log(`⏱ TOTAL server time: ${Date.now() - pageStart}ms`);
 
   const comments = commentsRaw ?? [];
   const recommended = recommendedRaw ?? { products: [], mediaUrlsById: {} };
@@ -154,8 +164,6 @@ export default async function ProductDetailPage({ params }: Props) {
     ? (extLower as AllowedExt)
     : null;
 
-  // Görüntülenme sayısı: kolon adını kesin bilmediğimiz için “güvenli okuma”.
-  // DB'de "view_count" ya da "viewCount" varsa alır, yoksa null gösterir.
   type RowWithViews = ProductsRowWithChain & {
     view_count?: number | null;
     viewCount?: number | null;
@@ -192,6 +200,7 @@ export default async function ProductDetailPage({ params }: Props) {
               date={product.date}
               revisionDate={product.revisionDate ?? null}
               createdAt={row.created_at ?? null}
+              updatedAt={row.updated_at ?? null}
               createdBy={createdByName}
               id={safeId}
               drawer={product.drawer}

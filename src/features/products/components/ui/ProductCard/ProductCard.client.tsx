@@ -100,6 +100,14 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
       ? product.createdAt.slice(0, 10)
       : null;
 
+  const updatedDate =
+    typeof product.updatedAt === 'string' && product.updatedAt
+      ? product.updatedAt.slice(0, 10)
+      : null;
+
+  // Only show if different from createdDate
+  const showUpdatedDate = updatedDate && updatedDate !== createdDate;
+
   /**
    * Kategori breadcrumb:
    *   - Biz leaf slug’ı product.subCategory’de tutuyoruz (products.server.ts’te override ettin).
@@ -269,6 +277,12 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
                 Eklenme Tarihi: {createdDate}
               </Typography>
             )}
+
+            {showUpdatedDate && (
+              <Typography variant="caption" color="text.secondary">
+                Güncellenme Tarihi: {updatedDate}
+              </Typography>
+            )}
           </Stack>
 
           {categoryPathLabels.length > 0 && (
@@ -323,6 +337,7 @@ function areProductCardPropsEqual(prev: Props, next: Props): boolean {
     p.unit_weight_g_pm === n.unit_weight_g_pm &&
     p.date === n.date &&
     p.createdAt === n.createdAt &&
+    p.updatedAt === n.updatedAt &&
     p.variant === n.variant &&
     p.category === n.category &&
     p.subCategory === n.subCategory &&

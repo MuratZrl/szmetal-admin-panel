@@ -72,6 +72,16 @@ function parseCustomerMold(raw: string): CustomerMoldValue[] | undefined {
   return undefined;
 }
 
+function parseUpdated(raw: string): boolean | undefined {
+  if (!raw) return undefined;
+  const v = raw.trim().toLocaleLowerCase('tr');
+
+  if (v === '1' || v === 'true' || v === 'updated' || v === 'evet') return true;
+  if (v === '0' || v === 'false' || v === 'notupdated' || v === 'hayır' || v === 'hayir') return false;
+
+  return undefined;
+}
+
 function parseAvailability(raw: string): boolean | undefined {
   if (!raw) return undefined;
   const v = raw.trim().toLocaleLowerCase('tr');
@@ -101,6 +111,7 @@ export function parseProductFilters(sp: RawParams): ProductFilters {
 
   const customerMold = parseCustomerMold(first(sp.customerMold));
   const availability = parseAvailability(first(sp.availability));
+  const updated = parseUpdated(first(sp.updated));
 
   return {
     q: q || undefined,
@@ -112,5 +123,6 @@ export function parseProductFilters(sp: RawParams): ProductFilters {
     sort,
     customerMold,
     availability,
+    updated,
   };
 }

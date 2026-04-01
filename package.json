@@ -7,7 +7,7 @@
     "types:supabase": "node scripts/gen-supabase-types.mjs",
     "predev": "npm run copy:pdf-worker && npm run types:supabase && (npm outdated supabase || node -e \"process.exit(0)\")",
     "ci": "npm ci && npm run lint && npm run typecheck && npm run build",
-    "dev": "next dev --turbopack",
+    "dev": "node --max-old-space-size=2048 node_modules/next/dist/bin/next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint src",

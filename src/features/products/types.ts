@@ -37,6 +37,7 @@ export type ProductFilters = {
   sort?: ProductSort;
   customerMold?: CustomerMoldValue[];
   availability?: boolean;       // true=Kullanılabilir, false=Kullanılamaz
+  updated?: boolean;            // true=Güncellenen, false=Güncellenmemiş
 };
 
 export type Pagination = {

@@ -49,6 +49,14 @@ export default function ResetPasswordForm() {
     let active = true;
     const run = async () => {
       try {
+        // 1) Check if session already exists (set by /auth/callback route)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          if (active) setLinkState('ok');
+          return;
+        }
+
+        // 2) Try PKCE code exchange (query param)
         const search = new URLSearchParams(window.location.search);
         const code = search.get('code');
 
@@ -59,6 +67,7 @@ export default function ResetPasswordForm() {
           return;
         }
 
+        // 3) Try implicit flow (hash fragment)
         if (window.location.hash) {
           const hash = new URLSearchParams(window.location.hash.slice(1));
           const access_token = hash.get('access_token');

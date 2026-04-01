@@ -12,12 +12,6 @@ type FetchRecommendedInput = {
   limit?: number;
 };
 
-function uniqById(rows: readonly ProductRow[]): ProductRow[] {
-  const m = new Map<string, ProductRow>();
-  for (const r of rows) m.set(String(r.id), r);
-  return Array.from(m.values());
-}
-
 function normText(v: string | null): string | null {
   const s = (v ?? '').trim();
   return s.length > 0 ? s : null;
@@ -31,88 +25,116 @@ export async function fetchRecommendedProducts({
 }: FetchRecommendedInput): Promise<ProductRow[]> {
   const limit = Math.max(1, Math.min(rawLimit ?? 8, 24));
   const sb = await createSupabaseRSCClient();
-
-  const results: ProductRow[] = [];
   const v = normText(variant);
 
+  // Step 1: Get sibling category IDs in parallel with nothing (we need them for the main query)
+  let siblingCategoryIds: string[] = [];
+
   if (categoryId) {
-    const { data, error } = await sb
-      .from('products')
-      .select('*')
-      .eq('category_id', categoryId)
-      .neq('id', currentProductId)
-      .order('updated_at', { ascending: false })
-      .limit(limit)
-      .returns<ProductRow[]>();
-
-    if (error) throw error;
-    if (data) results.push(...data);
-  }
-
-  if (categoryId && uniqById(results).length < limit) {
-    const { data: cat, error: catErr } = await sb
+    const { data: cat } = await sb
       .from('categories')
-      .select('id, parent_id')
+      .select('parent_id')
       .eq('id', categoryId)
-      .maybeSingle()
-      .returns<Pick<CategoryRow, 'id' | 'parent_id'> | null>();
+      .maybeSingle<Pick<CategoryRow, 'parent_id'>>();
 
-    if (catErr) throw catErr;
+    const parentId = cat?.parent_id ?? null;
 
-    const parentId = cat?.parent_id ?? categoryId;
+    if (parentId) {
+      const { data: siblings } = await sb
+        .from('categories')
+        .select('id')
+        .eq('parent_id', parentId)
+        .neq('id', categoryId)
+        .returns<Pick<CategoryRow, 'id'>[]>();
 
-    const { data: siblings, error: sibErr } = await sb
-      .from('categories')
-      .select('id')
-      .eq('parent_id', parentId)
-      .returns<Pick<CategoryRow, 'id'>[]>();
-
-    if (sibErr) throw sibErr;
-
-    const siblingIds = siblings?.map((c) => c.id) ?? [];
-    const allIds = Array.from(new Set<string>([...siblingIds, parentId]));
-
-    if (allIds.length > 0) {
-      const { data, error } = await sb
-        .from('products')
-        .select('*')
-        .in('category_id', allIds)
-        .neq('id', currentProductId)
-        .order('updated_at', { ascending: false })
-        .limit(limit * 3)
-        .returns<ProductRow[]>();
-
-      if (error) throw error;
-      if (data) results.push(...data);
+      siblingCategoryIds = siblings?.map((c) => c.id) ?? [];
     }
   }
 
-  if (uniqById(results).length < limit && v) {
-    const { data, error } = await sb
-      .from('products')
-      .select('*')
-      .eq('variant', v)
-      .neq('id', currentProductId)
-      .order('updated_at', { ascending: false })
-      .limit(limit * 3)
-      .returns<ProductRow[]>();
+  // Step 2: Single query — fetch more than needed, then prioritize in JS
+  // Build OR filter to grab all potentially relevant products at once
+  const filters: string[] = [];
 
-    if (error) throw error;
-    if (data) results.push(...data);
+  if (categoryId) {
+    filters.push(`category_id.eq.${categoryId}`);
+  }
+  if (siblingCategoryIds.length > 0) {
+    filters.push(`category_id.in.(${siblingCategoryIds.join(',')})`);
+  }
+  if (v) {
+    filters.push(`variant.eq.${v}`);
   }
 
-  if (uniqById(results).length < limit) {
-    const { data, error } = await sb
-      .from('products')
-      .select('*')
-      .neq('id', currentProductId)
-      .order('updated_at', { ascending: false })
-      .limit(limit * 3)
-      .returns<ProductRow[]>();
+  // If we have filters, use them; otherwise just grab latest products
+  let query = sb
+    .from('products')
+    .select('*')
+    .neq('id', currentProductId)
+    .order('updated_at', { ascending: false })
+    .limit(limit * 4);
 
-    if (error) throw error;
-    if (data) results.push(...data);
+  if (filters.length > 0) {
+    query = query.or(filters.join(','));
   }
 
-  return uniqById(results).slice(0, limit);
+  const { data, error } = await query.returns<ProductRow[]>();
+  if (error) throw error;
+
+  const rows = data ?? [];
+
+  // If we got enough from filtered query, prioritize and return
+  if (rows.length >= limit) {
+    return prioritize(rows, categoryId, siblingCategoryIds, v).slice(0, limit);
+  }
+
+  // Fallback: if not enough, grab latest products
+  const existingIds = new Set(rows.map((r) => String(r.id)));
+  existingIds.add(String(currentProductId));
+
+  const { data: fallback } = await sb
+    .from('products')
+    .select('*')
+    .neq('id', currentProductId)
+    .order('updated_at', { ascending: false })
+    .limit(limit * 3)
+    .returns<ProductRow[]>();
+
+  const combined = [
+    ...rows,
+    ...(fallback ?? []).filter((r) => !existingIds.has(String(r.id))),
+  ];
+
+  return prioritize(combined, categoryId, siblingCategoryIds, v).slice(0, limit);
+}
+
+/** Prioritize: same category > sibling category > same variant > rest */
+function prioritize(
+  rows: ProductRow[],
+  categoryId: string | null,
+  siblingIds: string[],
+  variant: string | null,
+): ProductRow[] {
+  const sibSet = new Set(siblingIds);
+
+  const scored = rows.map((r) => {
+    let score = 0;
+    if (categoryId && r.category_id === categoryId) score += 100;
+    else if (r.category_id && sibSet.has(r.category_id)) score += 50;
+    if (variant && r.variant === variant) score += 25;
+    return { row: r, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // Deduplicate
+  const seen = new Set<string>();
+  const result: ProductRow[] = [];
+  for (const { row } of scored) {
+    const id = String(row.id);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    result.push(row);
+  }
+
+  return result;
 }

@@ -28,6 +28,7 @@ export default function ProductInfo(props: ProductInfoProps): React.JSX.Element 
     date,
     revisionDate,
     createdAt,
+    updatedAt,
     createdBy,
     drawer,
     control,
@@ -162,7 +163,7 @@ export default function ProductInfo(props: ProductInfoProps): React.JSX.Element 
               })}
             />
 
-            <ProductMetaRow createdBy={createdBy} createdAt={createdAt ?? null} />
+            <ProductMetaRow createdBy={createdBy} createdAt={createdAt ?? null} updatedAt={updatedAt ?? null} />
           </Stack>
 
           <DetailsTable rows={rows} />

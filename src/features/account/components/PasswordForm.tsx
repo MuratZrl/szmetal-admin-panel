@@ -113,6 +113,7 @@ export default function PasswordForm() {
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
+              id="account-current-password"
               fullWidth
               size="small"
               type={showCurrent ? 'text' : 'password'}
@@ -140,6 +141,7 @@ export default function PasswordForm() {
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
+              id="account-new-password"
               fullWidth
               size="small"
               type={showNew ? 'text' : 'password'}

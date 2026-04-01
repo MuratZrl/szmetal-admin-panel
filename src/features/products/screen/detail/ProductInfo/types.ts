@@ -28,6 +28,8 @@ export type ProductInfoProps = {
 
   /** created_at sütunundan gelecek, eklenme tarihi */
   createdAt: string;
+  /** updated_at sütunundan gelecek, güncellenme tarihi */
+  updatedAt?: string | null;
   /** created_by sütunundan gelecek, eklendiği kişi tarafından */
   createdBy: string;
 

@@ -37,13 +37,12 @@ export default function ForgotPasswordForm() {
 
     setLoading(true);
     try {
-      // Client ortamında site URL’i almak için env yoksa origin’e düş
+      // Client ortamında her zaman origin kullan — env'deki localhost sorun yaratır
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ??
-        (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+        typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000');
 
       const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-        redirectTo: `${siteUrl}/reset-password`,
+        redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
       });
 
       if (error) {

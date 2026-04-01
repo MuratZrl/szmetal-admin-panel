@@ -387,6 +387,16 @@ export async function fetchFilteredProducts(
     q = q.eq('availability', filters.availability);
   }
 
+  // "Güncellenen" filter — uses the is_updated DB function (computed column)
+  // Run this SQL in Supabase once:
+  //   CREATE OR REPLACE FUNCTION is_updated(products)
+  //   RETURNS boolean LANGUAGE sql STABLE AS $$
+  //     SELECT $1.updated_at > $1.created_at + interval '1 second'
+  //   $$;
+  if (typeof filters.updated === 'boolean') {
+    q = q.eq('is_updated' as never, filters.updated);
+  }
+
   if (filters.from) q = q.gte('date', filters.from);
   if (filters.to) q = q.lte('date', filters.to);
 

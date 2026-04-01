@@ -9,11 +9,14 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 type Props = {
   createdBy?: string | null;
   createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
-export default function ProductMetaRow({ createdBy, createdAt }: Props): React.JSX.Element {
+export default function ProductMetaRow({ createdBy, createdAt, updatedAt }: Props): React.JSX.Element {
   const createdByText = createdBy || 'Bilinmiyor';
   const createdDate = typeof createdAt === 'string' && createdAt ? createdAt.slice(0, 10) : '';
+  const updatedDate = typeof updatedAt === 'string' && updatedAt ? updatedAt.slice(0, 10) : '';
+  const showUpdated = updatedDate && updatedDate !== createdDate;
 
   return (
     <Box
@@ -65,19 +68,35 @@ export default function ProductMetaRow({ createdBy, createdAt }: Props): React.J
         </Typography>
       </Box>
 
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{
-          fontStyle: 'italic',
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-          opacity: createdDate ? 0.9 : 0.6,
-        }}
-        title={createdAt ?? undefined}
-      >
-        {createdDate ? `Eklenme tarihi: ${createdDate}` : 'Eklenme tarihi: —'}
-      </Typography>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            fontStyle: 'italic',
+            whiteSpace: 'nowrap',
+            opacity: createdDate ? 0.9 : 0.6,
+          }}
+          title={createdAt ?? undefined}
+        >
+          {createdDate ? `Eklenme tarihi: ${createdDate}` : 'Eklenme tarihi: —'}
+        </Typography>
+
+        {showUpdated && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              fontStyle: 'italic',
+              whiteSpace: 'nowrap',
+              opacity: 0.9,
+            }}
+            title={updatedAt ?? undefined}
+          >
+            Güncellenme tarihi: {updatedDate}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 }

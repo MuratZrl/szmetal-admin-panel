@@ -55,6 +55,8 @@ export default function Filters({
     setMoldMode,
     availabilityMode,
     setAvailabilityMode,
+    updatedMode,
+    setUpdatedMode,
     variantQuery,
     setVariantQuery,
     expanded,
@@ -91,6 +93,8 @@ export default function Filters({
           onChangeMoldMode={setMoldMode}
           availabilityMode={availabilityMode}
           onChangeAvailabilityMode={setAvailabilityMode}
+          updatedMode={updatedMode}
+          onChangeUpdatedMode={setUpdatedMode}
         />
 
         <VariantFilterSection

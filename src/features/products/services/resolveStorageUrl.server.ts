@@ -14,7 +14,7 @@ function isHttp(u?: string | null) {
 // Supabase public/sign URL → { bucket, path } çıkar
 function extractPathFromSupabaseUrl(u: string): { bucket: string; path: string } | null {
   try {
-    const url = new URL(u);
+    const url = new URL(u); 
     // /storage/v1/object/{public|sign}/{bucket}/{...path}
     const i = url.pathname.indexOf('/object/');
     if (i === -1) return null;

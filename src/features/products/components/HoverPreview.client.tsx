@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { Popper, Paper, Box } from '@mui/material';
+import { Document, Page, pdfjs } from 'react-pdf';
 
 type Kind = 'pdf' | 'image' | 'other';
 
@@ -14,11 +15,15 @@ type HoverPreviewProps = {
   anchorEl: HTMLElement | null;
   src?: string | null;
   baseSize?: { width: number; height: number } | null;
-  // YENİ: büyütme faktörü (görseller için)
   scale?: number;
-  // YENİ: PDF genişlikleri (breakpoint bazlı)
   pdfWidths?: BreakWidths;
 };
+
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = '/api/pdf-worker';
+}
+
+const PDF_OPTIONS = { disableRange: true, disableStream: true } as const;
 
 export default function HoverPreview({
   kind,
@@ -26,23 +31,39 @@ export default function HoverPreview({
   anchorEl,
   src,
   baseSize,
-  scale = 2, // eskiden 1.5 idi; default'u zaten daha büyük yaptık
+  scale = 2,
   pdfWidths,
 }: HoverPreviewProps) {
-  if (!open || !anchorEl || !src) return null;
+  const [pageDims, setPageDims] = React.useState<{ width: number; height: number } | null>(null);
+
+  // Reset page dims when src changes
+  React.useEffect(() => {
+    setPageDims(null);
+  }, [src]);
 
   const isPdf = kind === 'pdf';
   const isImage = kind === 'image';
 
-  // Görsel için hedef boyut (daha büyük)
-  const imgWidth  = baseSize ? Math.round(baseSize.width  * scale) : 540; // 360 -> 540
-  const imgHeight = baseSize ? Math.round(baseSize.height * scale) : 405; // 270 -> 405
+  const pdfMdWidth = pdfWidths?.md ?? 600;
 
-  // PDF için genişlikleri özelleştirilebilir yap
+  // Compute scale to fit the PDF page into the preview box
+  const pdfScale = React.useMemo(() => {
+    if (!pageDims) return 1.5;
+    const targetW = pdfMdWidth;
+    const targetH = targetW * (297 / 210); // A4 ratio
+    const s = Math.min(targetW / pageDims.width, targetH / pageDims.height);
+    return Math.max(0.1, Math.min(s, 4));
+  }, [pageDims, pdfMdWidth]);
+
+  if (!open || !anchorEl || !src) return null;
+
+  const imgWidth = baseSize ? Math.round(baseSize.width * scale) : 540;
+  const imgHeight = baseSize ? Math.round(baseSize.height * scale) : 405;
+
   const pdfW = {
-    xs: pdfWidths?.xs ?? 360,   // 240 -> 360
-    sm: pdfWidths?.sm ?? 480,   // 300 -> 480
-    md: pdfWidths?.md ?? 600,   // 360 -> 600
+    xs: pdfWidths?.xs ?? 360,
+    sm: pdfWidths?.sm ?? 480,
+    md: pdfMdWidth,
     lg: pdfWidths?.lg ?? 720,
     xl: pdfWidths?.xl ?? 820,
   };
@@ -58,7 +79,6 @@ export default function HoverPreview({
         { name: 'computeStyles', options: { gpuAcceleration: false } },
         { name: 'flip', options: { padding: 8 } },
       ]}
-      // Büyük pencerelerde ebeveyn overflow’una takılmayalım
       style={{ zIndex: 1300, pointerEvents: 'none' }}
     >
       <Paper elevation={8} sx={{ p: 0, overflow: 'hidden', borderRadius: 0.75 }}>
@@ -66,26 +86,42 @@ export default function HoverPreview({
           <Box
             sx={{
               width: pdfW,
-              aspectRatio: '210 / 297', // A4
-              bgcolor: 'background.paper',
+              aspectRatio: '210 / 297',
+              bgcolor: '#fff',
               position: 'relative',
-              maxHeight: '90vh', // taşmasın
+              maxHeight: '90vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              '& .react-pdf__Page__canvas': {
+                maxWidth: '100%',
+                maxHeight: '100%',
+                width: 'auto',
+                height: 'auto',
+                display: 'block',
+                pointerEvents: 'none',
+              },
             }}
           >
-            <Box
-              component="iframe"
-              src={`${src}#page=1&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=0`}
-              title="PDF Önizleme"
-              loading="lazy"
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                width: 1,
-                height: 1,
-                border: 0,
-                pointerEvents: 'none',
-              }}
-            />
+            <Document
+              key={src}
+              file={src}
+              options={PDF_OPTIONS}
+              loading={null}
+              error={null}
+            >
+              <Page
+                pageNumber={1}
+                scale={pdfScale}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                onLoadSuccess={(page) => {
+                  const vp = page.getViewport({ scale: 1 });
+                  setPageDims({ width: vp.width, height: vp.height });
+                }}
+              />
+            </Document>
           </Box>
         ) : isImage ? (
           <Box

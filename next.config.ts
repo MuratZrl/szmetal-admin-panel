@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
   async headers() {
     // Security headers applied to ALL routes
     const securityHeaders = [
-      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy', value: 'same-origin' },
       { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
@@ -36,8 +36,10 @@ const nextConfig: NextConfig = {
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           "img-src 'self' data: blob: https://zofgtjswwjikwhdirvpa.supabase.co https://placehold.co",
-          "connect-src 'self' https://zofgtjswwjikwhdirvpa.supabase.co wss://zofgtjswwjikwhdirvpa.supabase.co",
-          "frame-ancestors 'none'",
+          "connect-src 'self' https://zofgtjswwjikwhdirvpa.supabase.co wss://zofgtjswwjikwhdirvpa.supabase.co blob:",
+          "worker-src 'self' blob:",
+          "frame-src 'self'",
+          "frame-ancestors 'self'",
           "base-uri 'self'",
           "form-action 'self'",
         ].join('; '),

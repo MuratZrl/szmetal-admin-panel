@@ -225,7 +225,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // 6) Login iken auth sayfalarına gitme → /account
-  if (isAuthRoute(npath)) {
+  //    (reset-password hariç — OTP exchange sonrası session var ama şifre henüz güncellenmedi)
+  if (isAuthRoute(npath) && npath !== '/reset-password') {
     return withForwardedCookies(withNoStore(NextResponse.redirect(new URL(HOME_PATH, req.url))));
   }
 

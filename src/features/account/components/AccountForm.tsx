@@ -108,6 +108,7 @@ export default function AccountForm({
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
+            id="account-username"
             required
             fullWidth
             size="small"
@@ -123,6 +124,7 @@ export default function AccountForm({
         <Grid size={{ xs: 12, sm: 6 }}>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch' }}>
             <TextField
+              id="account-email"
               required
               fullWidth
               size="small"
@@ -153,6 +155,7 @@ export default function AccountForm({
 
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
+            id="account-phone"
             fullWidth
             size="small"
             label="Telefon"
@@ -190,6 +193,7 @@ export default function AccountForm({
 
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
+            id="account-company"
             fullWidth
             size="small"
             label="Şirket"
@@ -204,6 +208,7 @@ export default function AccountForm({
         <Grid size={{ xs: 12, sm: 6 }}>
           <FormControl fullWidth>
             <TextField
+              id="account-country"
               select
               size="small"
               label="Ülke Seçimi"
