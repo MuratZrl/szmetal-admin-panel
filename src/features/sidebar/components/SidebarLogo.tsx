@@ -17,12 +17,11 @@ export default function SidebarLogo({
 }: {
   href?: Route;
   variant?: Variant;
-  size?: Size;            // ← isteğe bağlı özel boyut
+  size?: Size;
 }) {
-  // Varsayılan ölçüler; size verilirse bunları ezer
   const base: Size = variant === 'expanded'
-    ? { width: 175, height: 75 }   // mobil çekmece default
-    : { width: 60,  height: 35 };  // masaüstü kompakt default
+    ? { width: 150, height: 60 }
+    : { width: 48, height: 30 };
   const dims = size ?? base;
 
   return (

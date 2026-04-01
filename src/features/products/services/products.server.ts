@@ -387,18 +387,12 @@ export async function fetchFilteredProducts(
     q = q.eq('availability', filters.availability);
   }
 
-  // "Güncellenen" filter — uses the is_updated DB function (computed column)
-  // Run this SQL in Supabase once:
-  //   CREATE OR REPLACE FUNCTION is_updated(products)
-  //   RETURNS boolean LANGUAGE sql STABLE AS $$
-  //     SELECT $1.updated_at > $1.created_at + interval '1 second'
-  //   $$;
-  if (typeof filters.updated === 'boolean') {
-    q = q.eq('is_updated' as never, filters.updated);
-  }
+  // Güncelleme tarihi aralığı filtresi
+  if (filters.updatedFrom) q = q.gte('updated_at', filters.updatedFrom);
+  if (filters.updatedTo) q = q.lte('updated_at', `${filters.updatedTo}T23:59:59`);
 
-  if (filters.from) q = q.gte('date', filters.from);
-  if (filters.to) q = q.lte('date', filters.to);
+  if (filters.from) q = q.gte('created_at', filters.from);
+  if (filters.to) q = q.lte('created_at', `${filters.to}T23:59:59`);
 
   switch (filters.sort) {
     case 'date-desc':

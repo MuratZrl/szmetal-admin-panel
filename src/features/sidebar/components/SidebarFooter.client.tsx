@@ -20,7 +20,7 @@ export default function SidebarFooter({ logoutLink, onLogout, compact = true }: 
       justifyContent="center"
       alignItems={compact ? 'center' : 'stretch'}
       flexDirection="column"
-      sx={{ gap: .75, width: '100%' }}
+      sx={{ gap: .75, width: '100%', px: compact ? 0 : 1 }}
     >
       <ThemeToggle placement={compact ? 'right' : 'bottom'} />
 

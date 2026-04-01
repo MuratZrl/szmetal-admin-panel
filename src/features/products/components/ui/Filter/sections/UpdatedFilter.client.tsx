@@ -1,5 +1,5 @@
 'use client';
-// src/features/products/components/ui/Filter/sections/DateRangeFilter.client.tsx
+// src/features/products/components/ui/Filter/sections/UpdatedFilter.client.tsx
 
 import * as React from 'react';
 import { Box, Button, Grid, Typography } from '@mui/material';
@@ -7,21 +7,21 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { type Dayjs } from 'dayjs';
 
 import { sectionSx } from '../sectionSx';
-import { DATE_FROM_ID, DATE_TO_ID } from '@/features/products/components/ui/Filter/constants';
+import { UPDATED_FROM_ID, UPDATED_TO_ID } from '@/features/products/components/ui/Filter/constants';
 
-type DateRangeFilterSectionProps = {
-  from: string;
-  to: string;
-  onChangeFrom: (value: string) => void;
-  onChangeTo: (value: string) => void;
+type UpdatedFilterSectionProps = {
+  updatedFrom: string;
+  updatedTo: string;
+  onChangeUpdatedFrom: (value: string) => void;
+  onChangeUpdatedTo: (value: string) => void;
 };
 
-export function DateRangeFilterSection({
-  from,
-  to,
-  onChangeFrom,
-  onChangeTo,
-}: DateRangeFilterSectionProps): React.JSX.Element {
+export function UpdatedFilterSection({
+  updatedFrom,
+  updatedTo,
+  onChangeUpdatedFrom,
+  onChangeUpdatedTo,
+}: UpdatedFilterSectionProps): React.JSX.Element {
   const insetX = 1.5;
 
   const toDayjs = React.useCallback((v: string): Dayjs | null => {
@@ -32,12 +32,12 @@ export function DateRangeFilterSection({
 
   const toIso = React.useCallback((d: Dayjs | null): string => (d ? d.format('YYYY-MM-DD') : ''), []);
 
-  const isActive = from.trim().length > 0 || to.trim().length > 0;
+  const isActive = updatedFrom.trim().length > 0 || updatedTo.trim().length > 0;
 
   const handleClear = React.useCallback(() => {
-    onChangeFrom('');
-    onChangeTo('');
-  }, [onChangeFrom, onChangeTo]);
+    onChangeUpdatedFrom('');
+    onChangeUpdatedTo('');
+  }, [onChangeUpdatedFrom, onChangeUpdatedTo]);
 
   return (
     <Box
@@ -47,7 +47,6 @@ export function DateRangeFilterSection({
         borderRadius: 2.25,
       })}
     >
-      {/* Başlık satırı: insetX ile hizalı */}
       <Box
         sx={{
           display: 'flex',
@@ -59,7 +58,7 @@ export function DateRangeFilterSection({
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.8 }}>
-          Eklenme Tarihi
+          Güncelleme Tarihi
         </Typography>
 
         <Button
@@ -84,7 +83,6 @@ export function DateRangeFilterSection({
         </Button>
       </Box>
 
-      {/* Divider: TAM GENİŞLİK (daralmasın) */}
       <Box
         sx={(t) => ({
           mt: 1,
@@ -95,18 +93,17 @@ export function DateRangeFilterSection({
         })}
       />
 
-      {/* İçerik: insetX ile hizalı */}
       <Box sx={{ px: insetX }}>
         <Grid container spacing={1}>
           <Grid size={{ xs: 6 }}>
             <DatePicker
               label="Tarih baş."
               format="DD/MM/YY"
-              value={toDayjs(from)}
-              onChange={(val) => onChangeFrom(toIso(val))}
+              value={toDayjs(updatedFrom)}
+              onChange={(val) => onChangeUpdatedFrom(toIso(val))}
               slotProps={{
                 textField: {
-                  id: DATE_FROM_ID,
+                  id: UPDATED_FROM_ID,
                   size: 'small',
                   fullWidth: true,
                   InputLabelProps: { shrink: true },
@@ -119,11 +116,11 @@ export function DateRangeFilterSection({
             <DatePicker
               label="Tarih bitiş"
               format="DD/MM/YY"
-              value={toDayjs(to)}
-              onChange={(val) => onChangeTo(toIso(val))}
+              value={toDayjs(updatedTo)}
+              onChange={(val) => onChangeUpdatedTo(toIso(val))}
               slotProps={{
                 textField: {
-                  id: DATE_TO_ID,
+                  id: UPDATED_TO_ID,
                   size: 'small',
                   fullWidth: true,
                   InputLabelProps: { shrink: true },

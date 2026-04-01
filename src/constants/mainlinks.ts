@@ -7,6 +7,7 @@ import People from '@mui/icons-material/People';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 import Category from '@mui/icons-material/Category';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import Logout from '@mui/icons-material/Logout';
 
 export const mainLinks: SidebarLink[] = [
@@ -15,7 +16,9 @@ export const mainLinks: SidebarLink[] = [
   { label: 'Clients',             labelTr: 'Kullanıcılar',   href: '/clients',                   icon: People },
   { label: 'Product Analytics',   labelTr: 'Ürün Analizi',   href: '/products_analytics',        icon: ShowChartIcon },
 
-  { label: 'Products',            labelTr: 'Profiller',      href: '/products',                  icon: Category,       section: 'quick',  order: 1 },
+  { label: 'Products',            labelTr: 'Profiller',      href: '/products',                  icon: Category,       section: 'quick',  order: 1, children: [
+    { label: 'Compare', labelTr: 'Karşılaştır', href: '/products/compare', icon: CompareArrowsIcon },
+  ] },
 
   { label: 'Logout',              labelTr: 'Çıkış Yap',      href: '/login',                     icon: Logout,         section: 'footer' },
 ];

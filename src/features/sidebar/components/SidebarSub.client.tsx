@@ -40,7 +40,6 @@ export default function SidebarQuickActions({ links, compact = true }: Props) {
               (pathname === href || pathname.startsWith(`${href}/`) || pathname.startsWith(`${href}?`)),
           );
 
-        // ✅ benzersiz key: quick|href|label|idx
         const key = `quick|${href ?? 'nohref'}|${link.label}|${idx}`;
 
         return (

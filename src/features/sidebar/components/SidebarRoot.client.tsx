@@ -5,7 +5,9 @@ import * as React from 'react';
 
 import { Box, Drawer, Stack, Grid, Skeleton } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
-import { SIDEBAR_WIDTH } from '@/constants/layout';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { SIDEBAR_WIDTH_COMPACT, SIDEBAR_WIDTH_EXPANDED } from '@/constants/layout';
 import SidebarLogo from './SidebarLogo';
 import SidebarNav from './SidebarNav.client';
 import SidebarQuickActions from './SidebarSub.client';
@@ -36,9 +38,13 @@ type Props = {
   loading?: boolean;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  expanded?: boolean;
+  onToggleExpanded?: () => void;
 };
 
-const MOBILE_SIDEBAR_WIDTH = 280; // hamburger çekmecede tam metinli genişlik
+const MOBILE_SIDEBAR_WIDTH = 280;
+
+const TRANSITION = 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
 
 export default function SidebarRoot({
   initialRole,
@@ -49,6 +55,8 @@ export default function SidebarRoot({
   loading = false,
   mobileOpen = false,
   onCloseMobile,
+  expanded = false,
+  onToggleExpanded,
 }: Props) {
   const roleResolved: Role = initialRole ?? 'User';
   const statusUI = React.useMemo(() => toStatusUI(initialStatus), [initialStatus]);
@@ -76,9 +84,12 @@ export default function SidebarRoot({
 
   const logoHref = '/account' as const;
 
+  const desktopWidth = expanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COMPACT;
+  const compact = !expanded;
+
   // Drawer kağıdı: genişliği parametreyle veren fabrika
   const paperSx =
-    (w: number) =>
+    (w: number, animate = false) =>
     (theme: Theme) => {
       const bg =
         theme.palette.mode === 'dark'
@@ -93,6 +104,7 @@ export default function SidebarRoot({
         display: 'grid',
         gridTemplateRows: 'auto 1fr auto 1fr auto',
         minHeight: '100dvh',
+        ...(animate ? { transition: TRANSITION } : {}),
       };
     };
 
@@ -109,7 +121,7 @@ export default function SidebarRoot({
             <Grid key={i} size={{ xs: 12 }} >
               <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 0.5, py: 0.5 }}>
                 <Skeleton variant="circular" width={20} height={20} />
-                <Skeleton variant="rounded" width={180} height={14} />
+                {!compact && <Skeleton variant="rounded" width={140} height={14} />}
               </Stack>
             </Grid>
           ))}
@@ -120,7 +132,7 @@ export default function SidebarRoot({
         <Box aria-hidden />
         <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 0.5, py: 1 }}>
           <Skeleton variant="circular" width={18} height={18} />
-          <Skeleton variant="rounded" width={140} height={14} />
+          {!compact && <Skeleton variant="rounded" width={140} height={14} />}
         </Stack>
         <Box aria-hidden />
       </Box>
@@ -135,37 +147,60 @@ export default function SidebarRoot({
     </>
   );
 
-  const renderContent = (compact: boolean) => {
+  const renderContent = (isCompact: boolean) => {
     if (isLoading) return renderSkeleton();
 
     return (
       <>
-        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 3.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 3.5, gap: 2 }}>
           <SidebarLogo
             href={logoHref}
-            variant={compact ? 'compact' : 'expanded'} // ← fark burada
+            variant={isCompact ? 'compact' : 'expanded'}
           />
+
+          {onToggleExpanded && (
+            <Box
+              onClick={onToggleExpanded}
+              sx={(t) => ({
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                color: t.palette.text.disabled,
+                '&:hover': {
+                  color: t.palette.text.primary,
+                  bgcolor: t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                },
+              })}
+            >
+              {isCompact ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
+            </Box>
+          )}
         </Box>
 
         <Box aria-hidden />
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: compact ? 'center' : 'stretch', px: 1, width: '100%' }}>
-          <SidebarNav links={filtered} unreadCount={unread} loading={false} compact={compact} />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: isCompact ? 'center' : 'stretch', px: 1, width: '100%' }}>
+          <SidebarNav links={filtered} unreadCount={unread} loading={false} compact={isCompact} />
         </Box>
 
         <Box sx={{ display: 'grid', gridTemplateRows: '1fr auto 1fr', px: 1, minHeight: 0 }}>
           <Box aria-hidden />
-          <SidebarQuickActions links={filtered} compact={compact} />
+          <SidebarQuickActions links={filtered} compact={isCompact} />
           <Box aria-hidden />
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', pb: 3.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: isCompact ? 'center' : 'stretch', pb: 2, gap: 1.5, px: isCompact ? 0 : 1 }}>
           <SidebarFooter
             logoutLink={logoutLink}
             unreadCount={unread}
-            compact={compact}
+            compact={isCompact}
             onLogout={() => {
               fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
-                window.location.replace('/login'); // tek hamle, temiz
+                window.location.replace('/login');
               });
             }}
           />
@@ -182,7 +217,7 @@ export default function SidebarRoot({
         anchor="left"
         open={mobileOpen}
         onClose={onCloseMobile}
-        ModalProps={{ keepMounted: true, disableScrollLock: true }}  // ← body scroll lock KAPALI
+        ModalProps={{ keepMounted: true, disableScrollLock: true }}
         sx={{
           display: { xs: 'block', sm: 'none' },
           '& .MuiDrawer-paper': paperSx(MOBILE_SIDEBAR_WIDTH),
@@ -191,17 +226,17 @@ export default function SidebarRoot({
         {renderContent(false)}
       </Drawer>
 
-      {/* Masaüstü: kompakt ikon-only */}
+      {/* Masaüstü: kompakt/genişletilmiş */}
       <Drawer
         variant="permanent"
         anchor="left"
         sx={{
           display: { xs: 'none', sm: 'block' },
           flexShrink: 0,
-          '& .MuiDrawer-paper': paperSx(SIDEBAR_WIDTH),
+          '& .MuiDrawer-paper': paperSx(desktopWidth, true),
         }}
       >
-        {renderContent(true)}
+        {renderContent(compact)}
       </Drawer>
     </>
   );

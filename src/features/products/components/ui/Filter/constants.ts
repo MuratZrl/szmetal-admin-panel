@@ -18,3 +18,5 @@ export const CATEGORY_QUERY_ID = 'products-filter-category-query';
 export const DATE_FROM_ID = 'products-filter-date-from';
 export const DATE_TO_ID = 'products-filter-date-to';
 export const SORT_SELECT_ID = 'products-filter-select';
+export const UPDATED_FROM_ID = 'products-filter-updated-from';
+export const UPDATED_TO_ID = 'products-filter-updated-to';

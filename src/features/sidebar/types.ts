@@ -5,6 +5,13 @@ import type { SvgIconTypeMap } from '@mui/material/SvgIcon';
 export type Role = 'Admin' | 'Manager' | 'User';
 export type Status = 'Active' | 'Inactive' | 'Banned';
 
+export type SidebarSubLink = {
+  label: string;
+  labelTr?: string;
+  href: string;
+  icon: OverridableComponent<SvgIconTypeMap<object, 'svg'>>;
+};
+
 export type SidebarLink = {
   label: string;
   labelTr?: string;
@@ -16,4 +23,5 @@ export type SidebarLink = {
   section?: 'main' | 'quick' | 'footer';
   order?: number;
   disabled?: boolean;
+  children?: SidebarSubLink[];
 };

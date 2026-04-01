@@ -9,7 +9,6 @@ import type { CategoryTree } from '../types';
 
 export type MoldMode = 'all' | 'mold' | 'nonMold';
 export type AvailabilityMode = 'all' | 'unavailable' | 'available';
-export type UpdatedMode = 'all' | 'updated' | 'notUpdated';
 
 export type ProductSort =
   | 'date-desc'
@@ -47,8 +46,11 @@ export type UseProductFiltersResult = {
   availabilityMode: AvailabilityMode;
   setAvailabilityMode: React.Dispatch<React.SetStateAction<AvailabilityMode>>;
 
-  updatedMode: UpdatedMode;
-  setUpdatedMode: React.Dispatch<React.SetStateAction<UpdatedMode>>;
+  updatedFrom: string;
+  setUpdatedFrom: React.Dispatch<React.SetStateAction<string>>;
+
+  updatedTo: string;
+  setUpdatedTo: React.Dispatch<React.SetStateAction<string>>;
 
   variantQuery: string;
   setVariantQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -146,16 +148,6 @@ function parseMoldMode(raw: string | null): MoldMode {
   return 'all';
 }
 
-function parseUpdatedMode(raw: string | null): UpdatedMode {
-  if (!raw) return 'all';
-  const v = raw.trim().toLocaleLowerCase('tr');
-
-  if (v === '1' || v === 'true' || v === 'updated' || v === 'evet') return 'updated';
-  if (v === '0' || v === 'false' || v === 'notupdated' || v === 'hayır' || v === 'hayir') return 'notUpdated';
-
-  return 'all';
-}
-
 function parseAvailabilityMode(raw: string | null): AvailabilityMode {
   if (!raw) return 'all';
   const v = raw.trim().toLocaleLowerCase('tr');
@@ -181,7 +173,8 @@ type UrlSnapshot = {
   sort: ProductSort;
   moldMode: MoldMode;
   availabilityMode: AvailabilityMode;
-  updatedMode: UpdatedMode;
+  updatedFrom: string;
+  updatedTo: string;
   pageSize: string;
   page: string;
 };
@@ -204,12 +197,16 @@ function readFromSearchParams(sp: SearchParamsLike): UrlSnapshot {
   const sort = normalizeSort(sp.get('sort'));
   const moldMode = parseMoldMode(sp.get('customerMold'));
   const availabilityMode = parseAvailabilityMode(sp.get('availability'));
-  const updatedMode = parseUpdatedMode(sp.get('updated'));
+
+  const updatedFromRaw = (sp.get('updatedFrom') ?? '').trim();
+  const updatedToRaw = (sp.get('updatedTo') ?? '').trim();
+  const updatedFrom = isValidDateParam(updatedFromRaw) ? updatedFromRaw : '';
+  const updatedTo = isValidDateParam(updatedToRaw) ? updatedToRaw : '';
 
   const pageSize = (sp.get('pageSize') ?? '').trim();
   const page = (sp.get('page') ?? '').trim();
 
-  return { q, categories, subCategories, variantsSel, from, to, sort, moldMode, availabilityMode, updatedMode, pageSize, page };
+  return { q, categories, subCategories, variantsSel, from, to, sort, moldMode, availabilityMode, updatedFrom, updatedTo, pageSize, page };
 }
 
 function toSearchParams(snapshot: UrlSnapshot): URLSearchParams {
@@ -231,8 +228,8 @@ function toSearchParams(snapshot: UrlSnapshot): URLSearchParams {
   if (snapshot.availabilityMode === 'unavailable') params.set('availability', '0');
   if (snapshot.availabilityMode === 'available') params.set('availability', '1');
 
-  if (snapshot.updatedMode === 'updated') params.set('updated', '1');
-  if (snapshot.updatedMode === 'notUpdated') params.set('updated', '0');
+  if (snapshot.updatedFrom) params.set('updatedFrom', snapshot.updatedFrom);
+  if (snapshot.updatedTo) params.set('updatedTo', snapshot.updatedTo);
 
   if (snapshot.pageSize) params.set('pageSize', snapshot.pageSize);
   if (snapshot.page && snapshot.page !== '1') params.set('page', snapshot.page);
@@ -257,7 +254,8 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
 
   const [moldMode, setMoldMode] = React.useState<MoldMode>(snap.moldMode);
   const [availabilityMode, setAvailabilityMode] = React.useState<AvailabilityMode>(snap.availabilityMode);
-  const [updatedMode, setUpdatedMode] = React.useState<UpdatedMode>(snap.updatedMode);
+  const [updatedFrom, setUpdatedFrom] = React.useState<string>(snap.updatedFrom);
+  const [updatedTo, setUpdatedTo] = React.useState<string>(snap.updatedTo);
 
   const [variantQuery, setVariantQuery] = React.useState<string>('');
 
@@ -284,7 +282,8 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
 
     setMoldMode((prev) => (prev !== next.moldMode ? next.moldMode : prev));
     setAvailabilityMode((prev) => (prev !== next.availabilityMode ? next.availabilityMode : prev));
-    setUpdatedMode((prev) => (prev !== next.updatedMode ? next.updatedMode : prev));
+    setUpdatedFrom((prev) => (prev !== next.updatedFrom ? next.updatedFrom : prev));
+    setUpdatedTo((prev) => (prev !== next.updatedTo ? next.updatedTo : prev));
 
     setExpanded((prev) => {
       const derived = deriveExpanded(categoryTree, next.categories, next.subCategories);
@@ -310,7 +309,8 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
       sort,
       moldMode,
       availabilityMode,
-      updatedMode,
+      updatedFrom: isValidDateParam(updatedFrom) ? updatedFrom : '',
+      updatedTo: isValidDateParam(updatedTo) ? updatedTo : '',
       pageSize: (sp.get('pageSize') ?? '').trim(),
       page: (sp.get('page') ?? '').trim(),
     };
@@ -325,7 +325,7 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
 
     const href = (nextQs ? `${pathname}?${nextQs}` : pathname) as Route;
     router.replace(href, { scroll: false });
-  }, [q, categories, subCategories, variantsSel, from, to, sort, moldMode, availabilityMode, updatedMode, router, pathname, sp]);
+  }, [q, categories, subCategories, variantsSel, from, to, sort, moldMode, availabilityMode, updatedFrom, updatedTo, router, pathname, sp]);
 
   const reset = React.useCallback(() => {
     setQ('');
@@ -338,7 +338,8 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
 
     setMoldMode('all');
     setAvailabilityMode('all');
-    setUpdatedMode('all');
+    setUpdatedFrom('');
+    setUpdatedTo('');
 
     setVariantQuery('');
     setExpanded([]);
@@ -363,8 +364,10 @@ export function useProductFilters(categoryTree: CategoryTree): UseProductFilters
     setMoldMode,
     availabilityMode,
     setAvailabilityMode,
-    updatedMode,
-    setUpdatedMode,
+    updatedFrom,
+    setUpdatedFrom,
+    updatedTo,
+    setUpdatedTo,
     variantQuery,
     setVariantQuery,
     expanded,

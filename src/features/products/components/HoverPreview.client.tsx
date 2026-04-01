@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Popper, Paper, Box } from '@mui/material';
-import { Document, Page, pdfjs } from 'react-pdf';
+import PdfThumb from '@/features/products/components/ui/PdfThumb.client';
 
 type Kind = 'pdf' | 'image' | 'other';
 
@@ -19,11 +19,28 @@ type HoverPreviewProps = {
   pdfWidths?: BreakWidths;
 };
 
-if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = '/api/pdf-worker';
-}
+/** PDF kutusu: ResizeObserver ile gerçek boyutu PdfThumb'a iletir */
+function PdfPreviewBox({ src, title }: { src: string; title: string }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [size, setSize] = React.useState<{ width: number; height: number } | null>(null);
 
-const PDF_OPTIONS = { disableRange: true, disableStream: true } as const;
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (r) setSize({ width: r.width, height: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <Box ref={ref} sx={{ position: 'absolute', inset: 0 }}>
+      <PdfThumb src={src} boxSize={size} title={title} />
+    </Box>
+  );
+}
 
 export default function HoverPreview({
   kind,
@@ -34,28 +51,10 @@ export default function HoverPreview({
   scale = 2,
   pdfWidths,
 }: HoverPreviewProps) {
-  const [pageDims, setPageDims] = React.useState<{ width: number; height: number } | null>(null);
-
-  // Reset page dims when src changes
-  React.useEffect(() => {
-    setPageDims(null);
-  }, [src]);
+  if (!open || !anchorEl || !src) return null;
 
   const isPdf = kind === 'pdf';
   const isImage = kind === 'image';
-
-  const pdfMdWidth = pdfWidths?.md ?? 600;
-
-  // Compute scale to fit the PDF page into the preview box
-  const pdfScale = React.useMemo(() => {
-    if (!pageDims) return 1.5;
-    const targetW = pdfMdWidth;
-    const targetH = targetW * (297 / 210); // A4 ratio
-    const s = Math.min(targetW / pageDims.width, targetH / pageDims.height);
-    return Math.max(0.1, Math.min(s, 4));
-  }, [pageDims, pdfMdWidth]);
-
-  if (!open || !anchorEl || !src) return null;
 
   const imgWidth = baseSize ? Math.round(baseSize.width * scale) : 540;
   const imgHeight = baseSize ? Math.round(baseSize.height * scale) : 405;
@@ -63,7 +62,7 @@ export default function HoverPreview({
   const pdfW = {
     xs: pdfWidths?.xs ?? 360,
     sm: pdfWidths?.sm ?? 480,
-    md: pdfMdWidth,
+    md: pdfWidths?.md ?? 600,
     lg: pdfWidths?.lg ?? 720,
     xl: pdfWidths?.xl ?? 820,
   };
@@ -74,14 +73,14 @@ export default function HoverPreview({
       anchorEl={anchorEl}
       placement={isPdf ? 'left-start' : 'right-start'}
       modifiers={[
-        { name: 'offset', options: { offset: isPdf ? [0, 16] : [0, 12] } },
+        { name: 'offset', options: { offset: [0, 10] } },
         { name: 'preventOverflow', options: { padding: 8, boundary: 'viewport' } },
         { name: 'computeStyles', options: { gpuAcceleration: false } },
         { name: 'flip', options: { padding: 8 } },
       ]}
       style={{ zIndex: 1300, pointerEvents: 'none' }}
     >
-      <Paper elevation={8} sx={{ p: 0, overflow: 'hidden', borderRadius: 0.75 }}>
+      <Paper elevation={8} sx={{ p: 0, overflow: 'hidden', borderRadius: 3 }}>
         {isPdf ? (
           <Box
             sx={{
@@ -90,38 +89,10 @@ export default function HoverPreview({
               bgcolor: '#fff',
               position: 'relative',
               maxHeight: '90vh',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               overflow: 'hidden',
-              '& .react-pdf__Page__canvas': {
-                maxWidth: '100%',
-                maxHeight: '100%',
-                width: 'auto',
-                height: 'auto',
-                display: 'block',
-                pointerEvents: 'none',
-              },
             }}
           >
-            <Document
-              key={src}
-              file={src}
-              options={PDF_OPTIONS}
-              loading={null}
-              error={null}
-            >
-              <Page
-                pageNumber={1}
-                scale={pdfScale}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                onLoadSuccess={(page) => {
-                  const vp = page.getViewport({ scale: 1 });
-                  setPageDims({ width: vp.width, height: vp.height });
-                }}
-              />
-            </Document>
+            <PdfPreviewBox src={src} title="PDF Önizleme" />
           </Box>
         ) : isImage ? (
           <Box

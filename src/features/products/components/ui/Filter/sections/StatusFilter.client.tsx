@@ -28,9 +28,6 @@ type StatusFilterSectionProps = {
 
   availabilityMode: AvailabilityMode;
   onChangeAvailabilityMode: (mode: AvailabilityMode) => void;
-
-  updatedMode: UpdatedMode;
-  onChangeUpdatedMode: (mode: UpdatedMode) => void;
 };
 
 export function StatusFilterSection({
@@ -38,16 +35,13 @@ export function StatusFilterSection({
   onChangeMoldMode,
   availabilityMode,
   onChangeAvailabilityMode,
-  updatedMode,
-  onChangeUpdatedMode,
 }: StatusFilterSectionProps): React.JSX.Element {
-  const isActive = moldMode !== 'all' || availabilityMode !== 'all' || updatedMode !== 'all';
+  const isActive = moldMode !== 'all' || availabilityMode !== 'all';
 
   const handleClear = React.useCallback(() => {
     onChangeMoldMode('all');
     onChangeAvailabilityMode('all');
-    onChangeUpdatedMode('all');
-  }, [onChangeMoldMode, onChangeAvailabilityMode, onChangeUpdatedMode]);
+  }, [onChangeMoldMode, onChangeAvailabilityMode]);
 
   const insetX = 1.5;
 
@@ -63,13 +57,6 @@ export function StatusFilterSection({
       if (next) onChangeAvailabilityMode(next);
     },
     [onChangeAvailabilityMode],
-  );
-
-  const handleUpdatedChange = React.useCallback(
-    (_: React.MouseEvent<HTMLElement>, next: UpdatedMode | null) => {
-      if (next) onChangeUpdatedMode(next);
-    },
-    [onChangeUpdatedMode],
   );
 
   // ✅ “Evet” butonları için ortak gradient vurgusu (theme’e göre warning tonu)
@@ -254,48 +241,6 @@ export function StatusFilterSection({
             </ToggleButton>
 
             <ToggleButton value="available" sx={noSelectedSx}>Hayır</ToggleButton>
-          </ToggleButtonGroup>
-        </ListItemButton>
-
-        <Divider sx={{ my: 0.75 }} />
-
-        <ListItemButton
-          disableRipple
-          disableTouchRipple
-          sx={{
-            pl: insetX,
-            pr: insetX,
-            py: 0.25,
-            display: 'flex',
-            alignItems: 'center',
-            borderRadius: 1,
-            cursor: 'default',
-          }}
-        >
-          <ListItemText primary="Güncellenen" sx={{ m: 0 }} />
-
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={updatedMode}
-            onChange={handleUpdatedChange}
-            sx={{
-              ml: 1,
-              '& .MuiToggleButton-root': {
-                textTransform: 'none',
-                px: 1,
-                py: 0.25,
-                lineHeight: 1.2,
-              },
-            }}
-          >
-            <ToggleButton value="all">Tümü</ToggleButton>
-
-            <ToggleButton value="updated" sx={yesSelectedSx}>
-              Evet
-            </ToggleButton>
-
-            <ToggleButton value="notUpdated" sx={noSelectedSx}>Hayır</ToggleButton>
           </ToggleButtonGroup>
         </ListItemButton>
       </List>

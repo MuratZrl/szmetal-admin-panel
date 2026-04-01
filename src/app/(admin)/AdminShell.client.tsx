@@ -6,7 +6,7 @@ import * as React from 'react';
 import { AppBar, Box, IconButton, Paper, Toolbar } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 
-import { SIDEBAR_WIDTH } from '@/constants/layout';
+import { SIDEBAR_WIDTH_COMPACT, SIDEBAR_WIDTH_EXPANDED } from '@/constants/layout';
 import SidebarRoot from '@/features/sidebar/components/SidebarRoot.client';
 import SidebarLogo from '@/features/sidebar/components/SidebarLogo';
 import Breadcrumb from '@/components/layout/Breadcrumb';
@@ -23,10 +23,18 @@ type Props = {
   children: React.ReactNode;
 };
 
+const TRANSITION = 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+
 export default function AdminShell({ initialData, mainLinks, children }: Props): React.JSX.Element {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
+  const [expanded, setExpanded] = React.useState<boolean>(false);
+
+  const handleToggle = React.useCallback(() => {
+    setExpanded((prev) => !prev);
+  }, []);
 
   const logoHref = '/account' as const;
+  const desktopWidth = expanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COMPACT;
 
   return (
     <>
@@ -49,6 +57,8 @@ export default function AdminShell({ initialData, mainLinks, children }: Props):
           mainLinks={mainLinks}
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
+          expanded={expanded}
+          onToggleExpanded={handleToggle}
         />
 
         <AppBar
@@ -81,7 +91,8 @@ export default function AdminShell({ initialData, mainLinks, children }: Props):
           component="main"
           sx={{
             flexGrow: 1,
-            ml: { xs: 0, sm: `${SIDEBAR_WIDTH}px` },
+            ml: { xs: 0, sm: `${desktopWidth}px` },
+            transition: { sm: TRANSITION },
             overflowX: 'hidden',
             overflowY: 'auto',
             px: { xs: 1.25, sm: 2, md: 3 },

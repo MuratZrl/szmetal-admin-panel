@@ -70,20 +70,24 @@ function buildActiveFilters(sp: URLSearchParams): ActiveFilter[] {
     filters.push({ key: 'avail', label, param: 'availability' });
   }
 
-  const updated = sp.get('updated');
-  if (updated) {
-    const label = updated === '1' ? 'Güncellenen: Evet' : 'Güncellenen: Hayır';
-    filters.push({ key: 'updated', label, param: 'updated' });
+  const updatedFrom = sp.get('updatedFrom');
+  if (updatedFrom) {
+    filters.push({ key: 'updatedFrom', label: `Güncelleme Baş.: ${updatedFrom}`, param: 'updatedFrom' });
+  }
+
+  const updatedTo = sp.get('updatedTo');
+  if (updatedTo) {
+    filters.push({ key: 'updatedTo', label: `Güncelleme Bitiş: ${updatedTo}`, param: 'updatedTo' });
   }
 
   const from = sp.get('from');
   if (from) {
-    filters.push({ key: 'from', label: `Başlangıç: ${from}`, param: 'from' });
+    filters.push({ key: 'from', label: `Eklenme Baş.: ${from}`, param: 'from' });
   }
 
   const to = sp.get('to');
   if (to) {
-    filters.push({ key: 'to', label: `Bitiş: ${to}`, param: 'to' });
+    filters.push({ key: 'to', label: `Eklenme Bitiş: ${to}`, param: 'to' });
   }
 
   const sort = sp.get('sort');

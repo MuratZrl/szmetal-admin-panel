@@ -27,6 +27,7 @@ import { ProductMedia } from '@/features/products/components/ui/ProductCard/Prod
 import { CategoryChip } from '@/features/products/components/ui/ProductCard/ProductCardCategoryTag.client';
 import { VariantCaption } from '@/features/products/components/ui/ProductCard/ProductCardVariantCaptionclient';
 import { ProductActions } from '@/features/products/components/ui/ProductCard/ProductCardActions.client';
+import ProductCardCheckbox from '@/features/products/components/ui/ProductCard/ProductCardCheckbox.client';
 
 import type { Product } from '@/features/products/types';
 
@@ -187,6 +188,11 @@ function ProductCard({ product, labels, resolvedImageUrl, role }: Props) {
           'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
       }}
     >
+      <ProductCardCheckbox
+        id={product.id}
+        label={`${product.code} — ${product.name}`}
+      />
+
       <CardActionArea
         LinkComponent={Link}
         href={detailHref}

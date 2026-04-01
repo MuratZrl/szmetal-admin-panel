@@ -16,6 +16,7 @@ import { StatusFilterSection } from '@/features/products/components/ui/Filter/se
 import { CategoryFilterSection } from '@/features/products/components/ui/Filter/sections/CategoryFilter.client';
 import { VariantFilterSection } from '@/features/products/components/ui/Filter/sections/VariantFilter.client';
 import { DateRangeFilterSection } from '@/features/products/components/ui/Filter/sections/DateRangeFilter.client';
+import { UpdatedFilterSection } from '@/features/products/components/ui/Filter/sections/UpdatedFilter.client';
 import { SortFilterSection } from '@/features/products/components/ui/Filter/sections/SortFilter.client';
 import { ActionsSection } from '@/features/products/components/ui/Filter/sections/Actions.client';
 
@@ -55,8 +56,10 @@ export default function Filters({
     setMoldMode,
     availabilityMode,
     setAvailabilityMode,
-    updatedMode,
-    setUpdatedMode,
+    updatedFrom,
+    setUpdatedFrom,
+    updatedTo,
+    setUpdatedTo,
     variantQuery,
     setVariantQuery,
     expanded,
@@ -93,8 +96,6 @@ export default function Filters({
           onChangeMoldMode={setMoldMode}
           availabilityMode={availabilityMode}
           onChangeAvailabilityMode={setAvailabilityMode}
-          updatedMode={updatedMode}
-          onChangeUpdatedMode={setUpdatedMode}
         />
 
         <VariantFilterSection
@@ -106,6 +107,13 @@ export default function Filters({
         />
 
         <DateRangeFilterSection from={from} to={to} onChangeFrom={setFrom} onChangeTo={setTo} />
+
+        <UpdatedFilterSection
+          updatedFrom={updatedFrom}
+          updatedTo={updatedTo}
+          onChangeUpdatedFrom={setUpdatedFrom}
+          onChangeUpdatedTo={setUpdatedTo}
+        />
 
         <SortFilterSection sort={sort} onChangeSort={setSort} />
 
