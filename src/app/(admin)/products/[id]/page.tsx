@@ -100,7 +100,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const t0 = Date.now();
   const { profile } = await requirePageAccess(canonicalPath);
-  console.log(`⏱ requirePageAccess: ${Date.now() - t0}ms`);
+  // console.log(`⏱ requirePageAccess: ${Date.now() - t0}ms`);
 
   const t1 = Date.now();
   const [session, rowWithChain, dicts] = await Promise.all([
@@ -108,7 +108,7 @@ export default async function ProductDetailPage({ params }: Props) {
     fetchProductByIdWithCategoryChain(id),
     fetchProductDicts(),
   ]);
-  console.log(`⏱ [session + product + dicts] batch: ${Date.now() - t1}ms`);
+  // console.log(`⏱ [session + product + dicts] batch: ${Date.now() - t1}ms`);
 
   if (!rowWithChain) notFound();
 
@@ -149,9 +149,9 @@ export default async function ProductDetailPage({ params }: Props) {
     buildRecommendedBlock({ currentRow: row as ProductsRow, limit: 5 }),
     fetchAdjacentProductIds({ id: safeId, createdAt }),
   ]);
-  console.log(`⏱ [comments + recommended + adjacent] batch: ${Date.now() - t2}ms`);
+  // console.log(`⏱ [comments + recommended + adjacent] batch: ${Date.now() - t2}ms`);
 
-  console.log(`⏱ TOTAL server time: ${Date.now() - pageStart}ms`);
+  // console.log(`⏱ TOTAL server time: ${Date.now() - pageStart}ms`);
 
   const comments = commentsRaw ?? [];
   const recommended = recommendedRaw ?? { products: [], mediaUrlsById: {} };

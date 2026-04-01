@@ -1,27 +1,28 @@
 // next.config.ts
 import type { NextConfig } from "next";
 
+const SUPABASE_HOST = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://localhost').hostname;
+
 const nextConfig: NextConfig = {
   devIndicators: false,
   typedRoutes: true,
-  
+
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'zofgtjswwjikwhdirvpa.supabase.co',
+        hostname: SUPABASE_HOST,
         pathname: '/storage/v1/object/public/**',
       },
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        pathname: '/**', // tüm yollar için izin ver
+        pathname: '/**',
       },
     ],
   },
 
   async headers() {
-    // Security headers applied to ALL routes
     const securityHeaders = [
       { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -35,8 +36,8 @@ const nextConfig: NextConfig = {
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
-          "img-src 'self' data: blob: https://zofgtjswwjikwhdirvpa.supabase.co https://placehold.co",
-          "connect-src 'self' https://zofgtjswwjikwhdirvpa.supabase.co wss://zofgtjswwjikwhdirvpa.supabase.co blob:",
+          `img-src 'self' data: blob: https://${SUPABASE_HOST} https://placehold.co`,
+          `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} blob:`,
           "worker-src 'self' blob:",
           "frame-src 'self'",
           "frame-ancestors 'self'",
@@ -47,12 +48,10 @@ const nextConfig: NextConfig = {
     ];
 
     return [
-      // Global security headers for all routes
       {
         source: '/(.*)',
         headers: securityHeaders,
       },
-      // Additional cache-busting for admin routes
       {
         source: '/(dashboard|clients|products|account)(.*)',
         headers: [
@@ -61,12 +60,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  
+
   async redirects() {
     return [
       {
         source: '/:path*',
-        has: [{ type: 'host', value: 'www.szmetal.com.tr' }], // www → apex yönlendirme örneği
+        has: [{ type: 'host', value: 'www.szmetal.com.tr' }],
         destination: 'https://szmetal.com.tr/:path*',
         permanent: true,
       },

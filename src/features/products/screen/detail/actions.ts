@@ -101,11 +101,19 @@ export async function addCommentAction(input: AddCommentInput): Promise<void> {
   } = await sb.auth.getUser();
   if (!user) throw new Error('Giriş yapmalısınız.');
 
+  // Kullanıcı adını users tablosundan al
+  const { data: profile } = await sb
+    .from('users')
+    .select('username')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const authorName = profile?.username || user.email || 'Kullanıcı';
+
   const row: RowInsert = {
-    product_uuid: productUuid,          // yeni kolon
-    // product_id: null,                // legacy; istersen hiç göndermeyebilirsin
+    product_uuid: productUuid,
     author_id: user.id,
-    author_name: user.email ?? 'Kullanıcı',
+    author_name: authorName,
     content,
   };
 

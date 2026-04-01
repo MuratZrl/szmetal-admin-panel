@@ -66,6 +66,10 @@ export default function SidebarRoot({
 
   useSidebarRealtime(userId, () => setUnread(p => p + 1));
 
+  const handleMarkRead = React.useCallback((count: number) => {
+    setUnread((prev) => Math.max(0, prev - count));
+  }, []);
+
   const isLoading =
     loading || initialRole === null || initialStatus === null || mainLinks.length === 0;
 
@@ -198,6 +202,7 @@ export default function SidebarRoot({
             logoutLink={logoutLink}
             unreadCount={unread}
             compact={isCompact}
+            onMarkRead={handleMarkRead}
             onLogout={() => {
               fetch('/api/logout', { method: 'POST', credentials: 'include' }).finally(() => {
                 window.location.replace('/login');

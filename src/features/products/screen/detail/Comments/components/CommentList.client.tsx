@@ -217,6 +217,7 @@ export default function CommentList({
                     <Typography
                       variant="caption"
                       color="text.secondary"
+                      suppressHydrationWarning
                       sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, whiteSpace: 'nowrap' }}
                     >
                       {relativeTime(c.created_at)}

@@ -19,20 +19,21 @@ export async function fetchProductComments(productId: string, limit = 100): Prom
     { cookies: { get: n => jar.get(n)?.value, set() {}, remove() {} } }
   );
 
-  const pid = Number(productId);
+  // productId artık UUID string
+  const pid = productId.trim();
 
   // 1) Comments + pin + auth — all in parallel
   const [commentsRes, pinRes, userRes] = await Promise.all([
     sb
       .from('product_comments')
-      .select('id, product_id, author_id, author_name, content, created_at, updated_at')
-      .eq('product_id', pid)
+      .select('id, product_uuid, author_id, author_name, content, created_at, updated_at')
+      .eq('product_uuid', pid)
       .order('created_at', { ascending: false })
       .limit(limit),
     sb
       .from('product_comment_pins')
       .select('comment_id')
-      .eq('product_id', pid)
+      .eq('product_uuid', pid)
       .maybeSingle<PinRow>(),
     sb.auth.getUser(),
   ]);
@@ -102,7 +103,7 @@ export async function fetchProductComments(productId: string, limit = 100): Prom
 
     return {
       id: c.id,
-      product_id: c.product_id,
+      product_id: c.product_uuid,
       author_id: c.author_id,
       author_name: c.author_name,
       content: c.content,

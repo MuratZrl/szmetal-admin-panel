@@ -60,7 +60,7 @@ export default function SidebarNavItem({
   const buttonProps = isLogout
     ? ({ component: 'button', type: 'button', onClick: handleClick } as const)
     : hasChildren && !compact
-      ? ({ component: 'div', onClick: handleClick } as const)
+      ? ({ href: link.href ?? '#', onClick: () => setOpen((prev) => !prev) } as const)
       : ({ href: link.href ?? '#' } as const);
 
   const ButtonEl = (

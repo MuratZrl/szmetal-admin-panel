@@ -160,14 +160,14 @@ export default function ProductEditForm({ dicts, initial, title }: Props): React
 
   const methods = useForm<EditValues>({
     resolver: yupResolver(productSchema) as unknown as Resolver<EditValues>,
-    mode: 'onSubmit',
+    mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues,
   });
 
   const {
     handleSubmit,
-    formState: { isSubmitting, isDirty, isValid },
+    formState: { isSubmitting, isDirty, isValid, errors },
     reset,
   } = methods;
 
@@ -234,7 +234,13 @@ export default function ProductEditForm({ dicts, initial, title }: Props): React
       <Divider sx={{ mb: 2 }} />
 
       <FormProvider {...methods}>
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Box component="form" onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+          const firstError = Object.entries(validationErrors)[0];
+          if (firstError) {
+            const [field, err] = firstError;
+            show(`Doğrulama hatası: ${field} — ${(err as { message?: string }).message ?? 'Geçersiz'}`, 'error');
+          }
+        })} noValidate>
           <Grid container spacing={2} alignItems="stretch">
             <Grid size={{ xs: 12, md: 9 }}>
               <ProductFormFields methods={methods} dicts={dicts} showFileSection dir={initial.id} />
@@ -255,7 +261,7 @@ export default function ProductEditForm({ dicts, initial, title }: Props): React
               type="submit"
               variant="contained"
               color="contrast"
-              disabled={!isDirty || !isValid || isSubmitting}
+              disabled={!isDirty || isSubmitting}
             >
               Kaydet
             </Button>
