@@ -77,6 +77,47 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          message?: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_comment_pins: {
         Row: {
           comment_id: number
@@ -221,6 +262,7 @@ export type Database = {
           variant: string
           view_count: number
           wall_thickness_mm: number | null
+          is_updated: boolean | null
         }
         Insert: {
           availability?: boolean
@@ -422,12 +464,29 @@ export type Database = {
         Returns: undefined
       }
       capitalize_product_name_tr: { Args: { input: string }; Returns: string }
+      create_notification: {
+        Args: {
+          p_data?: Json
+          p_exclude_uid?: string
+          p_message: string
+          p_target?: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
       email_available: { Args: { p_email: string }; Returns: boolean }
       increment_product_view: { Args: { p_id: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_current_owner: { Args: { p_user_id: string }; Returns: boolean }
       is_current_staff: { Args: never; Returns: boolean }
       is_staff: { Args: { uid: string }; Returns: boolean }
+      is_updated: {
+        Args: { "": Database["public"]["Tables"]["products"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.is_updated with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
       tr_lower: { Args: { s: string }; Returns: string }
       tr_upper: { Args: { s: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
