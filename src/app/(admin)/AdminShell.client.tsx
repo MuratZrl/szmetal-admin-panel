@@ -27,7 +27,7 @@ const TRANSITION = 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
 
 export default function AdminShell({ initialData, mainLinks, children }: Props): React.JSX.Element {
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
-  const [expanded, setExpanded] = React.useState<boolean>(false);
+  const [expanded, setExpanded] = React.useState<boolean>(true);
 
   const handleToggle = React.useCallback(() => {
     setExpanded((prev) => !prev);
